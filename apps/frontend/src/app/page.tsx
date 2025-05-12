@@ -16,7 +16,9 @@ export default function Home() {
   const phaserRef = useRef<IRefPhaserGame | null>(null);
 
   // Event emitted from the PhaserGame component
-  const currentScene = (scene: Phaser.Scene) => {};
+  const currentScene = (scene: Phaser.Scene) => {
+    console.log(scene);
+  };
 
   return (
     <div
