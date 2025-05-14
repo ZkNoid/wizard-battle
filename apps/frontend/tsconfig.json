@@ -36,7 +36,8 @@
     "**/*.tsx",
     "**/*.cjs",
     "**/*.js",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "eslint.config.mjs"
   ],
   "exclude": ["node_modules"],
   "extends": "../../packages/typescript-config/base.json"
