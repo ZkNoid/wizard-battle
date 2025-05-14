@@ -4,49 +4,14 @@ import { Scene } from "phaser";
 import { EventBus } from "../EventBus";
 
 export class MainMenu extends Scene {
-  background!: GameObjects.Image;
-  logo!: GameObjects.Image;
   title!: GameObjects.Text;
   subTitle!: GameObjects.Text;
-  logoTween!: Phaser.Tweens.Tween | null;
 
   constructor() {
     super("MainMenu");
   }
 
-  preload() {
-    this.load.svg("atom", "assets/atom.svg", {
-      width: 100,
-      height: 100,
-    });
-    this.load.svg("rounded-btn", "assets/rounded-btn.svg", {
-      width: 355,
-      height: 60,
-      scale: 1,
-    });
-  }
-
   create() {
-    this.background = this.add.image(
-      window.innerWidth / 2,
-      window.innerHeight / 2,
-      "background",
-    );
-    this.background.setScale(1.75);
-
-    this.logo = this.add
-      .image(window.innerWidth / 2, window.innerHeight / 2, "atom")
-      .setDepth(100);
-
-    // Logo animation
-    this.tweens.add({
-      targets: this.logo,
-      angle: 360,
-      duration: 3000,
-      repeat: -1,
-      ease: "Linear",
-    });
-
     // Title
     this.title = this.add
       .text(
@@ -82,7 +47,7 @@ export class MainMenu extends Scene {
     const buttonY = window.innerHeight / 2 + 300;
 
     const playButton = this.add
-      .image(buttonX, buttonY, "rounded-btn")
+      .rectangle(buttonX, buttonY, 355, 60, 0x000000, 1)
       .setInteractive({ useHandCursor: true })
       .setDepth(100);
 
@@ -98,12 +63,12 @@ export class MainMenu extends Scene {
 
     // Play button hover effects
     playButton.on("pointerover", () => {
-      playButton.setTint(0xf0f0f0);
+      playButton.setFillStyle(0xf0f0f0);
       // playText.setStyle({ color: "#666" });
     });
 
     playButton.on("pointerout", () => {
-      playButton.clearTint();
+      playButton.setFillStyle(0x000000);
       playText.setStyle({ color: "#000" });
     });
 
@@ -116,37 +81,6 @@ export class MainMenu extends Scene {
   }
 
   changeScene() {
-    if (this.logoTween) {
-      this.logoTween.stop();
-      this.logoTween = null;
-    }
-
     this.scene.start("Game");
-  }
-
-  moveLogo(reactCallback: ({ x, y }: { x: number; y: number }) => void) {
-    if (this.logoTween) {
-      if (this.logoTween.isPlaying()) {
-        this.logoTween.pause();
-      } else {
-        this.logoTween.play();
-      }
-    } else {
-      this.logoTween = this.tweens.add({
-        targets: this.logo,
-        x: { value: 750, duration: 3000, ease: "Back.easeInOut" },
-        y: { value: 80, duration: 1500, ease: "Sine.easeOut" },
-        yoyo: true,
-        repeat: -1,
-        onUpdate: () => {
-          if (reactCallback) {
-            reactCallback({
-              x: Math.floor(this.logo.x),
-              y: Math.floor(this.logo.y),
-            });
-          }
-        },
-      });
-    }
   }
 }

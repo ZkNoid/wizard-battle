@@ -38,6 +38,8 @@
   --text-2xl-line-height: 24px;
   --text-2xll-line-height: 24px;
   --text-3xl-line-height: 32px;
+
+  --color-main-gray: #464444;
 }
 
 @layer theme {
