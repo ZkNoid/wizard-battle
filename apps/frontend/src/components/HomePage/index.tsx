@@ -1,23 +1,27 @@
 import { MainMenu } from "./MainMenu";
 import background from "../../../public/background.svg";
 import Image from "next/image";
-import AudioSelector from "../AudioSelector";
-import ConnectWallet from "../ConnectWallet";
+import Wallet from "@/components/Wallet";
+import { ZknoidLink } from "./ZknoidLink";
+import { SocialLinks } from "./SocialLinks";
+import { SettingsBar } from "./SettingsBar";
 
 export default function HomePage() {
   return (
-    <main className="relative flex h-screen w-full">
-      {/* Audio */}
-      <div className="mt-12.5 ml-20 w-[20%]">
-        <AudioSelector />
+    <main className="relative flex h-screen w-screen">
+      {/* Left Bar */}
+      <div className="my-12.5 ml-20 flex w-[20%] flex-col justify-between">
+        <SettingsBar />
+        <ZknoidLink />
       </div>
       {/* Main Menu */}
       <div className="flex h-full w-[60%] flex-col items-center justify-center">
         <MainMenu />
       </div>
-      {/* WalletConnect */}
-      <div className="mt-12.5 mr-20 w-[20%]">
-        <ConnectWallet />
+      {/* Right Bar */}
+      <div className="my-12.5 mr-20 flex w-[20%] flex-col justify-between">
+        <Wallet />
+        <SocialLinks />
       </div>
 
       {/* Background */}

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { AudioIcon } from "./assets/audio-icon";
 import { VolumeBar } from "./assets/volume-bar";
 import { VolumeHandle } from "./assets/volume-handle";
@@ -11,16 +10,11 @@ export default function AudioSelector() {
   const [volume, setVolume] = useState<number>(50);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 50, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.7, ease: "easeOut", delay: 2.5 }}
-      className="flex items-center gap-4"
-    >
+    <div className="flex items-center gap-4">
       {/* Audio On/Off button */}
       <button
         onClick={() => setIsActive(!isActive)}
-        className="cursor-pointer transition-all duration-300 hover:scale-105"
+        className="cursor-pointer transition-transform duration-300 hover:scale-105"
       >
         <AudioIcon className="h-20 w-20" isActive={isActive} />
       </button>
@@ -37,7 +31,7 @@ export default function AudioSelector() {
         />
         {/* Handle */}
         <div
-          className="pointer-events-none absolute top-1/2 -translate-y-1/2 transition-all duration-100"
+          className="pointer-events-none absolute top-1/2 -translate-y-1/2 transition-transform duration-100"
           style={{
             left: `${volume - 8}%`,
           }}
@@ -45,6 +39,6 @@ export default function AudioSelector() {
           <VolumeHandle className="h-10 w-10" />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

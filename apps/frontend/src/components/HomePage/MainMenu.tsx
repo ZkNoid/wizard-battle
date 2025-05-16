@@ -31,24 +31,34 @@ export function MainMenu() {
         transition={{ duration: 0.7, ease: "easeOut", delay: 1.8 }}
         className="relative w-full"
       >
-        <div className="ml-2.5 flex flex-col items-center justify-center gap-5 p-4">
+        <div className="ml-2.5 flex flex-col items-center justify-center gap-2.5 p-4">
           <Button
+            variant="gray"
             text="Play"
             onClick={() => {}}
             className="w-88.5 h-15 text-2xl font-bold"
           />
           <Button
+            variant="gray"
+            text="Tournaments"
+            onClick={() => {}}
+            className="w-88.5 h-15 text-2xl font-bold"
+          />
+          <Button
+            variant="gray"
             text="Customization"
             onClick={() => {}}
             className="w-88.5 h-15 text-2xl font-bold"
           />
           <Button
-            text="Settings"
+            variant="gray"
+            text="How to play"
             onClick={() => {}}
             className="w-88.5 h-15 text-2xl font-bold"
           />
           <Button
-            text="How to play"
+            variant="gray"
+            text="Support"
             onClick={() => {}}
             className="w-88.5 h-15 text-2xl font-bold"
           />

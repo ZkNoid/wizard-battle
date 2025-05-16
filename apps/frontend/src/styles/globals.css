@@ -17,9 +17,6 @@
 @theme {
   --spacing: 4px;
 
-  /* --font-lato: 'Lato', sans-serif; */
-  /* --font-roboto: 'Roboto', sans-serif; */
-
   --text-xxs: 10px;
   --text-xs: 12px;
   --text-sm: 14px;
@@ -39,7 +36,7 @@
   --text-2xll-line-height: 24px;
   --text-3xl-line-height: 32px;
 
-  --color-main-gray: #464444;
+  --color-main-gray: #070c19;
 }
 
 @layer theme {

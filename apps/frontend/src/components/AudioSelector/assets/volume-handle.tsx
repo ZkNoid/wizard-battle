@@ -8,21 +8,21 @@ export const VolumeHandle = ({ className }: { className?: string }) => {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      <rect y="5" width="5" height="40" fill="#464444" />
-      <rect x="5" width="5" height="5" fill="#464444" />
-      <rect x="5" y="45" width="5" height="5" fill="#464444" />
-      <rect x="15" width="5" height="5" fill="#464444" />
-      <rect x="15" y="5" width="5" height="40" fill="#D0CECE" />
-      <rect x="10" y="10" width="5" height="35" fill="#B7B7B7" />
-      <rect x="5" y="10" width="5" height="35" fill="#787878" />
-      <rect x="15" y="45" width="5" height="5" fill="#464444" />
-      <rect x="10" width="5" height="5" fill="#464444" />
-      <rect x="10" y="5" width="5" height="5" fill="#D0CECE" />
-      <rect x="5" y="5" width="5" height="5" fill="#B3B3B3" />
-      <rect x="5" y="40" width="5" height="5" fill="#555353" />
-      <rect x="15" y="10" width="5" height="5" fill="white" />
-      <rect x="10" y="45" width="5" height="5" fill="#464444" />
-      <rect x="20" y="5" width="5" height="40" fill="#464444" />
+      <rect y="5" width="5" height="40" fill="#070C19" />
+      <rect x="5" width="5" height="5" fill="#070C19" />
+      <rect x="5" y="45" width="5" height="5" fill="#070C19" />
+      <rect x="15" width="5" height="5" fill="#070C19" />
+      <rect x="15" y="5" width="5" height="40" fill="#D5D8DD" />
+      <rect x="10" y="10" width="5" height="35" fill="#747C8F" />
+      <rect x="5" y="10" width="5" height="35" fill="#2F3A56" />
+      <rect x="15" y="45" width="5" height="5" fill="#070C19" />
+      <rect x="10" width="5" height="5" fill="#070C19" />
+      <rect x="10" y="5" width="5" height="5" fill="#D5D8DD" />
+      <rect x="5" y="5" width="5" height="5" fill="#747C8F" />
+      <rect x="5" y="40" width="5" height="5" fill="#2F3A56" />
+      <rect x="15" y="10" width="5" height="5" fill="#F1F2F4" />
+      <rect x="10" y="45" width="5" height="5" fill="#070C19" />
+      <rect x="20" y="5" width="5" height="40" fill="#070C19" />
     </svg>
   );
 };
