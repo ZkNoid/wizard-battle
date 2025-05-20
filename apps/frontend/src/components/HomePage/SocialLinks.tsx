@@ -15,7 +15,7 @@ export function SocialLinks() {
       initial={{ opacity: 0, y: 50, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.7, ease: "easeOut", delay: 2.5 }}
-      className="ml-auto flex items-center gap-4"
+      className="flex items-center justify-end gap-4"
     >
       <div className="flex items-center gap-5">
         <BoxButton

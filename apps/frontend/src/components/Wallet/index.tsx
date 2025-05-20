@@ -8,8 +8,11 @@ import { LevelBg } from "./assets/level-bg";
 import BoxButton from "../shared/BoxButton";
 import { DisconnectIcon } from "./assets/disconnect-icon";
 import type { IUser } from "@/lib/types/IUser";
+import { usePathname } from "next/navigation";
 
 export default function Wallet() {
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const user: IUser = {
     name: "John Doe",
@@ -19,8 +22,8 @@ export default function Wallet() {
   };
   return (
     <motion.div
-      initial={{ opacity: 0, y: 50, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      initial={isHomePage ? { opacity: 0, y: 50, scale: 0.9 } : false}
+      animate={isHomePage ? { opacity: 1, y: 0, scale: 1 } : false}
       transition={{ duration: 0.7, ease: "easeOut", delay: 2.5 }}
       className="w-full"
     >

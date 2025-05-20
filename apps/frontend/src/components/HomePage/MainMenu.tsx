@@ -3,8 +3,12 @@
 import { motion } from "motion/react";
 import { Button } from "../shared/Button";
 import { ScrollBg } from "./assets/scroll-bg";
+import { Tab } from "@/lib/enums/Tab";
+import { useRouter } from "next/navigation";
 
-export function MainMenu() {
+export function MainMenu({ setTab }: { setTab: (tab: Tab) => void }) {
+  const router = useRouter();
+
   return (
     <div className="flex flex-col items-center justify-center gap-8">
       {/* Title */}
@@ -35,31 +39,31 @@ export function MainMenu() {
           <Button
             variant="gray"
             text="Play"
-            onClick={() => {}}
+            onClick={() => router.push("/play")}
             className="w-88.5 h-15 text-2xl font-bold"
           />
           <Button
             variant="gray"
             text="Tournaments"
-            onClick={() => {}}
+            onClick={() => setTab(Tab.TOURNAMENTS)}
             className="w-88.5 h-15 text-2xl font-bold"
           />
           <Button
             variant="gray"
             text="Customization"
-            onClick={() => {}}
+            onClick={() => setTab(Tab.CUSTOMIZATION)}
             className="w-88.5 h-15 text-2xl font-bold"
           />
           <Button
             variant="gray"
             text="How to play"
-            onClick={() => {}}
+            onClick={() => setTab(Tab.HOW_TO_PLAY)}
             className="w-88.5 h-15 text-2xl font-bold"
           />
           <Button
             variant="gray"
             text="Support"
-            onClick={() => {}}
+            onClick={() => setTab(Tab.SUPPORT)}
             className="w-88.5 h-15 text-2xl font-bold"
           />
         </div>

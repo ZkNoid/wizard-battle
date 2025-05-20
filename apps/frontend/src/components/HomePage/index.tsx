@@ -1,37 +1,32 @@
+"use client";
+
 import { MainMenu } from "./MainMenu";
-import background from "../../../public/background.svg";
-import Image from "next/image";
-import Wallet from "@/components/Wallet";
 import { ZknoidLink } from "./ZknoidLink";
 import { SocialLinks } from "./SocialLinks";
-import { SettingsBar } from "./SettingsBar";
+import { useState } from "react";
+import { Tab } from "@/lib/enums/Tab";
+import { cn } from "@/lib/utils";
+import BaseLayout from "../BaseLayout";
 
 export default function HomePage() {
-  return (
-    <main className="relative flex h-screen w-screen">
-      {/* Left Bar */}
-      <div className="my-12.5 ml-20 flex w-[20%] flex-col justify-between">
-        <SettingsBar />
-        <ZknoidLink />
-      </div>
-      {/* Main Menu */}
-      <div className="flex h-full w-[60%] flex-col items-center justify-center">
-        <MainMenu />
-      </div>
-      {/* Right Bar */}
-      <div className="my-12.5 mr-20 flex w-[20%] flex-col justify-between">
-        <Wallet />
-        <SocialLinks />
-      </div>
+  const [tab, setTab] = useState<Tab>(Tab.HOME);
 
-      {/* Background */}
-      <div className="absolute inset-0 -z-50 h-full w-full">
-        <Image
-          src={background}
-          alt="background"
-          className="h-full w-full object-cover object-center"
-        />
+  return (
+    <BaseLayout>
+      {/* Main section */}
+      <section
+        className={"flex h-full w-full flex-col items-center justify-center"}
+      >
+        {tab === Tab.HOME && <MainMenu setTab={(tab) => setTab(tab as Tab)} />}
+      </section>
+      {/* Left bottom bar */}
+      <div className="bottom-12.5 absolute left-20 w-[20%]">
+        {tab === Tab.HOME && <ZknoidLink />}
       </div>
-    </main>
+      {/* Left bottom bar */}
+      <div className="bottom-12.5 absolute right-20 w-[20%]">
+        {tab === Tab.HOME && <SocialLinks />}
+      </div>
+    </BaseLayout>
   );
 }
