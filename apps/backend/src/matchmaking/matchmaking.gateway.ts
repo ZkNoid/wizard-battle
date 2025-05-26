@@ -46,4 +46,18 @@ export class MatchmakingGateway
       client.emit("waitingForOpponent");
     }
   }
+
+  @SubscribeMessage("findBotMatch")
+  handleFindBotMatch(client: Socket, matchData: any) {
+    console.log(`Client ${client.id} looking for bot match`);
+
+    const transformedData = plainToClass(TransformedMatchPlayerData, matchData);
+
+    this.matchmakingService.findBotMatch(client);
+  }
+
+  @SubscribeMessage("botReady")
+  handleBotReady(client: Socket) {
+    console.log(`Client ${client.id} is ready for bot match`);
+  }
 }

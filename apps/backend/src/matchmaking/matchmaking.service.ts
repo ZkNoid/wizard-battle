@@ -6,12 +6,16 @@ import {
   MatchFoundResponse,
 } from "../../../common/types/matchmaking.types";
 import { GameSessionService } from "../game-session/game-session.service";
+import { BotService } from "src/bot/bot.service";
 
 @Injectable()
 export class MatchmakingService {
   private queue: QueueEntry[] = [];
 
-  constructor(private gameSessionService: GameSessionService) {}
+  constructor(
+    private gameSessionService: GameSessionService,
+    private botService: BotService,
+  ) {}
 
   addToQueue(socket: Socket, matchData: MatchPlayerData): boolean {
     if (this.queue.length > 0) {
@@ -21,7 +25,7 @@ export class MatchmakingService {
           socket,
           opponent.socket,
           matchData,
-          opponent.matchData
+          opponent.matchData,
         );
         return true;
       }
@@ -41,7 +45,7 @@ export class MatchmakingService {
     player1: Socket,
     player2: Socket,
     player1Data: MatchPlayerData,
-    player2Data: MatchPlayerData
+    player2Data: MatchPlayerData,
   ): void {
     const matchId = Math.random().toString(36).substring(7);
 
@@ -49,7 +53,7 @@ export class MatchmakingService {
     this.gameSessionService.createSession(
       matchId,
       [player1, player2],
-      [player1Data, player2Data]
+      [player1Data, player2Data],
     );
 
     console.log("Match found between:", player1.id, player2.id);
@@ -79,5 +83,9 @@ export class MatchmakingService {
 
     player1.emit("matchFound", player1Response);
     player2.emit("matchFound", player2Response);
+  }
+
+  findBotMatch(client: Socket): void {
+    this.botService.launchBot(client.id);
   }
 }

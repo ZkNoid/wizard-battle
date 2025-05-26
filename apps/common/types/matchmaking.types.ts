@@ -13,8 +13,23 @@ export enum SpellEffect {
   ENEMY_EFFECT = 1,
 }
 
-export interface MapStructure {
+export class MapStructure {
   matrix: TileType[][];
+
+  constructor(matrix: TileType[][]) {
+    this.matrix = matrix;
+  }
+
+  static random(width: number, height: number): MapStructure {
+    const matrix = new Array(height)
+      .fill(0)
+      .map(() =>
+        new Array(width)
+          .fill(0)
+          .map(() => (Math.random() > 0.5 ? TileType.VALLEY : TileType.ROCK)),
+      );
+    return new MapStructure(matrix);
+  }
 }
 
 export class Position {
