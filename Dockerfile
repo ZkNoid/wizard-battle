@@ -14,6 +14,7 @@ yum install -y nano
 yum install -y nc
 mkdir -p /usr/share/nestjs/main
 npm install pm2@latest -g
+npm install turbo -g
 pm2 install pm2-logrotate
 pm2 set pm2-logrotate:retain 7
 pm2 set pm2-logrotate:max_size 10M
@@ -37,7 +38,7 @@ mkdir -p /usr/share/temp/public
 chmod 775 -R /usr/share/temp/
 cd /usr/share/nestjs/main
 npm install
-npm run build
+turbo run build
 
 # Enable PM2 monitoring
 pm2 install pm2-server-monit
