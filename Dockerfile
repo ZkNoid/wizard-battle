@@ -1,5 +1,13 @@
 FROM centos:8
 LABEL maintainer="a.scherbatyuk@gmail.com"
+
+# Add ARGs and ENV here
+ARG MONGODB_URI
+ARG MONGODB_DB
+
+ENV MONGODB_URI=${MONGODB_URI}
+ENV MONGODB_DB=${MONGODB_DB}
+
 WORKDIR /usr/share/nestjs/main
 COPY . .
 RUN <<EOF
