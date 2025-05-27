@@ -5,11 +5,9 @@ LABEL maintainer="a.scherbatyuk@gmail.com"
 ARG MONGODB_URI
 ARG MONGODB_DB
 
-ENV MONGODB_URI=${MONGODB_URI}
-ENV MONGODB_DB=${MONGODB_DB}
-
 WORKDIR /usr/share/nestjs/main
 COPY . .
+
 RUN <<EOF
 sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
 sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
@@ -46,6 +44,8 @@ mkdir -p /usr/share/temp/public
 chmod 775 -R /usr/share/temp/
 cd /usr/share/nestjs/main
 pnpm install
+echo "MONGODB_URI=${MONGODB_URI}" >> apps/frontend/.env
+echo "MONGODB_DB=${MONGODB_DB}" >> apps/frontend/.env
 pnpm turbo run build
 
 # Enable PM2 monitoring
