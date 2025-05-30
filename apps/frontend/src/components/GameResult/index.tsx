@@ -1,0 +1,150 @@
+"use client";
+
+import { useBackgroundImageStore } from "@/lib/store/backgroundImageStore";
+import { motion } from "motion/react";
+import { useEffect } from "react";
+import { CrownImage } from "./assets/crown-image";
+import { SkullImage } from "./assets/skull-image";
+import { Button } from "../shared/Button";
+import { DividerImage } from "./assets/divider-image";
+import { Experience } from "./Experiense";
+import { PlaySteps } from "@/lib/enums/PlaySteps";
+import { useRouter } from "next/navigation";
+
+export default function GameResult({
+  type,
+  setPlayStep,
+}: {
+  type: "win" | "lose";
+  setPlayStep: (step: PlaySteps) => void;
+}) {
+  const router = useRouter();
+  const { setBackground } = useBackgroundImageStore();
+  const text = type === "win" ? "You Win" : "You Lose";
+  const phraseDelay = 0.5 + text.length * 0.1 + 0.2;
+
+  // Set background image on mount and reset on unmount
+  useEffect(() => {
+    setBackground(type);
+    return () => {
+      setBackground("base");
+    };
+  }, []);
+
+  return (
+    <div className="flex h-full w-full flex-col">
+      {/* Image */}
+      <div className="mt-5 flex w-full items-center justify-center">
+        {type === "win" && <CrownImage className="w-71 h-71" />}
+        {type === "lose" && <SkullImage className="w-71 h-71" />}
+      </div>
+
+      <div className="mt-5 flex flex-col items-center justify-center gap-5">
+        {/* Title */}
+        <span className="font-pixel text-[23.529vw] font-bold text-white lg:!text-[5.208vw]">
+          {text.split("").map((char, index) => (
+            <motion.span
+              key={index}
+              initial={{
+                opacity: 0,
+                y: 50,
+                scale: 0.5,
+                rotate: -10,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                rotate: 0,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 200,
+                damping: 10,
+                delay: 0.5 + index * 0.1,
+              }}
+            >
+              {char}
+            </motion.span>
+          ))}
+        </span>
+
+        {/* Phrase */}
+        <motion.span
+          className="font-pixel text-3xl font-bold text-white"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.5,
+            delay: phraseDelay,
+            ease: "easeOut",
+          }}
+        >
+          {type === "win" ? "Play more?" : "Try again?"}
+        </motion.span>
+
+        {/* Nav buttons */}
+        <motion.div
+          className="mt-7.5 flex items-center gap-5"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: phraseDelay + 1 }}
+        >
+          <Button
+            variant="blue"
+            onClick={() => {
+              setPlayStep(PlaySteps.SELECT_MODE);
+            }}
+            className="w-69 h-15"
+          >
+            Yes
+          </Button>
+          <Button
+            variant="red"
+            onClick={() => {
+              router.push("/");
+            }}
+            className="w-69 h-15"
+          >
+            No
+          </Button>
+        </motion.div>
+
+        {/* Divider */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: phraseDelay + 1.2 }}
+        >
+          <DividerImage className="w-230 mt-5 h-6" />
+        </motion.div>
+
+        {/* Rewards */}
+        <motion.div
+          className="mt-2.5 flex flex-col"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: phraseDelay + 1.5 }}
+        >
+          <span className="font-pixel text-center text-xl font-bold text-white">
+            Your Reward
+          </span>
+          <Experience
+            title="Account Experience"
+            expWidth={30}
+            expColor="#557FE8"
+            level={1}
+            plusExp={100}
+          />
+          <Experience
+            title="Character Experience: Wizard"
+            expWidth={50}
+            expColor="#FF5627"
+            level={1}
+            plusExp={100}
+          />
+        </motion.div>
+      </div>
+    </div>
+  );
+}

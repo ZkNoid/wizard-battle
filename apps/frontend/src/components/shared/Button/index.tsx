@@ -11,18 +11,24 @@ export function Button({
   variant,
   onClick,
   className,
+  type = "button",
+  disabled,
 }: {
   variant: "gray" | "blue" | "red";
   text?: string;
   children?: React.ReactNode;
-  onClick: () => void;
+  onClick?: () => void;
   className?: string;
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
 }) {
   return (
     <button
+      type={type}
       onClick={onClick}
+      disabled={disabled}
       className={cn(
-        "text-main-gray group/button font-pixel relative z-[1] flex cursor-pointer items-center justify-center transition-transform duration-300 hover:scale-105",
+        "text-main-gray not-disabled:group/button font-pixel not-disabled:hover:scale-105 relative z-[1] flex cursor-pointer items-center justify-center transition-transform duration-300 disabled:cursor-not-allowed",
         className,
       )}
     >

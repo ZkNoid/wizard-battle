@@ -11,6 +11,7 @@ import { wizards } from "@/lib/constants/DEBUG_wizards";
 import { cn } from "@/lib/utils";
 import MapEditor from "@/components/MapEditor";
 import Matchmaking from "./Matchmaking";
+import GameResult from "../GameResult";
 
 export default function Play() {
   const [playStep, setPlayStep] = useState<PlaySteps>(PlaySteps.SELECT_MODE);
@@ -23,10 +24,15 @@ export default function Play() {
     setSelectedSkills([]);
   }, [currentWizard]);
 
+  const noNavigation =
+    playStep === PlaySteps.MATCHMAKING ||
+    playStep === PlaySteps.LOSE ||
+    playStep === PlaySteps.WIN;
+
   return (
     <section className="flex h-full w-full flex-col items-center justify-center">
       <div className="flex flex-col gap-5">
-        {playStep !== PlaySteps.MATCHMAKING && (
+        {!noNavigation && (
           <Navigation
             playStep={playStep}
             setPlayStep={setPlayStep}
@@ -48,6 +54,12 @@ export default function Play() {
         {playStep === PlaySteps.SELECT_MAP && <MapEditor />}
         {playStep === PlaySteps.MATCHMAKING && (
           <Matchmaking setPlayStep={setPlayStep} />
+        )}
+        {(playStep === PlaySteps.LOSE || playStep === PlaySteps.WIN) && (
+          <GameResult
+            type={playStep === PlaySteps.LOSE ? "lose" : "win"}
+            setPlayStep={setPlayStep}
+          />
         )}
       </div>
     </section>
