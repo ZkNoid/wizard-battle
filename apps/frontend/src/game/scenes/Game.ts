@@ -1,143 +1,142 @@
 import { Scene } from "phaser";
+import { GameTilemap, createTilemap } from "../objects/GameTilemap";
 
 export class Game extends Scene {
   camera!: Phaser.Cameras.Scene2D.Camera;
-  map!: Phaser.Tilemaps.Tilemap;
-  tileset!: Phaser.Tilemaps.Tileset | null;
-  floorLayer!: Phaser.Tilemaps.TilemapLayer | null;
-  player!: Phaser.GameObjects.Image;
-  targetPosition!: { x: number; y: number } | null;
-  private readonly TILE_SIZE = 32;
+  private leftTilemap: GameTilemap;
+  private rightTilemap: GameTilemap;
+  leftPlayer!: Phaser.GameObjects.Image;
+  rightPlayer!: Phaser.GameObjects.Image;
+  leftTargetPosition!: { x: number; y: number } | null;
+  rightTargetPosition!: { x: number; y: number } | null;
   private highlightTile: Phaser.GameObjects.Rectangle | null = null;
-  private lastHighlightedTile: { x: number; y: number } | null = null;
+  private activePlayer: "left" | "right" = "left";
 
   constructor() {
     super("Game");
+    this.leftTilemap = new GameTilemap(this, createTilemap());
+    this.rightTilemap = new GameTilemap(this, createTilemap());
   }
 
   preload() {
-    this.load.image("tileset", "assets/tilemap/baseTiles.png");
-    this.load.tilemapCSV("map", "assets/tilemap/tilemap.csv");
     this.load.image("player", "assets/human.png");
   }
 
   create() {
     this.camera = this.cameras.main;
-    this.camera.setZoom(1.5);
 
     try {
-      // Create tilemap
-      this.map = this.make.tilemap({
-        key: "map",
-        tileWidth: this.TILE_SIZE,
-        tileHeight: this.TILE_SIZE,
-      });
+      // Initialize tilemaps
+      this.leftTilemap.initialize("tiles", "tiles");
+      this.rightTilemap.initialize("tiles", "tiles");
 
-      // Add tileset with correct parameters
-      this.tileset = this.map.addTilesetImage(
-        "baseTiles",
-        "tileset",
-        this.TILE_SIZE,
-        this.TILE_SIZE,
-      );
-
-      if (!this.tileset) {
-        throw new Error("Failed to create tileset");
-      }
-
-      // Create layer from tilemap data
-      this.floorLayer = this.map.createLayer(0, this.tileset);
-
-      if (!this.floorLayer) {
-        throw new Error("Failed to create layer");
-      }
-
-      // Center layer
+      // Center layers
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
-      const mapWidth = this.map.widthInPixels;
-      const mapHeight = this.map.heightInPixels;
+      const leftDimensions = this.leftTilemap.getScaledDimensions();
+      const rightDimensions = this.rightTilemap.getScaledDimensions();
 
-      this.floorLayer.setPosition(
-        centerX - mapWidth / 2,
-        centerY - mapHeight / 2,
-      );
+      const tilemapGap = 160;
+      const tilemapBottomOffset = 30;
+
+      // Позиционируем левую часть
+      const leftX = centerX - leftDimensions.width - tilemapGap;
+      const leftY = centerY - leftDimensions.height / 2 + tilemapBottomOffset;
+      this.leftTilemap.setPosition(leftX, leftY);
+
+      // Позиционируем правую часть
+      const rightX = centerX + tilemapGap;
+      const rightY = centerY - rightDimensions.height / 2 + tilemapBottomOffset;
+      this.rightTilemap.setPosition(rightX, rightY);
 
       // Create rectangle for highlighting
+      const leftScale = this.leftTilemap.getScale();
       this.highlightTile = this.add.rectangle(
         0,
         0,
-        this.TILE_SIZE,
-        this.TILE_SIZE,
+        this.leftTilemap.getConfig().tileSize * leftScale,
+        this.leftTilemap.getConfig().tileSize * leftScale,
         0xffffff,
         0.3,
       );
       this.highlightTile.setVisible(false);
 
-      // Add player
-      this.player = this.add.image(
-        centerX - mapWidth / 2 + this.TILE_SIZE / 2,
-        centerY - mapHeight / 2 + this.TILE_SIZE / 2,
+      // Add players
+      this.leftPlayer = this.add.image(
+        centerX -
+          leftDimensions.width -
+          tilemapGap +
+          (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
+        centerY -
+          leftDimensions.height / 2 +
+          tilemapBottomOffset +
+          (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
         "player",
       );
-      this.player.setScale(1);
+      this.leftPlayer.setScale(leftScale);
+
+      this.rightPlayer = this.add.image(
+        centerX +
+          tilemapGap +
+          (this.rightTilemap.getConfig().tileSize *
+            this.rightTilemap.getScale()) /
+            2,
+        centerY -
+          rightDimensions.height / 2 +
+          tilemapBottomOffset +
+          (this.rightTilemap.getConfig().tileSize *
+            this.rightTilemap.getScale()) /
+            2,
+        "player",
+      );
+      this.rightPlayer.setScale(this.rightTilemap.getScale());
+      this.rightPlayer.setTint(0xff0000); // Делаем правого игрока красным для отличия
 
       // Add mouse move handler
       this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
-        if (this.floorLayer && this.highlightTile) {
+        const activeTilemap =
+          this.activePlayer === "left" ? this.leftTilemap : this.rightTilemap;
+        if (this.highlightTile) {
           const worldPoint = this.camera.getWorldPoint(pointer.x, pointer.y);
-          const tileX = this.floorLayer.worldToTileX(worldPoint.x);
-          const tileY = this.floorLayer.worldToTileY(worldPoint.y);
 
-          // Check if cursor is inside map
-          if (
-            tileX >= 0 &&
-            tileX < this.map.width &&
-            tileY >= 0 &&
-            tileY < this.map.height
-          ) {
-            // Check if we're hovering over the same tile
-            if (
-              this.lastHighlightedTile?.x !== tileX ||
-              this.lastHighlightedTile?.y !== tileY
-            ) {
-              const worldX =
-                this.floorLayer.tileToWorldX(tileX) + this.TILE_SIZE / 2;
-              const worldY =
-                this.floorLayer.tileToWorldY(tileY) + this.TILE_SIZE / 2;
-
-              this.highlightTile.setPosition(worldX, worldY);
+          if (activeTilemap.isPointInside(worldPoint.x, worldPoint.y)) {
+            const tileCenter = activeTilemap.getTileCenter(
+              worldPoint.x,
+              worldPoint.y,
+            );
+            if (tileCenter) {
+              this.highlightTile.setPosition(tileCenter.x, tileCenter.y);
               this.highlightTile.setVisible(true);
-
-              this.lastHighlightedTile = { x: tileX, y: tileY };
             }
           } else {
             this.highlightTile.setVisible(false);
-            this.lastHighlightedTile = null;
           }
         }
       });
 
       // Add click handler
       this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-        if (this.floorLayer) {
-          const worldPoint = this.camera.getWorldPoint(pointer.x, pointer.y);
-          const tileX = this.floorLayer.worldToTileX(worldPoint.x);
-          const tileY = this.floorLayer.worldToTileY(worldPoint.y);
+        const activeTilemap =
+          this.activePlayer === "left" ? this.leftTilemap : this.rightTilemap;
+        const worldPoint = this.camera.getWorldPoint(pointer.x, pointer.y);
 
-          if (
-            tileX >= 0 &&
-            tileX < this.map.width &&
-            tileY >= 0 &&
-            tileY < this.map.height
-          ) {
-            const newX =
-              this.floorLayer.tileToWorldX(tileX) + this.TILE_SIZE / 2;
-            const newY =
-              this.floorLayer.tileToWorldY(tileY) + this.TILE_SIZE / 2;
-            this.targetPosition = { x: newX, y: newY };
+        const tileCenter = activeTilemap.getTileCenter(
+          worldPoint.x,
+          worldPoint.y,
+        );
+        if (tileCenter) {
+          if (this.activePlayer === "left") {
+            this.leftTargetPosition = tileCenter;
+          } else {
+            this.rightTargetPosition = tileCenter;
           }
         }
+      });
+
+      // Add key handler for switching players
+      this.input.keyboard?.on("keydown-SPACE", () => {
+        this.activePlayer = this.activePlayer === "left" ? "right" : "left";
+        console.log("Active player:", this.activePlayer);
       });
     } catch (error) {
       console.error("Error in create:", error);
@@ -145,31 +144,61 @@ export class Game extends Scene {
   }
 
   update() {
-    if (this.targetPosition) {
+    // Update left player
+    if (this.leftTargetPosition) {
       const distance = Phaser.Math.Distance.Between(
-        this.player.x,
-        this.player.y,
-        this.targetPosition.x,
-        this.targetPosition.y,
+        this.leftPlayer.x,
+        this.leftPlayer.y,
+        this.leftTargetPosition.x,
+        this.leftTargetPosition.y,
       );
 
       if (distance > 1) {
         const angle = Phaser.Math.Angle.Between(
-          this.player.x,
-          this.player.y,
-          this.targetPosition.x,
-          this.targetPosition.y,
+          this.leftPlayer.x,
+          this.leftPlayer.y,
+          this.leftTargetPosition.x,
+          this.leftTargetPosition.y,
         );
 
         const speed = 200;
-        this.player.x +=
+        this.leftPlayer.x +=
           (Math.cos(angle) * speed * this.game.loop.delta) / 1000;
-        this.player.y +=
+        this.leftPlayer.y +=
           (Math.sin(angle) * speed * this.game.loop.delta) / 1000;
       } else {
-        this.player.x = this.targetPosition.x;
-        this.player.y = this.targetPosition.y;
-        this.targetPosition = null;
+        this.leftPlayer.x = this.leftTargetPosition.x;
+        this.leftPlayer.y = this.leftTargetPosition.y;
+        this.leftTargetPosition = null;
+      }
+    }
+
+    // Update right player
+    if (this.rightTargetPosition) {
+      const distance = Phaser.Math.Distance.Between(
+        this.rightPlayer.x,
+        this.rightPlayer.y,
+        this.rightTargetPosition.x,
+        this.rightTargetPosition.y,
+      );
+
+      if (distance > 1) {
+        const angle = Phaser.Math.Angle.Between(
+          this.rightPlayer.x,
+          this.rightPlayer.y,
+          this.rightTargetPosition.x,
+          this.rightTargetPosition.y,
+        );
+
+        const speed = 200;
+        this.rightPlayer.x +=
+          (Math.cos(angle) * speed * this.game.loop.delta) / 1000;
+        this.rightPlayer.y +=
+          (Math.sin(angle) * speed * this.game.loop.delta) / 1000;
+      } else {
+        this.rightPlayer.x = this.rightTargetPosition.x;
+        this.rightPlayer.y = this.rightTargetPosition.y;
+        this.rightTargetPosition = null;
       }
     }
   }

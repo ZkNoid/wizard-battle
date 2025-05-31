@@ -71,8 +71,8 @@ export default function CharacterSelect({
                 className="w-22.5 h-22.5"
                 src={"/wizards/skills/empty.svg"}
                 alt={"empty skill"}
-                width={22.5}
-                height={22.5}
+                width={90}
+                height={90}
               />
             ),
           )}

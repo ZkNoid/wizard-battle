@@ -1,8 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { IRefPhaserGame } from "@/PhaserGame";
+import Game from "@/components/Game";
+import type { Game as GameScene } from "@/game/scenes/Game";
 
 const PhaserGame = dynamic(
   () => import("@/PhaserGame").then((mod) => mod.PhaserGame),
@@ -17,15 +19,12 @@ export default function GamePage() {
 
   // Event emitted from the PhaserGame component
   const currentScene = (scene: Phaser.Scene) => {
-    console.log(scene);
+    console.log("Scene changed:", scene);
   };
 
   return (
-    <div
-      id="app"
-      className="flex h-screen w-full items-center justify-center overflow-hidden"
-    >
+    <Game>
       <PhaserGame ref={phaserRef} currentActiveScene={currentScene} />
-    </div>
+    </Game>
   );
 }
