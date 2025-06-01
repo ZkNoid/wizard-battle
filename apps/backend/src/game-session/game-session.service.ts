@@ -62,12 +62,12 @@ export class GameSessionService {
 
     this.turns.set(session.id, new Map());
 
-    console.log("GameSessionService createSession", session.id);
-    console.log("this.activeSessions", session);
-    console.log(
-      "this.socketToSession",
-      session.playersData.map((data) => data.position),
-    );
+    // console.log("GameSessionService createSession", session.id);
+    // console.log("this.activeSessions", session);
+    // console.log(
+    //   "this.socketToSession",
+    //   session.playersData.map((data) => data.position),
+    // );
 
     return session.id;
   }

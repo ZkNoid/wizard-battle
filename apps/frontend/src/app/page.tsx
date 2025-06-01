@@ -15,20 +15,25 @@ export default function Home() {
   useEffect(() => {
     let socket = io(process.env.NEXT_PUBLIC_API_URL!);
     setSocket(socket);
-    console.log(socket);
-    const stater = new Stater(
-      new UserState(
-        socket.id!,
-        WizardId.MAGE,
-        MapStructure.random(10, 10),
-        100,
-        [allSpells[0]!, allSpells[1]!, allSpells[2]!],
-        new Position(0, 0),
-        [],
-      ),
-      "",
-    );
-    setStater(stater);
+
+    socket.on("connect", () => {
+      const stater = new Stater(
+        new UserState(
+          socket.id!,
+          WizardId.MAGE,
+          MapStructure.random(10, 10),
+          100,
+          [allSpells[0]!, allSpells[1]!, allSpells[2]!],
+          new Position(0, 0),
+          [],
+        ),
+        "",
+      );
+      console.log("stater");
+      console.log(stater);
+      setStater(stater);
+    });
   }, []);
+
   return <HomePage />;
 }
