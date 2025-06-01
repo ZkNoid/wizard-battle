@@ -35,6 +35,7 @@ export class MatchmakingGateway
   @SubscribeMessage("findMatch")
   handleFindMatch(client: Socket, matchData: any) {
     console.log(`Client ${client.id} looking for match`);
+    console.log(matchData);
 
     const transformedData = plainToClass(TransformedMatchPlayerData, matchData);
     const matchFound = this.matchmakingService.addToQueue(
@@ -43,8 +44,11 @@ export class MatchmakingGateway
     );
 
     if (!matchFound) {
+      console.log("Waiting for opponent");
       client.emit("waitingForOpponent");
     }
+
+    console.log("Match found");
   }
 
   @SubscribeMessage("findBotMatch")

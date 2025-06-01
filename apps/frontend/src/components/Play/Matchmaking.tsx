@@ -1,14 +1,46 @@
+"use client";
+
 import { PlaySteps } from "@/lib/enums/PlaySteps";
 import { ModeBg } from "./assets/mode-bg";
 import { Button } from "../shared/Button";
 import { TimeIcon } from "./assets/time-icon";
 import { QueueIcon } from "./assets/queue-icon";
+import { useUserInformationStore } from "@/lib/store/userInformationStore";
+import { useEffect, useRef, useState } from "react";
 
 export default function Matchmaking({
   setPlayStep,
 }: {
   setPlayStep: (playStep: PlaySteps) => void;
 }) {
+  const { socket, stater } = useUserInformationStore();
+  const sendRequest = useRef(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  useEffect(() => {
+    if (!socket) return;
+    if (!stater) return;
+    if (sendRequest.current) return;
+    sendRequest.current = true;
+    let state = stater.getPublicState();
+    console.log(state);
+    socket.emit("findMatch", state);
+  }, [socket, stater]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedTime((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
+
   return (
     <div className="px-15 py-13.5 w-143 h-143 relative flex flex-col items-center">
       <span className="font-pixel text-main-gray mt-7 text-3xl">
@@ -20,7 +52,7 @@ export default function Matchmaking({
           <TimeIcon className="h-20 w-20" />
           <div className="font-pixel text-main-gray flex flex-col gap-1">
             <span className="text-xl">Time Spent:</span>
-            <span className="text-3xl">00:00</span>
+            <span className="text-3xl">{formatTime(elapsedTime)}</span>
           </div>
         </div>
         {/* Queue Position */}
