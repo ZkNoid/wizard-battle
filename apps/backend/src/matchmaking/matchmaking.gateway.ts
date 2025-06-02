@@ -7,7 +7,7 @@ import {
 } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { MatchmakingService } from "./matchmaking.service";
-import { plainToClass } from "class-transformer";
+import { plainToClass, plainToInstance } from "class-transformer";
 import { TransformedMatchPlayerData } from "../types/matchmaking.types";
 
 @WebSocketGateway({
@@ -37,10 +37,14 @@ export class MatchmakingGateway
     console.log(`Client ${client.id} looking for match`);
     console.log(matchData);
 
-    const transformedData = plainToClass(TransformedMatchPlayerData, matchData);
+    const transformedData = plainToInstance(
+      TransformedMatchPlayerData,
+      matchData as TransformedMatchPlayerData,
+    );
+    console.log(transformedData);
     const matchFound = this.matchmakingService.addToQueue(
       client,
-      transformedData[0]!,
+      transformedData,
     );
 
     if (!matchFound) {

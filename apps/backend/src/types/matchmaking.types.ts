@@ -5,6 +5,7 @@ import {
   SpellCastInfo as BaseSpellCastInfo,
   MoveInfo as BaseMoveInfo,
   UserTurn as BaseUserTurn,
+  MapStructure,
 } from "../../../common/types/matchmaking.types";
 import { Action } from "../../../common/stater";
 
@@ -13,7 +14,7 @@ export class TransformedMatchPlayerData implements BaseMatchPlayerData {
   health: number;
   wizardId: string;
   spells?: any[];
-  mapStructure?: any;
+  map?: MapStructure;
 
   @Type(() => Position)
   playerPosition?: Position;
@@ -23,13 +24,13 @@ export class TransformedMatchPlayerData implements BaseMatchPlayerData {
     health: number,
     wizardId: string,
     spells: any[],
-    mapStructure: any,
+    map: MapStructure,
   ) {
     this.playerId = playerId;
     this.health = health;
     this.wizardId = wizardId;
     this.spells = spells;
-    this.mapStructure = mapStructure;
+    this.map = map;
   }
 }
 
