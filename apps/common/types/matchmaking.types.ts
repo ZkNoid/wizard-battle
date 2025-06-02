@@ -73,6 +73,7 @@ export interface Spell<ADType = any> {
     additionalData: ADType,
   ) => void;
   cast: (position: Position, target: string, additionalData: ADType) => Action;
+  imageURL?: string;
 }
 
 export class Effect {

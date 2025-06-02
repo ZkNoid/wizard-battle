@@ -120,9 +120,9 @@ class Signer {
 // Stater is a class that is used to store the state of the user. Each user has its own Stater instance.
 // It applies actions to update the state, create state commits and store state history for final reveal
 export class Stater extends Signer {
-  private stateHistory: UserState[] = [];
-  private gameId: string;
-  private turn: number;
+  stateHistory: UserState[] = [];
+  gameId: string;
+  turn: number;
 
   constructor(initialState: UserState, gameId: string) {
     const pk = "SomePrivateKey"; // TODO: Get session private key

@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
 import { SpellsBg } from "./assets/spells-bg";
-import type { ISkill } from "@/lib/types/IWizard";
+import type { Spell } from "../../../../common/types/matchmaking.types";
 import Image from "next/image";
 
 export function Spells({
   skills,
   className,
 }: {
-  skills: ISkill[];
+  skills: Spell[];
   className?: string;
 }) {
   const MAX_SKILLS = 7;
@@ -21,7 +21,7 @@ export function Spells({
             className={
               "w-22.5 h-22.5 cursor-pointer transition-transform duration-300 hover:scale-110"
             }
-            src={skill.imageURL}
+            src={skill.imageURL ?? ""}
             alt={"skill"}
             width={90}
             height={90}

@@ -6,23 +6,25 @@ import { ModeSelect } from "./ModeSelect";
 import { Navigation } from "./Navigation";
 import { PlayMode } from "@/lib/enums/PlayMode";
 import CharacterSelect from "@/components/CharacterSelect";
-import type { IWizard, ISkill } from "@/lib/types/IWizard";
-import { wizards } from "@/lib/constants/DEBUG_wizards";
 import { cn } from "@/lib/utils";
 import MapEditor from "@/components/MapEditor";
 import Matchmaking from "./Matchmaking";
 import GameResult from "../GameResult";
+import { allWizards, type Wizard } from "../../../../common/wizards";
+import type { Spell } from "../../../../common/types/matchmaking.types";
+import { useUserInformationStore } from "@/lib/store/userInformationStore";
 
 export default function Play() {
   const [playStep, setPlayStep] = useState<PlaySteps>(PlaySteps.SELECT_MODE);
   const [playMode, setPlayMode] = useState<PlayMode | undefined>(undefined);
-  const [currentWizard, setCurrentWizard] = useState<IWizard>(wizards[0]!);
-  const [selectedSkills, setSelectedSkills] = useState<ISkill[]>([]);
+
+  const { stater, setSelectedSkills, setCurrentWizard } =
+    useUserInformationStore();
 
   // Reset selected skills when wizard changes
   useEffect(() => {
     setSelectedSkills([]);
-  }, [currentWizard]);
+  }, [stater?.getCurrentState()?.wizardId]);
 
   const noNavigation =
     playStep === PlaySteps.MATCHMAKING ||
@@ -45,9 +47,13 @@ export default function Play() {
         {playStep === PlaySteps.SELECT_CHARACTER && (
           <CharacterSelect
             setPlayStep={setPlayStep}
-            currentWizard={currentWizard}
-            setCurrentWizard={setCurrentWizard}
-            selectedSkills={selectedSkills}
+            currentWizard={
+              allWizards.find(
+                (wizard) => wizard.id === stater?.getCurrentState()?.wizardId!,
+              )!
+            }
+            setCurrentWizard={(wizard) => setCurrentWizard(wizard.id)}
+            selectedSkills={stater?.getCurrentState()?.skillsInfo!}
             setSelectedSkills={setSelectedSkills}
           />
         )}

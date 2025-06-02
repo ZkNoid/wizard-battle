@@ -2,16 +2,16 @@
 
 import type { ReactNode } from "react";
 import { Spells } from "./Spells";
-import { wizards } from "@/lib/constants/DEBUG_wizards";
 import { Button } from "../shared/Button";
 import BoxButton from "../shared/BoxButton";
 import { HelpIcon } from "./assets/help-icon";
 import { Clock } from "./Clock";
 import { Users } from "./Users";
 import { useRouter } from "next/navigation";
-
+import { useUserInformationStore } from "@/lib/store/userInformationStore";
 export default function Game({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const { stater } = useUserInformationStore();
   return (
     <>
       {children}
@@ -28,7 +28,7 @@ export default function Game({ children }: { children: ReactNode }) {
           className="h-15 w-89 col-span-3 ml-auto"
         />
         <Spells
-          skills={wizards[0]?.skills ?? []}
+          skills={stater?.getCurrentState()?.skillsInfo ?? []}
           className="col-span-5 col-start-4"
         />
         <BoxButton onClick={() => {}} className="col-span-3 mr-auto h-20 w-20">

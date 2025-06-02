@@ -26,7 +26,7 @@ export const allSpells: Spell[] = [
       state: UserState,
       publicState: PublicState,
       effects: Effect[],
-      castPosition: Position
+      castPosition: Position,
     ) => {
       const playerPosition = state.position;
       if ((playerPosition as Position).equals(castPosition)) {
@@ -36,6 +36,7 @@ export const allSpells: Spell[] = [
     cast: (position: Position, target: string, additionalData: any) => {
       return new Action("lightning", position, target, additionalData);
     },
+    imageURL: "/wizards/skills/1.svg",
   },
   {
     id: "fireball",
@@ -51,14 +52,14 @@ export const allSpells: Spell[] = [
       state: UserState,
       publicState: PublicState,
       effects: Effect[],
-      castPosition: Position
+      castPosition: Position,
     ) => {
       const playerPosition = state.position;
 
       console.log("playerPosition", playerPosition);
       console.log(playerPosition as Position);
       const distance = (playerPosition as Position).manhattanDistance(
-        castPosition
+        castPosition,
       );
 
       let damage = 0;
@@ -81,6 +82,7 @@ export const allSpells: Spell[] = [
     cast: (position: Position, target: string, additionalData: any) => {
       return new Action("fireball", position, target, additionalData);
     },
+    imageURL: "/wizards/skills/2.svg",
   },
   {
     id: "teleport",
@@ -95,13 +97,14 @@ export const allSpells: Spell[] = [
       state: UserState,
       publicState: PublicState,
       effects: Effect[],
-      castPosition: Position
+      castPosition: Position,
     ) => {
       state.position = castPosition;
     },
     cast: (position: Position, target: string, additionalData: any) => {
       return new Action("teleport", position, target, additionalData);
     },
+    imageURL: "/wizards/skills/3.svg",
   },
   {
     id: "heal",
@@ -117,7 +120,7 @@ export const allSpells: Spell[] = [
       state: UserState,
       publicState: PublicState,
       effects: Effect[],
-      castPosition: Position
+      castPosition: Position,
     ) => {
       // Todo: Add max health check
       state.health += 30;
@@ -125,6 +128,7 @@ export const allSpells: Spell[] = [
     cast: (position: Position, target: string, additionalData: any) => {
       return new Action("heal", position, target, additionalData);
     },
+    imageURL: "/wizards/skills/4.svg",
   },
   {
     id: "laser",
@@ -139,7 +143,7 @@ export const allSpells: Spell[] = [
       state: UserState,
       publicState: PublicState,
       effects: Effect[],
-      castPosition: Position
+      castPosition: Position,
     ) => {
       const playerPosition = state.position;
       if (
@@ -152,6 +156,7 @@ export const allSpells: Spell[] = [
     cast: (position: Position, target: string, additionalData: any) => {
       return new Action("laser", position, target, additionalData);
     },
+    imageURL: "/wizards/skills/5.svg",
   },
 
   {
@@ -167,7 +172,7 @@ export const allSpells: Spell[] = [
       publicState: PublicState,
       effects: Effect[],
       castPosition: Position,
-      additionalData: RockDataType
+      additionalData: RockDataType,
     ) => {
       const type = additionalData.type;
       if (type === "horizontal") {
@@ -189,7 +194,7 @@ export const allSpells: Spell[] = [
     cast: (
       position: Position,
       target: string,
-      additionalData: RockDataType
+      additionalData: RockDataType,
     ) => {
       return new Action("rock-throw", position, target, additionalData);
     },
@@ -206,14 +211,14 @@ export const allSpells: Spell[] = [
       state: UserState,
       publicState: PublicState,
       effects: Effect[],
-      castPosition: Position
+      castPosition: Position,
     ) => {
       const playerPosition = state.position;
 
       console.log("playerPosition", playerPosition);
       console.log(playerPosition as Position);
       const distance = (playerPosition as Position).manhattanDistance(
-        castPosition
+        castPosition,
       );
 
       let damage = 0;
@@ -249,7 +254,7 @@ export const allSpells: Spell[] = [
       state: UserState,
       publicState: PublicState,
       effects: Effect[],
-      castPosition: Position
+      castPosition: Position,
     ) => {
       state.health += 30;
     },
@@ -269,7 +274,7 @@ export const allSpells: Spell[] = [
       state: UserState,
       publicState: PublicState,
       effects: Effect[],
-      castPosition: Position
+      castPosition: Position,
     ) => {
       state.position = castPosition;
     },
@@ -280,11 +285,11 @@ export const allSpells: Spell[] = [
 ];
 
 const mageSpells = allSpells.filter(
-  (spell) => spell.wizardId === WizardId.MAGE
+  (spell) => spell.wizardId === WizardId.MAGE,
 );
 const warriorSpells = allSpells.filter(
-  (spell) => spell.wizardId === WizardId.WARRIOR
+  (spell) => spell.wizardId === WizardId.WARRIOR,
 );
 const rogueSpells = allSpells.filter(
-  (spell) => spell.wizardId === WizardId.ROGUE
+  (spell) => spell.wizardId === WizardId.ROGUE,
 );
