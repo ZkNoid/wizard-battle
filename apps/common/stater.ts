@@ -4,7 +4,7 @@ import {
   Effect,
   MapStructure,
   Position,
-  Spell,
+  type Spell,
 } from "./types/matchmaking.types";
 import { allWizards } from "./wizards";
 

@@ -1,6 +1,6 @@
 // import { Socket } from "socket.io-client";
 
-import { Action, PublicState, Stater, UserState } from "../stater";
+import { Action, type PublicState, UserState } from "../stater";
 
 export enum TileType {
   VALLEY = 0,

@@ -1,12 +1,13 @@
 import { allWizards, WizardId } from "./wizards";
+//import type { MatchPlayerData } from "./types/matchmaking.types";
 import {
   Effect,
-  MatchPlayerData,
+  type MatchPlayerData,
   Position,
-  Spell,
+  type Spell,
   SpellEffect,
 } from "./types/matchmaking.types";
-import { Action, PublicState, Stater, UserState } from "./stater";
+import { Action, type PublicState, Stater, UserState } from "./stater";
 
 interface RockDataType {
   type: "horizontal" | "vertical" | "diagonal";

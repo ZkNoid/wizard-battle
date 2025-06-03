@@ -1,4 +1,4 @@
-import { PublicState } from "./stater";
+import type { PublicState } from "./stater";
 
 import { UserState } from "./stater";
 import { EffectInfo } from "./types/matchmaking.types";
