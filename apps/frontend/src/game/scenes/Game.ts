@@ -4,18 +4,18 @@ import { GameTilemap, createTilemap } from "../objects/GameTilemap";
 export class Game extends Scene {
   camera!: Phaser.Cameras.Scene2D.Camera;
   private leftTilemap: GameTilemap;
-  private rightTilemap: GameTilemap;
+  // private rightTilemap: GameTilemap;
   leftPlayer!: Phaser.GameObjects.Image;
-  rightPlayer!: Phaser.GameObjects.Image;
+  // rightPlayer!: Phaser.GameObjects.Image;
   leftTargetPosition!: { x: number; y: number } | null;
-  rightTargetPosition!: { x: number; y: number } | null;
+  // rightTargetPosition!: { x: number; y: number } | null;
   private highlightTile: Phaser.GameObjects.Rectangle | null = null;
   private activePlayer: "left" | "right" = "left";
 
   constructor() {
     super("Game");
     this.leftTilemap = new GameTilemap(this, createTilemap());
-    this.rightTilemap = new GameTilemap(this, createTilemap());
+    // this.rightTilemap = new GameTilemap(this, createTilemap());
   }
 
   preload() {
@@ -28,13 +28,13 @@ export class Game extends Scene {
     try {
       // Initialize tilemaps
       this.leftTilemap.initialize("tiles", "tiles");
-      this.rightTilemap.initialize("tiles", "tiles");
+      // this.rightTilemap.initialize("tiles", "tiles");
 
       // Center layers
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
+      const centerX = 0;
+      const centerY = 0;
       const leftDimensions = this.leftTilemap.getScaledDimensions();
-      const rightDimensions = this.rightTilemap.getScaledDimensions();
+      // const rightDimensions = this.rightTilemap.getScaledDimensions();
 
       const tilemapGap = 160;
       const tilemapBottomOffset = 30;
@@ -42,12 +42,12 @@ export class Game extends Scene {
       // Позиционируем левую часть
       const leftX = centerX - leftDimensions.width - tilemapGap;
       const leftY = centerY - leftDimensions.height / 2 + tilemapBottomOffset;
-      this.leftTilemap.setPosition(leftX, leftY);
+      this.leftTilemap.setPosition(centerX / 2, centerY / 2);
 
       // Позиционируем правую часть
-      const rightX = centerX + tilemapGap;
-      const rightY = centerY - rightDimensions.height / 2 + tilemapBottomOffset;
-      this.rightTilemap.setPosition(rightX, rightY);
+      // const rightX = centerX + tilemapGap;
+      // const rightY = centerY - rightDimensions.height / 2 + tilemapBottomOffset;
+      // this.rightTilemap.setPosition(rightX, rightY);
 
       // Create rectangle for highlighting
       const leftScale = this.leftTilemap.getScale();
@@ -62,40 +62,45 @@ export class Game extends Scene {
       this.highlightTile.setVisible(false);
 
       // Add players
+      // this.leftPlayer = this.add.image(
+      //   centerX -
+      //     leftDimensions.width -
+      //     tilemapGap +
+      //     (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
+      //   centerY -
+      //     leftDimensions.height / 2 +
+      //     tilemapBottomOffset +
+      //     (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
+      //   "player",
+      // );
       this.leftPlayer = this.add.image(
-        centerX -
-          leftDimensions.width -
-          tilemapGap +
-          (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
-        centerY -
-          leftDimensions.height / 2 +
-          tilemapBottomOffset +
-          (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
+        (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
+        (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
         "player",
       );
       this.leftPlayer.setScale(leftScale);
 
-      this.rightPlayer = this.add.image(
-        centerX +
-          tilemapGap +
-          (this.rightTilemap.getConfig().tileSize *
-            this.rightTilemap.getScale()) /
-            2,
-        centerY -
-          rightDimensions.height / 2 +
-          tilemapBottomOffset +
-          (this.rightTilemap.getConfig().tileSize *
-            this.rightTilemap.getScale()) /
-            2,
-        "player",
-      );
-      this.rightPlayer.setScale(this.rightTilemap.getScale());
-      this.rightPlayer.setTint(0xff0000); // Делаем правого игрока красным для отличия
+      // this.rightPlayer = this.add.image(
+      //   centerX +
+      //     tilemapGap +
+      //     (this.rightTilemap.getConfig().tileSize *
+      //       this.rightTilemap.getScale()) /
+      //       2,
+      //   centerY -
+      //     rightDimensions.height / 2 +
+      //     tilemapBottomOffset +
+      //     (this.rightTilemap.getConfig().tileSize *
+      //       this.rightTilemap.getScale()) /
+      //       2,
+      //   "player",
+      // );
+      // this.rightPlayer.setScale(this.rightTilemap.getScale());
+      // this.rightPlayer.setTint(0xff0000); // Делаем правого игрока красным для отличия
 
       // Add mouse move handler
       this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
         const activeTilemap =
-          this.activePlayer === "left" ? this.leftTilemap : this.rightTilemap;
+          this.activePlayer === "left" ? this.leftTilemap : this.leftTilemap; // : this.rightTilemap;
         if (this.highlightTile) {
           const worldPoint = this.camera.getWorldPoint(pointer.x, pointer.y);
 
@@ -117,7 +122,7 @@ export class Game extends Scene {
       // Add click handler
       this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         const activeTilemap =
-          this.activePlayer === "left" ? this.leftTilemap : this.rightTilemap;
+          this.activePlayer === "left" ? this.leftTilemap : this.leftTilemap; // : this.rightTilemap;
         const worldPoint = this.camera.getWorldPoint(pointer.x, pointer.y);
 
         const tileCenter = activeTilemap.getTileCenter(
@@ -127,15 +132,15 @@ export class Game extends Scene {
         if (tileCenter) {
           if (this.activePlayer === "left") {
             this.leftTargetPosition = tileCenter;
-          } else {
-            this.rightTargetPosition = tileCenter;
-          }
+          } // else {
+          //   this.rightTargetPosition = tileCenter;
+          // }
         }
       });
 
       // Add key handler for switching players
       this.input.keyboard?.on("keydown-SPACE", () => {
-        this.activePlayer = this.activePlayer === "left" ? "right" : "left";
+        this.activePlayer = this.activePlayer === "left" ? "left" : "left"; // ? "right" : "left";
         console.log("Active player:", this.activePlayer);
       });
     } catch (error) {
@@ -174,32 +179,32 @@ export class Game extends Scene {
     }
 
     // Update right player
-    if (this.rightTargetPosition) {
-      const distance = Phaser.Math.Distance.Between(
-        this.rightPlayer.x,
-        this.rightPlayer.y,
-        this.rightTargetPosition.x,
-        this.rightTargetPosition.y,
-      );
+    // if (this.rightTargetPosition) {
+    //   const distance = Phaser.Math.Distance.Between(
+    //     this.rightPlayer.x,
+    //     this.rightPlayer.y,
+    //     this.rightTargetPosition.x,
+    //     this.rightTargetPosition.y,
+    //   );
 
-      if (distance > 1) {
-        const angle = Phaser.Math.Angle.Between(
-          this.rightPlayer.x,
-          this.rightPlayer.y,
-          this.rightTargetPosition.x,
-          this.rightTargetPosition.y,
-        );
+    //   if (distance > 1) {
+    //     const angle = Phaser.Math.Angle.Between(
+    //       this.rightPlayer.x,
+    //       this.rightPlayer.y,
+    //       this.rightTargetPosition.x,
+    //       this.rightTargetPosition.y,
+    //     );
 
-        const speed = 200;
-        this.rightPlayer.x +=
-          (Math.cos(angle) * speed * this.game.loop.delta) / 1000;
-        this.rightPlayer.y +=
-          (Math.sin(angle) * speed * this.game.loop.delta) / 1000;
-      } else {
-        this.rightPlayer.x = this.rightTargetPosition.x;
-        this.rightPlayer.y = this.rightTargetPosition.y;
-        this.rightTargetPosition = null;
-      }
-    }
+    //     const speed = 200;
+    //     this.rightPlayer.x +=
+    //       (Math.cos(angle) * speed * this.game.loop.delta) / 1000;
+    //     this.rightPlayer.y +=
+    //       (Math.sin(angle) * speed * this.game.loop.delta) / 1000;
+    //   } else {
+    //     this.rightPlayer.x = this.rightTargetPosition.x;
+    //     this.rightPlayer.y = this.rightTargetPosition.y;
+    //     this.rightTargetPosition = null;
+    //   }
+    // }
   }
 }

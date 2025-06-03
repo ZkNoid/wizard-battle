@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useEffect, useLayoutEffect, useRef } from "react";
-import StartGame from "./game/main";
+import { StartGameAlly, StartGameEnemy } from "./game/main";
 import { EventBus } from "./game/EventBus";
 
 export interface IRefPhaserGame {
@@ -11,15 +11,19 @@ export interface IRefPhaserGame {
 
 interface IProps {
   currentActiveScene?: (scene_instance: Phaser.Scene) => void;
+  container: string;
+  isEnemy?: boolean;
 }
 
 export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
-  function PhaserGame({ currentActiveScene }, ref) {
+  function PhaserGame({ currentActiveScene, container, isEnemy }, ref) {
     const game = useRef<Phaser.Game | null>(null!);
 
     useLayoutEffect(() => {
       if (game.current === null) {
-        game.current = StartGame("game-container");
+        game.current = isEnemy
+          ? StartGameEnemy(container)
+          : StartGameAlly(container);
 
         if (typeof ref === "function") {
           ref({ game: game.current, scene: null });
@@ -55,6 +59,6 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
       };
     }, [currentActiveScene, ref]);
 
-    return <div id="game-container"></div>;
+    return <div id={container} className="h-full w-full"></div>;
   },
 );

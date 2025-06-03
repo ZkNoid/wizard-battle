@@ -5,11 +5,21 @@ import { Preloader } from "./scenes/Preloader";
 
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
-const config: Phaser.Types.Core.GameConfig = {
+const config1: Phaser.Types.Core.GameConfig = {
   type: AUTO,
-  width: window.innerWidth, // 100vw
-  height: window.innerHeight, // 100vh
-  parent: "game-container",
+  parent: "game-container-ally",
+  transparent: true,
+  backgroundColor: "transparent",
+  scene: [Boot, Preloader, MainGame],
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+};
+
+const config2: Phaser.Types.Core.GameConfig = {
+  type: AUTO,
+  parent: "game-container-enemy",
   transparent: true,
   backgroundColor: "transparent",
   scene: [Boot, Preloader, MainGame],
@@ -19,8 +29,12 @@ const config: Phaser.Types.Core.GameConfig = {
   },
 };
 
-const StartGame = (parent: string) => {
-  return new Game({ ...config, parent });
+const StartGameAlly = (parent: string) => {
+  return new Game({ ...config1, parent });
 };
 
-export default StartGame;
+const StartGameEnemy = (parent: string) => {
+  return new Game({ ...config2, parent });
+};
+
+export { StartGameAlly, StartGameEnemy };

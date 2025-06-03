@@ -15,7 +15,8 @@ const PhaserGame = dynamic(
 
 export default function GamePage() {
   //  References to the PhaserGame component (game and scene are exposed)
-  const phaserRef = useRef<IRefPhaserGame | null>(null);
+  const phaserRefAlly = useRef<IRefPhaserGame | null>(null);
+  const phaserRefEnemy = useRef<IRefPhaserGame | null>(null);
 
   // Event emitted from the PhaserGame component
   const currentScene = (scene: Phaser.Scene) => {
@@ -24,7 +25,18 @@ export default function GamePage() {
 
   return (
     <Game>
-      <PhaserGame ref={phaserRef} currentActiveScene={currentScene} />
+      <PhaserGame
+        ref={phaserRefAlly}
+        currentActiveScene={currentScene}
+        container="game-container-ally"
+        isEnemy={false}
+      />
+      <PhaserGame
+        ref={phaserRefEnemy}
+        currentActiveScene={currentScene}
+        container="game-container-enemy"
+        isEnemy={true}
+      />
     </Game>
   );
 }
