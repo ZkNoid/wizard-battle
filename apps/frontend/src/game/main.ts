@@ -24,7 +24,7 @@ const config2: Phaser.Types.Core.GameConfig = {
   backgroundColor: "transparent",
   scene: [Boot, Preloader, MainGame],
   scale: {
-    mode: Phaser.Scale.RESIZE,
+    mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
 };
