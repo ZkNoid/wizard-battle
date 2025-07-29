@@ -59,6 +59,6 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
       };
     }, [currentActiveScene, ref]);
 
-    return <div id={container} className="h-full w-full"></div>;
+    return <div id={container}></div>;
   },
 );

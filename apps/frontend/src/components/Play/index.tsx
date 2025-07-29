@@ -13,6 +13,7 @@ import GameResult from "../GameResult";
 import { allWizards, type Wizard } from "../../../../common/wizards";
 import type { Spell } from "../../../../common/types/matchmaking.types";
 import { useUserInformationStore } from "@/lib/store/userInformationStore";
+import { allSpells } from "../../../../common/spells";
 
 export default function Play() {
   const [playStep, setPlayStep] = useState<PlaySteps>(PlaySteps.SELECT_MODE);

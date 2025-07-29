@@ -9,6 +9,7 @@ import { Clock } from "./Clock";
 import { Users } from "./Users";
 import { useRouter } from "next/navigation";
 import { useUserInformationStore } from "@/lib/store/userInformationStore";
+
 export default function Game({
   children,
 }: {
@@ -17,27 +18,31 @@ export default function Game({
   const router = useRouter();
   const { stater } = useUserInformationStore();
   return (
-    <>
-      <div className="flex h-screen w-full flex-col">
-        {/* top bar ---------------------------------------------------- */}
+    <div className='flex flex-col h-full w-full flex-grow pt-40'>
+      <div className="flex h-full w-full flex-col">
+      
+        {/* Top bar */}
         <div className="h-1/5">
           <Users />
         </div>
 
-        {/* game area -------------------------------------------------- */}
-        <div className="flex min-h-0 w-full flex-1">
-          <div className="relative min-h-0 min-w-0 flex-[2]">{children[0]}</div>
-
-          <div className="flex min-h-0 min-w-0 flex-[1] items-center justify-center">
-            <Clock className="left-[43%] top-[30%]" />
+        {/* Game area */}
+        <div className='grid grid-cols-8 w-full h-full px-57'>
+          <div className='col-span-3'>
+            {children[0]}
+          </div>
+          <div className="col-span-2">
+          <Clock className="" />
           </div>
 
-          <div className="relative min-h-0 min-w-0 flex-[2]">{children[1]}</div>
+          <div className='col-span-3'>
+            {children[1]}
+          </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="pb-12.5 absolute bottom-0 left-0 z-[1] grid w-full grid-cols-11 items-end justify-center gap-5">
+      <div className="z-[1] grid w-full grid-cols-11 items-end justify-center gap-5">
         <Button
           variant="blue"
           text="Give up"
@@ -54,6 +59,6 @@ export default function Game({
           <HelpIcon className="h-12.5 w-7.5" />
         </BoxButton>
       </div>
-    </>
+    </div>
   );
 }

@@ -145,7 +145,7 @@ export class GameTilemap {
 }
 
 export const createTilemap = (): TilemapConfig => ({
-  width: 10,
-  height: 10,
+  width: 8,
+  height: 8,
   tileSize: 48,
 });

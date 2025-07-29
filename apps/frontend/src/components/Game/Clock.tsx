@@ -28,7 +28,7 @@ export function Clock({ className }: { className?: string }) {
   };
 
   return (
-    <div className={cn("absolute left-0 top-0 flex flex-col", className)}>
+    <div className={cn("flex flex-col", className)}>
       <div className="flex flex-col items-center justify-center gap-4">
         <ClockIcon className="w-21 h-22.5" />
         <div className="w-69 h-21 relative flex flex-col items-center justify-center">

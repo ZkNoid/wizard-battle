@@ -1,10 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import type { IRefPhaserGame } from "@/PhaserGame";
 import Game from "@/components/Game";
-import type { Game as GameScene } from "@/game/scenes/Game";
 
 const PhaserGame = dynamic(
   () => import("@/PhaserGame").then((mod) => mod.PhaserGame),

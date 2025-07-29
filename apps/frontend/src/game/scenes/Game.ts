@@ -31,18 +31,18 @@ export class Game extends Scene {
       // this.rightTilemap.initialize("tiles", "tiles");
 
       // Center layers
-      const centerX = 0;
-      const centerY = 0;
-      const leftDimensions = this.leftTilemap.getScaledDimensions();
+      // const centerX = 0;
+      // const centerY = 0;
+      // const leftDimensions = this.leftTilemap.getScaledDimensions();
       // const rightDimensions = this.rightTilemap.getScaledDimensions();
 
-      const tilemapGap = 160;
-      const tilemapBottomOffset = 30;
+      // const tilemapGap = 160;
+      // const tilemapBottomOffset = 30;
 
       // Позиционируем левую часть
-      const leftX = centerX - leftDimensions.width - tilemapGap;
-      const leftY = centerY - leftDimensions.height / 2 + tilemapBottomOffset;
-      this.leftTilemap.setPosition(centerX / 2, centerY / 2);
+      // const leftX = centerX - leftDimensions.width - tilemapGap;
+      // const leftY = centerY - leftDimensions.height / 2 + tilemapBottomOffset;
+      // this.leftTilemap.setPosition(centerX / 2, centerY / 2);
 
       // Позиционируем правую часть
       // const rightX = centerX + tilemapGap;
