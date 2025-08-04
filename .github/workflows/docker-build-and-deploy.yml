@@ -46,7 +46,7 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker (optional)
+      - name: Log in to Docker (opt
         run: echo "Skipping Docker Hub login if not pushing to registry."
 
       - name: Calculate deploy container name
