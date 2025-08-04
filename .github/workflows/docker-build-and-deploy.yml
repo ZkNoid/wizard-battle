@@ -4,76 +4,33 @@ on:
   push:
     branches:
       - main
+      - dev
 
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker (optional)
-        run: echo "Skipping Docker Hub login if not pushing to registry."
-
-      - name: Build Docker image
-        run: |
-          docker build \
-            --build-arg MONGODB_URI=${{ secrets.MONGODB_URI }} \
-            --build-arg MONGODB_DB=${{ secrets.MONGODB_DB }} \
-            -t nestjs-app .
-
-      - name: Save Docker image to tar
-        run: |
-          docker save nestjs-app -o nestjs-app.tar
-          chmod 644 nestjs-app.tar
-
-      - name: Install ssh client
-        run: sudo apt-get update && sudo apt-get install -y openssh-client
-
-      - name: Copy image to remote server via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          port: ${{ secrets.SERVER_PORT }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "nestjs-app.tar"
-          target: ${{ secrets.TARGET_PATH }}
-
-      - name: SSH into server and load Docker image
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          port: ${{ secrets.SERVER_PORT }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd ${{ secrets.TARGET_PATH }}
-            docker load -i nestjs-app.tar
-            docker stop nestjs-app || true
-            docker rm nestjs-app || true
-            docker compose up -d 
-  
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Vercel Deploy Hook
         env:
-          #DEPLOY_HOOKS: '{"main": "https://api.vercel.com/v1/integrations/deploy/prj_N4NKbNs9rxtbh3mK1SeXRqjCOiiF/lPYdwhFMLg", "dev": "https://api.vercel.com/v1/integrations/deploy/prj_N4NKbNs9rxtbh3mK1SeXRqjCOiiF/vOtXRyrFIe"}'
+          DEPLOY_HOOKS: '{"main": "https://api.vercel.com/v1/integrations/deploy/prj_C1HUgN5FZYWAVc6rLyg0su57Miui/Mr2uYTmBav", "dev": "https://api.vercel.com/v1/integrations/deploy/prj_C1HUgN5FZYWAVc6rLyg0su57Miui/eVHIfTAoWi"}'
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           BRANCH=${{ github.ref_name }}
-          if [ -z "$TELEGRAM_TOKEN" ]; then
+          HOOK_URL=$(echo "$DEPLOY_HOOKS" | jq -r ".[\"$BRANCH\"]")
+          if [ -n "$HOOK_URL" ]; then
+            curl -X POST "$HOOK_URL"
+            echo "Triggered deployment for $BRANCH"
+            if [ -z "$TELEGRAM_TOKEN" ]; then
               echo "Error: TELEGRAM_TOKEN is empty"
             else
               echo "TELEGRAM_TOKEN is set (length: ${#TELEGRAM_TOKEN})"
+            fi
+            ESCAPED_COMMIT_MESSAGE=$(echo "$COMMIT_MESSAGE" | sed 's/"/\\"/g; s/\\/\\\\/g; s/&/%26/g; s/=/\\=/g')
+            RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage" -d chat_id=$TELEGRAM_CHAT_ID -d text="New power has awakened in the $BRANCH land. Be aware: $ESCAPED_COMMIT_MESSAGE")
+            echo "Telegram API response: $RESPONSE"
+            echo "Triggered telegram message for $BRANCH"
+          else
+            echo "No Deploy Hook configured for $BRANCH"
           fi
-          ESCAPED_COMMIT_MESSAGE=$(echo "$COMMIT_MESSAGE" | sed 's/"/\\"/g; s/\\/\\\\/g; s/&/%26/g; s/=/\\=/g')
-          RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage" -d chat_id=$TELEGRAM_CHAT_ID -d text="New power has awakened in the $BRANCH land. Be aware: $ESCAPED_COMMIT_MESSAGE")
-          echo "Telegram API response: $RESPONSE"
