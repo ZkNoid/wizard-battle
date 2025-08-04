@@ -4,7 +4,8 @@ LABEL maintainer="a.scherbatyuk@gmail.com"
 # Add ARGs and ENV here
 ARG MONGODB_URI
 ARG MONGODB_DB
-ARG APP_PORT
+
+ENV APP_PORT=${APP_PORT}
 
 WORKDIR /usr/share/nestjs/main
 COPY . .
