@@ -7,58 +7,6 @@ on:
       - dev
 
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker (optional)
-        run: echo "Skipping Docker Hub login if not pushing to registry."
-
-      - name: Build Docker image
-        run: |
-          docker build \
-            --build-arg MONGODB_URI=${{ secrets.MONGODB_URI }} \
-            --build-arg MONGODB_DB=${{ secrets.MONGODB_DB }} \
-            -t nestjs-app .
-
-      - name: Save Docker image to tar
-        run: |
-          docker save nestjs-app -o nestjs-app.tar
-          chmod 644 nestjs-app.tar
-
-      - name: Install ssh client
-        run: sudo apt-get update && sudo apt-get install -y openssh-client
-
-      - name: Copy image to remote server via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          port: ${{ secrets.SERVER_PORT }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "nestjs-app.tar"
-          target: ${{ secrets.TARGET_PATH }}
-
-      - name: SSH into server and load Docker image
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          port: ${{ secrets.SERVER_PORT }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd ${{ secrets.TARGET_PATH }}
-            docker load -i nestjs-app.tar
-            docker stop nestjs-app || true
-            docker rm nestjs-app || true
-            docker compose up -d 
-  
   deploy:
     runs-on: ubuntu-latest
     steps:
@@ -86,3 +34,64 @@ jobs:
           else
             echo "No Deploy Hook configured for $BRANCH"
           fi
+
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+        DEPLOY_CONTAINER: '{"main": "nestjs-main", "dev": "nestjs-dev"}'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker (opt
+        run: echo "Skipping Docker Hub login if not pushing to registry."
+
+      - name: Calculate deploy container name
+        id: calc-container
+        run: |
+          BRANCH=${{ github.ref_name }}
+          DEPLOY_CONTAINER=$(echo "$DEPLOY_CONTAINER" | jq -r ".[\"$BRANCH\"]")
+          echo "container_name=$DEPLOY_CONTAINER" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg MONGODB_URI=${{ secrets.MONGODB_URI }} \
+            --build-arg MONGODB_DB=${{ secrets.MONGODB_DB }} \
+            -t ${{ steps.calc-container.outputs.container_name }} .
+
+      - name: Save Docker image to tar
+        run: |
+          docker save ${{ steps.calc-container.outputs.container_name }} -o ${{ steps.calc-container.outputs.container_name }}.tar
+          chmod 644 ${{ steps.calc-container.outputs.container_name }}.tar
+
+      - name: Install ssh client
+        run: sudo apt-get update && sudo apt-get install -y openssh-client
+
+      - name: Copy image to remote server via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          port: ${{ secrets.SERVER_PORT }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "${{ steps.calc-container.outputs.container_name }}.tar"
+          target: ${{ secrets.TARGET_PATH }}
+
+      - name: SSH into server and load Docker image
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          port: ${{ secrets.SERVER_PORT }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd ${{ secrets.TARGET_PATH }}
+            docker load -i ${{ steps.calc-container.outputs.container_name }}.tar
+            docker stop ${{ steps.calc-container.outputs.container_name }} || true
+            docker rm ${{ steps.calc-container.outputs.container_name }} || true
+            docker compose up -d 
+  

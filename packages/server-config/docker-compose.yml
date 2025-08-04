@@ -1,48 +1,4 @@
 services:
-  watchtower:
-    image: containrrr/watchtower
-    container_name: watchtower
-    command: --cleanup --label-enable --scope=outline --tlsverify --interval 3600
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-    networks:
-      - bridge_network
-    restart: always
-    healthcheck:
-      test: ["CMD","/watchtower", "--health-check"]
-    labels:
-      com.centurylinklabs.watchtower: "true"
-      com.centurylinklabs.watchtower.enable: "true"
-      com.centurylinklabs.watchtower.scope: "outline"
-
-  shadowbox:
-    image: quay.io/outline/shadowbox:stable
-    container_name: shadowbox
-    entrypoint: ["docker-entrypoint.sh"]
-    command: ["/cmd.sh"]
-    volumes:
-      - /opt/outline/persisted-state:/opt/outline/persisted-state
-    environment:
-      - SB_PRIVATE_KEY_FILE=/opt/outline/persisted-state/shadowbox-selfsigned.key
-      - SB_METRICS_URL=
-      - SB_STATE_DIR=/opt/outline/persisted-state
-      - SB_API_PORT=38243
-      - SB_API_PREFIX=Ou1pOIoef2tQ4DJd_4xNCA
-      - SB_CERTIFICATE_FILE=/opt/outline/persisted-state/shadowbox-selfsigned.crt
-      - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      - NODE_VERSION=18.18.0
-      - YARN_VERSION=1.22.19
-    network_mode: host
-    restart: always
-    labels:
-      com.centurylinklabs.watchtower.enable: "true"
-      com.centurylinklabs.watchtower.scope: "outline"
-      shadowbox.github.release: "1.12.3"
-      shadowbox.node_version: "16.18.0"
-    stop_signal: SIGKILL
-
   mongodb:
     image: mongo:latest
     container_name: mongodb
@@ -73,9 +29,9 @@ services:
       timeout: 5s
       retries: 5
 
-  nestjs-app:
+  nestjs-main:
     image: nestjs-app:latest
-    container_name: nestjs-app
+    container_name: nestjs-main
 #    ports:
 #      - "3030:3030"
     volumes:
@@ -83,11 +39,11 @@ services:
     networks:
       - bridge_network
 
- nestjs-app:
-    image: nestjs-app:latest
-    container_name: nestjs-app
-    ports:
-      - "3031:3031"
+  nestjs-dev:
+    image: nestjs-dev:latest
+    container_name: nestjs-dev
+#    ports:
+#      - "3031:3031"
     volumes:
       - data:/usr/share/temp
     networks:
