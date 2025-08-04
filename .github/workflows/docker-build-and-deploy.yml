@@ -37,6 +37,7 @@ jobs:
 
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: preview
     env:
         DEPLOY_CONTAINER: '{"main": "nestjs-main", "dev": "nestjs-dev"}'
     steps:
@@ -61,6 +62,7 @@ jobs:
           docker build \
             --build-arg MONGODB_URI=${{ secrets.MONGODB_URI }} \
             --build-arg MONGODB_DB=${{ secrets.MONGODB_DB }} \
+            --build-arg APP_PORT=${{ secrets.APP_PORT }} \
             -t ${{ steps.calc-container.outputs.container_name }} .
 
       - name: Save Docker image to tar
