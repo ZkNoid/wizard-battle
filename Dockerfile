@@ -44,8 +44,9 @@ mkdir -p /usr/share/temp/public
 chmod 775 -R /usr/share/temp/
 cd /usr/share/nestjs/main
 pnpm install
-echo "MONGODB_URI=${MONGODB_URI}" >> apps/frontend/.env
-echo "MONGODB_DB=${MONGODB_DB}" >> apps/frontend/.env
+echo "MONGODB_URI=${MONGODB_URI}" >> apps/backend/.env
+echo "MONGODB_DB=${MONGODB_DB}" >> apps/backend/.env
+echo "APP_PORT=${APP_PORT}" >> apps/backend/.env
 pnpm turbo run build
 
 # Enable PM2 monitoring
