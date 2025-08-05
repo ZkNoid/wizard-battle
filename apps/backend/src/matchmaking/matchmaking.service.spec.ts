@@ -1,203 +1,331 @@
-import { Test, TestingModule } from "@nestjs/testing";
-import { MatchmakingService } from "./matchmaking.service";
-import { Socket } from "socket.io";
-import {
-  MatchPlayerData,
-  Position,
-  QueueEntry,
-  TileType,
-} from "../../../common/types/matchmaking.types";
+import { Test, TestingModule } from '@nestjs/testing';
+import { MatchmakingService } from './matchmaking.service';
+import { Server, Socket } from 'socket.io';
+import { createMock } from '@golevelup/ts-jest';
 
-describe("MatchmakingService", () => {
-  let service: MatchmakingService;
-  let mockSocket1: Partial<Socket>;
-  let mockSocket2: Partial<Socket>;
-  let mockSocket3: Partial<Socket>;
+// Mock Redis client
+const mockRedisClient = {
+    on: jest.fn(),
+    connect: jest.fn().mockResolvedValue(undefined),
+    lPush: jest.fn(),
+    lRange: jest.fn(),
+    lRem: jest.fn(),
+    hSet: jest.fn(),
+    hKeys: jest.fn(),
+    hGetAll: jest.fn(),
+    hDel: jest.fn(),
+    hGet: jest.fn(),
+    quit: jest.fn(),
+};
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [MatchmakingService],
-    }).compile();
+// Mock the redis module before any imports
+jest.mock('redis', () => ({
+    createClient: jest.fn(() => mockRedisClient),
+}));
 
-    service = module.get<MatchmakingService>(MatchmakingService);
+describe('MatchmakingService', () => {
+    let service: MatchmakingService;
+    let mockServer: Server;
 
-    // Create mock sockets with more detailed emit tracking
-    mockSocket1 = {
-      id: "socket1",
-      emit: jest.fn((event, data) => {
-        console.log(`Socket1 emitted ${event}:`, data);
-        return true;
-      }),
-    };
-    mockSocket2 = {
-      id: "socket2",
-      emit: jest.fn((event, data) => {
-        console.log(`Socket2 emitted ${event}:`, data);
-        return true;
-      }),
-    };
-    mockSocket3 = {
-      id: "socket3",
-      emit: jest.fn((event, data) => {
-        console.log(`Socket3 emitted ${event}:`, data);
-        return true;
-      }),
-    };
-  });
+    beforeEach(async () => {
+        // Reset all mocks before each test
+        jest.clearAllMocks();
 
-  it("should be defined", () => {
-    expect(service).toBeDefined();
-  });
+        mockServer = createMock<Server>();
+        const module: TestingModule = await Test.createTestingModule({
+            providers: [MatchmakingService],
+        }).compile();
 
-  describe("addToQueue", () => {
-    it("should add player to queue when no opponent is available", () => {
-      const matchData: MatchPlayerData = {
-        playerId: "player1",
-        wizardId: "Mage",
-        skillsInfo: [],
-        map: {
-          matrix: [[TileType.VALLEY]],
-        },
-        position: new Position(0, 0),
-        health: 100,
-      };
-      const result = service.addToQueue(mockSocket1 as Socket, matchData);
-
-      expect(result).toBe(false);
-      expect(mockSocket1.emit).not.toHaveBeenCalled();
+        service = module.get<MatchmakingService>(MatchmakingService);
+        service.setServer(mockServer);
     });
 
-    it("should match players when opponent is available", () => {
-      const matchData1: MatchPlayerData = {
-        playerId: "player1",
-        wizardId: "Mage",
-        skillsInfo: [],
-        map: {
-          matrix: [[TileType.VALLEY]],
-        },
-        position: new Position(0, 0),
-        health: 100,
-      };
-      const matchData2: MatchPlayerData = {
-        playerId: "player2",
-        wizardId: "Mage",
-        skillsInfo: [],
-        map: {
-          matrix: [[TileType.ROCK]],
-        },
-        position: new Position(1, 1),
-        health: 100,
-      };
-
-      // Add first player
-      service.addToQueue(mockSocket1 as Socket, matchData1);
-
-      // Add second player - should trigger match
-      const result = service.addToQueue(mockSocket2 as Socket, matchData2);
-
-      expect(result).toBe(true);
-
-      // Verify the exact structure of the emitted data
-      const player1EmitCall = (mockSocket1.emit as jest.Mock).mock.calls[0];
-      expect(player1EmitCall[0]).toBe("matchFound");
-      expect(player1EmitCall[1]).toMatchObject({
-        matchId: expect.any(String),
-        opponent: mockSocket2.id,
-        opponentData: matchData2,
-      });
-
-      const player2EmitCall = (mockSocket2.emit as jest.Mock).mock.calls[0];
-      expect(player2EmitCall[0]).toBe("matchFound");
-      expect(player2EmitCall[1]).toMatchObject({
-        matchId: expect.any(String),
-        opponent: mockSocket1.id,
-        opponentData: matchData1,
-      });
+    it('should be defined', () => {
+        expect(service).toBeDefined();
     });
-  });
 
-  describe("removeFromQueue", () => {
-    it("should remove player from queue", () => {
-      const matchData: MatchPlayerData = {
-        playerId: "player1",
-        wizardId: "Mage",
-        skillsInfo: [],
-        map: {
-          matrix: [[TileType.VALLEY]],
-        },
-        position: new Position(0, 0),
-        health: 100,
-      };
+    describe('joinMatchmaking', () => {
+        it('should match two level 2 players in their own room', async () => {
+            const mockSocket1 = createMock<Socket>({ id: 'player1' });
+            const mockSocket2 = createMock<Socket>({ id: 'player2' });
 
-      // Add player to queue
-      service.addToQueue(mockSocket1 as Socket, matchData);
+            // Mock Redis responses for first player
+            mockRedisClient.lPush.mockResolvedValue(1);
+            mockRedisClient.lRange
+                .mockResolvedValueOnce(['{"id":"player1","level":2}']) // First player joins
+                .mockResolvedValueOnce(['{"id":"player1","level":2}']); // Check for match - no match
+            mockRedisClient.lRem.mockResolvedValue(1);
+            mockRedisClient.hSet.mockResolvedValue(1);
+            mockRedisClient.hKeys.mockResolvedValue(['player1-player2']);
 
-      // Remove player
-      service.removeFromQueue(mockSocket1 as Socket);
+            // Mock server.sockets.sockets.get
+            mockServer.sockets.sockets.get = jest.fn().mockReturnValue(mockSocket2);
 
-      // Try to match with another player - should not find a match
-      const result = service.addToQueue(mockSocket2 as Socket, matchData);
-      expect(result).toBe(false);
-      expect(mockSocket2.emit).not.toHaveBeenCalled();
+            // First player joins
+            const roomId1 = await service.joinMatchmaking(mockSocket1, 2);
+            expect(roomId1).toBeNull();
+            expect(mockSocket1.emit).toHaveBeenCalledWith('waiting', { message: 'Waiting for a match...' });
+
+            // Reset mocks for second player
+            jest.clearAllMocks();
+            mockRedisClient.lPush.mockResolvedValue(1);
+            mockRedisClient.lRange
+                .mockResolvedValueOnce(['{"id":"player1","level":2}', '{"id":"player2","level":2}']) // Second player joins
+                .mockResolvedValueOnce(['{"id":"player1","level":2}', '{"id":"player2","level":2}']); // Check for match - found match
+            mockRedisClient.lRem.mockResolvedValue(1);
+            mockRedisClient.hSet.mockResolvedValue(1);
+            mockRedisClient.hKeys.mockResolvedValue(['player1-player2']);
+
+            // Second player joins and should match with first
+            const roomId2 = await service.joinMatchmaking(mockSocket2, 2);
+            expect(roomId2).toBeDefined();
+            expect(roomId2).toEqual('player1-player2');
+
+            // Verify both players joined the room
+            expect(mockSocket1.join).not.toHaveBeenCalled(); // First player already joined
+            expect(mockSocket2.join).toHaveBeenCalledWith('player1-player2');
+
+            // Verify match notification
+            expect(mockServer.to).toHaveBeenCalledWith('player1-player2');
+            expect(mockServer.to('player1-player2').emit).toHaveBeenCalledWith('matchFound', {
+                roomId: 'player1-player2',
+                players: [
+                    { id: 'player1', level: 2 },
+                    { id: 'player2', level: 2 },
+                ],
+            });
+        });
+
+        it('should match two level 3 players in their own room', async () => {
+            const mockSocket1 = createMock<Socket>({ id: 'player3' });
+            const mockSocket2 = createMock<Socket>({ id: 'player4' });
+
+            // Mock Redis responses for first player
+            mockRedisClient.lPush.mockResolvedValue(1);
+            mockRedisClient.lRange
+                .mockResolvedValueOnce(['{"id":"player3","level":3}']) // First player joins
+                .mockResolvedValueOnce(['{"id":"player3","level":3}']); // Check for match - no match
+            mockRedisClient.lRem.mockResolvedValue(1);
+            mockRedisClient.hSet.mockResolvedValue(1);
+            mockRedisClient.hKeys.mockResolvedValue(['player3-player4']);
+
+            // Mock server.sockets.sockets.get
+            mockServer.sockets.sockets.get = jest.fn().mockReturnValue(mockSocket2);
+
+            // First player joins
+            const roomId1 = await service.joinMatchmaking(mockSocket1, 3);
+            expect(roomId1).toBeNull();
+            expect(mockSocket1.emit).toHaveBeenCalledWith('waiting', { message: 'Waiting for a match...' });
+
+            // Reset mocks for second player
+            jest.clearAllMocks();
+            mockRedisClient.lPush.mockResolvedValue(1);
+            mockRedisClient.lRange
+                .mockResolvedValueOnce(['{"id":"player3","level":3}', '{"id":"player4","level":3}']) // Second player joins
+                .mockResolvedValueOnce(['{"id":"player3","level":3}', '{"id":"player4","level":3}']); // Check for match - found match
+            mockRedisClient.lRem.mockResolvedValue(1);
+            mockRedisClient.hSet.mockResolvedValue(1);
+            mockRedisClient.hKeys.mockResolvedValue(['player3-player4']);
+
+            // Second player joins and should match with first
+            const roomId2 = await service.joinMatchmaking(mockSocket2, 3);
+            expect(roomId2).toBeDefined();
+            expect(roomId2).toEqual('player3-player4');
+
+            // Verify both players joined the room
+            expect(mockSocket1.join).not.toHaveBeenCalled(); // First player already joined
+            expect(mockSocket2.join).toHaveBeenCalledWith('player3-player4');
+
+            // Verify match notification
+            expect(mockServer.to).toHaveBeenCalledWith('player3-player4');
+            expect(mockServer.to('player3-player4').emit).toHaveBeenCalledWith('matchFound', {
+                roomId: 'player3-player4',
+                players: [
+                    { id: 'player3', level: 3 },
+                    { id: 'player4', level: 3 },
+                ],
+            });
+        });
+
+        it('should not match level 2 and level 3 players', async () => {
+            const mockSocket1 = createMock<Socket>({ id: 'player5' });
+            const mockSocket2 = createMock<Socket>({ id: 'player6' });
+
+            // Mock Redis responses - no match found
+            mockRedisClient.lPush.mockResolvedValue(1);
+            mockRedisClient.lRange
+                .mockResolvedValueOnce(['{"id":"player5","level":2}']) // First player joins
+                .mockResolvedValueOnce(['{"id":"player5","level":2}']); // Check for match - no match
+
+            // Level 2 player joins
+            const roomId1 = await service.joinMatchmaking(mockSocket1, 2);
+            expect(roomId1).toBeNull();
+            expect(mockSocket1.emit).toHaveBeenCalledWith('waiting', { message: 'Waiting for a match...' });
+
+            // Reset mocks for second player
+            jest.clearAllMocks();
+            mockRedisClient.lPush.mockResolvedValue(1);
+            mockRedisClient.lRange
+                .mockResolvedValueOnce(['{"id":"player6","level":3}']) // Second player joins
+                .mockResolvedValueOnce(['{"id":"player6","level":3}']); // Check for match - no match
+
+            // Level 3 player joins, should not match with level 2
+            const roomId2 = await service.joinMatchmaking(mockSocket2, 3);
+            expect(roomId2).toBeNull();
+            expect(mockSocket2.emit).toHaveBeenCalledWith('waiting', { message: 'Waiting for a match...' });
+
+            // Verify no room was created
+            expect(mockSocket1.join).not.toHaveBeenCalled();
+            expect(mockSocket2.join).not.toHaveBeenCalled();
+            expect(mockServer.to).not.toHaveBeenCalled();
+        });
+
+        it('should handle server not being initialized', async () => {
+            const mockSocket = createMock<Socket>({ id: 'player1' });
+
+            // Create service without setting server
+            const module: TestingModule = await Test.createTestingModule({
+                providers: [MatchmakingService],
+            }).compile();
+            const serviceWithoutServer = module.get<MatchmakingService>(MatchmakingService);
+
+            // Mock Redis responses
+            mockRedisClient.lPush.mockResolvedValue(1);
+            mockRedisClient.lRange
+                .mockResolvedValueOnce(['{"id":"player1","level":2}', '{"id":"player2","level":2}']) // Player joins
+                .mockResolvedValueOnce(['{"id":"player1","level":2}', '{"id":"player2","level":2}']); // Check for match - found match
+            mockRedisClient.lRem.mockResolvedValue(1);
+            mockRedisClient.hSet.mockResolvedValue(1);
+            mockRedisClient.hKeys.mockResolvedValue(['player1-player2']);
+
+            // Mock server.sockets.sockets.get to return null (socket not found)
+            mockServer.sockets.sockets.get = jest.fn().mockReturnValue(null);
+
+            const roomId = await serviceWithoutServer.joinMatchmaking(mockSocket, 2);
+            expect(roomId).toBeDefined();
+            expect(roomId).toEqual('player1-player2');
+        });
+
+        it('should handle matched socket not found', async () => {
+            const mockSocket1 = createMock<Socket>({ id: 'player1' });
+            const mockSocket2 = createMock<Socket>({ id: 'player2' });
+
+            // Mock Redis responses
+            mockRedisClient.lPush.mockResolvedValue(1);
+            mockRedisClient.lRange
+                .mockResolvedValueOnce(['{"id":"player1","level":2}', '{"id":"player2","level":2}']) // Second player joins
+                .mockResolvedValueOnce(['{"id":"player1","level":2}', '{"id":"player2","level":2}']); // Check for match - found match
+            mockRedisClient.lRem.mockResolvedValue(1);
+            mockRedisClient.hSet.mockResolvedValue(1);
+            mockRedisClient.hKeys.mockResolvedValue(['player1-player2']);
+
+            // Mock server.sockets.sockets.get to return null (socket not found)
+            mockServer.sockets.sockets.get = jest.fn().mockReturnValue(null);
+
+            const roomId = await service.joinMatchmaking(mockSocket2, 2);
+            expect(roomId).toBeDefined();
+            expect(roomId).toEqual('player1-player2');
+        });
     });
-  });
 
-  describe("matchmaking flow", () => {
-    it("should handle multiple players in queue correctly", () => {
-      const matchData1: MatchPlayerData = {
-        playerId: "player1",
-        wizardId: "Mage",
-        skillsInfo: [],
-        map: {
-          matrix: [[TileType.VALLEY]],
-        },
-        position: new Position(0, 0),
-        health: 100,
-      };
-      const matchData2: MatchPlayerData = {
-        playerId: "player2",
-        wizardId: "Mage",
-        skillsInfo: [],
-        map: {
-          matrix: [[TileType.ROCK]],
-        },
-        position: new Position(1, 1),
-        health: 100,
-      };
-      const matchData3: MatchPlayerData = {
-        playerId: "player3",
-        wizardId: "Mage",
-        skillsInfo: [],
-        map: {
-          matrix: [[TileType.WATER]],
-        },
-        position: new Position(2, 2),
-        health: 100,
-      };
+    describe('leaveMatchmaking', () => {
+        it('should remove player from waiting list', async () => {
+            const mockSocket = createMock<Socket>({ id: 'player1' });
 
-      // Add three players
-      service.addToQueue(mockSocket1 as Socket, matchData1);
-      service.addToQueue(mockSocket2 as Socket, matchData2);
-      service.addToQueue(mockSocket3 as Socket, matchData3);
+            // Mock Redis responses
+            mockRedisClient.lRange.mockResolvedValue(['{"id":"player1","level":2}']);
+            mockRedisClient.lRem.mockResolvedValue(1);
+            mockRedisClient.hGetAll.mockResolvedValue({});
 
-      // Verify that only two players were matched
-      expect(mockSocket1.emit).toHaveBeenCalledWith(
-        "matchFound",
-        expect.objectContaining({
-          matchId: expect.any(String),
-          opponent: mockSocket2.id,
-          opponentData: matchData2,
-        })
-      );
-      expect(mockSocket2.emit).toHaveBeenCalledWith(
-        "matchFound",
-        expect.objectContaining({
-          matchId: expect.any(String),
-          opponent: mockSocket1.id,
-          opponentData: matchData1,
-        })
-      );
-      expect(mockSocket3.emit).not.toHaveBeenCalled();
+            await service.leaveMatchmaking(mockSocket);
+
+            expect(mockRedisClient.lRange).toHaveBeenCalledWith('waiting:level:2', 0, -1);
+            expect(mockRedisClient.lRem).toHaveBeenCalledWith('waiting:level:2', 1, '{"id":"player1","level":2}');
+        });
+
+        it('should handle player leaving from match', async () => {
+            const mockSocket = createMock<Socket>({ id: 'player1' });
+            const mockOtherSocket = createMock<Socket>({ id: 'player2' });
+
+            // Mock Redis responses
+            mockRedisClient.lRange.mockResolvedValue([]);
+            mockRedisClient.hGetAll.mockResolvedValue({
+                'player1-player2': JSON.stringify({
+                    player1: { id: 'player1', level: 2 },
+                    player2: { id: 'player2', level: 2 },
+                    roomId: 'player1-player2'
+                })
+            });
+            mockRedisClient.hDel.mockResolvedValue(1);
+            mockRedisClient.hKeys.mockResolvedValue([]);
+
+            // Mock server.sockets.sockets.get
+            mockServer.sockets.sockets.get = jest.fn().mockReturnValue(mockOtherSocket);
+
+            await service.leaveMatchmaking(mockSocket);
+
+            expect(mockOtherSocket.emit).toHaveBeenCalledWith('opponentDisconnected');
+            expect(mockOtherSocket.leave).toHaveBeenCalledWith('player1-player2');
+            expect(mockRedisClient.hDel).toHaveBeenCalledWith('matches', 'player1-player2');
+        });
+
+        it('should handle player leaving from match when other socket not found', async () => {
+            const mockSocket = createMock<Socket>({ id: 'player1' });
+
+            // Mock Redis responses
+            mockRedisClient.lRange.mockResolvedValue([]);
+            mockRedisClient.hGetAll.mockResolvedValue({
+                'player1-player2': JSON.stringify({
+                    player1: { id: 'player1', level: 2 },
+                    player2: { id: 'player2', level: 2 },
+                    roomId: 'player1-player2'
+                })
+            });
+            mockRedisClient.hDel.mockResolvedValue(1);
+            mockRedisClient.hKeys.mockResolvedValue([]);
+
+            // Mock server.sockets.sockets.get to return null
+            mockServer.sockets.sockets.get = jest.fn().mockReturnValue(null);
+
+            await service.leaveMatchmaking(mockSocket);
+
+            expect(mockRedisClient.hDel).toHaveBeenCalledWith('matches', 'player1-player2');
+        });
     });
-  });
+
+    describe('getMatchInfo', () => {
+        it('should return match info for valid room', async () => {
+            const mockMatch = {
+                player1: { id: 'player1', level: 2 },
+                player2: { id: 'player2', level: 2 },
+                roomId: 'player1-player2'
+            };
+
+            mockRedisClient.hGet.mockResolvedValue(JSON.stringify(mockMatch));
+
+            const result = await service.getMatchInfo('player1-player2');
+
+            expect(result).toEqual(mockMatch);
+            expect(mockRedisClient.hGet).toHaveBeenCalledWith('matches', 'player1-player2');
+        });
+
+        it('should return null for invalid room', async () => {
+            mockRedisClient.hGet.mockResolvedValue(null);
+
+            const result = await service.getMatchInfo('invalid-room');
+
+            expect(result).toBeNull();
+            expect(mockRedisClient.hGet).toHaveBeenCalledWith('matches', 'invalid-room');
+        });
+    });
+
+    describe('disconnect', () => {
+        it('should disconnect Redis client', async () => {
+            mockRedisClient.quit.mockResolvedValue(undefined);
+
+            await service.disconnect();
+
+            expect(mockRedisClient.quit).toHaveBeenCalled();
+        });
+    });
 });

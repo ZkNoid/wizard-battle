@@ -1,91 +1,165 @@
-import { Injectable } from "@nestjs/common";
-import { Socket } from "socket.io";
-import {
-  MatchPlayerData,
-  QueueEntry,
-  MatchFoundResponse,
-} from "../../../common/types/matchmaking.types";
-import { GameSessionService } from "../game-session/game-session.service";
-import { BotService } from "src/bot/bot.service";
+import { Injectable } from '@nestjs/common';
+import { Server, Socket } from 'socket.io';
+import { createClient } from 'redis';
+
+interface Player {
+    id: string;
+    level: number;
+}
+
+interface Match {
+    player1: Player;
+    player2: Player;
+    roomId: string;
+}
 
 @Injectable()
 export class MatchmakingService {
-  private queue: QueueEntry[] = [];
+    private server: Server | null = null;
+    private redisClient = createClient({ url: 'redis://localhost:6379' });
 
-  constructor(
-    private gameSessionService: GameSessionService,
-    private botService: BotService,
-  ) {}
+    constructor() {
+        this.redisClient.on('error', err => console.error('Redis Client Error', err));
+        this.redisClient.connect().then(() => console.log('MatchmakingService Redis Connected'));
+    }
 
-  addToQueue(socket: Socket, matchData: MatchPlayerData): boolean {
-    if (this.queue.length > 0) {
-      const opponent = this.queue.shift();
-      if (opponent) {
-        this.notifyMatch(
-          socket,
-          opponent.socket,
-          matchData,
-          opponent.matchData,
+    setServer(server: Server) {
+        this.server = server;
+        console.log('Server set in MatchmakingService');
+    }
+
+    async joinMatchmaking(socket: Socket, level: number) {
+        const player: Player = {
+            id: socket.id,
+            level,
+        };
+
+        console.log(`Player ${player.id} (Level ${level}) joining matchmaking`);
+
+        // Add player to Redis waiting list
+        await this.redisClient.lPush(`waiting:level:${level}`, JSON.stringify(player));
+        const waiting = await this.redisClient.lRange(`waiting:level:${level}`, 0, -1);
+        console.log(`Current waiting players for level ${level}: ${waiting.join(', ')}`);
+
+        socket.emit('waiting', { message: 'Waiting for a match...' });
+
+        // Check for match
+        const matchedPlayer = await this.findMatch(player, level);
+        if (matchedPlayer) {
+            console.log(`Match found for ${player.id} with ${matchedPlayer.id}`);
+
+            // Sort player IDs for consistent room ID
+            const [firstPlayer, secondPlayer] =
+                player.id < matchedPlayer.id ? [player, matchedPlayer] : [matchedPlayer, player];
+            const roomId = `${firstPlayer.id}-${secondPlayer.id}`;
+
+            // Create match
+            const match: Match = {
+                player1: firstPlayer,
+                player2: secondPlayer,
+                roomId,
+            };
+
+            // Remove both players from Redis waiting list
+            await this.redisClient.lRem(`waiting:level:${level}`, 1, JSON.stringify(player));
+            await this.redisClient.lRem(`waiting:level:${level}`, 1, JSON.stringify(matchedPlayer));
+            console.log(`Players ${player.id} and ${matchedPlayer.id} removed from waiting list`);
+
+            // Store match in Redis
+            await this.redisClient.hSet('matches', roomId, JSON.stringify(match));
+            const activeRooms = await this.redisClient.hKeys('matches');
+            console.log(`Active rooms: ${activeRooms.join(', ')}`);
+
+            // Join both players to room
+            socket.join(roomId);
+            if (this.server) {
+                const matchedSocket = this.server.sockets.sockets.get(matchedPlayer.id);
+                if (matchedSocket) {
+                    matchedSocket.join(roomId);
+                    console.log(`Players ${player.id} and ${matchedPlayer.id} joined room ${roomId}`);
+                } else {
+                    console.error(`Matched player socket not found: ${matchedPlayer.id}`);
+                }
+            } else {
+                console.error(`Server not initialized, cannot join matched player ${matchedPlayer.id} to room ${roomId}`);
+            }
+
+            // Notify players of match
+            if (!this.server) {
+                console.error('Server not initialized in MatchmakingService');
+                return roomId;
+            }
+            this.server.to(roomId).emit('matchFound', {
+                roomId,
+                players: [
+                    { id: firstPlayer.id, level: firstPlayer.level },
+                    { id: secondPlayer.id, level: secondPlayer.level },
+                ],
+            });
+
+            return roomId;
+        }
+
+        console.log(`No match found for ${player.id} (Level ${level})`);
+        return null;
+    }
+
+    private async findMatch(player: Player, level: number): Promise<Player | null> {
+        const waiting = await this.redisClient.lRange(`waiting:level:${level}`, 0, -1);
+        const match = waiting
+            .map(p => JSON.parse(p))
+            .find(p => p.level === player.level && p.id !== player.id);
+        console.log(`findMatch for ${player.id} (Level ${player.level}): ${match ? `Found ${match.id}` : 'No match'}`);
+        return match || null;
+    }
+
+    async leaveMatchmaking(socket: Socket) {
+        console.log(`Player ${socket.id} leaving matchmaking`);
+
+        // Remove from Redis waiting list for all possible levels
+        const levels = [2, 3]; // Adjust based on your LEVELS from client.js
+        for (const level of levels) {
+            const waiting = await this.redisClient.lRange(`waiting:level:${level}`, 0, -1);
+            const playerEntry = waiting.find(p => JSON.parse(p).id === socket.id);
+            if (playerEntry) {
+                await this.redisClient.lRem(`waiting:level:${level}`, 1, playerEntry);
+            }
+        }
+
+        // Check for match in Redis
+        const matches = await this.redisClient.hGetAll('matches');
+        const matchEntry = Object.entries(matches).find(
+            ([_, m]) => {
+                const match = JSON.parse(m);
+                return match.player1.id === socket.id || match.player2.id === socket.id;
+            }
         );
-        return true;
-      }
+
+        if (matchEntry) {
+            const [roomId, m] = matchEntry;
+            const match: Match = JSON.parse(m);
+            const otherPlayer = match.player1.id === socket.id ? match.player2 : match.player1;
+            if (this.server) {
+                const otherSocket = this.server.sockets.sockets.get(otherPlayer.id);
+                if (otherSocket) {
+                    otherSocket.emit('opponentDisconnected');
+                    otherSocket.leave(roomId);
+                }
+                console.log(`Player ${socket.id} left match ${roomId}`);
+            }
+            await this.redisClient.hDel('matches', roomId);
+            const activeRooms = await this.redisClient.hKeys('matches');
+            console.log(`Active rooms: ${activeRooms.join(', ')}`);
+        }
     }
-    this.queue.push({ socket, matchData });
-    return false;
-  }
 
-  removeFromQueue(socket: Socket): void {
-    const index = this.queue.findIndex((entry) => entry.socket === socket);
-    if (index > -1) {
-      this.queue.splice(index, 1);
+    async getMatchInfo(roomId: string) {
+        const match = await this.redisClient.hGet('matches', roomId);
+        return match ? JSON.parse(match) : null;
     }
-  }
 
-  private notifyMatch(
-    player1: Socket,
-    player2: Socket,
-    player1Data: MatchPlayerData,
-    player2Data: MatchPlayerData,
-  ): void {
-    const matchId = Math.random().toString(36).substring(7);
-
-    // Create a new game session
-    this.gameSessionService.createSession(
-      matchId,
-      [player1, player2],
-      [player1Data, player2Data],
-    );
-
-    console.log("Match found between:", player1.id, player2.id);
-
-    // const firstPlayerState = this.gameSessionService.getStateForPlayer(
-    //   matchId,
-    //   player1.id
-    // );
-    // const secondPlayerState = this.gameSessionService.getStateForPlayer(
-    //   matchId,
-    //   player2.id
-    // );
-
-    const player1Response: MatchFoundResponse = {
-      matchId,
-      opponent: player2.id,
-      state: [player1Data, player2Data],
-    };
-    const player2Response: MatchFoundResponse = {
-      matchId,
-      opponent: player1.id,
-      state: [player2Data, player1Data],
-    };
-
-    console.log("Player 1 response:", player1Response);
-    console.log("Player 2 response:", player2Response);
-
-    player1.emit("matchFound", player1Response);
-    player2.emit("matchFound", player2Response);
-  }
-
-  findBotMatch(client: Socket): void {
-    this.botService.launchBot(client.id);
-  }
+    async disconnect() {
+        await this.redisClient.quit();
+        console.log('MatchmakingService Redis Disconnected');
+    }
 }
