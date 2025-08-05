@@ -1,84 +1,293 @@
-# Turborepo starter
+# Wizard Battle - Multi-Instance Game Server
 
-This Turborepo starter is maintained by the Turborepo core team.
+A real-time multiplayer wizard battle game with Redis-backed multi-instance architecture supporting horizontal scaling and cross-instance matchmaking.
 
-## Using this example
+## 🚀 Features
 
-Run the following command:
+### **Multi-Instance Architecture**
+- **Horizontal Scaling**: Run multiple server instances simultaneously
+- **Redis State Management**: All game state persisted in Redis
+- **Cross-Instance Communication**: Seamless communication between instances
+- **Socket-to-Instance Mapping**: Track connections across all instances
+- **Health Monitoring**: Comprehensive system monitoring and statistics
 
-```sh
-npx create-turbo@latest
+### **Real-Time Game Features**
+- **Cross-Instance Matchmaking**: Players matched across different server instances
+- **WebSocket Communication**: Real-time game updates
+- **Game State Persistence**: Complete game state stored in Redis
+- **Graceful Disconnection**: Proper cleanup and resource management
+
+## 🏗️ Architecture
+
+### **Backend Services**
+- **GameSessionGateway**: WebSocket handling and game session management
+- **MatchmakingService**: Player matching with Redis-backed queues
+- **GameStateService**: Game state persistence and cross-instance communication
+- **RedisHealthService**: System monitoring and health checks
+
+### **Redis Data Structure**
+```
+socket_mappings: Hash storing socket-to-instance mappings
+game_states: Hash storing game state for each room
+waiting:level:${level}: Lists of players waiting for matches
+matches: Hash storing active match information
+room_events: Pub/sub channel for cross-instance communication
 ```
 
-## What's inside?
+## 🛠️ Technology Stack
 
-This Turborepo includes the following packages/apps:
+- **Backend**: NestJS with TypeScript
+- **WebSockets**: Socket.IO with Redis adapter
+- **State Management**: Redis for persistence and synchronization
+- **Frontend**: Next.js with React
+- **Build System**: Turborepo for monorepo management
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+## 📦 Project Structure
 
 ```
-cd my-turborepo
-pnpm build
+wizard-battle/
+├── apps/
+│   ├── backend/          # NestJS game server
+│   ├── frontend/         # Next.js game client
+│   └── common/           # Shared types and utilities
+├── packages/
+│   ├── redis/            # Redis configuration
+│   └── typescript-config/ # TypeScript configurations
+└── docs/                 # Documentation
 ```
 
-### Develop
+## 🚀 Quick Start
 
-To develop all apps and packages, run the following command:
+### **Prerequisites**
+- Node.js 18+
+- Redis server
+- pnpm package manager
 
-```
-cd my-turborepo
-pnpm dev
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
+### **1. Install Dependencies**
+```bash
+pnpm install
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+### **2. Start Redis**
+```bash
+# Using Docker
+docker run -d -p 6379:6379 redis:latest
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
+# Or using local Redis
+redis-server
 ```
-npx turbo link
+
+### **3. Start Multi-Instance Backend**
+```bash
+cd apps/backend
+
+# Start multiple instances
+npm run start:multi
+
+# Or start instances only (keeps them running)
+npm run start:instances
 ```
 
-## Useful Links
+### **4. Start Frontend**
+```bash
+cd apps/frontend
+npm run dev
+```
 
-Learn more about the power of Turborepo:
+## 🧪 Testing Multi-Instance Setup
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+### **Single Instance Test**
+```bash
+cd apps/backend
+npm run test:single-instance
+```
+
+### **Multi-Instance Test**
+```bash
+cd apps/backend
+npm run test:multi-instance
+```
+
+### **Manual Testing**
+```bash
+# Start instances manually
+export APP_PORT=3001 && npm run start:dev &
+export APP_PORT=3002 && npm run start:dev &
+export APP_PORT=3003 && npm run start:dev &
+
+# Test health endpoints
+curl http://localhost:3001/health
+curl http://localhost:3002/health
+curl http://localhost:3003/health
+```
+
+## 🔧 Configuration
+
+### **Environment Variables**
+- `APP_PORT`: Server port (default: 3030)
+- `REDIS_URL`: Redis connection URL (default: redis://localhost:6379)
+
+### **Multi-Instance Setup**
+The system automatically supports multiple instances:
+- Each instance gets a unique instance ID
+- Socket mappings track which instance each connection belongs to
+- Redis pub/sub enables cross-instance communication
+- Game state is shared across all instances
+
+## 📊 Monitoring & Health
+
+### **Health Endpoints**
+- `GET /health`: Overall system health
+- `GET /health/stats`: Detailed system statistics
+- `POST /health/cleanup`: Clean up orphaned data
+
+### **Health Response Example**
+```json
+{
+  "redis": true,
+  "matchmaking": true,
+  "gameStates": true,
+  "socketMappings": true,
+  "details": {
+    "redisConnection": true,
+    "matchmakingData": 5,
+    "activeGameStates": 3,
+    "activeSocketMappings": 10,
+    "activeRooms": 3
+  }
+}
+```
+
+## 🔄 Cross-Instance Matchmaking
+
+### **How It Works**
+1. **Player A** connects to Instance 1
+2. **Player B** connects to Instance 2
+3. Both players join matchmaking queue (stored in Redis)
+4. MatchmakingService finds compatible players across instances
+5. Game state created in Redis
+6. Both players notified via cross-instance events
+7. Game session starts with players on different instances
+
+### **Cross-Instance Events**
+- `matchFound`: Notifies players when match is created
+- `playerJoined`: Handles player joining from different instance
+- `gameMessage`: Broadcasts game messages across instances
+- `opponentDisconnected`: Handles player disconnection
+
+## 🚀 Production Deployment
+
+### **Docker Compose Setup**
+```yaml
+version: '3.8'
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+  
+  backend-1:
+    build: ./apps/backend
+    environment:
+      - APP_PORT=3001
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3001:3001"
+  
+  backend-2:
+    build: ./apps/backend
+    environment:
+      - APP_PORT=3002
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3002:3002"
+  
+  backend-3:
+    build: ./apps/backend
+    environment:
+      - APP_PORT=3003
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3003:3003"
+```
+
+### **Load Balancer Configuration**
+- Use sticky sessions for WebSocket connections
+- Configure health checks for all instances
+- Set up Redis clustering for high availability
+
+## 🔍 Troubleshooting
+
+### **Common Issues**
+
+1. **Port Conflicts**
+   ```bash
+   # Check for running processes
+   lsof -i :3001 -i :3002 -i :3003
+   
+   # Kill existing processes
+   pkill -f "nest start"
+   ```
+
+2. **Redis Connection Issues**
+   ```bash
+   # Test Redis connection
+   redis-cli ping
+   
+   # Check Redis logs
+   docker logs redis-container
+   ```
+
+3. **Cross-Instance Communication**
+   - Verify Redis pub/sub is working
+   - Check socket mappings in Redis
+   - Monitor room events
+
+### **Debug Commands**
+```bash
+# Check Redis data
+redis-cli hgetall socket_mappings
+redis-cli hgetall game_states
+redis-cli hgetall matches
+
+# Monitor Redis operations
+redis-cli monitor
+
+# Check instance health
+curl http://localhost:3001/health
+curl http://localhost:3002/health
+curl http://localhost:3003/health
+```
+
+## 📈 Performance Considerations
+
+### **Redis Optimization**
+- Use Redis pipelining for batch operations
+- Implement connection pooling
+- Monitor Redis memory usage
+- Consider Redis clustering for high availability
+
+### **Scaling Guidelines**
+- Start with 3-5 instances for testing
+- Monitor memory usage per instance
+- Use load balancer for distribution
+- Implement auto-scaling based on metrics
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🔗 Useful Links
+
+- [NestJS Documentation](https://docs.nestjs.com/)
+- [Socket.IO Documentation](https://socket.io/docs/)
+- [Redis Documentation](https://redis.io/documentation)
+- [Turborepo Documentation](https://turborepo.com/docs)

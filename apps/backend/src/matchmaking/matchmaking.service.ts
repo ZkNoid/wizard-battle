@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { createClient } from 'redis';
+import { GameStateService } from '../game-session/game-state.service';
 
 interface Player {
     id: string;
@@ -18,7 +19,7 @@ export class MatchmakingService {
     private server: Server | null = null;
     private redisClient = createClient({ url: 'redis://localhost:6379' });
 
-    constructor() {
+    constructor(private readonly gameStateService: GameStateService) {
         this.redisClient.on('error', err => console.error('Redis Client Error', err));
         this.redisClient.connect().then(() => console.log('MatchmakingService Redis Connected'));
     }
@@ -35,6 +36,9 @@ export class MatchmakingService {
         };
 
         console.log(`Player ${player.id} (Level ${level}) joining matchmaking`);
+
+        // Register socket mapping
+        await this.gameStateService.registerSocket(socket);
 
         // Add player to Redis waiting list
         await this.redisClient.lPush(`waiting:level:${level}`, JSON.stringify(player));
@@ -70,15 +74,43 @@ export class MatchmakingService {
             const activeRooms = await this.redisClient.hKeys('matches');
             console.log(`Active rooms: ${activeRooms.join(', ')}`);
 
+            // Create game state
+            await this.gameStateService.createGameState(roomId, [
+                { id: firstPlayer.id, socketId: firstPlayer.id },
+                { id: secondPlayer.id, socketId: secondPlayer.id }
+            ]);
+
+            // Update socket mappings with room information
+            await this.gameStateService.registerSocket(socket, player.id, roomId);
+            
+            // Find and update the matched player's socket mapping
+            const matchedSocketMapping = await this.gameStateService.getSocketMapping(matchedPlayer.id);
+            if (matchedSocketMapping) {
+                // Update the matched player's mapping with room info
+                await this.gameStateService.registerSocket(
+                    { id: matchedPlayer.id } as Socket, 
+                    matchedPlayer.id, 
+                    roomId
+                );
+            }
+
             // Join both players to room
             socket.join(roomId);
+            
+            // For the matched player, we need to notify them through Redis pub/sub
+            // since they might be on a different instance
+            await this.gameStateService.publishToRoom(roomId, 'playerJoined', {
+                playerId: matchedPlayer.id,
+                roomId: roomId
+            });
+            
             if (this.server) {
                 const matchedSocket = this.server.sockets.sockets.get(matchedPlayer.id);
                 if (matchedSocket) {
                     matchedSocket.join(roomId);
                     console.log(`Players ${player.id} and ${matchedPlayer.id} joined room ${roomId}`);
                 } else {
-                    console.error(`Matched player socket not found: ${matchedPlayer.id}`);
+                    console.log(`Matched player ${matchedPlayer.id} is on a different instance, will be notified via Redis`);
                 }
             } else {
                 console.error(`Server not initialized, cannot join matched player ${matchedPlayer.id} to room ${roomId}`);
@@ -89,7 +121,18 @@ export class MatchmakingService {
                 console.error('Server not initialized in MatchmakingService');
                 return roomId;
             }
-            this.server.to(roomId).emit('matchFound', {
+            
+            // Emit to local socket
+            socket.emit('matchFound', {
+                roomId,
+                players: [
+                    { id: firstPlayer.id, level: firstPlayer.level },
+                    { id: secondPlayer.id, level: secondPlayer.level },
+                ],
+            });
+            
+            // Publish match found event to other instances
+            await this.gameStateService.publishToRoom(roomId, 'matchFound', {
                 roomId,
                 players: [
                     { id: firstPlayer.id, level: firstPlayer.level },
@@ -116,6 +159,9 @@ export class MatchmakingService {
     async leaveMatchmaking(socket: Socket) {
         console.log(`Player ${socket.id} leaving matchmaking`);
 
+        // Remove socket mapping
+        await this.gameStateService.unregisterSocket(socket.id);
+
         // Remove from Redis waiting list for all possible levels
         const levels = [2, 3]; // Adjust based on your LEVELS from client.js
         for (const level of levels) {
@@ -139,6 +185,16 @@ export class MatchmakingService {
             const [roomId, m] = matchEntry;
             const match: Match = JSON.parse(m);
             const otherPlayer = match.player1.id === socket.id ? match.player2 : match.player1;
+            
+            // Notify other player through Redis pub/sub instead of direct socket access
+            await this.gameStateService.publishToRoom(roomId, 'opponentDisconnected', {
+                disconnectedPlayer: socket.id,
+                remainingPlayer: otherPlayer.id
+            });
+
+            // Remove game state
+            await this.gameStateService.removeGameState(roomId);
+            
             if (this.server) {
                 const otherSocket = this.server.sockets.sockets.get(otherPlayer.id);
                 if (otherSocket) {
