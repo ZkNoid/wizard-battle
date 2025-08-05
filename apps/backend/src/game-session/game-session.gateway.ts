@@ -1,66 +1,59 @@
-import {
-  WebSocketGateway,
-  WebSocketServer,
-  SubscribeMessage,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-} from "@nestjs/websockets";
-import { Server, Socket } from "socket.io";
-import { GameSessionService } from "./game-session.service";
-import { UserTurn } from "../../../common/types/matchmaking.types";
-import {
-  TransformedUserTurn,
-  TransformedUserTurnV2,
-} from "../types/matchmaking.types";
-import { plainToClass } from "class-transformer";
+import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { createClient } from 'redis';
+import { MatchmakingService } from '../matchmaking/matchmaking.service';
 
 @WebSocketGateway({
-  cors: {
-    origin: "*",
-  },
+    cors: { origin: '*' },
+    adapter: (() => {
+        const pubClient = createClient({ url: 'redis://localhost:6379' });
+        const subClient = pubClient.duplicate();
+        pubClient.on('error', err => console.error('Redis Pub Client Error', err));
+        subClient.on('error', err => console.error('Redis Sub Client Error', err));
+        pubClient.on('connect', () => console.log('Redis Pub Client Connected'));
+        subClient.on('connect', () => console.log('Redis Sub Client Connected'));
+        Promise.all([pubClient.connect(), subClient.connect()]).catch(err => console.error('Redis Connection Error', err));
+        return createAdapter(pubClient, subClient);
+    })(),
 })
-export class GameSessionGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
-  @WebSocketServer()
-  server: Server | undefined;
+export class GameSessionGateway {
+    @WebSocketServer()
+    server!: Server;
 
-  constructor(private gameSessionService: GameSessionService) {}
+    constructor(private readonly matchmakingService: MatchmakingService) { }
 
-  handleConnection(client: Socket) {
-    console.log(`Game client connected: ${client.id}`);
-  }
-
-  handleDisconnect(client: Socket) {
-    console.log(`Game client disconnected: ${client.id}`);
-    // The disconnect is now handled in the GameSessionService
-  }
-
-  // Client side state managment
-  @SubscribeMessage("SendActions")
-  sendActions(client: Socket, payload: { sessionId: string; turnData: any }) {
-    const { sessionId, turnData } = payload;
-
-    console.log(turnData);
-
-    // Transform the incoming turn data
-    const transformedTurn = plainToClass(TransformedUserTurnV2, turnData);
-
-    console.log(transformedTurn);
-
-    // Add the action to the actions map
-    for (const action of transformedTurn  ) {
-      this.gameSessionService.addActions(sessionId, client.id, action);
+    afterInit() {
+        console.log('WebSocket Gateway initialized');
+        this.matchmakingService.setServer(this.server);
     }
-  }
 
-  @SubscribeMessage("updatePublicState")
-  updatePublicState(
-    client: Socket,
-    payload: { sessionId: string; state: any },
-  ) {
-    const { sessionId, state } = payload;
+    handleConnection(socket: Socket) {
+        console.log(`Client connected: ${socket.id}, Process ID: ${process.pid}`);
+    }
 
-    this.gameSessionService.updatePublicState(sessionId, client.id, state);
-  }
+    handleDisconnect(socket: Socket) {
+        console.log(`Client disconnected: ${socket.id}`);
+        this.matchmakingService.leaveMatchmaking(socket);
+    }
+
+    @SubscribeMessage('joinMatchmaking')
+    async handleJoinMatchmaking(socket: Socket, data: { level: number }) {
+        return await this.matchmakingService.joinMatchmaking(socket, data.level);
+    }
+
+    @SubscribeMessage('gameMessage')
+    async handleGameMessage(socket: Socket, data: { roomId: string; message: any }) {
+        const match = await this.matchmakingService.getMatchInfo(data.roomId);
+        if (match && this.server) {
+            console.log(`Broadcasting gameMessage to room ${data.roomId}: ${JSON.stringify(data.message)}`);
+            this.server.to(data.roomId).emit('gameMessage', {
+                roomId: data.roomId,
+                sender: socket.id,
+                message: data.message,
+            });
+        } else {
+            console.error(`Failed to broadcast gameMessage: match=${!!match}, server=${!!this.server}, roomId=${data.roomId}`);
+        }
+    }
 }
