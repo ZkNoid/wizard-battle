@@ -116,7 +116,8 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "packages/redis/redis.conf"
-          target: ${{ secrets.TARGET_PATH }}/redis.conf
+          target: ${{ secrets.TARGET_PATH }}
+          strip_components: 1
 
       - name: SSH into server and copy redis.conf
         uses: appleboy/ssh-action@v1.0.0
@@ -146,7 +147,8 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "packages/nginx/nginx.conf"
-          target: ${{ secrets.TARGET_PATH }}/nginx.conf
+          target: ${{ secrets.TARGET_PATH }}
+          strip_components: 1
 
       - name: SSH into server and copy nginx.conf
         uses: appleboy/ssh-action@v1.0.0
