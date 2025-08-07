@@ -115,8 +115,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           port: ${{ secrets.SERVER_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "packages/redis/redis.conf/redis.conf"
-          target: ${{ secrets.TARGET_PATH }}
+          source: "packages/redis/redis.conf"
+          target: ${{ secrets.TARGET_PATH }}/redis/redis.conf
 
       - name: SSH into server and copy redis.conf
         uses: appleboy/ssh-action@v1.0.0
@@ -145,8 +145,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           port: ${{ secrets.SERVER_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "packages/server-config/nginx/nginx.conf"
-          target: ${{ secrets.TARGET_PATH }} 
+          source: "packages/nginx/nginx.conf"
+          target: ${{ secrets.TARGET_PATH }}/nginx/nginx.conf
 
       - name: SSH into server and copy nginx.conf
         uses: appleboy/ssh-action@v1.0.0
@@ -158,4 +158,33 @@ jobs:
           script: |
             cd ${{ secrets.TARGET_PATH }}
             docker compose up -d
-  
+
+  copy-server-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install ssh client
+        run: sudo apt-get update && sudo apt-get install -y openssh-client
+
+      - name: Copy nginx.conf to remote server via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          port: ${{ secrets.SERVER_PORT }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "packages/server-config/docker-compose.yml"
+          target: ${{ secrets.TARGET_PATH }}/docker-compose.yml
+
+      - name: SSH into server and copy docker-compose.yml
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          port: ${{ secrets.SERVER_PORT }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd ${{ secrets.TARGET_PATH }}
+            docker compose up -d
