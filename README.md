@@ -56,6 +56,42 @@ wizard-battle/
 └── docs/                 # Documentation
 ```
 
+## 🚀 Project Deploy
+### **GitHub Secrets Setup**
+
+1. Navigate to your GitHub repository
+2. Go to Settings > Secrets and Variables > Actions
+3. Click "New repository secret"
+4. Add the following required secrets:
+- `MONGODB_URI`: MongoDB connection string
+- `MONGODB_DB`: MongoDB database name
+- `SERVER_HOST`: Remote server hostname/IP
+- `SERVER_USER`: SSH username for remote server
+- `SERVER_PORT`: SSH port for remote server
+- `SERVER_SSH_KEY`: SSH private key for authentication
+- `TARGET_PATH`: Remote server deployment path
+- `TELEGRAM_TOKEN`: Telegram bot token for notifications
+- `TELEGRAM_CHAT_ID`: Telegram chat ID for notifications
+- `MONGO_INITDB_ROOT_USERNAME`: MongoDB root username (default: admin)
+- `MONGO_INITDB_ROOT_PASSWORD`: MongoDB root password
+- `POSTGRES_USER`: PostgreSQL username (default: orbitrium)
+- `POSTGRES_PASSWORD`: PostgreSQL password
+- `POSTGRES_DB`: PostgreSQL database name (default: orbitrium_db)
+
+#### Required Secrets:
+
+for dev server
+```bash
+git commit --allow-empty -m "Deploy all to new dev server"
+git push origin dev
+```
+
+for production server
+```bash
+git commit --allow-empty -m "Deploy all to new prod server"
+git push origin main
+```
+
 ## 🚀 Quick Start
 
 ### **Prerequisites**
