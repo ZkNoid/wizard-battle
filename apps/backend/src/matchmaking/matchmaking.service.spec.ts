@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MatchmakingService } from './matchmaking.service';
+import { GameStateService } from '../game-session/game-state.service';
 import { Server, Socket } from 'socket.io';
 import { createMock } from '@golevelup/ts-jest';
 
@@ -26,14 +27,33 @@ jest.mock('redis', () => ({
 describe('MatchmakingService', () => {
     let service: MatchmakingService;
     let mockServer: Server;
+    let mockGameStateService: GameStateService;
 
     beforeEach(async () => {
         // Reset all mocks before each test
         jest.clearAllMocks();
 
-        mockServer = createMock<Server>();
+        // Create a proper mock for server.to() chaining
+        const mockTo = jest.fn().mockReturnValue({
+            emit: jest.fn(),
+        });
+        mockServer = createMock<Server>({
+            to: mockTo,
+        });
+
+        // Create mock GameStateService
+        mockGameStateService = createMock<GameStateService>({
+            publishToRoom: jest.fn().mockResolvedValue(undefined),
+        });
+
         const module: TestingModule = await Test.createTestingModule({
-            providers: [MatchmakingService],
+            providers: [
+                MatchmakingService,
+                {
+                    provide: GameStateService,
+                    useValue: mockGameStateService,
+                },
+            ],
         }).compile();
 
         service = module.get<MatchmakingService>(MatchmakingService);
@@ -85,9 +105,8 @@ describe('MatchmakingService', () => {
             expect(mockSocket1.join).not.toHaveBeenCalled(); // First player already joined
             expect(mockSocket2.join).toHaveBeenCalledWith('player1-player2');
 
-            // Verify match notification
-            expect(mockServer.to).toHaveBeenCalledWith('player1-player2');
-            expect(mockServer.to('player1-player2').emit).toHaveBeenCalledWith('matchFound', {
+            // Verify match notification was sent to the socket
+            expect(mockSocket2.emit).toHaveBeenCalledWith('matchFound', {
                 roomId: 'player1-player2',
                 players: [
                     { id: 'player1', level: 2 },
@@ -136,9 +155,8 @@ describe('MatchmakingService', () => {
             expect(mockSocket1.join).not.toHaveBeenCalled(); // First player already joined
             expect(mockSocket2.join).toHaveBeenCalledWith('player3-player4');
 
-            // Verify match notification
-            expect(mockServer.to).toHaveBeenCalledWith('player3-player4');
-            expect(mockServer.to('player3-player4').emit).toHaveBeenCalledWith('matchFound', {
+            // Verify match notification was sent to the socket
+            expect(mockSocket2.emit).toHaveBeenCalledWith('matchFound', {
                 roomId: 'player3-player4',
                 players: [
                     { id: 'player3', level: 3 },
@@ -177,7 +195,6 @@ describe('MatchmakingService', () => {
             // Verify no room was created
             expect(mockSocket1.join).not.toHaveBeenCalled();
             expect(mockSocket2.join).not.toHaveBeenCalled();
-            expect(mockServer.to).not.toHaveBeenCalled();
         });
 
         it('should handle server not being initialized', async () => {
@@ -185,7 +202,13 @@ describe('MatchmakingService', () => {
 
             // Create service without setting server
             const module: TestingModule = await Test.createTestingModule({
-                providers: [MatchmakingService],
+                providers: [
+                    MatchmakingService,
+                    {
+                        provide: GameStateService,
+                        useValue: createMock<GameStateService>(),
+                    },
+                ],
             }).compile();
             const serviceWithoutServer = module.get<MatchmakingService>(MatchmakingService);
 

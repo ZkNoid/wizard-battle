@@ -7,7 +7,8 @@ echo "🚀 Starting Multi-Instance Backend Servers"
 
 # Check if Redis is running
 echo "📡 Checking Redis connection..."
-if ! docker exec b65c2a1a79ce redis-cli ping > /dev/null 2>&1; then
+REDIS_CONTAINER_ID=$(docker ps --filter "ancestor=redis:latest" --format "{{.ID}}" | head -1)
+if [ -z "$REDIS_CONTAINER_ID" ] || ! docker exec $REDIS_CONTAINER_ID redis-cli ping > /dev/null 2>&1; then
     echo "❌ Redis is not running. Please start Redis first:"
     echo "   docker run -d -p 6379:6379 redis:latest"
     exit 1
