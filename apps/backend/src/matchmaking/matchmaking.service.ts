@@ -26,7 +26,7 @@ interface Match {
 @Injectable()
 export class MatchmakingService {
     private server: Server | null = null;
-    private redisClient = createClient({ url: process.env.REDIS_URL });
+    private redisClient = createClient({ url: "redis://localhost:6379"}); //process.env.REDIS_URL });
 
     constructor(private readonly gameStateService: GameStateService) {
         this.redisClient.on('error', err => console.error('Redis Client Error', err));
