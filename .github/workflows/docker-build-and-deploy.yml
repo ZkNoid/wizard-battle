@@ -92,7 +92,7 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "packages/server/docker-compose.yml"
-          target: ${{ secrets.TARGET_PATH }}/docker-compose.yml
+          target: ${{ secrets.TARGET_PATH }}
           strip_components: 2
 
   build-and-deploy:
