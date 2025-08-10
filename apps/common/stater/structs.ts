@@ -1,0 +1,32 @@
+import { Field, Int64, Struct } from "o1js";
+
+export class Position extends Struct({
+  x: Int64,
+  y: Int64,
+}) {
+  manhattanDistance(other: Position) {
+    return this.x.sub(other.x).magnitude.add(this.y.sub(other.y).magnitude);
+  }
+}
+
+export class PlayerStats extends Struct({
+  hp: Int64,
+  position: Position,
+}) {}
+
+export class SpellStats extends Struct({
+  spellId: Field,
+  cooldown: Int64,
+  currentColldown: Int64,
+}) {}
+
+export interface SpellCast<T> {
+  spellId: Field;
+  target: Field;
+  additionalData: T;
+}
+
+export class Effect extends Struct({
+  effectId: Field,
+  duration: Field,
+}) {}
