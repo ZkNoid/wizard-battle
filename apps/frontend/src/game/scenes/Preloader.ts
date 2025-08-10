@@ -28,9 +28,6 @@ export class Preloader extends Scene {
     this.load.image("tiles", "tilemap/tiles.png");
     this.load.image("tiles2", "tilemap/tiles.png"); // Временно используем тот же тайлсет
 
-    // Load tilemap
-    this.load.tilemapTiledJSON("map", "tilemap/tilemap.json");
-
     // Load player image
     this.load.image("player", "human.png");
 
@@ -51,51 +48,12 @@ export class Preloader extends Scene {
       return;
     }
 
-    if (!this.cache.tilemap.exists("map")) {
-      console.error("Map not loaded!");
-      return;
-    }
-
     if (!this.textures.exists("player")) {
       console.error("Player texture not loaded!");
       return;
     }
 
-    // Проверяем структуру тайлмапа
-    const mapData = this.cache.tilemap.get("map");
-
-    if (!mapData || !mapData.data) {
-      console.error("Map data is null or undefined");
-      return;
-    }
-
-    if (!mapData.data.layers) {
-      console.error("Map data has no layers property");
-      return;
-    }
-
-    if (!Array.isArray(mapData.data.layers)) {
-      console.error(
-        "Map data layers is not an array:",
-        typeof mapData.data.layers,
-      );
-      return;
-    }
-
-    const requiredLayers = ["ground", "details"];
-    const missingLayers = requiredLayers.filter(
-      (layerName) =>
-        !mapData.data.layers.some((layer: any) => layer.name === layerName),
-    );
-
-    if (missingLayers.length > 0) {
-      console.error("Missing required layers:", missingLayers);
-      console.log(
-        "Available layers:",
-        mapData.data.layers.map((layer: any) => layer.name),
-      );
-      return;
-    }
+    // Tilemap structure will be validated when data is loaded
 
     console.log("----- Preloader scene completed -----");
     this.scene.start("Game");

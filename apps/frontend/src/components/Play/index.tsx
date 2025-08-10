@@ -49,12 +49,16 @@ export default function Play() {
           <CharacterSelect
             setPlayStep={setPlayStep}
             currentWizard={
-              allWizards.find(
-                (wizard) => wizard.id === stater?.getCurrentState()?.wizardId,
-              )!
+              // DEBUG
+              // allWizards.find(
+              //   (wizard) => wizard.id === stater?.getCurrentState()?.wizardId,
+              // )!
+              allWizards[0]!
             }
             setCurrentWizard={(wizard) => setCurrentWizard(wizard.id)}
-            selectedSkills={stater?.getCurrentState()?.skillsInfo ?? []}
+            // selectedSkills={stater?.getCurrentState()?.skillsInfo ?? []}
+            // DEBUG
+            selectedSkills={allSpells.slice(0, 3)}
             setSelectedSkills={setSelectedSkills}
           />
         )}
