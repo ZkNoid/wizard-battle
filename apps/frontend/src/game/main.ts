@@ -15,7 +15,7 @@ const config1: Phaser.Types.Core.GameConfig = {
   scene: [Boot, Preloader, MainGame],
   scale: {
     mode: Phaser.Scale.FIT,
-  }
+  },
 };
 
 const config2: Phaser.Types.Core.GameConfig = {
@@ -28,15 +28,25 @@ const config2: Phaser.Types.Core.GameConfig = {
   scene: [Boot, Preloader, MainGame],
   scale: {
     mode: Phaser.Scale.FIT,
+  },
+};
+
+const StartGameAlly = (parent: string, tilemapData?: number[]) => {
+  const game = new Game({ ...config1, parent });
+  if (tilemapData) {
+    // Store tilemap data for later use
+    (game as any).tilemapData = tilemapData;
   }
+  return game;
 };
 
-const StartGameAlly = (parent: string) => {
-  return new Game({ ...config1, parent });
-};
-
-const StartGameEnemy = (parent: string) => {
-  return new Game({ ...config2, parent });
+const StartGameEnemy = (parent: string, tilemapData?: number[]) => {
+  const game = new Game({ ...config2, parent });
+  if (tilemapData) {
+    // Store tilemap data for later use
+    (game as any).tilemapData = tilemapData;
+  }
+  return game;
 };
 
 export { StartGameAlly, StartGameEnemy };

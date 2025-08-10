@@ -13,17 +13,21 @@ interface IProps {
   currentActiveScene?: (scene_instance: Phaser.Scene) => void;
   container: string;
   isEnemy?: boolean;
+  tilemapData?: number[];
 }
 
 export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
-  function PhaserGame({ currentActiveScene, container, isEnemy }, ref) {
+  function PhaserGame(
+    { currentActiveScene, container, isEnemy, tilemapData },
+    ref,
+  ) {
     const game = useRef<Phaser.Game | null>(null!);
 
     useLayoutEffect(() => {
       if (game.current === null) {
         game.current = isEnemy
-          ? StartGameEnemy(container)
-          : StartGameAlly(container);
+          ? StartGameEnemy(container, tilemapData)
+          : StartGameAlly(container, tilemapData);
 
         if (typeof ref === "function") {
           ref({ game: game.current, scene: null });
@@ -40,7 +44,7 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
           }
         }
       };
-    }, [ref]);
+    }, [ref, tilemapData]);
 
     useEffect(() => {
       EventBus.on("current-scene-ready", (scene_instance: Phaser.Scene) => {
@@ -57,7 +61,7 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
       return () => {
         EventBus.removeListener("current-scene-ready");
       };
-    }, [currentActiveScene, ref]);
+    }, [currentActiveScene, ref, tilemapData]);
 
     return <div id={container}></div>;
   },

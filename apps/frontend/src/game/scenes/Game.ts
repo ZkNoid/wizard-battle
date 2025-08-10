@@ -19,7 +19,7 @@ export class Game extends Scene {
   }
 
   preload() {
-    this.load.image("player", "assets/human.png");
+    // Player image is already loaded in Preloader
   }
 
   create() {
@@ -29,6 +29,15 @@ export class Game extends Scene {
       // Initialize tilemaps
       this.leftTilemap.initialize("tiles", "tiles");
       // this.rightTilemap.initialize("tiles", "tiles");
+
+      // Load tilemap data if available
+      const tilemapData = (this.game as any).tilemapData;
+
+      if (tilemapData && Array.isArray(tilemapData)) {
+        this.leftTilemap.loadTilemapFromData(tilemapData);
+      } else {
+        console.log("No tilemap data available, using default");
+      }
 
       // Center layers
       // const centerX = 0;
@@ -206,5 +215,12 @@ export class Game extends Scene {
     //     this.rightTargetPosition = null;
     //   }
     // }
+  }
+
+  public loadTilemap(tilemapData: number[]) {
+    // Update the tilemap with new data
+    if (this.leftTilemap) {
+      this.leftTilemap.loadTilemapFromData(tilemapData);
+    }
   }
 }
