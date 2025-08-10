@@ -2,6 +2,17 @@
   "extends": "../../packages/typescript-config/base.json",
   "compilerOptions": {
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
-  }
+    "emitDecoratorMetadata": true,
+    "outDir": "./dist",
+    "rootDir": "./",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "types": ["jest", "node"]
+  },
+  "include": ["*.ts", "types/**/*.ts", "stater/**/*.ts"],
+  "exclude": ["dist", "node_modules"]
 }
