@@ -1,7 +1,7 @@
 // import { Socket } from "socket.io-client";
 
 import { Action, type PublicState, UserState } from "../stater";
-
+// Old
 export enum TileType {
   VALLEY = 0,
   ROCK = 1,
@@ -161,4 +161,76 @@ export interface SubmittedActionsResponse {
   sessionId: string;
   currentRound: number;
   actions: Action[];
+}
+
+/*//////////////////////////////////////////////////////////////
+                          NEW TYPES
+//////////////////////////////////////////////////////////////*/
+
+// New
+// export enum TileType {
+// 	"Wood",
+// 	"Water",
+// 	"Mountain" 
+// }
+
+export interface IMap {
+	tiles: number[][]
+}
+
+export interface ISpell {
+	spellId: string, 
+	cooldown: number,
+	active: boolean
+}
+
+export interface IPosition {
+	x: number;
+	y: number;
+}
+
+export interface IState {
+	playerId: string; 
+	wizardId: string;
+	maxHP: number;
+	mapStructure: IMap;
+	spells: ISpell[];
+	initialPosition: IPosition;
+	stateCommit: any
+}
+
+// Send only public parts of setup
+type IPublicState = Partial<IState>
+
+/*//////////////////////////////////////////////////////////////
+                      NEW MATCHMAKING TYPES
+//////////////////////////////////////////////////////////////*/
+
+export interface IAddToQueue {
+	playerId: string;
+	playerSetup: IPublicState;
+	nonce: number;
+	signature: any;
+	setupProof: any;
+}
+
+export interface IAddToQueueResponse {
+	success: boolean;
+	result: string;
+}
+
+export interface IRemoveFromQueue {
+	playerId: string;
+	nonce: number;
+	signature: any;
+}
+
+export interface IUpdateQueue {
+	playersAmount: number;
+	estimatedTime: number;
+}
+
+export interface IFoundMatch {
+	opponentId: string;
+	opponentSetup: IPublicState[];
 }
