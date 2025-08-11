@@ -168,11 +168,11 @@ export interface SubmittedActionsResponse {
 //////////////////////////////////////////////////////////////*/
 
 // New
-// export enum TileType {
-// 	"Wood",
-// 	"Water",
-// 	"Mountain" 
-// }
+export enum TileTypeNew {
+	"Wood",
+	"Water",
+	"Mountain" 
+}
 
 export interface IMap {
 	tiles: number[][]
@@ -200,7 +200,7 @@ export interface IState {
 }
 
 // Send only public parts of setup
-type IPublicState = Partial<IState>
+export type IPublicState = Partial<IState>
 
 /*//////////////////////////////////////////////////////////////
                       NEW MATCHMAKING TYPES
