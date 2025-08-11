@@ -101,136 +101,74 @@ export class EffectInfo {
   }
 }
 
-export interface MatchPlayerData extends PublicState {}
-// export interface MatchPlayerData {
-//   playerId: string;
-//   health: number;
-//   wizardId: number;
-//   spells?: Spell[];
-//   mapStructure?: MapStructure;
-//   playerPosition?: Position;
-// }
-
-export interface QueueEntry {
-  socket: any;
-  matchData: MatchPlayerData;
-}
-
-export interface MatchFoundResponse {
-  matchId: string;
-  opponent: string;
-  state: MatchPlayerData[];
-}
-
-export interface NextRoundResponse {
-  sessionId: string;
-  currentRound: number;
-  state: MatchPlayerData[];
-  impacts: Impact[];
-}
-
-export interface NextRoundResponseV2 {
-  sessionId: string;
-  currentRound: number;
-  state: MatchPlayerData[];
-  actions: Action[];
-}
-
-export interface SpellCastInfo {
-  spellId: number;
-  targetId: string;
-  targetPosition: Position;
-}
-
-export interface MoveInfo {
-  to: Position;
-}
-
-export interface UserTurn {
-  playerId: string;
-  spellCastInfo: SpellCastInfo[];
-  moveInfo: MoveInfo | null;
-}
-
-export interface GameOverResponse {
-  sessionId: string;
-  winners: string[];
-}
-
-export interface SubmittedActionsResponse {
-  sessionId: string;
-  currentRound: number;
-  actions: Action[];
-}
-
 /*//////////////////////////////////////////////////////////////
                           NEW TYPES
 //////////////////////////////////////////////////////////////*/
 
 // New
 export enum TileTypeNew {
-	"Wood",
-	"Water",
-	"Mountain" 
+  "Wood",
+  "Water",
+  "Mountain",
 }
 
 export interface IMap {
-	tiles: number[][]
+  tiles: number[][];
 }
 
 export interface ISpell {
-	spellId: string, 
-	cooldown: number,
-	active: boolean
+  spellId: string;
+  cooldown: number;
+  active: boolean;
 }
 
 export interface IPosition {
-	x: number;
-	y: number;
+  x: number;
+  y: number;
 }
 
 export interface IState {
-	playerId: string; 
-	wizardId: string;
-	maxHP: number;
-	mapStructure: IMap;
-	spells: ISpell[];
-	initialPosition: IPosition;
-	stateCommit: any
+  playerId: string;
+  wizardId: string;
+  maxHP: number;
+  mapStructure: IMap;
+  spells: ISpell[];
+  initialPosition: IPosition;
+  stateCommit: any;
 }
 
 // Send only public parts of setup
-export type IPublicState = Partial<IState>
+export type IPublicState = Partial<IState>;
 
 /*//////////////////////////////////////////////////////////////
                       NEW MATCHMAKING TYPES
 //////////////////////////////////////////////////////////////*/
 /** Find a game */
 export interface IAddToQueue {
-	playerId: string;
-	playerSetup: IPublicState;
-	nonce: number;
-	signature: any;
-	setupProof: any;
+  playerId: string;
+  playerSetup: IPublicState;
+  nonce: number;
+  signature: any;
+  setupProof: any;
 }
 
 export interface IAddToQueueResponse {
-	success: boolean;
-	result: string;
+  success: boolean;
+  result: string;
 }
 
 export interface IRemoveFromQueue {
-	playerId: string;
-	nonce: number;
-	signature: any;
+  playerId: string;
+  nonce: number;
+  signature: any;
 }
 
 export interface IUpdateQueue {
-	playersAmount: number;
-	estimatedTime: number;
+  playersAmount: number;
+  estimatedTime: number;
 }
 
 export interface IFoundMatch {
-	opponentId: string;
-	opponentSetup: IPublicState[];
+  opponentId: string;
+  opponentSetup: IPublicState[];
 }
