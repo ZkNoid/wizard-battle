@@ -205,7 +205,7 @@ export type IPublicState = Partial<IState>
 /*//////////////////////////////////////////////////////////////
                       NEW MATCHMAKING TYPES
 //////////////////////////////////////////////////////////////*/
-
+/** Find a game */
 export interface IAddToQueue {
 	playerId: string;
 	playerSetup: IPublicState;
