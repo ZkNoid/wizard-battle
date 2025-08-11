@@ -14,7 +14,7 @@ import { GameStateService } from './game-state.service';
 @WebSocketGateway({
     cors: { origin: '*' },
     adapter: (() => {
-        const pubClient = createClient({ url: 'redis://localhost:6379' });
+        const pubClient = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
         const subClient = pubClient.duplicate();
         pubClient.on('error', err => console.error('Redis Pub Client Error', err));
         subClient.on('error', err => console.error('Redis Sub Client Error', err));

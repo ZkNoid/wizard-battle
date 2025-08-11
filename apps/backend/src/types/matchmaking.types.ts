@@ -1,91 +1,171 @@
-import { Type } from "class-transformer";
+// import { Type } from "class-transformer";
+// import {
+//   Position,
+//   MatchPlayerData as BaseMatchPlayerData,
+//   SpellCastInfo as BaseSpellCastInfo,
+//   MoveInfo as BaseMoveInfo,
+//   UserTurn as BaseUserTurn,
+//   MapStructure,
+// } from "../../../common/types/matchmaking.types";
+// import { Action } from "../../../common/stater";
 import {
-  Position,
-  MatchPlayerData as BaseMatchPlayerData,
-  SpellCastInfo as BaseSpellCastInfo,
-  MoveInfo as BaseMoveInfo,
-  UserTurn as BaseUserTurn,
-  MapStructure,
+  IAddToQueue,
+  IAddToQueueResponse,
+  IRemoveFromQueue,
+  IUpdateQueue,
+  IFoundMatch,
+  IPublicState,
 } from "../../../common/types/matchmaking.types";
-import { Action } from "../../../common/stater";
 
-export class TransformedMatchPlayerData implements BaseMatchPlayerData {
-  playerId: string;
-  health: number;
-  wizardId: string;
-  spells?: any[];
-  map?: MapStructure;
+    /*//////////////////////////////////////////////////////////////
+                              NEW CLASSES
+    //////////////////////////////////////////////////////////////*/
 
-  @Type(() => Position)
-  playerPosition?: Position;
+    export class TransformedAddToQueue implements IAddToQueue {
+      playerId: string;
+      playerSetup: IPublicState;
+      nonce: number;
+      signature: any;
+      setupProof: any;
 
-  constructor(
-    playerId: string,
-    health: number,
-    wizardId: string,
-    spells: any[],
-    map: MapStructure,
-  ) {
-    this.playerId = playerId;
-    this.health = health;
-    this.wizardId = wizardId;
-    this.spells = spells;
-    this.map = map;
-  }
-}
+      constructor(
+        playerId: string,
+        playerSetup: IPublicState,
+        nonce: number,
+        signature: any,
+        setupProof: any,
+      ) {
+        this.playerId = playerId;
+        this.playerSetup = playerSetup;
+        this.nonce = nonce;
+        this.signature = signature;
+        this.setupProof = setupProof;
+      }
+    }
 
-export class TransformedSpellCastInfo implements BaseSpellCastInfo {
-  spellId: number;
-  targetId: string;
+    export class TransformedAddToQueueResponse implements IAddToQueueResponse {
+      success: boolean;
+      result: string;
 
-  @Type(() => Position)
-  targetPosition: Position;
+      constructor(success: boolean, result: string) {
+        this.success = success;
+        this.result = result;
+      }
+    }
 
-  constructor(spellId: number, targetId: string, targetPosition: Position) {
-    this.spellId = spellId;
-    this.targetId = targetId;
-    this.targetPosition = targetPosition;
-  }
-}
+    export class TransformedRemoveFromQueue implements IRemoveFromQueue {
+      playerId: string;
+      nonce: number;
+      signature: any;
 
-export class TransformedMoveInfo implements BaseMoveInfo {
-  @Type(() => Position)
-  to: Position;
+      constructor(playerId: string, nonce: number, signature: any) {
+        this.playerId = playerId;
+        this.nonce = nonce;
+        this.signature = signature;
+      }
+    }
 
-  constructor(to: Position) {
-    this.to = to;
-  }
-}
+    export class TransformedUpdateQueue implements IUpdateQueue {
+      playersAmount: number;
+      estimatedTime: number;
 
-// Old type for server side state management
-export class TransformedUserTurn implements BaseUserTurn {
-  playerId: string;
+      constructor(playersAmount: number, estimatedTime: number) {
+        this.playersAmount = playersAmount;
+        this.estimatedTime = estimatedTime;
+      }
+    }
 
-  @Type(() => TransformedSpellCastInfo)
-  spellCastInfo: TransformedSpellCastInfo[];
+    export class TransformedFoundMatch implements IFoundMatch {
+      opponentId: string;
+      opponentSetup: IPublicState[];
 
-  @Type(() => TransformedMoveInfo)
-  moveInfo: TransformedMoveInfo | null;
+      constructor(opponentId: string, opponentSetup: IPublicState[]) {
+        this.opponentId = opponentId;
+        this.opponentSetup = opponentSetup;
+      }
+    }
 
-  constructor(
-    playerId: string,
-    spellCastInfo: TransformedSpellCastInfo[],
-    moveInfo: TransformedMoveInfo | null,
-  ) {
-    this.playerId = playerId;
-    this.spellCastInfo = spellCastInfo;
-    this.moveInfo = moveInfo;
-  }
-}
+    /*//////////////////////////////////////////////////////////////
+                               OLD CLASSES
+    //////////////////////////////////////////////////////////////*/
 
-export class TransformedUserTurnV2 {
-  playerId: string;
+// export class TransformedMatchPlayerData implements BaseMatchPlayerData {
+//   playerId: string;
+//   health: number;
+//   wizardId: string;
+//   spells?: any[];
+//   map?: MapStructure;
 
-  @Type(() => Action)
-  actions: Action[];
+//   @Type(() => Position)
+//   playerPosition?: Position;
 
-  constructor(playerId: string, actions: Action[]) {
-    this.playerId = playerId;
-    this.actions = actions;
-  }
-}
+//   constructor(
+//     playerId: string,
+//     health: number,
+//     wizardId: string,
+//     spells: any[],
+//     map: MapStructure,
+//   ) {
+//     this.playerId = playerId;
+//     this.health = health;
+//     this.wizardId = wizardId;
+//     this.spells = spells;
+//     this.map = map;
+//   }
+// }
+
+// export class TransformedSpellCastInfo implements BaseSpellCastInfo {
+//   spellId: number;
+//   targetId: string;
+
+//   @Type(() => Position)
+//   targetPosition: Position;
+
+//   constructor(spellId: number, targetId: string, targetPosition: Position) {
+//     this.spellId = spellId;
+//     this.targetId = targetId;
+//     this.targetPosition = targetPosition;
+//   }
+// }
+
+// export class TransformedMoveInfo implements BaseMoveInfo {
+//   @Type(() => Position)
+//   to: Position;
+
+//   constructor(to: Position) {
+//     this.to = to;
+//   }
+// }
+
+// // Old type for server side state management
+// export class TransformedUserTurn implements BaseUserTurn {
+//   playerId: string;
+
+//   @Type(() => TransformedSpellCastInfo)
+//   spellCastInfo: TransformedSpellCastInfo[];
+
+//   @Type(() => TransformedMoveInfo)
+//   moveInfo: TransformedMoveInfo | null;
+
+//   constructor(
+//     playerId: string,
+//     spellCastInfo: TransformedSpellCastInfo[],
+//     moveInfo: TransformedMoveInfo | null,
+//   ) {
+//     this.playerId = playerId;
+//     this.spellCastInfo = spellCastInfo;
+//     this.moveInfo = moveInfo;
+//   }
+// }
+
+// export class TransformedUserTurnV2 {
+//   playerId: string;
+
+//   @Type(() => Action)
+//   actions: Action[];
+
+//   constructor(playerId: string, actions: Action[]) {
+//     this.playerId = playerId;
+//     this.actions = actions;
+//   }
+// }
