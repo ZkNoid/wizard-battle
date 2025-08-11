@@ -26,7 +26,7 @@ interface SocketMapping {
 
 @Injectable()
 export class GameStateService {
-    private redisClient = createClient({ url: 'redis://localhost:6379' });
+    private redisClient = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
     private instanceId = `${process.pid}-${Date.now()}`;
 
     constructor() {
