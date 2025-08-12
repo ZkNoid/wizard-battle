@@ -1,7 +1,6 @@
 import { Socket } from "socket.io-client";
 import {
   MapStructure,
-  MatchPlayerData,
   Position,
 } from "../../../../common/types/matchmaking.types";
 import {

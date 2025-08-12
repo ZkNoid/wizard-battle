@@ -15,75 +15,114 @@ import {
   IUpdateQueue,
   IFoundMatch,
   IPublicState,
+  ISpell,
+  IMap,
+  TransformedMap,
+  TransformedPlayerSetup,
+  TransformedAddToQueue,
+  TransformedAddToQueueResponse,
+  TransformedRemoveFromQueue,
+  TransformedUpdateQueue,
+  TransformedFoundMatch,
 } from "../../../common/types/matchmaking.types";
 
-    /*//////////////////////////////////////////////////////////////
-                              NEW CLASSES
-    //////////////////////////////////////////////////////////////*/
 
-    export class TransformedAddToQueue implements IAddToQueue {
-      playerId: string;
-      playerSetup: IPublicState;
-      nonce: number;
-      signature: any;
-      setupProof: any;
+export default {
+  TransformedMap,
+  TransformedPlayerSetup,
+  TransformedAddToQueue,
+  TransformedAddToQueueResponse,
+  TransformedRemoveFromQueue,
+  TransformedUpdateQueue,
+  TransformedFoundMatch,
+} 
+    // /*//////////////////////////////////////////////////////////////
+    //                           NEW CLASSES
+    // //////////////////////////////////////////////////////////////*/
 
-      constructor(
-        playerId: string,
-        playerSetup: IPublicState,
-        nonce: number,
-        signature: any,
-        setupProof: any,
-      ) {
-        this.playerId = playerId;
-        this.playerSetup = playerSetup;
-        this.nonce = nonce;
-        this.signature = signature;
-        this.setupProof = setupProof;
-      }
-    }
+    // export class TransformedMap implements IMap {
+    //   tiles: number[][];
+    // }
 
-    export class TransformedAddToQueueResponse implements IAddToQueueResponse {
-      success: boolean;
-      result: string;
+    // export class TransformedPlayerSetup implements IPublicState {
+    //   playerId: string;
+    //   wizardId: string;
+    //   maxHP: number;
+    //   mapStructure: IMap;
+    //   spells: ISpell[];
 
-      constructor(success: boolean, result: string) {
-        this.success = success;
-        this.result = result;
-      }
-    }
+    //   constructor(playerId: string, wizardId: string, maxHP: number, mapStructure: IMap, spells: ISpell[]) {
+    //     this.playerId = playerId;
+    //     this.wizardId = wizardId;
+    //     this.maxHP = maxHP;
+    //     this.mapStructure = mapStructure;
+    //     this.spells = spells;
+    //   }
+    // }
 
-    export class TransformedRemoveFromQueue implements IRemoveFromQueue {
-      playerId: string;
-      nonce: number;
-      signature: any;
+    // export class TransformedAddToQueue implements IAddToQueue {
+    //   playerId: string;
+    //   playerSetup: IPublicState;
+    //   nonce: number;
+    //   signature: any;
+    //   setupProof: any;
 
-      constructor(playerId: string, nonce: number, signature: any) {
-        this.playerId = playerId;
-        this.nonce = nonce;
-        this.signature = signature;
-      }
-    }
+    //   constructor(
+    //     playerId: string,
+    //     playerSetup: IPublicState,
+    //     nonce: number,
+    //     signature: any,
+    //     setupProof: any,
+    //   ) {
+    //     this.playerId = playerId;
+    //     this.playerSetup = playerSetup;
+    //     this.nonce = nonce;
+    //     this.signature = signature;
+    //     this.setupProof = setupProof;
+    //   }
+    // }
 
-    export class TransformedUpdateQueue implements IUpdateQueue {
-      playersAmount: number;
-      estimatedTime: number;
+    // export class TransformedAddToQueueResponse implements IAddToQueueResponse {
+    //   success: boolean;
+    //   result: string;
 
-      constructor(playersAmount: number, estimatedTime: number) {
-        this.playersAmount = playersAmount;
-        this.estimatedTime = estimatedTime;
-      }
-    }
+    //   constructor(success: boolean, result: string) {
+    //     this.success = success;
+    //     this.result = result;
+    //   }
+    // }
 
-    export class TransformedFoundMatch implements IFoundMatch {
-      opponentId: string;
-      opponentSetup: IPublicState[];
+    // export class TransformedRemoveFromQueue implements IRemoveFromQueue {
+    //   playerId: string;
+    //   nonce: number;
+    //   signature: any;
 
-      constructor(opponentId: string, opponentSetup: IPublicState[]) {
-        this.opponentId = opponentId;
-        this.opponentSetup = opponentSetup;
-      }
-    }
+    //   constructor(playerId: string, nonce: number, signature: any) {
+    //     this.playerId = playerId;
+    //     this.nonce = nonce;
+    //     this.signature = signature;
+    //   }
+    // }
+
+    // export class TransformedUpdateQueue implements IUpdateQueue {
+    //   playersAmount: number;
+    //   estimatedTime: number;
+
+    //   constructor(playersAmount: number, estimatedTime: number) {
+    //     this.playersAmount = playersAmount;
+    //     this.estimatedTime = estimatedTime;
+    //   }
+    // }
+
+    // export class TransformedFoundMatch implements IFoundMatch {
+    //   opponentId: string;
+    //   opponentSetup: IPublicState[];
+
+    //   constructor(opponentId: string, opponentSetup: IPublicState[]) {
+    //     this.opponentId = opponentId;
+    //     this.opponentSetup = opponentSetup;
+    //   }
+    // }
 
     /*//////////////////////////////////////////////////////////////
                                OLD CLASSES
