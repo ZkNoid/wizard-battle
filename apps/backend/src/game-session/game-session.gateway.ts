@@ -4,6 +4,14 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
 import { MatchmakingService } from '../matchmaking/matchmaking.service';
 import { GameStateService } from './game-state.service';
+import {
+    IAddToQueue,
+    IAddToQueueResponse,
+    IRemoveFromQueue,
+    IUpdateQueue,
+    IFoundMatch,
+    IPublicState,
+  } from "../../../common/types/matchmaking.types";
 
 /**
  * @dev WebSocket gateway responsible for orchestrating real-time gameplay and
@@ -50,6 +58,7 @@ export class GameSessionGateway {
     }
 
     /**
+     * @param socket - The socket instance
      * @dev Handles new socket connections. Registers a socket-to-instance
      * mapping in Redis so other processes can target this client even if they
      * do not host the socket locally.
@@ -78,16 +87,22 @@ export class GameSessionGateway {
 
     @SubscribeMessage('joinMatchmaking')
     /**
+     * @param socket - The socket instance
+     * @param data - The data object containing the addToQueue
+     * @returns The result of the matchmaking service's joinMatchmaking method
      * @dev Entrypoint for clients to join a matchmaking queue. Delegates to the
      * matchmaking service which enqueues, attempts to match, and returns a
      * `roomId` when successful.
      */
-    async handleJoinMatchmaking(socket: Socket, data: { level: number }) {
-        return await this.matchmakingService.joinMatchmaking(socket, data.level);
+    async handleJoinMatchmaking(socket: Socket, data: { addToQueue: IAddToQueue }) {
+        return await this.matchmakingService.joinMatchmaking(socket, data.addToQueue);
     }
 
     @SubscribeMessage('gameMessage')
     /**
+     * @param socket - The socket instance
+     * @param data - The data object containing the roomId and message
+     * @returns The result of the matchmaking service's getMatchInfo method
      * @dev Broadcasts a gameplay message to participants in a room. Verifies an
      * active match and state, emits to local sockets in the room, and publishes
      * the same event via Redis so other instances rebroadcast to their local
@@ -119,6 +134,9 @@ export class GameSessionGateway {
 
     @SubscribeMessage('updatePlayerState')
     /**
+     * @param socket - The socket instance
+     * @param data - The data object containing the roomId, playerId, and state
+     * @returns The result of the gameStateService's updatePlayerState method
      * @dev Updates a player's state in the room and notifies peers. Persists the
      * per-player state via `GameStateService`, then publishes a
      * `playerStateUpdated` event to other instances and acknowledges the caller.
@@ -142,6 +160,9 @@ export class GameSessionGateway {
 
     @SubscribeMessage('getGameState')
     /**
+     * @param socket - The socket instance
+     * @param data - The data object containing the roomId
+     * @returns The current `GameState` for a room to the requesting client.
      * @dev Returns the current `GameState` for a room to the requesting client.
      * Errors are caught and sent back in the payload.
      */
@@ -156,6 +177,7 @@ export class GameSessionGateway {
     }
 
     /**
+     * @param data - The data object containing the roomId, event, and data
      * @dev Handles events published by other instances on the Redis channel and
      * re-emits them to any local sockets subscribed to the target room. For
      * `playerJoined`, attempts to join the player's socket to the room if the

@@ -2,6 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { createClient } from 'redis';
 import { GameStateService } from '../game-session/game-state.service';
+import {
+    IAddToQueue,
+    IAddToQueueResponse,
+    IRemoveFromQueue,
+    IUpdateQueue,
+    IFoundMatch,
+    IPublicState,
+  } from "../../../common/types/matchmaking.types";
 
 /**
  * Player interface
@@ -64,10 +72,12 @@ export class MatchmakingService {
      * events. If no match is available yet, it emits a 'waiting' message and
      * returns `null`.
      */
-    async joinMatchmaking(socket: Socket, level: number) {
+    async joinMatchmaking(socket: Socket, addToQueue: IAddToQueue) { //level: number
+        const level = addToQueue.playerSetup.level!;
+
         const player: Player = {
             id: socket.id,
-            level,
+            level: level,
         };
 
         console.log(`Player ${player.id} (Level ${level}) joining matchmaking`);
