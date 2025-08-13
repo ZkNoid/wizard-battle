@@ -2,7 +2,6 @@ import { allWizards, WizardId } from "./wizards";
 //import type { MatchPlayerData } from "./types/matchmaking.types";
 import {
   Effect,
-  type MatchPlayerData,
   Position,
   type Spell,
   SpellEffect,

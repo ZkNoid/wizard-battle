@@ -135,6 +135,7 @@ export interface IState {
   spells: ISpell[];
   initialPosition: IPosition;
   stateCommit: any;
+  level: number;
 }
 
 // Send only public parts of setup
@@ -171,4 +172,110 @@ export interface IUpdateQueue {
 export interface IFoundMatch {
   opponentId: string;
   opponentSetup: IPublicState[];
+}
+
+ /*//////////////////////////////////////////////////////////////
+                              NEW CLASSES
+    //////////////////////////////////////////////////////////////*/
+
+export class TransformedSpell implements ISpell {
+  spellId: string;
+  cooldown: number;
+  active: boolean;
+
+  constructor(spellId: string, cooldown: number, active: boolean) {
+    this.spellId = spellId;
+    this.cooldown = cooldown;
+    this.active = active;
+  }
+}
+
+export class TransformedMap implements IMap {
+  tiles: number[][];
+
+  constructor(tiles: number[][]) {
+    this.tiles = tiles;
+  }
+}
+
+export class TransformedPlayerSetup implements IPublicState {
+  playerId: string;
+  wizardId: string;
+  maxHP: number;
+  mapStructure: IMap;
+  spells: ISpell[];
+  level: number;
+
+  constructor(playerId: string, wizardId: string, maxHP: number, mapStructure: IMap, spells: ISpell[], level: number) {
+    this.playerId = playerId;
+    this.wizardId = wizardId;
+    this.maxHP = maxHP;
+    this.mapStructure = mapStructure;
+    this.spells = spells;
+    this.level = level;
+  }
+}
+
+export class TransformedAddToQueue implements IAddToQueue {
+  playerId: string;
+  playerSetup: IPublicState;
+  nonce: number;
+  signature: any;
+  setupProof: any;
+
+  constructor(
+    playerId: string,
+    playerSetup: IPublicState,
+    nonce: number,
+    signature: any,
+    setupProof: any,
+  ) {
+    this.playerId = playerId;
+    this.playerSetup = playerSetup;
+    this.nonce = nonce;
+    this.signature = signature;
+    this.setupProof = setupProof;
+  }
+}
+
+export class TransformedAddToQueueResponse implements IAddToQueueResponse {
+  success: boolean;
+  result: string;
+
+  constructor(success: boolean, result: string) {
+    this.success = success;
+    this.result = result;
+  }
+}
+
+export class TransformedRemoveFromQueue implements IRemoveFromQueue {
+  playerId: string;
+  nonce: number;
+  signature: any;
+
+  constructor(playerId: string, nonce: number, signature: any) {
+    this.playerId = playerId;
+    this.nonce = nonce;
+    this.signature = signature;
+  }
+}
+
+export class TransformedUpdateQueue implements IUpdateQueue {
+  playersAmount: number;
+  estimatedTime: number;
+
+  constructor(playersAmount: number, estimatedTime: number) {
+    this.playersAmount = playersAmount;
+    this.estimatedTime = estimatedTime;
+  }
+}
+
+export class TransformedFoundMatch implements IFoundMatch {
+  opponentId: string;
+  opponentSetup: IPublicState[];
+
+  constructor(opponentId: string, opponentSetup: IPublicState[]) {
+    this.opponentId = opponentId;
+    this.opponentSetup = opponentSetup;
+  }
 }
