@@ -31,6 +31,11 @@ interface IMap {
     result: string;
   }
   
+  interface IUpdateQueue {
+    playersAmount: number;
+    estimatedTime: number;
+  }
+  
   interface IFoundMatch {
     roomId: string;
     opponentSetup: IPublicState[];
@@ -169,6 +174,11 @@ async function createUser(userId: string, level: number): Promise<void> {
         // Handle waiting state in matchmaking queue
         socket.on('addtoqueue', (data: IAddToQueueResponse) => {
             console.log(`User ${userId} (Level ${level}): ${data.result}`);
+        });
+        
+        // Log queue updates (players count and estimated wait time)
+        socket.on('updateQueue', (data: IUpdateQueue) => {
+            console.log(`User ${userId} (Level ${level}) queue update -> players: ${data.playersAmount}, eta: ${data.estimatedTime}s`);
         });
 
         // Handle successful match found

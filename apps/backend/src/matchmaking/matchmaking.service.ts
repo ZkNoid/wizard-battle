@@ -11,7 +11,9 @@ import {
     IPublicState,
     TransformedAddToQueueResponse,
     TransformedFoundMatch,
-    TransformedPlayerSetup
+    TransformedPlayerSetup,
+      TransformedRemoveFromQueue,
+      TransformedUpdateQueue
   } from "../../../common/types/matchmaking.types";
 
 /**
@@ -95,6 +97,20 @@ export class MatchmakingService {
         const waiting = await this.redisClient.lRange(`waiting:level:${player.level}`, 0, -1);
         console.log(`Current waiting players for level ${player.level}: ${waiting.join(', ')}`);
 
+        // Emit queue update to the caller and broadcast to the level room
+        try {
+            const waitingCount = await this.redisClient.lLen(`waiting:level:${player.level}`);
+            const estimatedTimeSec = Math.max(0, Number(waitingCount) - 1) * 3; // naive ETA
+            const eUpdateQueue: IUpdateQueue = new TransformedUpdateQueue(Number(waitingCount), estimatedTimeSec);
+            // Join a logical room for this level's queue to enable fan-out
+            await socket.join(`queue:level:${player.level}`);
+            // Emit to the caller and broadcast to everyone in the queue room
+            socket.emit('updateQueue', eUpdateQueue);
+            this.server?.to(`queue:level:${player.level}`).emit('updateQueue', eUpdateQueue);
+        } catch (err) {
+            console.error('Failed to emit updateQueue after enqueue:', err);
+        }
+
         // Emiting event add to queue (IAddToQueueResponse)
         // OLD: socket.emit('waiting', { message: 'Waiting for a match...' });
         const eAddToQueueResponse:IAddToQueueResponse = new TransformedAddToQueueResponse(true, 'Player added to queue, waiting for a match...');
@@ -135,6 +151,22 @@ export class MatchmakingService {
             await this.redisClient.lRem(`waiting:level:${player.level}`, 1, JSON.stringify(player));
             await this.redisClient.lRem(`waiting:level:${player.level}`, 1, JSON.stringify(matchedPlayer));
             console.log(`Players ${player.playerId} and ${matchedPlayer.playerId} removed from waiting list`);
+            // Broadcast updated queue state for this level
+            try {
+                const newCount = await this.redisClient.lLen(`waiting:level:${player.level}`);
+                const etaSec = Math.max(0, Number(newCount) - 1) * 3;
+                const eUpdateQueue: IUpdateQueue = new TransformedUpdateQueue(Number(newCount), etaSec);
+                this.server?.to(`queue:level:${player.level}`).emit('updateQueue', eUpdateQueue);
+            } catch (err) {
+                console.error('Failed to emit updateQueue after match remove:', err);
+            }
+            
+            // Do I need to emit IRemoveFromQueue here for both players?
+            // const eRemoveFromQueue:IRemoveFromQueue = new TransformedRemoveFromQueue(socket.id, 0, null);
+            // socket.emit('removeFromQueue', eRemoveFromQueue);
+            // const eRemoveFromQueueMatched:IRemoveFromQueue = new TransformedRemoveFromQueue(matchedPlayer.socketId!, 0, null);
+            // matchedSocket.emit('removeFromQueue', eRemoveFromQueueMatched);
+
 
             // Store match in Redis
             await this.redisClient.hSet('matches', roomId, JSON.stringify(match));
@@ -296,10 +328,28 @@ export class MatchmakingService {
         const levels = [2, 3]; // Adjust based on your LEVELS from client.js
         for (const level of levels) {
             const waiting = await this.redisClient.lRange(`waiting:level:${level}`, 0, -1);
-            const playerEntry = waiting.find(p => JSON.parse(p).id === socket.id);
+            const playerEntry = waiting.find(p => {
+                try {
+                    const parsed = JSON.parse(p);
+                    return parsed.socketId === socket.id;
+                } catch {
+                    return false;
+                }
+            });
             if (playerEntry) {
                 await this.redisClient.lRem(`waiting:level:${level}`, 1, playerEntry);
+                // Broadcast updated queue state for this level
+                try {
+                    const newCount = await this.redisClient.lLen(`waiting:level:${level}`);
+                    const etaSec = Math.max(0, Number(newCount) - 1) * 3;
+                    const eUpdateQueue: IUpdateQueue = new TransformedUpdateQueue(Number(newCount), etaSec);
+                    this.server?.to(`queue:level:${level}`).emit('updateQueue', eUpdateQueue);
+                } catch (err) {
+                    console.error('Failed to emit updateQueue after leave:', err);
+                }
             }
+            const eRemoveFromQueue:IRemoveFromQueue = new TransformedRemoveFromQueue(socket.id, 0, null);
+            socket.emit('removeFromQueue', eRemoveFromQueue);
         }
 
         // Check for match in Redis
@@ -307,7 +357,7 @@ export class MatchmakingService {
         const matchEntry = Object.entries(matches).find(
             ([_, m]) => {
                 const match = JSON.parse(m);
-                return match.player1.id === socket.id || match.player2.id === socket.id;
+                return match.player1?.socketId === socket.id || match.player2?.socketId === socket.id;
             }
         );
 
