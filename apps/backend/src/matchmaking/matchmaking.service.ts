@@ -10,6 +10,8 @@ import {
     IFoundMatch,
     IPublicState,
     TransformedAddToQueueResponse,
+    TransformedFoundMatch,
+    TransformedPlayerSetup
   } from "../../../common/types/matchmaking.types";
 
 /**
@@ -24,8 +26,8 @@ interface Player {
  * Match interface
  */
 interface Match {
-    player1: Player;
-    player2: Player;
+    player1: IPublicState;
+    player2: IPublicState;
     roomId: string;
 }
 
@@ -74,38 +76,53 @@ export class MatchmakingService {
      * returns `null`.
      */
     async joinMatchmaking(socket: Socket, addToQueue: IAddToQueue) { //level: number
-        const level = addToQueue.playerSetup.level!;
+        //const level = addToQueue.playerSetup.level!;
 
-        const player: Player = {
-            id: socket.id,
-            level: level,
-        };
+        const player: IPublicState = addToQueue.playerSetup
 
-        console.log(`Player ${player.id} (Level ${level}) joining matchmaking`);
+        if (!player) {
+            console.error('Player is not defined');
+            return null;
+        }
+
+        console.log(`Player ${player.playerId} (Level ${player.level}) joining matchmaking`);
 
         // Register socket mapping
         await this.gameStateService.registerSocket(socket);
 
         // Add player to Redis waiting list
-        await this.redisClient.lPush(`waiting:level:${level}`, JSON.stringify(player));
-        const waiting = await this.redisClient.lRange(`waiting:level:${level}`, 0, -1);
-        console.log(`Current waiting players for level ${level}: ${waiting.join(', ')}`);
+        await this.redisClient.lPush(`waiting:level:${player.level}`, JSON.stringify(player));
+        const waiting = await this.redisClient.lRange(`waiting:level:${player.level}`, 0, -1);
+        console.log(`Current waiting players for level ${player.level}: ${waiting.join(', ')}`);
 
         // Emiting event add to queue (IAddToQueueResponse)
         // OLD: socket.emit('waiting', { message: 'Waiting for a match...' });
-        const addToQueueResponse = new TransformedAddToQueueResponse(true, 'Player added to queue, waiting for a match...');
-        socket.emit('addtoqueue', addToQueueResponse);
+        const eAddToQueueResponse:IAddToQueueResponse = new TransformedAddToQueueResponse(true, 'Player added to queue, waiting for a match...');
+        socket.emit('addtoqueue', eAddToQueueResponse);
  
 
+
+
+        if (!player.level) {
+            console.error("Player's level is not defined");
+            return null;
+        }
         // Check for match
-        const matchedPlayer = await this.findMatch(player, level);
+        // TODO: Update findMatch logic
+        const matchedPlayer = await this.findMatch(player, player.level);
         if (matchedPlayer) {
-            console.log(`Match found for ${player.id} with ${matchedPlayer.id}`);
+            // Check if playerId is defined
+            if (!player.playerId || !matchedPlayer.playerId) {
+                console.error("Player's playerId is not defined");
+                return null;
+            }
+
+            console.log(`Match found for ${player.playerId} with ${matchedPlayer.playerId}`);
 
             // Sort player IDs for consistent room ID
             const [firstPlayer, secondPlayer] =
-                player.id < matchedPlayer.id ? [player, matchedPlayer] : [matchedPlayer, player];
-            const roomId = `${firstPlayer.id}-${secondPlayer.id}`;
+                player.playerId < matchedPlayer.playerId ? [player, matchedPlayer] : [matchedPlayer, player];
+            const roomId = `${firstPlayer.playerId}-${secondPlayer.playerId}`;
 
             // Create match
             const match: Match = {
@@ -115,9 +132,9 @@ export class MatchmakingService {
             };
 
             // Remove both players from Redis waiting list
-            await this.redisClient.lRem(`waiting:level:${level}`, 1, JSON.stringify(player));
-            await this.redisClient.lRem(`waiting:level:${level}`, 1, JSON.stringify(matchedPlayer));
-            console.log(`Players ${player.id} and ${matchedPlayer.id} removed from waiting list`);
+            await this.redisClient.lRem(`waiting:level:${player.level}`, 1, JSON.stringify(player));
+            await this.redisClient.lRem(`waiting:level:${player.level}`, 1, JSON.stringify(matchedPlayer));
+            console.log(`Players ${player.playerId} and ${matchedPlayer.playerId} removed from waiting list`);
 
             // Store match in Redis
             await this.redisClient.hSet('matches', roomId, JSON.stringify(match));
@@ -125,21 +142,29 @@ export class MatchmakingService {
             console.log(`Active rooms: ${activeRooms.join(', ')}`);
 
             // Create game state
+            // Check if socketId is defined
+            if (!firstPlayer.socketId || !firstPlayer.playerId || !secondPlayer.socketId || !secondPlayer.playerId) {
+                console.error("Player's socketId is not defined");
+                return null;
+            }
+
             await this.gameStateService.createGameState(roomId, [
-                { id: firstPlayer.id, socketId: firstPlayer.id },
-                { id: secondPlayer.id, socketId: secondPlayer.id }
+                { id: firstPlayer.playerId, socketId: firstPlayer.socketId },
+                { id: secondPlayer.playerId, socketId: secondPlayer.socketId }
             ]);
 
-            // Update socket mappings with room information
-            await this.gameStateService.registerSocket(socket, player.id, roomId);
-            
-            // Find and update the matched player's socket mapping
-            const matchedSocketMapping = await this.gameStateService.getSocketMapping(matchedPlayer.id);
-            if (matchedSocketMapping) {
-                // Update the matched player's mapping with room info
+            // Update socket mappings with room information for the local caller
+            await this.gameStateService.registerSocket(socket, player.playerId, roomId);
+
+            // Update the matched player's mapping with room info if we know their socket mapping
+            // Note: getSocketMapping expects a socketId key
+            const matchedSocketMapping = matchedPlayer.socketId
+                ? await this.gameStateService.getSocketMapping(matchedPlayer.socketId)
+                : null;
+            if (matchedSocketMapping && matchedPlayer.socketId) {
                 await this.gameStateService.registerSocket(
-                    { id: matchedPlayer.id } as Socket, 
-                    matchedPlayer.id, 
+                    { id: matchedPlayer.socketId } as Socket,
+                    matchedPlayer.playerId,
                     roomId
                 );
             }
@@ -150,20 +175,23 @@ export class MatchmakingService {
             // For the matched player, we need to notify them through Redis pub/sub
             // since they might be on a different instance
             await this.gameStateService.publishToRoom(roomId, 'playerJoined', {
-                playerId: matchedPlayer.id,
+                playerId: matchedPlayer.playerId,
+                socketId: matchedPlayer.socketId,
                 roomId: roomId
             });
             
             if (this.server) {
-                const matchedSocket = this.server.sockets.sockets.get(matchedPlayer.id);
+                const matchedSocket = matchedPlayer.socketId
+                    ? this.server.sockets.sockets.get(matchedPlayer.socketId)
+                    : undefined;
                 if (matchedSocket) {
                     matchedSocket.join(roomId);
-                    console.log(`Players ${player.id} and ${matchedPlayer.id} joined room ${roomId}`);
+                    console.log(`Players ${player.playerId} and ${matchedPlayer.playerId} joined room ${roomId}`);
                 } else {
-                    console.log(`Matched player ${matchedPlayer.id} is on a different instance, will be notified via Redis`);
+                    console.log(`Matched player ${matchedPlayer.playerId} is on a different instance, will be notified via Redis`);
                 }
             } else {
-                console.error(`Server not initialized, cannot join matched player ${matchedPlayer.id} to room ${roomId}`);
+                console.error(`Server not initialized, cannot join matched player ${matchedPlayer.playerId} to room ${roomId}`);
             }
 
             // Notify players of match
@@ -171,29 +199,60 @@ export class MatchmakingService {
                 console.error('Server not initialized in MatchmakingService');
                 return roomId;
             }
-            
-            // Emit to local socket
-            socket.emit('matchFound', {
+
+            // Construct event for local socket: send opponent's setup
+            const opponentSetupLocal:IPublicState = new TransformedPlayerSetup(
+                matchedPlayer.socketId!,
+                `Player ${matchedPlayer.playerId}`,
+                `Wizard${matchedPlayer.playerId}`,
+                100,
+                matchedPlayer.mapStructure!,
+                matchedPlayer.spells!,
+                matchedPlayer.level!
+            );
+            const eLocalFoundMatch:IFoundMatch = new TransformedFoundMatch(
                 roomId,
-                players: [
-                    { id: firstPlayer.id, level: firstPlayer.level },
-                    { id: secondPlayer.id, level: secondPlayer.level },
-                ],
-            });
+                matchedPlayer.playerId,
+                [opponentSetupLocal]
+            );
+            // Emit to local socket
+            // socket.emit('matchFound', {
+            //     roomId,
+            //     players: [
+            //         { id: firstPlayer.id, level: firstPlayer.level },
+            //         { id: secondPlayer.id, level: secondPlayer.level },
+            //     ],
+            // });
+            socket.emit('matchFound', eLocalFoundMatch);
             
             // Publish match found event to other instances
+            // For the matched player, their opponent is the local player
+            const remoteOpponentSetup:IPublicState = new TransformedPlayerSetup(
+                socket.id,
+                `Player ${player.playerId}`,
+                `Wizard${player.playerId}`,
+                100,
+                player.mapStructure!,
+                player.spells!,
+                player.level!
+            );
+            const eRemoteFoundMatch:IFoundMatch = new TransformedFoundMatch(roomId, player.playerId, [remoteOpponentSetup]);
+            // await this.gameStateService.publishToRoom(roomId, 'matchFound', {
+            //     roomId,
+            //     players: [
+            //         { id: firstPlayer.id, level: firstPlayer.level },
+            //         { id: secondPlayer.id, level: secondPlayer.level },
+            //     ],
+            // });
             await this.gameStateService.publishToRoom(roomId, 'matchFound', {
-                roomId,
-                players: [
-                    { id: firstPlayer.id, level: firstPlayer.level },
-                    { id: secondPlayer.id, level: secondPlayer.level },
-                ],
+                payload: eRemoteFoundMatch,
+                targetSocketId: matchedPlayer.socketId,
             });
 
             return roomId;
         }
 
-        console.log(`No match found for ${player.id} (Level ${level})`);
+        console.log(`No match found for ${player.playerId} (Level ${player.level})`);
         return null;
     }
 
@@ -207,12 +266,12 @@ export class MatchmakingService {
      * simple FIFO/same-level strategy (no ELO or skill distance). Returns
      * `null` when no candidate is available.
      */
-    private async findMatch(player: Player, level: number): Promise<Player | null> {
+    private async findMatch(player: IPublicState, level: number): Promise<IPublicState | null> {
         const waiting = await this.redisClient.lRange(`waiting:level:${level}`, 0, -1);
         const match = waiting
             .map(p => JSON.parse(p))
-            .find(p => p.level === player.level && p.id !== player.id);
-        console.log(`findMatch for ${player.id} (Level ${player.level}): ${match ? `Found ${match.id}` : 'No match'}`);
+            .find(p => p.level === player.level && p.playerId !== player.playerId);
+        console.log(`findMatch for ${player.playerId} (Level ${player.level}): ${match ? `Found ${match.playerId}` : 'No match'}`);
         return match || null;
     }
 
@@ -255,19 +314,19 @@ export class MatchmakingService {
         if (matchEntry) {
             const [roomId, m] = matchEntry;
             const match: Match = JSON.parse(m);
-            const otherPlayer = match.player1.id === socket.id ? match.player2 : match.player1;
+            const otherPlayer = match.player1.socketId === socket.id ? match.player2 : match.player1;
             
             // Notify other player through Redis pub/sub instead of direct socket access
             await this.gameStateService.publishToRoom(roomId, 'opponentDisconnected', {
                 disconnectedPlayer: socket.id,
-                remainingPlayer: otherPlayer.id
+                remainingPlayer: otherPlayer.socketId
             });
 
             // Remove game state
             await this.gameStateService.removeGameState(roomId);
             
             if (this.server) {
-                const otherSocket = this.server.sockets.sockets.get(otherPlayer.id);
+                const otherSocket = this.server.sockets.sockets.get(otherPlayer.socketId!);
                 if (otherSocket) {
                     otherSocket.emit('opponentDisconnected');
                     otherSocket.leave(roomId);

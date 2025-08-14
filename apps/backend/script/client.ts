@@ -9,6 +9,7 @@ interface IMap {
   }
   
   interface IPublicState {
+    socketId?: string;
     playerId?: string;
     wizardId?: string;
     maxHP?: number;
@@ -28,6 +29,11 @@ interface IMap {
   interface IAddToQueueResponse {
     success: boolean;
     result: string;
+  }
+  
+  interface IFoundMatch {
+    roomId: string;
+    opponentSetup: IPublicState[];
   }
   
   export class TransformedMap implements IMap {
@@ -51,6 +57,7 @@ interface IMap {
   }
   
   export class TransformedPlayerSetup implements IPublicState {
+    socketId: string;
     playerId: string;
     wizardId: string;
     maxHP: number;
@@ -58,7 +65,8 @@ interface IMap {
     spells: ISpell[];
     level: number;
   
-    constructor(playerId: string, wizardId: string, maxHP: number, mapStructure: IMap, spells: ISpell[], level: number) {
+    constructor(socketId: string, playerId: string, wizardId: string, maxHP: number, mapStructure: IMap, spells: ISpell[], level: number) {
+      this.socketId = socketId;
       this.playerId = playerId;
       this.wizardId = wizardId;
       this.maxHP = maxHP;
@@ -132,18 +140,27 @@ async function createUser(userId: string, level: number): Promise<void> {
         // Store socket reference for cleanup
         sockets.push(socket);
 
-        // 1. Create addToQueue struct
-        const map = new TransformedMap([[0, 0, 0], [0, 0, 0], [0, 0, 0]]);
-        const spells = [
-            new TransformedSpell("fireball", 10, true),
-            new TransformedSpell("heal", 10, true),
-        ];
-        const playerSetup = new TransformedPlayerSetup(socket.id || `Player${userId}`, socket.id || `Wizard${userId}`, 100, map, spells, level);
-        const addToQueue = new TransformedAddToQueue(socket.id || `Player${userId}`, playerSetup, 0, null, null);
-
         // Handle successful connection
         socket.on('connect', () => {
             console.log(`User ${userId} (Level ${level}) connected: ${socket.id}`);
+            // 1. Create addToQueue struct AFTER connect when socket.id is defined
+            const sid = socket.id as string;
+            const map:IMap = new TransformedMap([[0, 0, 0], [0, 0, 0], [0, 0, 0]]);
+            const spells:ISpell[] = [
+                new TransformedSpell("fireball", 10, true),
+                new TransformedSpell("heal", 10, true),
+            ];
+            const playerSetup:IPublicState = new TransformedPlayerSetup(
+                sid,
+                `Player${userId}`,
+                `Wizard${userId}`,
+                100,
+                map,
+                spells,
+                level
+            );
+            const addToQueue:IAddToQueue = new TransformedAddToQueue(`Player${userId}`, playerSetup, 0, null, null);
+
             // Join matchmaking queue immediately after connection
             socket.emit('joinMatchmaking', { addToQueue });
             resolve();
@@ -155,9 +172,9 @@ async function createUser(userId: string, level: number): Promise<void> {
         });
 
         // Handle successful match found
-        socket.on('matchFound', (data) => {
+        socket.on('matchFound', (data: IFoundMatch) => {
             console.log(`User ${userId} (Level ${level}) matched in room: ${data.roomId}`);
-            console.log(`Players in room: ${JSON.stringify(data.players)}`);
+            console.log(`Opponent setup: ${JSON.stringify(data.opponentSetup)}`);
             
             // Send a test game message to verify room communication
             socket.emit('gameMessage', {
