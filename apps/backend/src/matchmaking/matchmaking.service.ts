@@ -9,6 +9,7 @@ import {
     IUpdateQueue,
     IFoundMatch,
     IPublicState,
+    TransformedAddToQueueResponse,
   } from "../../../common/types/matchmaking.types";
 
 /**
@@ -90,7 +91,11 @@ export class MatchmakingService {
         const waiting = await this.redisClient.lRange(`waiting:level:${level}`, 0, -1);
         console.log(`Current waiting players for level ${level}: ${waiting.join(', ')}`);
 
-        socket.emit('waiting', { message: 'Waiting for a match...' });
+        // Emiting event add to queue (IAddToQueueResponse)
+        // OLD: socket.emit('waiting', { message: 'Waiting for a match...' });
+        const addToQueueResponse = new TransformedAddToQueueResponse(true, 'Player added to queue, waiting for a match...');
+        socket.emit('addtoqueue', addToQueueResponse);
+ 
 
         // Check for match
         const matchedPlayer = await this.findMatch(player, level);
