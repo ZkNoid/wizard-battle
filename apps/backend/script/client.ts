@@ -24,6 +24,11 @@ interface IMap {
     signature: any;
     setupProof: any;
   }
+
+  interface IAddToQueueResponse {
+    success: boolean;
+    result: string;
+  }
   
   export class TransformedMap implements IMap {
     tiles: number[][];
@@ -145,8 +150,8 @@ async function createUser(userId: string, level: number): Promise<void> {
         });
 
         // Handle waiting state in matchmaking queue
-        socket.on('waiting', (data) => {
-            console.log(`User ${userId} (Level ${level}): ${data.message}`);
+        socket.on('addtoqueue', (data: IAddToQueueResponse) => {
+            console.log(`User ${userId} (Level ${level}): ${data.result}`);
         });
 
         // Handle successful match found
