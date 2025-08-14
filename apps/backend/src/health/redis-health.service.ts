@@ -17,7 +17,7 @@ export interface HealthStatus {
 
 @Injectable()
 export class RedisHealthService {
-    private redisClient = createClient({ url: 'redis://localhost:6379' });
+    private redisClient = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
 
     constructor() {
         this.redisClient.on('error', err => console.error('RedisHealthService Redis Client Error', err));

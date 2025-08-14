@@ -21,16 +21,6 @@ import {
  */
 @WebSocketGateway({
     cors: { origin: '*' },
-    adapter: (() => {
-        const pubClient = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
-        const subClient = pubClient.duplicate();
-        pubClient.on('error', err => console.error('Redis Pub Client Error', err));
-        subClient.on('error', err => console.error('Redis Sub Client Error', err));
-        pubClient.on('connect', () => console.log('Redis Pub Client Connected'));
-        subClient.on('connect', () => console.log('Redis Sub Client Connected'));
-        Promise.all([pubClient.connect(), subClient.connect()]).catch(err => console.error('Redis Connection Error', err));
-        return createAdapter(pubClient, subClient);
-    })(),
 })
 export class GameSessionGateway {
     @WebSocketServer()
@@ -50,7 +40,21 @@ export class GameSessionGateway {
     afterInit() {
         console.log('WebSocket Gateway initialized');
         this.matchmakingService.setServer(this.server);
-        
+
+        // Configure Socket.IO Redis adapter at runtime so env is available
+        const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+        const pubClient = createClient({ url: redisUrl });
+        const subClient = pubClient.duplicate();
+        pubClient.on('error', err => console.error('Redis Pub Client Error', err));
+        subClient.on('error', err => console.error('Redis Sub Client Error', err));
+        pubClient.on('connect', () => console.log('Redis Pub Client Connected'));
+        subClient.on('connect', () => console.log('Redis Sub Client Connected'));
+        Promise.all([pubClient.connect(), subClient.connect()])
+            .then(() => {
+                this.server.adapter(createAdapter(pubClient, subClient));
+            })
+            .catch(err => console.error('Redis Connection Error', err));
+
         // Subscribe to cross-instance room events
         this.gameStateService.subscribeToRoomEvents(async (data) => {
             await this.handleCrossInstanceEvent(data);
