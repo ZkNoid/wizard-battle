@@ -206,14 +206,24 @@ export class GameSessionGateway {
 
             case 'matchFound':
                 // Handle match found event from other instances
-                this.server.to(data.roomId).emit('matchFound', data.data);
+                // If a specific socket is targeted, emit only to that socket; otherwise to room
+                if (data.data?.targetSocketId) {
+                    const target = this.server.sockets.sockets.get(data.data.targetSocketId);
+                    if (target) {
+                        target.emit('matchFound', data.data.payload);
+                    }
+                } else {
+                    this.server.to(data.roomId).emit('matchFound', data.data?.payload ?? data.data);
+                }
                 break;
 
             case 'playerJoined':
                 // Handle player joined event from other instances
-                const socketMapping = await this.gameStateService.getSocketMapping(data.data.playerId);
+                // data.data contains { playerId, roomId } from publisher
+                // Look up by socketId; if not provided, try playerId as fallback
+                const socketMapping = await this.gameStateService.getSocketMapping(data.data.socketId ?? data.data.playerId);
                 if (socketMapping && this.server) {
-                    const socket = this.server.sockets.sockets.get(data.data.playerId);
+                    const socket = this.server.sockets.sockets.get(socketMapping.socketId);
                     if (socket) {
                         socket.join(data.roomId);
                         console.log(`Player ${data.data.playerId} joined room ${data.roomId} via cross-instance event`);

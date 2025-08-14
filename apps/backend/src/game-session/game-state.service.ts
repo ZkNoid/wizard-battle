@@ -217,6 +217,7 @@ export class GameStateService {
             roomId,
             event,
             data,
+            originInstanceId: this.instanceId,
             timestamp: Date.now(),
         }));
         console.log(`Published ${event} to room ${roomId}`);
@@ -236,6 +237,10 @@ export class GameStateService {
         await subscriber.subscribe('room_events', (message) => {
             try {
                 const parsed = JSON.parse(message);
+                // Ignore events published by this same instance to avoid duplicate local handling
+                if (parsed.originInstanceId && parsed.originInstanceId === this.instanceId) {
+                    return;
+                }
                 callback(parsed);
             } catch (error) {
                 console.error('Error parsing room event:', error);

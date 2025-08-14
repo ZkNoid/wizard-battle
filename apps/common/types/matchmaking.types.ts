@@ -128,6 +128,7 @@ export interface IPosition {
 }
 
 export interface IState {
+  socketId: string;
   playerId: string;
   wizardId: string;
   maxHP: number;
@@ -144,7 +145,7 @@ export type IPublicState = Partial<IState>;
 /*//////////////////////////////////////////////////////////////
                       NEW MATCHMAKING TYPES
 //////////////////////////////////////////////////////////////*/
-/** Find a game */
+/* Find a game queue */
 export interface IAddToQueue {
   playerId: string;
   playerSetup: IPublicState;
@@ -153,6 +154,7 @@ export interface IAddToQueue {
   setupProof: any;
 }
 
+/* Waits for a match */
 export interface IAddToQueueResponse {
   success: boolean;
   result: string;
@@ -170,6 +172,7 @@ export interface IUpdateQueue {
 }
 
 export interface IFoundMatch {
+  roomId:string;
   opponentId: string;
   opponentSetup: IPublicState[];
 }
@@ -199,6 +202,7 @@ export class TransformedMap implements IMap {
 }
 
 export class TransformedPlayerSetup implements IPublicState {
+  socketId: string;
   playerId: string;
   wizardId: string;
   maxHP: number;
@@ -206,7 +210,8 @@ export class TransformedPlayerSetup implements IPublicState {
   spells: ISpell[];
   level: number;
 
-  constructor(playerId: string, wizardId: string, maxHP: number, mapStructure: IMap, spells: ISpell[], level: number) {
+  constructor(socketId: string, playerId: string, wizardId: string, maxHP: number, mapStructure: IMap, spells: ISpell[], level: number) {
+    this.socketId = socketId;
     this.playerId = playerId;
     this.wizardId = wizardId;
     this.maxHP = maxHP;
@@ -271,10 +276,12 @@ export class TransformedUpdateQueue implements IUpdateQueue {
 }
 
 export class TransformedFoundMatch implements IFoundMatch {
+  roomId: string;
   opponentId: string;
   opponentSetup: IPublicState[];
 
-  constructor(opponentId: string, opponentSetup: IPublicState[]) {
+  constructor(roomId: string, opponentId: string, opponentSetup: IPublicState[]) {
+    this.roomId = roomId;
     this.opponentId = opponentId;
     this.opponentSetup = opponentSetup;
   }
