@@ -51,6 +51,7 @@ echo "MONGODB_DB=${MONGODB_DB}" >> /usr/share/nestjs/main/.env
 echo "APP_PORT=${APP_PORT}" >> /usr/share/nestjs/main/.env
 echo "REDIS_URL=${REDIS_URL}" >> /usr/share/nestjs/main/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/backend/.env
+cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/frontend/.env
 pnpm turbo run build
 
 # Enable PM2 monitoring
