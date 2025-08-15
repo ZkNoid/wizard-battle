@@ -34,6 +34,14 @@ export class GameStateService {
         this.redisClient.connect().then(() => console.log('GameStateService Redis Connected'));
     }
 
+    /**
+     * Get the current instance ID
+     * @returns The unique identifier for this instance
+     */
+    getInstanceId(): string {
+        return this.instanceId;
+    }
+
     // Socket-to-Instance Mapping
     /**
      * Register a socket mapping
@@ -225,12 +233,12 @@ export class GameStateService {
 
     /**
      * Subscribe to cross-instance room events
-     * @param callback - Handler invoked with parsed message `{ roomId, event, data }`
+     * @param callback - Handler invoked with parsed message `{ roomId, event, data, originInstanceId, timestamp }`
      * @dev Creates a dedicated Redis client in subscriber mode, connects, and
      * subscribes to `room_events`. Each message is parsed and passed to the
      * provided callback. Parsing errors are caught and logged.
      */
-    async subscribeToRoomEvents(callback: (data: { roomId: string; event: string; data: any }) => void): Promise<void> {
+    async subscribeToRoomEvents(callback: (data: { roomId: string; event: string; data: any; originInstanceId: string; timestamp: number }) => void): Promise<void> {
         const subscriber = this.redisClient.duplicate();
         await subscriber.connect();
         

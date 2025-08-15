@@ -162,6 +162,26 @@ export class GameSessionGateway {
         }
     }
 
+    @SubscribeMessage('cleanupQueue')
+    /**
+     * @param socket - The socket instance
+     * @param data - The cleanup action data
+     * @dev Handles queue cleanup requests for testing purposes.
+     * Clears all players from the matchmaking queue and removes all active matches.
+     */
+    async handleCleanupQueue(socket: Socket, data: { action: string }) {
+        if (data.action === 'clear') {
+            try {
+                console.log('🧹 Client requested queue cleanup');
+                await this.matchmakingService.clearQueue();
+                socket.emit('cleanupComplete', { success: true, message: 'Queue cleared successfully' });
+            } catch (error) {
+                console.error('Failed to cleanup queue:', error);
+                socket.emit('cleanupComplete', { success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+            }
+        }
+    }
+
     @SubscribeMessage('getGameState')
     /**
      * @param socket - The socket instance
@@ -181,14 +201,19 @@ export class GameSessionGateway {
     }
 
     /**
-     * @param data - The data object containing the roomId, event, and data
+     * @param data - The data object containing the roomId, event, data, originInstanceId, and timestamp
      * @dev Handles events published by other instances on the Redis channel and
      * re-emits them to any local sockets subscribed to the target room. For
      * `playerJoined`, attempts to join the player's socket to the room if the
      * socket is connected to this instance.
      */
-    private async handleCrossInstanceEvent(data: { roomId: string; event: string; data: any }) {
+    private async handleCrossInstanceEvent(data: { roomId: string; event: string; data: any; originInstanceId: string; timestamp: number }) {
         if (!this.server) return;
+
+        // Skip events that originated from this instance to prevent double messages
+        if (data.originInstanceId === this.gameStateService.getInstanceId()) {
+            return;
+        }
 
         switch (data.event) {
             case 'gameMessage':

@@ -124,6 +124,7 @@ const SERVER_URL = 'http://localhost:3030';  // Target server URL for testing
 const TOTAL_USERS = 20;                     // Total number of users to create
 const LEVELS = [2, 3];                      // Available game levels for matchmaking
 const sockets: Socket[] = [];               // Array to track all created socket connections
+const CLEAR_QUEUE_ON_START = true;          // Clear existing queue before starting test
 
 /**
  * Creates a single user connection and joins matchmaking
@@ -266,5 +267,94 @@ process.on('SIGINT', () => {
     process.exit(0);
 });
 
-// Start the test by generating users
-generateUsers().catch(console.error);
+/**
+ * Cleans up the matchmaking queue before starting a new test
+ * @description Connects to the server and clears any existing players from the queue
+ * to ensure a clean test environment.
+ */
+async function cleanupQueue() {
+    console.log('🧹 Cleaning up existing queue before starting test...');
+    
+    try {
+        // Create a temporary socket for cleanup
+        const cleanupSocket = io(SERVER_URL, {
+            transports: ['websocket'],
+            timeout: 5000,
+        });
+
+        await new Promise<void>((resolve, reject) => {
+            cleanupSocket.on('connect', () => {
+                console.log('✅ Cleanup socket connected');
+                resolve();
+            });
+
+            cleanupSocket.on('connect_error', (err) => {
+                console.error('❌ Cleanup socket connection failed:', err.message);
+                reject(err);
+            });
+
+            // Give it a moment to connect
+            setTimeout(() => {
+                if (cleanupSocket.connected) {
+                    resolve();
+                } else {
+                    reject(new Error('Cleanup socket connection timeout'));
+                }
+            }, 1000);
+        });
+
+        // Send cleanup command to clear the queue
+        cleanupSocket.emit('cleanupQueue', { action: 'clear' });
+        
+        // Wait for cleanup confirmation
+        await new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Cleanup timeout'));
+            }, 5000);
+            
+            cleanupSocket.once('cleanupComplete', (data) => {
+                clearTimeout(timeout);
+                if (data.success) {
+                    console.log('✅ Queue cleanup confirmed:', data.message);
+                    resolve();
+                } else {
+                    reject(new Error(data.error || 'Cleanup failed'));
+                }
+            });
+        });
+        
+        // Disconnect cleanup socket
+        cleanupSocket.disconnect();
+        console.log('🧹 Queue cleanup completed');
+        
+    } catch (error) {
+        console.warn('⚠️  Queue cleanup failed, continuing with test:', error);
+    }
+}
+
+/**
+ * Main test execution function
+ * @description Orchestrates the complete test flow: cleanup → generate users → monitor results
+ */
+async function runTest() {
+    try {
+        // Step 1: Clean up any existing queue
+        await cleanupQueue();
+        
+        // Step 2: Wait a moment for cleanup to settle
+        console.log('⏳ Waiting for cleanup to settle...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Step 3: Generate test users
+        console.log('🚀 Starting user generation...');
+        await generateUsers();
+        
+        console.log('✅ Test setup completed. Monitoring matchmaking...');
+        
+    } catch (error) {
+        console.error('❌ Test execution failed:', error);
+    }
+}
+
+// Start the test
+runTest().catch(console.error);

@@ -5,5 +5,6 @@ import { GameStateService } from './game-state.service';
 
 @Module({
     providers: [GameSessionGateway, MatchmakingService, GameStateService],
+    exports: [MatchmakingService, GameStateService],
 })
 export class GameSessionModule { }
