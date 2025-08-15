@@ -1,98 +1,78 @@
 import { Field, Int64, Poseidon, Provable, Struct } from "o1js";
-import { Effect, PlayerStats, SpellCast, SpellStats } from "./structs";
+import { Effect, type SpellCast } from "./structs";
 import { allSpells } from "./spells";
 import { allEffectsInfo } from "./effects/effects";
+import { State } from "./state";
 
-const spellStatsAmount = 5;
-const maxSpellEffects = 10;
-
-export class State extends Struct({
-  playerId: Field,
-  playerStats: PlayerStats,
-  spellStats: Provable.Array(SpellStats, spellStatsAmount),
-  effects: Provable.Array(Effect, maxSpellEffects),
-  turnId: Int64,
+export class Stater extends Struct({
+  // state: State,
 }) {
-  copy() {
-    return new State({
-      playerId: this.playerId,
-      playerStats: this.playerStats,
-      spellStats: this.spellStats,
-      effects: this.effects,
-      turnId: this.turnId,
+  static default() {
+    return new Stater({
+      // state: State.default(),
     });
   }
 
-  getCommit() {
-    // Hash all fields
-    return Poseidon.hash([]);
-  }
-}
+  // applySpellCast(spell: SpellCast<any>) {
+  //   // Find spell
+  //   const spellModifier = allSpells.find(
+  //     (s) => s.id === spell.spellId,
+  //   )?.modifyer;
 
-export class Stater extends Struct({
-  state: State,
-  randomSeed: Field,
-}) {
-  applySpellCast(spell: SpellCast<any>) {
-    // Find spell
-    const spellModifier = allSpells.find(
-      (s) => s.id === spell.spellId,
-    )?.modifyer;
+  //   if (!spellModifier) {
+  //     throw Error("No such spell modifier");
+  //   }
 
-    if (!spellModifier) {
-      throw Error("No such spell modifier");
-    }
+  //   spellModifier(this.state, spell);
+  //   // Apply it to the
+  // }
 
-    spellModifier(this, spell);
-    // Apply it to the
-  }
+  // generatePublicState() {
+  //   return this.state.copy();
+  // }
 
-  generatePublicState() {
-    return this.state.copy();
-  }
+  // generateStateCommit() {
+  //   return this.state.getCommit();
+  // }
 
-  generateStateCommit() {
-    return this.state.getCommit();
-  }
+  // applyEffect(publicState: State, effect: Effect) {
+  //   const effectInfo = allEffectsInfo.find((e) => e.id === effect.effectId);
 
-  applyEffect(publicState: State, effect: Effect) {
-    const effectInfo = allEffectsInfo.find((e) => e.id === effect.effectId);
+  //   if (!effectInfo) {
+  //     throw new Error("No such effectInfo");
+  //   }
 
-    if (!effectInfo) {
-      throw new Error("No such effectInfo");
-    }
+  //   effectInfo.apply(this.state, publicState);
+  // }
 
-    effectInfo.apply(this.state, publicState);
-  }
+  // applyEffects(publicState: State) {
+  //   for (const effect of this.state.effects) {
+  //     this.applyEffect(publicState, effect);
+  //   }
+  // }
 
-  applyEffects(publicState: State) {
-    for (const effect of this.state.effects) {
-      this.applyEffect(publicState, effect);
-    }
-  }
+  // apply(spellCasts: SpellCast<any>[]): {
+  //   stateCommit: Field;
+  //   publicState: State;
+  // } {
+  //   // Derive random seed form all [spellCast, turnId, randomSeed]
+  //   // ToDo: Include actual spellCast data
+  //   const randomSeed = Poseidon.hash([this.state.randomSeed]);
 
-  apply(spellCasts: SpellCast<any>[]): {
-    stateCommit: Field;
-    publicState: State;
-  } {
-    // Derive random seed form all [spellCast, turnId, randomSeed]
-    // ToDo: Include actual spellCast data
-    const randomSeed = Poseidon.hash([this.randomSeed]);
+  //   // Apply spells
+  //   for (const spell of spellCasts) {
+  //     this.applySpellCast(spell);
+  //   }
 
-    // Apply spells
-    for (const spell of spellCasts) {
-      this.applySpellCast(spell);
-    }
+  //   const publicState = this.generatePublicState();
 
-    const publicState = this.generatePublicState();
+  //   this.applyEffects(publicState);
 
-    this.applyEffects(publicState);
+  //   const stateCommit = this.generateStateCommit();
 
-    const stateCommit = this.generateStateCommit();
-
-    return {
-      stateCommit,
-      publicState,
-    };
-  }
+  //   return {
+  //     stateCommit,
+  //     publicState,
+  //   };
+  // }
 }

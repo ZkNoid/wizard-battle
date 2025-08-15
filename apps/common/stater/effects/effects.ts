@@ -1,5 +1,5 @@
 import { Field } from "o1js";
-import { State } from "../stater";
+import { State } from "../state";
 
 export interface IEffectInfo {
   id: Field;

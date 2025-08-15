@@ -1,5 +1,7 @@
+import { CircuitString, Field } from "o1js";
+
 export interface Wizard {
-  id: string;
+  id: Field;
   name: string;
   defaultHealth: number;
   publicFields?: string[];
@@ -7,11 +9,11 @@ export interface Wizard {
   imageURL?: string;
 }
 
-export enum WizardId {
-  MAGE = "Mage",
-  WARRIOR = "Warrior",
-  ROGUE = "Rogue",
-}
+export const WizardId = {
+  MAGE: CircuitString.fromString("Mage").hash(),
+  WARRIOR: CircuitString.fromString("Warrior").hash(),
+  ROGUE: CircuitString.fromString("Rogue").hash(),
+};
 
 export const allWizards: Wizard[] = [
   {

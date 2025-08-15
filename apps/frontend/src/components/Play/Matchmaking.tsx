@@ -7,10 +7,6 @@ import { TimeIcon } from "./assets/time-icon";
 import { QueueIcon } from "./assets/queue-icon";
 import { useUserInformationStore } from "@/lib/store/userInformationStore";
 import { useEffect, useRef, useState } from "react";
-import type {
-  MatchFoundResponse,
-  MatchPlayerData,
-} from "../../../../common/types/matchmaking.types";
 import { useRouter } from "next/navigation";
 
 export default function Matchmaking({
@@ -19,28 +15,28 @@ export default function Matchmaking({
   setPlayStep: (playStep: PlaySteps) => void;
 }) {
   const router = useRouter();
-  const { socket, stater, setOpponentState } = useUserInformationStore();
+  const { socket, stater } = useUserInformationStore();
 
   const sendRequest = useRef(false);
   const [elapsedTime, setElapsedTime] = useState(0);
 
-  useEffect(() => {
-    if (!socket) return;
-    if (!stater) return;
-    if (sendRequest.current) return;
-    sendRequest.current = true;
-    let state = stater.getPublicState();
-    console.log("state");
-    console.log(state);
-    socket.emit("findMatch", state satisfies MatchPlayerData);
+  // useEffect(() => {
+  //   if (!socket) return;
+  //   if (!stater) return;
+  //   if (sendRequest.current) return;
+  //   sendRequest.current = true;
+  //   let state = stater.getPublicState();
+  //   console.log("state");
+  //   console.log(state);
+  //   socket.emit("findMatch", state satisfies MatchPlayerData);
 
-    socket.on("matchFound", (response: MatchFoundResponse) => {
-      setOpponentState(
-        response.state.find((player) => player.playerId !== socket.id)!,
-      );
-      router.push(`/game`);
-    });
-  }, [socket, stater]);
+  //   socket.on("matchFound", (response: MatchFoundResponse) => {
+  //     setOpponentState(
+  //       response.state.find((player) => player.playerId !== socket.id)!,
+  //     );
+  //     router.push(`/game`);
+  //   });
+  // }, [socket, stater]);
 
   useEffect(() => {
     const timer = setInterval(() => {

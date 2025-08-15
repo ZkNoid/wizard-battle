@@ -6,14 +6,12 @@ import { ModeSelect } from "./ModeSelect";
 import { Navigation } from "./Navigation";
 import { PlayMode } from "@/lib/enums/PlayMode";
 import CharacterSelect from "@/components/CharacterSelect";
-import { cn } from "@/lib/utils";
+import { cn, spellIdToSpell } from "@/lib/utils";
 import MapEditor from "@/components/MapEditor";
 import Matchmaking from "./Matchmaking";
 import GameResult from "../GameResult";
-import { allWizards, type Wizard } from "../../../../common/wizards";
-import type { Spell } from "../../../../common/types/matchmaking.types";
+import { allWizards } from "../../../../common/wizards";
 import { useUserInformationStore } from "@/lib/store/userInformationStore";
-import { allSpells } from "../../../../common/spells";
 
 export default function Play() {
   const [playStep, setPlayStep] = useState<PlaySteps>(PlaySteps.SELECT_MODE);
@@ -23,9 +21,9 @@ export default function Play() {
     useUserInformationStore();
 
   // Reset selected skills when wizard changes
-  useEffect(() => {
-    setSelectedSkills([]);
-  }, [stater?.getCurrentState()?.wizardId]);
+  // useEffect(() => {
+  //   setSelectedSkills([]);
+  // }, [stater?.state.playerId]);
 
   const noNavigation =
     playStep === PlaySteps.MATCHMAKING ||
@@ -49,16 +47,10 @@ export default function Play() {
           <CharacterSelect
             setPlayStep={setPlayStep}
             currentWizard={
-              // DEBUG
-              // allWizards.find(
-              //   (wizard) => wizard.id === stater?.getCurrentState()?.wizardId,
-              // )!
-              allWizards[0]!
+              allWizards.find((wizard) => wizard.id === stater?.state.playerId)!
             }
             setCurrentWizard={(wizard) => setCurrentWizard(wizard.id)}
-            // selectedSkills={stater?.getCurrentState()?.skillsInfo ?? []}
-            // DEBUG
-            selectedSkills={allSpells.slice(0, 3)}
+            selectedSkills={stater?.state.spellStats ?? []}
             setSelectedSkills={setSelectedSkills}
           />
         )}

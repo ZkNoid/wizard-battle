@@ -8,9 +8,9 @@ import { PlaySteps } from "@/lib/enums/PlaySteps";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { MAX_SELECTED_SKILLS } from "@/lib/constants/wizards";
-import { allWizards, type Wizard } from "../../../../common/wizards";
-import type { Spell } from "../../../../common/types/matchmaking.types";
-import { allSpells } from "../../../../common/spells";
+import { type Wizard } from "../../../../common/wizards";
+import { allSpells } from "../../../../common/stater/spells";
+import type { SpellStats } from "../../../../common/stater/structs";
 
 export default function CharacterSelect({
   setPlayStep,
@@ -22,8 +22,8 @@ export default function CharacterSelect({
   setPlayStep: (playStep: PlaySteps) => void;
   currentWizard: Wizard;
   setCurrentWizard: (wizard: Wizard) => void;
-  selectedSkills: Spell[];
-  setSelectedSkills: (skills: Spell[]) => void;
+  selectedSkills: SpellStats[];
+  setSelectedSkills: (skills: SpellStats[]) => void;
 }) {
   return (
     <div className="gap-15 flex">
@@ -45,26 +45,30 @@ export default function CharacterSelect({
             .filter((spell) => spell.wizardId === currentWizard.id)
             .map((spell) => (
               <Image
-                key={spell.id}
+                key={spell.id.toString()}
                 className={cn(
                   "w-22.5 h-22.5 cursor-pointer transition-transform duration-300 hover:scale-110",
-                  selectedSkills.includes(spell) && "scale-110",
-                  !selectedSkills.includes(spell) &&
+                  selectedSkills.some((s) => s.spellId === spell.id) &&
+                    "scale-110",
+                  !selectedSkills.some((s) => s.spellId === spell.id) &&
                     selectedSkills.length >= MAX_SELECTED_SKILLS &&
                     "hover:scale-none cursor-not-allowed opacity-50",
                 )}
-                src={spell.imageURL ?? ""}
+                src={spell.image ?? ""}
                 alt={"skill"}
                 width={22.5}
                 height={22.5}
                 onClick={() => {
-                  if (selectedSkills.includes(spell)) {
+                  if (selectedSkills.some((s) => s.spellId === spell.id)) {
                     setSelectedSkills(
-                      selectedSkills.filter((s) => s !== spell),
+                      selectedSkills.filter((s) => s.spellId !== spell.id),
                     );
                   } else {
                     if (selectedSkills.length < MAX_SELECTED_SKILLS) {
-                      setSelectedSkills([...selectedSkills, spell]);
+                      setSelectedSkills([
+                        ...selectedSkills,
+                        spell.defaultValue,
+                      ]);
                     }
                   }
                 }}
