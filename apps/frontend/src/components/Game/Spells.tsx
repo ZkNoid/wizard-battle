@@ -1,13 +1,14 @@
 import { cn } from "@/lib/utils";
 import { SpellsBg } from "./assets/spells-bg";
-import type { Spell } from "../../../../common/types/matchmaking.types";
 import Image from "next/image";
+import type { SpellStats } from "../../../../common/stater/structs";
+import type { ISpell } from "../../../../common/stater/spells/interface";
 
 export function Spells({
   skills,
   className,
 }: {
-  skills: Spell[];
+  skills: ISpell[];
   className?: string;
 }) {
   const MAX_SKILLS = 7;
@@ -17,11 +18,11 @@ export function Spells({
       <div className={"px-15 flex flex-row gap-5 py-5"}>
         {skills.map((skill) => (
           <Image
-            key={skill.id}
+            key={skill.id.toString()}
             className={
               "w-22.5 h-22.5 cursor-pointer transition-transform duration-300 hover:scale-110"
             }
-            src={skill.imageURL ?? ""}
+            src={skill.image ?? ""}
             alt={"skill"}
             width={90}
             height={90}

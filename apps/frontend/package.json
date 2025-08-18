@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "next build",
-    "dev": "next dev --turbo",
+    "dev": "next dev",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "preview": "next build && next start",
@@ -19,6 +19,7 @@
     "@trpc/react-query": "^11.4.3",
     "@trpc/server": "^11.4.3",
     "clsx": "^2.1.1",
+    "copy-webpack-plugin": "^13.0.1",
     "formik": "^2.4.6",
     "immer": "^10.1.1",
     "mongodb": "^6.18.0",
@@ -31,9 +32,13 @@
     "socket.io-client": "^4.8.1",
     "superjson": "^2.2.2",
     "tailwind-merge": "^3.3.1",
+    "terser-webpack-plugin": "^5.3.14",
     "yup": "^1.6.1",
     "zod": "^3.25.76",
     "zustand": "^5.0.6"
+  },
+  "peerDependencies": {
+    "o1js": "1.8.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

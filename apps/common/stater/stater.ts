@@ -1,38 +1,18 @@
 import { Field, Int64, Poseidon, Provable, Struct } from "o1js";
-import { Effect, PlayerStats, SpellCast, SpellStats } from "./structs";
+import { Effect, type SpellCast } from "./structs";
 import { allSpells } from "./spells";
 import { allEffectsInfo } from "./effects/effects";
-
-const spellStatsAmount = 5;
-const maxSpellEffects = 10;
-
-export class State extends Struct({
-  playerId: Field,
-  playerStats: PlayerStats,
-  spellStats: Provable.Array(SpellStats, spellStatsAmount),
-  effects: Provable.Array(Effect, maxSpellEffects),
-  turnId: Int64,
-}) {
-  copy() {
-    return new State({
-      playerId: this.playerId,
-      playerStats: this.playerStats,
-      spellStats: this.spellStats,
-      effects: this.effects,
-      turnId: this.turnId,
-    });
-  }
-
-  getCommit() {
-    // Hash all fields
-    return Poseidon.hash([]);
-  }
-}
+import { State } from "./state";
 
 export class Stater extends Struct({
   state: State,
-  randomSeed: Field,
 }) {
+  static default() {
+    return new Stater({
+      state: State.default(),
+    });
+  }
+
   applySpellCast(spell: SpellCast<any>) {
     // Find spell
     const spellModifier = allSpells.find(
@@ -43,7 +23,7 @@ export class Stater extends Struct({
       throw Error("No such spell modifier");
     }
 
-    spellModifier(this, spell);
+    spellModifier(this.state, spell);
     // Apply it to the
   }
 
@@ -77,7 +57,7 @@ export class Stater extends Struct({
   } {
     // Derive random seed form all [spellCast, turnId, randomSeed]
     // ToDo: Include actual spellCast data
-    const randomSeed = Poseidon.hash([this.randomSeed]);
+    const randomSeed = Poseidon.hash([this.state.randomSeed]);
 
     // Apply spells
     for (const spell of spellCasts) {

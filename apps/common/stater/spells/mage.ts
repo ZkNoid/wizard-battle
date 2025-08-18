@@ -1,16 +1,26 @@
-import { Int64, Poseidon, Provable, Struct, UInt64, CircuitString } from "o1js";
-import { Stater } from "../stater";
-import { Position, SpellCast } from "../structs";
+import {
+  Int64,
+  Poseidon,
+  Provable,
+  Struct,
+  UInt64,
+  CircuitString,
+  Field,
+} from "o1js";
+import { Position, type SpellCast } from "../structs";
+import { WizardId } from "../../wizards";
+import { type ISpell } from "./interface";
+import type { State } from "../state";
 
 export class LightningBoldData extends Struct({
   position: Position,
 }) {}
 
-export const LightningBold = (
-  state: Stater,
+export const LightningBoldModifyer = (
+  state: State,
   spellCast: SpellCast<LightningBoldData>,
 ) => {
-  const selfPosition = state.state.playerStats.position;
+  const selfPosition = state.playerStats.position;
   const targetPosition = spellCast.additionalData.position;
 
   const distance = selfPosition.manhattanDistance(targetPosition);
@@ -18,8 +28,8 @@ export const LightningBold = (
   const damage = Int64.from(100);
   const damage2 = Int64.from(50);
 
-  const directHit = distance.lessThan(UInt64.from(1));
-  const nearbyHit = distance.lessThan(UInt64.from(2));
+  const directHit = distance.equals(UInt64.from(0));
+  const nearbyHit = distance.equals(UInt64.from(1));
   const distantHit = directHit.not().and(nearbyHit.not());
 
   const damageToApply = Provable.switch(
@@ -28,15 +38,18 @@ export const LightningBold = (
     [damage, damage2, Int64.from(0)],
   );
 
-  state.state.playerStats.hp = state.state.playerStats.hp.sub(damageToApply);
+  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 };
 
 export class FireBallData extends Struct({
   position: Position,
 }) {}
 
-export const FireBall = (state: Stater, spellCast: SpellCast<FireBallData>) => {
-  const selfPosition = state.state.playerStats.position;
+export const FireBallModifyer = (
+  state: State,
+  spellCast: SpellCast<FireBallData>,
+) => {
+  const selfPosition = state.playerStats.position;
   const targetPosition = spellCast.additionalData.position;
 
   const distance = selfPosition.manhattanDistance(targetPosition);
@@ -45,9 +58,9 @@ export const FireBall = (state: Stater, spellCast: SpellCast<FireBallData>) => {
   const damage2 = Int64.from(40);
   const damage3 = Int64.from(20);
 
-  const directHit = distance.lessThan(UInt64.from(1));
-  const nearbyHit = distance.lessThan(UInt64.from(2));
-  const farHit = distance.lessThan(UInt64.from(3));
+  const directHit = distance.equals(UInt64.from(0));
+  const nearbyHit = distance.equals(UInt64.from(1));
+  const farHit = distance.equals(UInt64.from(2));
   const distantHit = directHit.not().and(nearbyHit.not()).and(farHit.not());
 
   const damageToApply = Provable.switch(
@@ -56,15 +69,18 @@ export const FireBall = (state: Stater, spellCast: SpellCast<FireBallData>) => {
     [damage, damage2, damage3, Int64.from(0)],
   );
 
-  state.state.playerStats.hp = state.state.playerStats.hp.sub(damageToApply);
+  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 };
 
 export class LaserData extends Struct({
   position: Position,
 }) {}
 
-export const Laser = (state: Stater, spellCast: SpellCast<LaserData>) => {
-  const selfPosition = state.state.playerStats.position;
+export const LaserModifyer = (
+  state: State,
+  spellCast: SpellCast<LaserData>,
+) => {
+  const selfPosition = state.playerStats.position;
   const targetPosition = spellCast.additionalData.position;
 
   const sameRow = selfPosition.x.equals(targetPosition.x);
@@ -75,38 +91,95 @@ export const Laser = (state: Stater, spellCast: SpellCast<LaserData>) => {
 
   const damageToApply = Provable.switch([hit], Int64, [damage]);
 
-  state.state.playerStats.hp = state.state.playerStats.hp.sub(damageToApply);
+  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 };
 
 export class TeleportData extends Struct({
   position: Position,
 }) {}
 
-export const Teleport = (state: Stater, spellCast: SpellCast<TeleportData>) => {
-  state.state.playerStats.position = spellCast.additionalData.position;
+export const TeleportModifyer = (
+  state: State,
+  spellCast: SpellCast<TeleportData>,
+) => {
+  state.playerStats.position = spellCast.additionalData.position;
 };
 
 export class HealData extends Struct({}) {}
 
-export const Heal = (state: Stater, spellCast: SpellCast<HealData>) => {
-  state.state.playerStats.hp = state.state.playerStats.hp.add(Int64.from(100));
+export const HealModifyer = (state: State, spellCast: SpellCast<HealData>) => {
+  state.playerStats.hp = state.playerStats.hp.add(Int64.from(100));
 };
 
-export const mageSpells = [
+export const mageSpells: ISpell[] = [
   {
     id: CircuitString.fromString("LightningBold").hash(),
-    modifyer: LightningBold,
+    wizardId: WizardId.MAGE,
+    cooldown: Field(1),
+    name: "Lightning",
+    description: "A powerful bolt of lightning. High one point damage",
+    image: "/wizards/skills/1.svg",
+    modifyer: LightningBoldModifyer,
+    defaultValue: {
+      spellId: CircuitString.fromString("LightningBold").hash(),
+      cooldown: Int64.from(1),
+      currentColldown: Int64.from(0),
+    },
   },
   {
     id: CircuitString.fromString("FireBall").hash(),
-    modifyer: FireBall,
+    wizardId: WizardId.MAGE,
+    cooldown: Field(1),
+    name: "Fire Ball",
+    description: "A ball of fire. Deals damage to a single target",
+    image: "/wizards/skills/2.svg",
+    modifyer: FireBallModifyer,
+    defaultValue: {
+      spellId: CircuitString.fromString("FireBall").hash(),
+      cooldown: Int64.from(1),
+      currentColldown: Int64.from(0),
+    },
   },
   {
     id: CircuitString.fromString("Teleport").hash(),
-    modifyer: Teleport,
+    wizardId: WizardId.MAGE,
+    cooldown: Field(1),
+    name: "Teleport",
+    description: "Teleport to a random position",
+    image: "/wizards/skills/3.svg",
+    modifyer: TeleportModifyer,
+    defaultValue: {
+      spellId: CircuitString.fromString("Teleport").hash(),
+      cooldown: Int64.from(1),
+      currentColldown: Int64.from(0),
+    },
   },
   {
     id: CircuitString.fromString("Heal").hash(),
-    modifyer: Heal,
+    wizardId: WizardId.MAGE,
+    cooldown: Field(1),
+    name: "Heal",
+    description: "Heal yourself for 100 health",
+    image: "/wizards/skills/4.svg",
+    modifyer: HealModifyer,
+    defaultValue: {
+      spellId: CircuitString.fromString("Heal").hash(),
+      cooldown: Int64.from(1),
+      currentColldown: Int64.from(0),
+    },
+  },
+  {
+    id: CircuitString.fromString("Laser").hash(),
+    wizardId: WizardId.MAGE,
+    cooldown: Field(1),
+    name: "Laser",
+    description: "A beam of laser. Deals damage to a single target",
+    image: "/wizards/skills/5.svg",
+    modifyer: LaserModifyer,
+    defaultValue: {
+      spellId: CircuitString.fromString("Laser").hash(),
+      cooldown: Int64.from(1),
+      currentColldown: Int64.from(0),
+    },
   },
 ];
