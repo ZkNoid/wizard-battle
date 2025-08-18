@@ -20,6 +20,9 @@ export default function Play() {
   const { stater, setSelectedSkills, setCurrentWizard } =
     useUserInformationStore();
 
+  console.log(allWizards.map((w) => w.id.toString()));
+  console.log(stater?.state.wizardId.toString());
+
   // Reset selected skills when wizard changes
   // useEffect(() => {
   //   setSelectedSkills([]);
@@ -47,7 +50,10 @@ export default function Play() {
           <CharacterSelect
             setPlayStep={setPlayStep}
             currentWizard={
-              allWizards.find((wizard) => wizard.id === stater?.state.playerId)!
+              allWizards.find(
+                (wizard) =>
+                  wizard.id.toString() === stater?.state.wizardId.toString(),
+              )!
             }
             setCurrentWizard={(wizard) => setCurrentWizard(wizard.id)}
             selectedSkills={stater?.state.spellStats ?? []}

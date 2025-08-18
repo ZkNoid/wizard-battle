@@ -118,7 +118,7 @@ export const mageSpells: ISpell[] = [
     cooldown: Field(1),
     name: "Lightning",
     description: "A powerful bolt of lightning. High one point damage",
-    image: "Lightning.png",
+    image: "/wizards/skills/1.svg",
     modifyer: LightningBoldModifyer,
     defaultValue: {
       spellId: CircuitString.fromString("LightningBold").hash(),
@@ -132,7 +132,7 @@ export const mageSpells: ISpell[] = [
     cooldown: Field(1),
     name: "Fire Ball",
     description: "A ball of fire. Deals damage to a single target",
-    image: "FireBall.png",
+    image: "/wizards/skills/2.svg",
     modifyer: FireBallModifyer,
     defaultValue: {
       spellId: CircuitString.fromString("FireBall").hash(),
@@ -146,7 +146,7 @@ export const mageSpells: ISpell[] = [
     cooldown: Field(1),
     name: "Teleport",
     description: "Teleport to a random position",
-    image: "Teleport.png",
+    image: "/wizards/skills/3.svg",
     modifyer: TeleportModifyer,
     defaultValue: {
       spellId: CircuitString.fromString("Teleport").hash(),
@@ -160,10 +160,24 @@ export const mageSpells: ISpell[] = [
     cooldown: Field(1),
     name: "Heal",
     description: "Heal yourself for 100 health",
-    image: "Heal.png",
+    image: "/wizards/skills/4.svg",
     modifyer: HealModifyer,
     defaultValue: {
       spellId: CircuitString.fromString("Heal").hash(),
+      cooldown: Int64.from(1),
+      currentColldown: Int64.from(0),
+    },
+  },
+  {
+    id: CircuitString.fromString("Laser").hash(),
+    wizardId: WizardId.MAGE,
+    cooldown: Field(1),
+    name: "Laser",
+    description: "A beam of laser. Deals damage to a single target",
+    image: "/wizards/skills/5.svg",
+    modifyer: LaserModifyer,
+    defaultValue: {
+      spellId: CircuitString.fromString("Laser").hash(),
       cooldown: Int64.from(1),
       currentColldown: Int64.from(0),
     },

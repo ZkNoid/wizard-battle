@@ -1,4 +1,4 @@
-import { Field, Int64, Poseidon, Provable, Struct } from "o1js";
+import { CircuitString, Field, Int64, Poseidon, Provable, Struct } from "o1js";
 import { Effect, PlayerStats, Position, SpellStats } from "./structs";
 
 const spellStatsAmount = 5;
@@ -6,6 +6,7 @@ const maxSpellEffects = 10;
 
 export class State extends Struct({
   playerId: Field,
+  wizardId: Field,
   playerStats: PlayerStats,
   spellStats: Provable.Array(SpellStats, spellStatsAmount),
   effects: Provable.Array(Effect, maxSpellEffects),
@@ -15,6 +16,7 @@ export class State extends Struct({
   static default() {
     return new State({
       playerId: Field(0),
+      wizardId: CircuitString.fromString("Mage").hash(),
       playerStats: new PlayerStats({
         hp: Int64.from(100),
         position: new Position({ x: Int64.from(0), y: Int64.from(0) }),
@@ -46,6 +48,7 @@ export class State extends Struct({
   copy() {
     return new State({
       playerId: this.playerId,
+      wizardId: this.wizardId,
       playerStats: this.playerStats,
       spellStats: this.spellStats,
       effects: this.effects,

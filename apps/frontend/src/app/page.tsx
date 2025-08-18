@@ -15,15 +15,15 @@ export default function Home() {
     setSocket(socket);
     console.log(socket);
 
+    const stater = Stater.default();
+    console.log(stater);
+    setStater(stater);
+
     socket.on("connect", () => {
       console.log("connected");
       console.log(Field.from(10).toString());
-      // const stater = Stater.default();
-      // console.log(stater);
-      // setStater(stater);
     });
   }, []);
-  return <div>Hello</div>;
 
-  // return <HomePage />;
+  return <HomePage />;
 }
