@@ -61,6 +61,7 @@ describe("Mage Spells", () => {
 
     initialState = new State({
       playerId: Field(42),
+      wizardId: WizardId.MAGE,
       playerStats,
       spellStats,
       effects,
