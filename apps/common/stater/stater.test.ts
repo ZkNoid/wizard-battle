@@ -9,6 +9,7 @@ import {
   SpellCast,
   SpellStats,
 } from "./structs";
+import { WizardId } from "../wizards";
 
 describe("Stater", () => {
   let initialState: State;
@@ -48,6 +49,7 @@ describe("Stater", () => {
 
     initialState = new State({
       playerId: Field(42),
+      wizardId: WizardId.MAGE,
       playerStats,
       spellStats,
       effects,
