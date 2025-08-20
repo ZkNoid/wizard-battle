@@ -25,6 +25,10 @@ export default function CharacterSelect({
   selectedSkills: SpellStats[];
   setSelectedSkills: (skills: SpellStats[]) => void;
 }) {
+  const currentWizardSpells = allSpells.filter(
+    (spell) => spell.wizardId === currentWizard.id,
+  );
+
   return (
     <div className="gap-15 flex">
       <Carousel
@@ -41,41 +45,45 @@ export default function CharacterSelect({
         </span>
         {/* Skills */}
         <div className="mt-5 grid grid-cols-4 gap-5">
-          {allSpells
-            .filter((spell) => spell.wizardId === currentWizard.id)
-            .map((spell) => (
-              <Image
-                key={spell.id.toString()}
-                className={cn(
-                  "w-22.5 h-22.5 cursor-pointer transition-transform duration-300 hover:scale-110",
-                  selectedSkills.some((s) => s.spellId === spell.id) &&
-                    "scale-110",
-                  !selectedSkills.some((s) => s.spellId === spell.id) &&
-                    selectedSkills.length >= MAX_SELECTED_SKILLS &&
-                    "hover:scale-none cursor-not-allowed opacity-50",
-                )}
-                src={spell.image ?? ""}
-                alt={"skill"}
-                width={22.5}
-                height={22.5}
-                onClick={() => {
-                  if (selectedSkills.some((s) => s.spellId === spell.id)) {
-                    setSelectedSkills(
-                      selectedSkills.filter((s) => s.spellId !== spell.id),
-                    );
-                  } else {
-                    if (selectedSkills.length < MAX_SELECTED_SKILLS) {
-                      setSelectedSkills([
-                        ...selectedSkills,
-                        spell.defaultValue,
-                      ]);
-                    }
+          {currentWizardSpells.map((spell) => (
+            <Image
+              key={spell.id.toString()}
+              className={cn(
+                "w-22.5 h-22.5 cursor-pointer transition-transform duration-300 hover:scale-110",
+                selectedSkills.some(
+                  (s) => s.spellId.toString() === spell.id.toString(),
+                ) && "scale-110",
+                !selectedSkills.some(
+                  (s) => s.spellId.toString() === spell.id.toString(),
+                ) &&
+                  selectedSkills.length >= MAX_SELECTED_SKILLS &&
+                  "hover:scale-none cursor-not-allowed opacity-50",
+              )}
+              src={spell.image ?? ""}
+              alt={"skill"}
+              width={22.5}
+              height={22.5}
+              onClick={() => {
+                if (
+                  selectedSkills.some(
+                    (s) => s.spellId.toString() === spell.id.toString(),
+                  )
+                ) {
+                  setSelectedSkills(
+                    selectedSkills.filter(
+                      (s) => s.spellId.toString() !== spell.id.toString(),
+                    ),
+                  );
+                } else {
+                  if (selectedSkills.length < MAX_SELECTED_SKILLS) {
+                    setSelectedSkills([...selectedSkills, spell.defaultValue]);
                   }
-                }}
-              />
-            ))}
+                }
+              }}
+            />
+          ))}
           {/* Empty skills */}
-          {Array.from({ length: 4 - (selectedSkills.length % 4) }).map(
+          {Array.from({ length: 4 - (currentWizardSpells.length % 4) }).map(
             (_, index) => (
               <Image
                 key={index}

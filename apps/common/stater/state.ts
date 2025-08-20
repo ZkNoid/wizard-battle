@@ -21,25 +21,8 @@ export class State extends Struct({
         hp: Int64.from(100),
         position: new Position({ x: Int64.from(0), y: Int64.from(0) }),
       }),
-      spellStats: Array(spellStatsAmount)
-        .fill(null)
-        .map(
-          () =>
-            new SpellStats({
-              spellId: Field(0),
-              cooldown: Int64.from(0),
-              currentColldown: Int64.from(0),
-            }),
-        ),
-      effects: Array(maxSpellEffects)
-        .fill(null)
-        .map(
-          () =>
-            new Effect({
-              effectId: Field(0),
-              duration: Field(0),
-            }),
-        ),
+      spellStats: [],
+      effects: [],
       turnId: Int64.from(0),
       randomSeed: Field(0),
     });
