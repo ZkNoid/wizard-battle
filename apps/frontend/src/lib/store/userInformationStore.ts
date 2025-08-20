@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { Socket } from "socket.io-client";
 import { Stater } from "../../../../common/stater/stater";
 import type { PublicState } from "../../../../common/stater/state";
-import type { Field } from "o1js";
+import { Field } from "o1js";
 import type { SpellStats } from "../../../../common/stater/structs";
 interface UserInformationStore {
   socket: Socket | null;
@@ -10,6 +10,7 @@ interface UserInformationStore {
   opponentState: PublicState | null;
   setSocket: (socket: Socket) => void;
   setStater: (stater: Stater) => void;
+  setMap: (map: Field[] | number[]) => void;
   // setOpponentState: (opponentState: PublicState) => void;
   setCurrentWizard: (wizardId: Field) => void;
   setSelectedSkills: (skills: SpellStats[]) => void;
@@ -40,6 +41,14 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
       if (!currentState) return state;
 
       currentState.spellStats = skills;
+      return { stater: state.stater };
+    }),
+  setMap: (map: Field[] | number[]) =>
+    set((state) => {
+      if (!state.stater) return state;
+      const currentState = state.stater.state;
+      if (!currentState) return state;
+      currentState.map = map.map((item) => Field.from(item));
       return { stater: state.stater };
     }),
   clearSocket: () => {

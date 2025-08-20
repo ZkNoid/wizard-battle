@@ -8,6 +8,7 @@ import { api } from "@/trpc/react";
 import { SaveSlot } from "./SaveSlot";
 import { TrashBtn } from "./assets/trash-btn";
 import { RandomBtn } from "./assets/random-btn";
+import { useUserInformationStore } from "@/lib/store/userInformationStore";
 
 enum Tiles {
   Air = 0,
@@ -16,10 +17,11 @@ enum Tiles {
 }
 
 export default function MapEditor() {
+  const { stater, setMap } = useUserInformationStore();
   const [selectedTile, setSelectedTile] = useState<Tiles>(Tiles.Air);
-  const [tilemap, setTilemap] = useState<Tiles[]>([
-    ...Array(64).fill(Tiles.Air),
-  ]);
+  // const [tilemap, setTilemap] = useState<Tiles[]>([
+  //   ...Array(64).fill(Tiles.Air),
+  // ]);
   const [activeSlot, setActiveSlot] = useState<"1" | "2" | "3" | "4">("1");
   const [hasChanges, setHasChanges] = useState(false);
   const [originalTilemap, setOriginalTilemap] = useState<Tiles[]>([
@@ -34,9 +36,11 @@ export default function MapEditor() {
     slot: activeSlot,
   });
 
+  const tilemap = stater?.state.map.map((elem) => +elem);
+
   useEffect(() => {
     if (tilemapData) {
-      setTilemap(tilemapData);
+      setMap(tilemapData);
       setOriginalTilemap(tilemapData);
       setHasChanges(false);
     }
@@ -48,7 +52,7 @@ export default function MapEditor() {
       updateTilemap(
         {
           userAddress: "0x123",
-          tilemap: tilemap,
+          tilemap: tilemap ?? [],
           slot: activeSlot,
         },
         {
@@ -82,7 +86,7 @@ export default function MapEditor() {
           </div>
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-8 grid-rows-8">
-              {tilemap.map((tile, index) => (
+              {tilemap?.map((tile, index) => (
                 <button
                   key={index}
                   onClick={() => {
@@ -90,7 +94,7 @@ export default function MapEditor() {
 
                     const newTilemap = [...tilemap];
                     newTilemap[index] = selectedTile;
-                    setTilemap(newTilemap);
+                    setMap(newTilemap);
 
                     // Check if there are changes
                     const hasChangesNow = newTilemap.some(
@@ -121,7 +125,7 @@ export default function MapEditor() {
                   const randomTilemap = Array.from({ length: 64 }, () =>
                     Math.random() < 0.5 ? Tiles.Water : Tiles.Grass,
                   );
-                  setTilemap(randomTilemap);
+                  setMap(randomTilemap);
                   setOriginalTilemap(randomTilemap);
                   setHasChanges(false);
 
@@ -143,7 +147,7 @@ export default function MapEditor() {
                 className="size-12"
                 onClick={() => {
                   const emptyTilemap = Array(64).fill(Tiles.Air);
-                  setTilemap(emptyTilemap);
+                  setMap(emptyTilemap);
                   setOriginalTilemap(emptyTilemap);
                   setHasChanges(false);
 
