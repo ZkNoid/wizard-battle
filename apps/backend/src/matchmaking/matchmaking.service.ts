@@ -334,12 +334,12 @@ export class MatchmakingService {
      * - Format: "lowerPlayerId-higherPlayerId" (e.g., "player123-player456")
      * - Prevents duplicate rooms for same player pair
      * 
-      * @dev Redis Operations:
- * - HGET: Checks for existing matches
- * - HSET: Stores match data in 'matches' hash with roomId as key
- * - LRANGE + LREM: Removes matched players from 'waiting:queue' list (after success)
- * - Queue removal: Iterates through all queue entries to find and remove both players
- * - Data serialization: All data stored as JSON strings
+     * @dev Redis Operations:
+     * - HGET: Checks for existing matches
+     * - HSET: Stores match data in 'matches' hash with roomId as key
+     * - LRANGE + LREM: Removes matched players from 'waiting:queue' list (after success)
+     * - Queue removal: Iterates through all queue entries to find and remove both players
+     * - Data serialization: All data stored as JSON strings
      * 
      * @dev Game State Initialization:
      * - Calls GameStateService.createGameState() with roomId and player mappings
@@ -353,18 +353,18 @@ export class MatchmakingService {
      * - Players automatically join Socket.IO room for game communication
      * - Notification failures don't invalidate the match
      * 
-      * @dev Error Handling:
- * - Early returns on missing playerId or socketId
- * - Rollback of match data if game state creation fails (removes from 'matches' hash)
- * - Graceful handling of notification failures
- * - Logs errors but doesn't throw to maintain matchmaking stability
+     * @dev Error Handling:
+     * - Early returns on missing playerId or socketId
+     * - Rollback of match data if game state creation fails (removes from 'matches' hash)
+     * - Graceful handling of notification failures
+     * - Logs errors but doesn't throw to maintain matchmaking stability
      * 
-      * @dev Data Consistency:
- * - Players only removed from queue after successful match creation and storage
- * - Queue removal: Iterates through all entries to find and remove both players by playerId
- * - Rollback mechanisms prevent orphaned data
- * - Atomic operations prevent duplicate matches
- * - Queue and matches stay synchronized
+     * @dev Data Consistency:
+     * - Players only removed from queue after successful match creation and storage
+     * - Queue removal: Iterates through all entries to find and remove both players by playerId
+     * - Rollback mechanisms prevent orphaned data
+     * - Atomic operations prevent duplicate matches
+     * - Queue and matches stay synchronized
      * 
      * @dev Safety Improvements:
      * - Prevents player loss from failed match creation
