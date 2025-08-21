@@ -1,13 +1,17 @@
 import { create } from "zustand";
 import { Socket } from "socket.io-client";
 import { Stater } from "../../../../common/stater/stater";
-import type { PublicState } from "../../../../common/stater/state";
-import { Field } from "o1js";
-import type { SpellStats } from "../../../../common/stater/structs";
+import {
+  spellStatsAmount,
+  type PublicState,
+  type State,
+} from "../../../../common/stater/state";
+import { Field, Int64 } from "o1js";
+import { SpellStats } from "../../../../common/stater/structs";
 interface UserInformationStore {
   socket: Socket | null;
   stater: Stater | null;
-  opponentState: PublicState | null;
+  opponentState: State | null;
   setSocket: (socket: Socket) => void;
   setStater: (stater: Stater) => void;
   setMap: (map: Field[] | number[]) => void;
@@ -40,7 +44,18 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
       const currentState = state.stater.state;
       if (!currentState) return state;
 
-      currentState.spellStats = skills;
+      const nonEmptySkills = skills.filter((s) => s.spellId.toString() !== "0");
+
+      currentState.spellStats = [
+        ...nonEmptySkills,
+        ...Array(spellStatsAmount - nonEmptySkills.length).fill(
+          new SpellStats({
+            spellId: Field(0),
+            cooldown: Int64.from(0),
+            currentColldown: Int64.from(0),
+          }),
+        ),
+      ];
       return { stater: state.stater };
     }),
   setMap: (map: Field[] | number[]) =>

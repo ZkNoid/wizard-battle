@@ -1,5 +1,7 @@
 // import { Socket } from "socket.io-client";
 
+import { Field } from "o1js";
+
 /*//////////////////////////////////////////////////////////////
                           NEW TYPES
 //////////////////////////////////////////////////////////////*/
@@ -29,17 +31,18 @@ export interface IPosition {
 export interface IState {
   socketId: string;
   playerId: string;
-  wizardId: string;
-  maxHP: number;
-  mapStructure: IMap;
-  spells: ISpell[];
-  initialPosition: IPosition;
-  stateCommit: any;
-  level: number;
+  fields: Field[]; // Contain State.toFields(userState)
+  // wizardId: string;
+  // maxHP: number;
+  // mapStructure: IMap;
+  // spells: ISpell[];
+  // initialPosition: IPosition;
+  // stateCommit: any;
+  // level: number;
 }
 
 // Send only public parts of setup
-export type IPublicState = Partial<IState>;
+export type IPublicState = IState;
 
 /*//////////////////////////////////////////////////////////////
                       NEW MATCHMAKING TYPES
@@ -71,12 +74,12 @@ export interface IUpdateQueue {
 }
 
 export interface IFoundMatch {
-  roomId:string;
+  roomId: string;
   opponentId: string;
   opponentSetup: IPublicState[];
 }
 
- /*//////////////////////////////////////////////////////////////
+/*//////////////////////////////////////////////////////////////
                               NEW CLASSES
     //////////////////////////////////////////////////////////////*/
 
@@ -103,20 +106,12 @@ export class TransformedMap implements IMap {
 export class TransformedPlayerSetup implements IPublicState {
   socketId: string;
   playerId: string;
-  wizardId: string;
-  maxHP: number;
-  mapStructure: IMap;
-  spells: ISpell[];
-  level: number;
+  fields: Field[];
 
-  constructor(socketId: string, playerId: string, wizardId: string, maxHP: number, mapStructure: IMap, spells: ISpell[], level: number) {
+  constructor(socketId: string, playerId: string, fields: Field[]) {
     this.socketId = socketId;
     this.playerId = playerId;
-    this.wizardId = wizardId;
-    this.maxHP = maxHP;
-    this.mapStructure = mapStructure;
-    this.spells = spells;
-    this.level = level;
+    this.fields = fields;
   }
 }
 
@@ -179,7 +174,11 @@ export class TransformedFoundMatch implements IFoundMatch {
   opponentId: string;
   opponentSetup: IPublicState[];
 
-  constructor(roomId: string, opponentId: string, opponentSetup: IPublicState[]) {
+  constructor(
+    roomId: string,
+    opponentId: string,
+    opponentSetup: IPublicState[],
+  ) {
     this.roomId = roomId;
     this.opponentId = opponentId;
     this.opponentSetup = opponentSetup;

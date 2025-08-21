@@ -21,7 +21,6 @@ export default function Home() {
 
     socket.on("connect", () => {
       console.log("connected");
-      console.log(Field.from(10).toString());
     });
   }, []);
 

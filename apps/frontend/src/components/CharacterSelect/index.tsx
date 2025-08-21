@@ -29,6 +29,10 @@ export default function CharacterSelect({
     (spell) => spell.wizardId === currentWizard.id,
   );
 
+  const selectedSkillsLength = selectedSkills.filter(
+    (s) => s.spellId.toString() !== "0",
+  ).length;
+
   return (
     <div className="gap-15 flex">
       <Carousel
@@ -56,7 +60,7 @@ export default function CharacterSelect({
                 !selectedSkills.some(
                   (s) => s.spellId.toString() === spell.id.toString(),
                 ) &&
-                  selectedSkills.length >= MAX_SELECTED_SKILLS &&
+                  selectedSkillsLength >= MAX_SELECTED_SKILLS &&
                   "hover:scale-none cursor-not-allowed opacity-50",
               )}
               src={spell.image ?? ""}
@@ -75,7 +79,7 @@ export default function CharacterSelect({
                     ),
                   );
                 } else {
-                  if (selectedSkills.length < MAX_SELECTED_SKILLS) {
+                  if (selectedSkillsLength < MAX_SELECTED_SKILLS) {
                     setSelectedSkills([...selectedSkills, spell.defaultValue]);
                   }
                 }
