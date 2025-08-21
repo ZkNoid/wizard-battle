@@ -19,6 +19,7 @@
  */
 
 import { Injectable, Scope } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { Server, Socket } from 'socket.io';
 import { createClient } from 'redis';
 import { GameStateService } from '../game-session/game-state.service';
@@ -77,8 +78,6 @@ interface Match {
 export class MatchmakingService {
     private server: Server | null = null;
     private redisClient = createClient({ url: process.env.REDIS_URL || "redis://localhost:6379"}); //process.env.REDIS_URL });
-    private matchmakingInterval: NodeJS.Timeout | null = null;
-    private readonly MATCHMAKING_DELAY = 20000; // 20 seconds in milliseconds
 
     /**
      * Constructor for MatchmakingService
@@ -92,81 +91,17 @@ export class MatchmakingService {
         this.redisClient.on('error', err => console.error('Redis Client Error', err));
         this.redisClient.connect().then(() => {
             console.log('MatchmakingService Redis Connected');
-            this.startMatchmakingLoop();
         }).catch(err => {
             console.error('Failed to connect to Redis:', err);
         });
     }
 
-    /**
-     * Start the matchmaking loop that runs every 20 seconds
-     * 
-     * @dev This function initializes the core matchmaking scheduler that continuously processes
-     * the player queue at regular intervals. It's the heartbeat of the matchmaking system,
-     * ensuring players are matched efficiently while maintaining system stability.
-     * 
-     * @dev Loop Initialization:
-     * 1. Logs start of matchmaking loop for debugging and monitoring
-     * 2. Creates setInterval with 20-second delay (MATCHMAKING_DELAY constant)
-     * 3. Stores interval reference for cleanup during shutdown
-     * 4. Immediately triggers first matchmaking cycle
-     * 5. Confirms loop is running with completion log
-     * 
-     * @dev Timing Configuration:
-     * - Interval: 20 seconds (20,000 milliseconds)
-     * - Balances responsiveness with system resource usage
-     * - Prevents excessive Redis operations and CPU usage
-     * - Allows sufficient time for match creation and player notification
-     * 
-     * @dev Interval Management:
-     * - Uses NodeJS.Timeout type for proper TypeScript typing
-     * - Stored in matchmakingInterval property for lifecycle management
-     * - Enables clean shutdown via disconnect() method
-     * - Prevents memory leaks from orphaned intervals
-     * 
-     * @dev Error Handling:
-     * - Each cycle is wrapped in async/await for proper error handling
-     * - Errors in processMatchmaking() don't break the loop
-     * - System continues running even if individual cycles fail
-     * - Logs errors for debugging without stopping service
-     * 
-     * @dev System Integration:
-     * - Called automatically during service construction
-     * - Runs independently of incoming player requests
-     * - Ensures consistent matchmaking regardless of player activity
-     * - Maintains queue health and prevents player stagnation
-     * 
-     * @dev Performance Characteristics:
-     * - Low CPU overhead (single function call every 20 seconds)
-     * - Predictable resource usage pattern
-     * - Scales well with queue size (processes entire queue each cycle)
-     * - No blocking operations that could delay subsequent cycles
-     * 
-     * @dev Monitoring and Debugging:
-     * - Clear logging at start and completion
-     * - Cycle triggers are logged for performance monitoring
-     * - Interval reference enables external control if needed
-     * - Predictable timing aids in debugging queue issues
-     */
-    private startMatchmakingLoop() {
-        console.log('Starting matchmaking loop...');
-        
-        // Trigger first matchmaking cycle immediately for testing
-        this.processMatchmaking();
-        
-        // Set up interval for subsequent cycles
-        this.matchmakingInterval = setInterval(async () => {
-            console.log('Matchmaking cycle triggered');
-            await this.processMatchmaking();
-        }, this.MATCHMAKING_DELAY);
-        
-        console.log('Matchmaking loop started with 20-second intervals');
-    }
+
 
     /**
      * Process matchmaking for all players in the queue
      * 
-     * @dev This function is the core matchmaking algorithm that runs every 20 seconds via setInterval.
+     * @dev This function is the core matchmaking algorithm that runs every 30 seconds via cron job.
      * It processes the Redis waiting queue and creates matches between players based on FIFO (First In, First Out) principle.
      * The function now includes advanced filtering and cleanup mechanisms to prevent duplicate matches and queue buildup.
      * 
@@ -224,6 +159,7 @@ export class MatchmakingService {
      * - Tracks stale entry cleanup operations
      * - Provides visibility into matchmaking decision process
      */
+    @Cron(CronExpression.EVERY_30_SECONDS)
     private async processMatchmaking() {
         try {
             const waitingPlayers = await this.redisClient.lRange('waiting:queue', 0, -1);
@@ -599,8 +535,8 @@ export class MatchmakingService {
      * 5. Handles errors gracefully without breaking matchmaking
      * 
      * @dev Wait Time Estimation:
-     * - Formula: Math.max(0, waitingCount - 1) * 3 seconds
-     * - Assumes 3 seconds per matchmaking cycle (20s actual, but optimistic estimate)
+     * - Formula: Math.max(0, waitingCount - 1) * 30 seconds
+     * - Assumes 30 seconds per matchmaking cycle based on cron schedule
      * - Subtracts 1 from count since current player will be matched in next cycle
      * - Provides realistic expectations while maintaining player engagement
      * 
@@ -635,7 +571,7 @@ export class MatchmakingService {
     private async updateQueueStatus(): Promise<void> {
         try {
             const waitingCount = await this.redisClient.lLen('waiting:queue');
-            const estimatedTimeSec = Math.max(0, waitingCount - 1) * 3; // naive ETA
+            const estimatedTimeSec = Math.max(0, waitingCount - 1) * 30; // naive ETA based on 30-second cron cycle
             const updateQueue: IUpdateQueue = new TransformedUpdateQueue(waitingCount, estimatedTimeSec);
             
             // Broadcast to all players in the queue
@@ -717,8 +653,8 @@ export class MatchmakingService {
      * - Room membership enables efficient targeted communication
      * 
      * @dev Wait Time Estimation:
-     * - Formula: Math.max(0, waitingCount - 1) * 3 seconds
-     * - Optimistic estimate based on 3-second matchmaking cycles
+     * - Formula: Math.max(0, waitingCount - 1) * 30 seconds
+     * - Realistic estimate based on 30-second cron cycles
      * - Accounts for current player in next cycle
      * - Helps set player expectations and reduce anxiety
      * 
@@ -772,7 +708,7 @@ export class MatchmakingService {
         // Emit queue update
         try {
             const waitingCount = await this.redisClient.lLen('waiting:queue');
-            const estimatedTimeSec = Math.max(0, waitingCount - 1) * 3; // naive ETA
+            const estimatedTimeSec = Math.max(0, waitingCount - 1) * 30; // naive ETA based on 30-second cron cycle
             const updateQueue: IUpdateQueue = new TransformedUpdateQueue(waitingCount, estimatedTimeSec);
             
             socket.emit('updateQueue', updateQueue);
@@ -788,7 +724,7 @@ export class MatchmakingService {
         );
         socket.emit('addtoqueue', addToQueueResponse);
 
-        console.log(`Player ${player.playerId} added to queue. Next matchmaking cycle in ~20 seconds.`);
+        console.log(`Player ${player.playerId} added to queue. Next matchmaking cycle in ~30 seconds.`);
         return null; // No immediate match, wait for next cycle
     }
 
@@ -1037,12 +973,6 @@ export class MatchmakingService {
         console.log('🧹 Clearing matchmaking queue for testing...');
         
         try {
-            // Temporarily stop matchmaking loop
-            if (this.matchmakingInterval) {
-                clearInterval(this.matchmakingInterval);
-                this.matchmakingInterval = null;
-            }
-            
             // Clear waiting queue
             await this.redisClient.del('waiting:queue');
             console.log('✅ Waiting queue cleared');
@@ -1051,18 +981,10 @@ export class MatchmakingService {
             await this.redisClient.del('matches');
             console.log('✅ Active matches cleared');
             
-            // Restart matchmaking loop
-            this.startMatchmakingLoop();
-            console.log('✅ Matchmaking loop restarted');
-            
             console.log('🧹 Queue cleanup completed successfully');
             
         } catch (error) {
             console.error('❌ Queue cleanup failed:', error);
-            // Restart matchmaking loop even if cleanup fails
-            if (!this.matchmakingInterval) {
-                this.startMatchmakingLoop();
-            }
             throw error;
         }
     }
@@ -1071,28 +993,16 @@ export class MatchmakingService {
      * Disconnect
      * 
      * @dev This function performs graceful shutdown of the MatchmakingService by cleaning up
-     * all resources, stopping background processes, and closing external connections.
-     * It's designed to be called during application shutdown to prevent resource leaks
-     * and ensure clean service termination.
+     * all resources and closing external connections. It's designed to be called during
+     * application shutdown to prevent resource leaks and ensure clean service termination.
      * 
      * @dev Shutdown Flow:
-     * 1. Checks if matchmaking interval is active
-     * 2. Clears the interval to stop background matchmaking cycles
-     * 3. Sets interval reference to null for garbage collection
-     * 4. Closes Redis client connection gracefully
-     * 5. Logs successful disconnection for monitoring
+     * 1. Closes Redis client connection gracefully
+     * 2. Logs successful disconnection for monitoring
      * 
      * @dev Resource Cleanup:
-     * - clearInterval(): Stops the 20-second matchmaking loop
-     * - matchmakingInterval = null: Enables garbage collection
      * - redisClient.quit(): Gracefully closes Redis connection
-     * - Prevents memory leaks from orphaned timers
-     * 
-     * @dev Interval Management:
-     * - Safely handles cases where interval may not be set
-     * - Prevents errors from clearing non-existent intervals
-     * - Ensures clean shutdown regardless of service state
-     * - Null assignment enables proper cleanup
+     * - Cron jobs are automatically cleaned up by NestJS scheduler
      * 
      * @dev Redis Connection:
      * - Uses quit() instead of disconnect() for graceful closure
@@ -1101,7 +1011,6 @@ export class MatchmakingService {
      * - Properly closes all Redis channels and subscriptions
      * 
      * @dev Error Handling:
-     * - Graceful handling of missing intervals
      * - Redis quit() handles connection errors internally
      * - No exceptions thrown during shutdown
      * - Ensures cleanup completes even with errors
@@ -1131,10 +1040,6 @@ export class MatchmakingService {
      * - Supports rolling updates and restarts
     */
     async disconnect() {
-        if (this.matchmakingInterval) {
-            clearInterval(this.matchmakingInterval);
-            this.matchmakingInterval = null;
-        }
         await this.redisClient.quit();
         console.log('MatchmakingService Redis Disconnected');
     }
