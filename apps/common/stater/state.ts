@@ -10,6 +10,7 @@ export class State extends Struct({
   playerStats: PlayerStats,
   spellStats: Provable.Array(SpellStats, spellStatsAmount),
   effects: Provable.Array(Effect, maxSpellEffects),
+  map: Provable.Array(Field, 64),
   turnId: Int64,
   randomSeed: Field,
 }) {
@@ -21,25 +22,9 @@ export class State extends Struct({
         hp: Int64.from(100),
         position: new Position({ x: Int64.from(0), y: Int64.from(0) }),
       }),
-      spellStats: Array(spellStatsAmount)
-        .fill(null)
-        .map(
-          () =>
-            new SpellStats({
-              spellId: Field(0),
-              cooldown: Int64.from(0),
-              currentColldown: Int64.from(0),
-            }),
-        ),
-      effects: Array(maxSpellEffects)
-        .fill(null)
-        .map(
-          () =>
-            new Effect({
-              effectId: Field(0),
-              duration: Field(0),
-            }),
-        ),
+      spellStats: [],
+      effects: [],
+      map: Array(64).fill(Field(0)),
       turnId: Int64.from(0),
       randomSeed: Field(0),
     });
@@ -52,6 +37,7 @@ export class State extends Struct({
       playerStats: this.playerStats,
       spellStats: this.spellStats,
       effects: this.effects,
+      map: this.map,
       turnId: this.turnId,
       randomSeed: this.randomSeed,
     });
