@@ -65,6 +65,7 @@ describe("Mage Spells", () => {
       playerStats,
       spellStats,
       effects,
+      map: [...Array(64).fill(Field(0))],
       turnId: Int64.from(1),
       randomSeed: Field(123),
     });
