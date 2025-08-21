@@ -105,11 +105,7 @@ describe("MatchmakingService", () => {
       const setup: IPublicState = new TransformedPlayerSetup(
         socketId,
         playerId,
-        "WZ",
-        100,
-        map,
-        spells,
-        level,
+        defaultStateFields,
       );
       return new TransformedAddToQueue(playerId, setup, 0, null, null);
     };
@@ -387,11 +383,7 @@ describe("MatchmakingService", () => {
           player: new TransformedPlayerSetup(
             "socket1",
             "Player1",
-            "WZ",
-            100,
-            new TransformedMap([[0]]),
-            [new TransformedSpell("s", 0, true)],
-            2,
+            defaultStateFields,
           ),
           timestamp: Date.now(),
         }),
@@ -399,15 +391,7 @@ describe("MatchmakingService", () => {
 
       const addToQueue = new TransformedAddToQueue(
         "Player1",
-        new TransformedPlayerSetup(
-          "socket1",
-          "Player1",
-          "WZ",
-          100,
-          new TransformedMap([[0]]),
-          [new TransformedSpell("s", 0, true)],
-          2,
-        ),
+        new TransformedPlayerSetup("socket1", "Player1", defaultStateFields),
         0,
         null,
         null,
@@ -424,30 +408,14 @@ describe("MatchmakingService", () => {
 
       const addToQueue1 = new TransformedAddToQueue(
         "Player1",
-        new TransformedPlayerSetup(
-          "socket1",
-          "Player1",
-          "WZ",
-          100,
-          new TransformedMap([[0]]),
-          [new TransformedSpell("s", 0, true)],
-          2,
-        ),
+        new TransformedPlayerSetup("socket1", "Player1", defaultStateFields),
         0,
         null,
         null,
       );
       const addToQueue2 = new TransformedAddToQueue(
         "Player2",
-        new TransformedPlayerSetup(
-          "socket2",
-          "Player2",
-          "WZ",
-          100,
-          new TransformedMap([[0]]),
-          [new TransformedSpell("s", 0, true)],
-          2,
-        ),
+        new TransformedPlayerSetup("socket2", "Player2", defaultStateFields),
         0,
         null,
         null,
