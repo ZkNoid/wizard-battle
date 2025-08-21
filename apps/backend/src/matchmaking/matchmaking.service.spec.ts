@@ -1,4 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { ScheduleModule } from "@nestjs/schedule";
 import { MatchmakingService } from "./matchmaking.service";
 import { GameStateService } from "../game-session/game-state.service";
 import { Server, Socket } from "socket.io";
@@ -9,9 +10,7 @@ import {
   IFoundMatch,
   IUpdateQueue,
   TransformedAddToQueue,
-  TransformedMap,
   TransformedPlayerSetup,
-  TransformedSpell,
   IPublicState,
 } from "../../../common/types/matchmaking.types";
 import { State } from "../../../common/stater/state";
@@ -77,6 +76,7 @@ describe("MatchmakingService", () => {
     }) as any;
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ScheduleModule.forRoot()],
       providers: [
         MatchmakingService,
         {
@@ -100,8 +100,6 @@ describe("MatchmakingService", () => {
       playerId: string,
       level: number,
     ): IAddToQueue => {
-      const map = new TransformedMap([[0]]);
-      const spells = [new TransformedSpell("s1", 0, true)];
       const setup: IPublicState = new TransformedPlayerSetup(
         socketId,
         playerId,
@@ -352,6 +350,7 @@ describe("MatchmakingService", () => {
 
       // Create service without setting server
       const module: TestingModule = await Test.createTestingModule({
+        imports: [ScheduleModule.forRoot()],
         providers: [
           MatchmakingService,
           {
@@ -565,17 +564,16 @@ describe("MatchmakingService", () => {
       expect(mockRedisClient.del).toHaveBeenCalledWith("matches");
     });
 
-    it("should restart matchmaking loop after cleanup", async () => {
+    it("should not restart matchmaking loop after cleanup (cron job handles scheduling)", async () => {
       // Mock Redis responses
-      //   mockRedisClient.del.mockResolvedValue(1);
-      //   // Spy on startMatchmakingLoop
-      //   const startMatchmakingLoopSpy = jest.spyOn(
-      //     service as any,
-      //     "startMatchmakingLoop",
-      //   );
-      //   await service.clearQueue();
-      //   expect(startMatchmakingLoopSpy).toHaveBeenCalled();
-      //   startMatchmakingLoopSpy.mockRestore();
+      mockRedisClient.del.mockResolvedValue(1);
+      
+      // With cron job implementation, clearQueue no longer manages intervals
+      await service.clearQueue();
+      
+      // Verify cleanup operations were called
+      expect(mockRedisClient.del).toHaveBeenCalledWith("waiting:queue");
+      expect(mockRedisClient.del).toHaveBeenCalledWith("matches");
     });
 
     it("should handle cleanup errors gracefully", async () => {
@@ -594,6 +592,65 @@ describe("MatchmakingService", () => {
       await service.disconnect();
 
       expect(mockRedisClient.quit).toHaveBeenCalled();
+    });
+  });
+
+  describe("processMatchmaking (cron job)", () => {
+    it("should be callable directly for testing", async () => {
+      // Mock Redis responses for empty queue
+      mockRedisClient.lRange.mockResolvedValue([]);
+
+      // Call the private method directly for testing
+      const processMatchmaking = (service as any).processMatchmaking.bind(service);
+      
+      // Should not throw and should handle empty queue gracefully
+      await expect(processMatchmaking()).resolves.toBeUndefined();
+      
+      expect(mockRedisClient.lRange).toHaveBeenCalledWith("waiting:queue", 0, -1);
+    });
+
+    it("should process two players and create a match", async () => {
+      const player1 = new TransformedPlayerSetup("socket1", "Player1", defaultStateFields);
+      const player2 = new TransformedPlayerSetup("socket2", "Player2", defaultStateFields);
+
+      // Mock Redis responses
+      mockRedisClient.lRange.mockResolvedValue([
+        JSON.stringify({ player: player1, timestamp: Date.now() - 1000 }),
+        JSON.stringify({ player: player2, timestamp: Date.now() }),
+      ]);
+      mockRedisClient.hGetAll.mockResolvedValue({}); // No active matches
+      mockRedisClient.hGet.mockResolvedValue(null); // No duplicate match
+      mockRedisClient.hSet.mockResolvedValue(1);
+      mockRedisClient.lLen.mockResolvedValue(2);
+
+      // Call processMatchmaking directly
+      const processMatchmaking = (service as any).processMatchmaking.bind(service);
+      await processMatchmaking();
+
+      // Verify match was created
+      expect(mockRedisClient.hSet).toHaveBeenCalledWith(
+        "matches",
+        "Player1-Player2",
+        expect.any(String)
+      );
+    });
+
+    it("should handle insufficient players gracefully", async () => {
+      // Mock Redis responses for single player
+      mockRedisClient.lRange.mockResolvedValue([
+        JSON.stringify({ 
+          player: new TransformedPlayerSetup("socket1", "Player1", defaultStateFields), 
+          timestamp: Date.now() 
+        }),
+      ]);
+
+      const processMatchmaking = (service as any).processMatchmaking.bind(service);
+      
+      // Should not throw with only one player
+      await expect(processMatchmaking()).resolves.toBeUndefined();
+      
+      // Should not attempt to create matches
+      expect(mockRedisClient.hSet).not.toHaveBeenCalled();
     });
   });
 });

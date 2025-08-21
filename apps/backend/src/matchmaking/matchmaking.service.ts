@@ -105,7 +105,7 @@ export class MatchmakingService {
   /**
    * Process matchmaking for all players in the queue
    *
-   * @dev This function is the core matchmaking algorithm that runs every 30 seconds via setInterval.
+   * @dev This function is the core matchmaking algorithm that runs every 30 seconds via cron job.
    * It processes the Redis waiting queue and creates matches between players based on FIFO (First In, First Out) principle.
    * The function now includes advanced filtering and cleanup mechanisms to prevent duplicate matches and queue buildup.
    *
@@ -573,9 +573,9 @@ export class MatchmakingService {
    * 4. Broadcasts update to all players in 'queue:general' room
    * 5. Handles errors gracefully without breaking matchmaking
    *
-   * @dev Wait Time Estimation:
-   * - Formula: Math.max(0, waitingCount - 1) * 3 seconds
-   * - Assumes 3 seconds per matchmaking cycle (30s actual, but optimistic estimate)
+        * @dev Wait Time Estimation:
+     * - Formula: Math.max(0, waitingCount - 1) * 30 seconds
+     * - Assumes 30 seconds per matchmaking cycle based on cron schedule
    * - Subtracts 1 from count since current player will be matched in next cycle
    * - Provides realistic expectations while maintaining player engagement
    *
@@ -694,8 +694,8 @@ export class MatchmakingService {
    * - server.to('queue:general').emit(): Updates all waiting players
    * - Room membership enables efficient targeted communication
    *
-   * @dev Wait Time Estimation:
-   * - Formula: Math.max(0, waitingCount - 1) * 3 seconds
+        * @dev Wait Time Estimation:
+     * - Formula: Math.max(0, waitingCount - 1) * 30 seconds
    * - Optimistic estimate based on 3-second matchmaking cycles
    * - Accounts for current player in next cycle
    * - Helps set player expectations and reduce anxiety
@@ -750,7 +750,7 @@ export class MatchmakingService {
     // Emit queue update
     try {
       const waitingCount = await this.redisClient.lLen("waiting:queue");
-      const estimatedTimeSec = Math.max(0, waitingCount - 1) * 3; // naive ETA
+      const estimatedTimeSec = Math.max(0, waitingCount - 1) * 30; // naive ETA based on 30-second cron cycle
       const updateQueue: IUpdateQueue = new TransformedUpdateQueue(
         waitingCount,
         estimatedTimeSec,
@@ -1057,23 +1057,17 @@ export class MatchmakingService {
    * and ensure clean service termination.
    *
    * @dev Shutdown Flow:
-   * 1. Checks if matchmaking interval is active
-   * 2. Clears the interval to stop background matchmaking cycles
-   * 3. Sets interval reference to null for garbage collection
-   * 4. Closes Redis client connection gracefully
-   * 5. Logs successful disconnection for monitoring
+   * 1. Closes Redis client connection gracefully
+   * 2. Logs successful disconnection for monitoring
    *
-   * @dev Resource Cleanup:
-   * - clearInterval(): Stops the 30-second matchmaking loop
-   * - matchmakingInterval = null: Enables garbage collection
-   * - redisClient.quit(): Gracefully closes Redis connection
-   * - Prevents memory leaks from orphaned timers
+        * @dev Resource Cleanup:
+     * - redisClient.quit(): Gracefully closes Redis connection
+     * - Cron jobs are automatically cleaned up by NestJS scheduler
    *
-   * @dev Interval Management:
-   * - Safely handles cases where interval may not be set
-   * - Prevents errors from clearing non-existent intervals
+   * @dev Cron Job Management:
+   * - NestJS automatically manages cron job lifecycle
+   * - No manual cleanup required for scheduled tasks
    * - Ensures clean shutdown regardless of service state
-   * - Null assignment enables proper cleanup
    *
    * @dev Redis Connection:
    * - Uses quit() instead of disconnect() for graceful closure

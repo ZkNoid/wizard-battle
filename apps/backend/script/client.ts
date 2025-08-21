@@ -1,22 +1,27 @@
-interface IMap {
-    tiles: number[][];
+// Mock Field class to simulate o1js Field without the actual dependency
+class MockField {
+  constructor(public value: string | number) {}
+  
+  static fromNumber(n: number): MockField {
+    return new MockField(n);
   }
   
-  interface ISpell {
-    spellId: string;
-    cooldown: number;
-    active: boolean;
+  static fromString(s: string): MockField {
+    return new MockField(s);
   }
-  
-  interface IPublicState {
-    socketId?: string;
-    playerId?: string;
-    wizardId?: string;
-    maxHP?: number;
-    mapStructure?: IMap;
-    spells?: ISpell[];
-    level?: number;
-  }
+}
+
+// Use MockField as Field for testing
+type Field = MockField;
+
+interface IState {
+  socketId: string;
+  playerId: string;
+  fields: Field[]; // Contains State.toFields(userState)
+}
+
+// Send only public parts of setup
+type IPublicState = IState;
   
   interface IAddToQueue {
     playerId: string;
@@ -41,43 +46,15 @@ interface IMap {
     opponentSetup: IPublicState[];
   }
   
-  export class TransformedMap implements IMap {
-    tiles: number[][];
-  
-    constructor(tiles: number[][]) {
-      this.tiles = tiles;
-    }
-  }
-  
-  export class TransformedSpell implements ISpell {
-    spellId: string;
-    cooldown: number;
-    active: boolean;
-  
-    constructor(spellId: string, cooldown: number, active: boolean) {
-      this.spellId = spellId;
-      this.cooldown = cooldown;
-      this.active = active;
-    }
-  }
-  
   export class TransformedPlayerSetup implements IPublicState {
     socketId: string;
     playerId: string;
-    wizardId: string;
-    maxHP: number;
-    mapStructure: IMap;
-    spells: ISpell[];
-    level: number;
+    fields: Field[];
   
-    constructor(socketId: string, playerId: string, wizardId: string, maxHP: number, mapStructure: IMap, spells: ISpell[], level: number) {
+    constructor(socketId: string, playerId: string, fields: Field[]) {
       this.socketId = socketId;
       this.playerId = playerId;
-      this.wizardId = wizardId;
-      this.maxHP = maxHP;
-      this.mapStructure = mapStructure;
-      this.spells = spells;
-      this.level = level;
+      this.fields = fields;
     }
   }
   
@@ -151,21 +128,22 @@ async function createUser(userId: string, level: number): Promise<void> {
             console.log(`User ${userId} (Level ${level}) connected: ${socket.id}`);
             // 1. Create addToQueue struct AFTER connect when socket.id is defined
             const sid = socket.id as string;
-            const map:IMap = new TransformedMap([[0, 0, 0], [0, 0, 0], [0, 0, 0]]);
-            const spells:ISpell[] = [
-                new TransformedSpell("fireball", 10, true),
-                new TransformedSpell("heal", 10, true),
+            
+            // Create mock fields array to simulate game state
+            const mockFields: Field[] = [
+                MockField.fromNumber(level),        // Level
+                MockField.fromNumber(100),          // HP
+                MockField.fromString(`Wizard${userId}`), // Wizard ID
+                MockField.fromNumber(0),            // X position
+                MockField.fromNumber(0),            // Y position
             ];
-            const playerSetup:IPublicState = new TransformedPlayerSetup(
+            
+            const playerSetup: IPublicState = new TransformedPlayerSetup(
                 sid,
                 `Player${userId}`,
-                `Wizard${userId}`,
-                100,
-                map,
-                spells,
-                level
+                mockFields
             );
-            const addToQueue:IAddToQueue = new TransformedAddToQueue(`Player${userId}`, playerSetup, 0, null, null);
+            const addToQueue: IAddToQueue = new TransformedAddToQueue(`Player${userId}`, playerSetup, 0, null, null);
 
             // Join matchmaking queue immediately after connection
             socket.emit('joinMatchmaking', { addToQueue });
