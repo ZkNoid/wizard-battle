@@ -5,11 +5,13 @@ import { useRef } from "react";
 import type { IRefPhaserGame } from "@/PhaserGame";
 import Game from "@/components/Game";
 import { api } from "@/trpc/react";
+import { FullscreenLoader } from "@/components/shared/FullscreenLoader";
 
 const PhaserGame = dynamic(
   () => import("@/PhaserGame").then((mod) => mod.PhaserGame),
   {
     ssr: false,
+    loading: () => <FullscreenLoader />,
   },
 );
 

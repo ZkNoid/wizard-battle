@@ -1,10 +1,11 @@
 "use client";
 
+import { FullscreenLoader } from "@/components/shared/FullscreenLoader";
 import dynamic from "next/dynamic";
 
 const Home = dynamic(() => import("./Home"), {
   ssr: false,
-  loading: () => <div>Loading…</div>,
+  loading: () => <FullscreenLoader />,
 });
 
 export default function Page() {

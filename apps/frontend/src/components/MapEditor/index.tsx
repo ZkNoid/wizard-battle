@@ -74,7 +74,7 @@ export default function MapEditor() {
         </span>
         <div className="gap-17.5 mt-6 flex flex-row">
           <div className="max-h-120 flex flex-col gap-10 overflow-scroll">
-            {[Tiles.Water, Tiles.Grass].map((tile, index) => (
+            {/* {[Tiles.Water, Tiles.Grass].map((tile, index) => (
               <Tile
                 key={index}
                 image={`/assets/tiles/${tile}.png`}
@@ -82,7 +82,21 @@ export default function MapEditor() {
                 description={`Tile ${index + 1} description`}
                 onClick={() => setSelectedTile(tile)}
               />
-            ))}
+            ))} */}
+
+            {/* For testing purposes */}
+            {[...Array(33)].map((_, i) => {
+              const tile = i + 1; // Remove 0 tile
+              return (
+                <Tile
+                  key={tile}
+                  image={`/assets/tiles/${tile}.png`}
+                  title={`Tile ${tile}`}
+                  description={`Tile ${tile} description`}
+                  onClick={() => setSelectedTile(tile)}
+                />
+              );
+            })}
           </div>
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-8 grid-rows-8">
