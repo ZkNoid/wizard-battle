@@ -23,6 +23,18 @@ interface ITile {
   position: string;
 }
 
+class Megatile {
+  tiles: ITile[] = [];
+
+  constructor(tiles: ITile[]) {
+    this.tiles = tiles;
+  }
+
+  getMainTile() {
+    return this.tiles[5]!;
+  }
+}
+
 export default function MapEditor() {
   const { stater, setMap } = useUserInformationStore();
   const [selectedTile, setSelectedTile] = useState<Tiles>(Tiles.Air);
@@ -43,30 +55,41 @@ export default function MapEditor() {
 
   const staterTilemap = stater?.state.map.map((elem) => +elem);
 
-  const [tilemap, setTilemap] = useState<ITile[]>(
-    Array(64).fill({
-      type: Tiles.Air,
-      collisionType: Tiles.Air,
-      position: '',
-    })
+  const [tilemap, setTilemap] = useState<Megatile[]>(
+    [...Array(64)].map(
+      (_, i) =>
+        new Megatile([
+          ...Array(9).fill({
+            type: Tiles.Air,
+            collisionType: Tiles.Air,
+            position: "",
+          }),
+        ]),
+    ),
   );
 
   const getTileImage = (tile: ITile) => {
-    let image = tile.type + '';
-    if (tile.collisionType !== Tiles.Air) {
+    let image = tile.type + "";
+    if (tile.collisionType) {
       image += `-${tile.collisionType}`;
-      if (tile.position !== '') {
+      if (tile.position) {
         image += `-${tile.position}`;
       }
     }
     return `/assets/tiles/${image}.png`;
   };
 
-  const getTile = (tilemap: ITile[], x: number, y: number) => {
-    const tile = tilemap?.[x + y * 8];
-    if (!tile)
-      return { type: 'air', collisionType: 'air', position: `${x},${y}` };
-    return tile;
+  const getTile = (tiles: ITile[], x: number, y: number) => {
+    if (x < 0 || x >= W || y < 0 || y >= H) {
+      return { type: Tiles.Air, collisionType: Tiles.Air, position: "" };
+    }
+    return (
+      tiles[x + y * W] ?? {
+        type: Tiles.Air,
+        collisionType: Tiles.Air,
+        position: "",
+      }
+    );
   };
 
   const getNewTile = (tilemap: ITile[], type: Tiles, x: number, y: number) => {
@@ -130,18 +153,56 @@ export default function MapEditor() {
     };
   };
 
-  const getNewTilemap = (tilemap: ITile[]) => {
-    const newTilemap = [...tilemap];
-    for (let i = 0; i < 64; i++) {
-      newTilemap[i] = getNewTile(
-        newTilemap,
-        tilemap[i]!.type,
-        i % 8,
-        Math.floor(i / 8)
+  const MEGA_W = 8;
+  const MEGA_H = 8;
+  const S = 3; // inner tile size per megatile dimension
+  const W = MEGA_W * S; // 24
+  const H = MEGA_H * S; // 24
+
+  const toIndex = (I: number, J: number, l: number, k: number) =>
+    (I * S + l) * W + (J * S + k); // global (24×24) index
+
+  function updateTilemap2(tilemap: Megatile[]) {
+    // 1) Flatten 8×8 megatiles -> 24×24 tiles
+    const tiles: ITile[] = new Array(W * H);
+    for (let I = 0; I < MEGA_H; I++) {
+      for (let J = 0; J < MEGA_W; J++) {
+        const m = tilemap[I * MEGA_W + J]!;
+        // m.tiles is row-major 3×3: [r0c0,r0c1,r0c2, r1c0,...]
+        for (let l = 0; l < S; l++) {
+          for (let k = 0; k < S; k++) {
+            tiles[toIndex(I, J, l, k)] = m.tiles[l * S + k]!;
+          }
+        }
+      }
+    }
+
+    // 2) (Optional) produce a NEW tiles array if neighbors matter
+    const nextTiles: ITile[] = new Array(W * H);
+    for (let i = 0; i < W * H; i++) {
+      nextTiles[i] = getNewTile(
+        tiles, // read from ORIGINAL grid
+        tiles[i]!.type,
+        i % W,
+        Math.floor(i / W),
       );
     }
+
+    // 3) Rebuild 8×8 megatiles from 24×24 tiles (the part that was wrong)
+    const newTilemap: Megatile[] = [];
+    for (let I = 0; I < MEGA_H; I++) {
+      for (let J = 0; J < MEGA_W; J++) {
+        const nine: ITile[] = [];
+        for (let l = 0; l < S; l++) {
+          const rowStart = (I * S + l) * W + J * S;
+          nine.push(...nextTiles.slice(rowStart, rowStart + S));
+        }
+        newTilemap.push(new Megatile(nine));
+      }
+    }
+
     return newTilemap;
-  };
+  }
 
   useEffect(() => {
     if (tilemapData) {
@@ -213,7 +274,7 @@ export default function MapEditor() {
 
     setActiveSlot(newSlot);
   };
-
+*/
   return (
     <div className="w-290 h-170 relative">
       <div className="p-12.5 relative z-[2] flex size-full flex-col items-center">
@@ -248,7 +309,7 @@ export default function MapEditor() {
           </div>
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-8 grid-rows-8">
-              {tilemap?.map((tile, index) => (
+              {tilemap?.map((megatile, index) => (
                 <button
                   key={index}
                   onMouseDown={() => handleMouseDown(index)}
@@ -257,15 +318,19 @@ export default function MapEditor() {
                   className="size-15 cursor-pointer select-none"
                   style={{ userSelect: 'none' }}
                   onClick={() => {
-                    if (selectedTile === tile.type) return;
+                    let mainTile = megatile.getMainTile();
+                    if (selectedTile === mainTile.type) return;
 
                     const newTilemap = [...tilemap];
-                    newTilemap[index] = {
-                      type: selectedTile,
-                      collisionType: Tiles.Air,
-                      position: '',
-                    };
-                    setTilemap(getNewTilemap(newTilemap));
+                    for (let i = 0; i < 9; i++) {
+                      newTilemap[index]!.tiles[i] = {
+                        type: selectedTile,
+                        collisionType: mainTile.collisionType,
+                        position: mainTile.position,
+                      };
+                    }
+                    setTilemap(newTilemap);
+                    setTilemap(updateTilemap2(newTilemap));
 
                     setMap(
                       newTilemap.map((tile) =>
@@ -285,17 +350,21 @@ export default function MapEditor() {
                   }}
                   className="size-15 cursor-pointer"
                 >
-                  {tile.type === Tiles.Air ? (
+                  {megatile.getMainTile().type === Tiles.Air ? (
                     <div className="size-full bg-gray-200 hover:bg-gray-400" />
                   ) : (
-                    <Image
-                      src={getTileImage(tile)}
-                      alt="Tile"
-                      width={60}
-                      height={60}
-                      className="size-full"
-                      draggable={false}
-                    />
+                    <div className="grid grid-cols-3 grid-rows-3">
+                      {megatile.tiles.map((tile, index) => (
+                        <Image
+                          key={index}
+                          src={getTileImage(tile)}
+                          alt="Tile"
+                          width={60}
+                          height={60}
+                          className="size-full"
+                        />
+                      ))}
+                    </div>
                   )}
                 </button>
               ))}
@@ -325,18 +394,22 @@ export default function MapEditor() {
                 onClick={() => {
                   const randomTilemap = Array.from({ length: 64 }, () =>
                     Math.random() < 0.5
-                      ? {
-                          type: Tiles.Water,
-                          collisionType: Tiles.Air,
-                          position: '',
-                        }
-                      : {
-                          type: Tiles.Grass,
-                          collisionType: Tiles.Grass,
-                          position: '',
-                        }
+                      ? new Megatile(
+                          Array(9).fill({
+                            type: Tiles.Water,
+                            collisionType: Tiles.Air,
+                            position: "",
+                          }),
+                        )
+                      : new Megatile(
+                          Array(9).fill({
+                            type: Tiles.Grass,
+                            collisionType: Tiles.Air,
+                            position: "",
+                          }),
+                        ),
                   );
-                  setTilemap(getNewTilemap(randomTilemap));
+                  setTilemap(updateTilemap2(randomTilemap));
 
                   setMap(
                     randomTilemap.map((tile) =>
