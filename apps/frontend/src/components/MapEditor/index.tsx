@@ -11,9 +11,15 @@ import { RandomBtn } from "./assets/random-btn";
 import { useUserInformationStore } from "@/lib/store/userInformationStore";
 
 enum Tiles {
-  Air = 0,
-  Water = 1,
-  Grass = 2,
+  Air = "",
+  Water = "water",
+  Grass = "grass",
+}
+
+interface ITile {
+  type: Tiles;
+  collisionType: Tiles;
+  position: string;
 }
 
 export default function MapEditor() {
@@ -36,7 +42,107 @@ export default function MapEditor() {
     slot: activeSlot,
   });
 
-  const tilemap = stater?.state.map.map((elem) => +elem);
+  const staterTilemap = stater?.state.map.map((elem) => +elem);
+
+  const [tilemap, setTilemap] = useState<ITile[]>(
+    Array(64).fill({
+      type: Tiles.Air,
+      collisionType: Tiles.Air,
+      position: "",
+    }),
+  );
+
+  const getTileImage = (tile: ITile) => {
+    let image = tile.type + "";
+    if (tile.collisionType !== Tiles.Air) {
+      image += `-${tile.collisionType}`;
+      if (tile.position !== "") {
+        image += `-${tile.position}`;
+      }
+    }
+    return `/assets/tiles/${image}.png`;
+  };
+
+  const getTile = (tilemap: ITile[], x: number, y: number) => {
+    const tile = tilemap?.[x + y * 8];
+    if (!tile)
+      return { type: "air", collisionType: "air", position: `${x},${y}` };
+    return tile;
+  };
+
+  const getNewTile = (tilemap: ITile[], type: Tiles, x: number, y: number) => {
+    // Find Collision Type
+    let collisionType = null;
+    for (let i = -1; i <= 1; i++) {
+      for (let j = -1; j <= 1; j++) {
+        const neighbor = getTile(tilemap, x + i, y + j);
+        if (neighbor && neighbor.type !== Tiles.Air && neighbor.type !== type) {
+          collisionType = neighbor.type;
+        }
+      }
+    }
+
+    if (type === Tiles.Grass) {
+      return {
+        type,
+        collisionType: Tiles.Air,
+        position: "",
+      };
+    }
+
+    if (collisionType === Tiles.Air) {
+      return {
+        type,
+        collisionType: Tiles.Air,
+        position: "",
+      };
+    }
+
+    // Find Collision Position
+    const topCollision = getTile(tilemap, x, y - 1).type === collisionType;
+    const bottomCollision = getTile(tilemap, x, y + 1).type === collisionType;
+    const leftCollision = getTile(tilemap, x - 1, y).type === collisionType;
+    const rightCollision = getTile(tilemap, x + 1, y).type === collisionType;
+    const hasCollision =
+      topCollision || bottomCollision || leftCollision || rightCollision;
+    const tlCornerCollision =
+      !hasCollision && getTile(tilemap, x - 1, y - 1).type === collisionType;
+    const trCornerCollision =
+      !hasCollision && getTile(tilemap, x + 1, y - 1).type === collisionType;
+    const blCornerCollision =
+      !hasCollision && getTile(tilemap, x - 1, y + 1).type === collisionType;
+    const brCornerCollision =
+      !hasCollision && getTile(tilemap, x + 1, y + 1).type === collisionType;
+
+    let position = "";
+    if (topCollision) position += "t";
+    if (bottomCollision) position += "b";
+    if (leftCollision) position += "l";
+    if (rightCollision) position += "r";
+    if (tlCornerCollision) position += "corner-tl";
+    if (trCornerCollision) position += "corner-tr";
+    if (blCornerCollision) position += "corner-bl";
+    if (brCornerCollision) position += "corner-br";
+
+    return {
+      type,
+      collisionType: collisionType as Tiles,
+      position: position,
+    };
+  };
+
+  const getNewTilemap = (tilemap: ITile[]) => {
+    const newTilemap = [...tilemap];
+    for (let i = 0; i < 64; i++) {
+      newTilemap[i] = getNewTile(
+        newTilemap,
+        tilemap[i]!.type,
+        i % 8,
+        Math.floor(i / 8),
+      );
+    }
+    return newTilemap;
+  };
 
   useEffect(() => {
     if (tilemapData) {
@@ -52,7 +158,9 @@ export default function MapEditor() {
       updateTilemap(
         {
           userAddress: "0x123",
-          tilemap: tilemap ?? [],
+          tilemap: tilemap.map((tile) =>
+            tile.type === Tiles.Air ? 0 : tile.type === Tiles.Water ? 1 : 2,
+          ),
           slot: activeSlot,
         },
         {
@@ -74,7 +182,7 @@ export default function MapEditor() {
         </span>
         <div className="gap-17.5 mt-6 flex flex-row">
           <div className="max-h-120 flex flex-col gap-10 overflow-scroll">
-            {/* {[Tiles.Water, Tiles.Grass].map((tile, index) => (
+            {[Tiles.Water, Tiles.Grass].map((tile, index) => (
               <Tile
                 key={index}
                 image={`/assets/tiles/${tile}.png`}
@@ -82,10 +190,10 @@ export default function MapEditor() {
                 description={`Tile ${index + 1} description`}
                 onClick={() => setSelectedTile(tile)}
               />
-            ))} */}
+            ))}
 
             {/* For testing purposes */}
-            {[...Array(33)].map((_, i) => {
+            {/* {[...Array(33)].map((_, i) => {
               const tile = i + 1; // Remove 0 tile
               return (
                 <Tile
@@ -96,7 +204,7 @@ export default function MapEditor() {
                   onClick={() => setSelectedTile(tile)}
                 />
               );
-            })}
+            })} */}
           </div>
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-8 grid-rows-8">
@@ -104,25 +212,39 @@ export default function MapEditor() {
                 <button
                   key={index}
                   onClick={() => {
-                    if (selectedTile === tile) return;
+                    if (selectedTile === tile.type) return;
 
                     const newTilemap = [...tilemap];
-                    newTilemap[index] = selectedTile;
-                    setMap(newTilemap);
+                    newTilemap[index] = {
+                      type: selectedTile,
+                      collisionType: Tiles.Air,
+                      position: "",
+                    };
+                    setTilemap(getNewTilemap(newTilemap));
+
+                    setMap(
+                      newTilemap.map((tile) =>
+                        tile.type === Tiles.Air
+                          ? 0
+                          : tile.type === Tiles.Water
+                            ? 1
+                            : 2,
+                      ),
+                    );
 
                     // Check if there are changes
                     const hasChangesNow = newTilemap.some(
-                      (t, i) => t !== originalTilemap[i],
+                      (t, i) => t.type !== originalTilemap[i],
                     );
                     setHasChanges(hasChangesNow);
                   }}
                   className="size-15 cursor-pointer"
                 >
-                  {tile === Tiles.Air ? (
+                  {tile.type === Tiles.Air ? (
                     <div className="size-full bg-gray-200 hover:bg-gray-400" />
                   ) : (
                     <Image
-                      src={`/assets/tiles/${tile}.png`}
+                      src={getTileImage(tile)}
                       alt="Tile"
                       width={60}
                       height={60}
@@ -137,16 +259,42 @@ export default function MapEditor() {
                 className="size-12"
                 onClick={() => {
                   const randomTilemap = Array.from({ length: 64 }, () =>
-                    Math.random() < 0.5 ? Tiles.Water : Tiles.Grass,
+                    Math.random() < 0.5
+                      ? {
+                          type: Tiles.Water,
+                          collisionType: Tiles.Air,
+                          position: "",
+                        }
+                      : {
+                          type: Tiles.Grass,
+                          collisionType: Tiles.Grass,
+                          position: "",
+                        },
                   );
-                  setMap(randomTilemap);
-                  setOriginalTilemap(randomTilemap);
+                  setTilemap(getNewTilemap(randomTilemap));
+
+                  setMap(
+                    randomTilemap.map((tile) =>
+                      tile.type === Tiles.Air
+                        ? 0
+                        : tile.type === Tiles.Water
+                          ? 1
+                          : 2,
+                    ),
+                  );
+                  setOriginalTilemap(randomTilemap.map((tile) => tile.type));
                   setHasChanges(false);
 
                   updateTilemap(
                     {
                       userAddress: "0x123",
-                      tilemap: randomTilemap,
+                      tilemap: randomTilemap.map((tile) =>
+                        tile.type === Tiles.Air
+                          ? 0
+                          : tile.type === Tiles.Water
+                            ? 1
+                            : 2,
+                      ),
                       slot: activeSlot,
                     },
                     {
