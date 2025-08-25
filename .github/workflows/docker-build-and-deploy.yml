@@ -155,6 +155,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd ${{ secrets.TARGET_PATH }}
+            docker system prune -f
             docker load -i ${{ steps.calc-container.outputs.container_name }}.tar
             docker stop ${{ steps.calc-container.outputs.container_name }} || true
             docker rm ${{ steps.calc-container.outputs.container_name }} || true
