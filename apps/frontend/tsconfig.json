@@ -10,6 +10,7 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "declaration": false,
+    "declarationMap": false,
 
     /* Strictness */
     "strict": true,
