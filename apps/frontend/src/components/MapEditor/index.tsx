@@ -33,6 +33,10 @@ class Megatile {
   getMainTile() {
     return this.tiles[5]!;
   }
+
+  getType() {
+    return this.getMainTile().type;
+  }
 }
 
 export default function MapEditor() {
@@ -62,14 +66,14 @@ export default function MapEditor() {
           ...Array(9).fill({
             type: Tiles.Air,
             collisionType: Tiles.Air,
-            position: "",
+            position: '',
           }),
-        ]),
-    ),
+        ])
+    )
   );
 
   const getTileImage = (tile: ITile) => {
-    let image = tile.type + "";
+    let image = tile.type + '';
     if (tile.collisionType) {
       image += `-${tile.collisionType}`;
       if (tile.position) {
@@ -81,13 +85,13 @@ export default function MapEditor() {
 
   const getTile = (tiles: ITile[], x: number, y: number) => {
     if (x < 0 || x >= W || y < 0 || y >= H) {
-      return { type: Tiles.Air, collisionType: Tiles.Air, position: "" };
+      return { type: Tiles.Air, collisionType: Tiles.Air, position: '' };
     }
     return (
       tiles[x + y * W] ?? {
         type: Tiles.Air,
         collisionType: Tiles.Air,
-        position: "",
+        position: '',
       }
     );
   };
@@ -105,14 +109,6 @@ export default function MapEditor() {
     }
 
     if (type === Tiles.Grass) {
-      return {
-        type,
-        collisionType: Tiles.Air,
-        position: '',
-      };
-    }
-
-    if (collisionType === Tiles.Air) {
       return {
         type,
         collisionType: Tiles.Air,
@@ -184,7 +180,7 @@ export default function MapEditor() {
         tiles, // read from ORIGINAL grid
         tiles[i]!.type,
         i % W,
-        Math.floor(i / W),
+        Math.floor(i / W)
       );
     }
 
@@ -260,7 +256,11 @@ export default function MapEditor() {
         {
           userAddress: '0x123',
           tilemap: tilemap.map((tile) =>
-            tile.type === Tiles.Air ? 0 : tile.type === Tiles.Water ? 1 : 2
+            tile.getType() === Tiles.Air
+              ? 0
+              : tile.getType() === Tiles.Water
+                ? 1
+                : 2
           ),
           slot: activeSlot,
         },
@@ -274,7 +274,7 @@ export default function MapEditor() {
 
     setActiveSlot(newSlot);
   };
-*/
+
   return (
     <div className="w-290 h-170 relative">
       <div className="p-12.5 relative z-[2] flex size-full flex-col items-center">
@@ -334,9 +334,9 @@ export default function MapEditor() {
 
                     setMap(
                       newTilemap.map((tile) =>
-                        tile.type === Tiles.Air
+                        tile.getType() === Tiles.Air
                           ? 0
-                          : tile.type === Tiles.Water
+                          : tile.getType() === Tiles.Water
                             ? 1
                             : 2
                       )
@@ -344,7 +344,7 @@ export default function MapEditor() {
 
                     // Check if there are changes
                     const hasChangesNow = newTilemap.some(
-                      (t, i) => t.type !== originalTilemap[i]
+                      (t, i) => t.getType() !== originalTilemap[i]
                     );
                     setHasChanges(hasChangesNow);
                   }}
@@ -398,38 +398,40 @@ export default function MapEditor() {
                           Array(9).fill({
                             type: Tiles.Water,
                             collisionType: Tiles.Air,
-                            position: "",
-                          }),
+                            position: '',
+                          })
                         )
                       : new Megatile(
                           Array(9).fill({
                             type: Tiles.Grass,
                             collisionType: Tiles.Air,
-                            position: "",
-                          }),
-                        ),
+                            position: '',
+                          })
+                        )
                   );
                   setTilemap(updateTilemap2(randomTilemap));
 
                   setMap(
                     randomTilemap.map((tile) =>
-                      tile.type === Tiles.Air
+                      tile.getType() === Tiles.Air
                         ? 0
-                        : tile.type === Tiles.Water
+                        : tile.getType() === Tiles.Water
                           ? 1
                           : 2
                     )
                   );
-                  setOriginalTilemap(randomTilemap.map((tile) => tile.type));
+                  setOriginalTilemap(
+                    randomTilemap.map((tile) => tile.getType())
+                  );
                   setHasChanges(false);
 
                   updateTilemap(
                     {
                       userAddress: '0x123',
                       tilemap: randomTilemap.map((tile) =>
-                        tile.type === Tiles.Air
+                        tile.getType() === Tiles.Air
                           ? 0
-                          : tile.type === Tiles.Water
+                          : tile.getType() === Tiles.Water
                             ? 1
                             : 2
                       ),
