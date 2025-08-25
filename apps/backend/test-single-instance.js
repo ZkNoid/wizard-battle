@@ -30,6 +30,27 @@ async function testSingleInstance() {
         console.log(`📨 Game Message:`, data);
     });
 
+    // Listen for new gameplay phase events
+    socket.on('allPlayerActions', (data) => {
+        console.log(`🎯 All Player Actions:`, data);
+    });
+
+    socket.on('applySpellEffects', () => {
+        console.log(`⚡ Apply Spell Effects phase started`);
+    });
+
+    socket.on('updateUserStates', (data) => {
+        console.log(`🔄 Update User States:`, data);
+    });
+
+    socket.on('newTurn', (data) => {
+        console.log(`🔄 New Turn Started:`, data);
+    });
+
+    socket.on('gameEnd', (data) => {
+        console.log(`🏆 Game Ended:`, data);
+    });
+
     // Wait for connection
     await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -67,10 +88,42 @@ async function testSingleInstance() {
         message: { type: 'test', data: 'Hello from single instance test' }
     });
 
-    // Wait and cleanup
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Test new gameplay phase messages
+    console.log('\n6. Testing gameplay phases...');
     
-    console.log('\n6. Cleaning up...');
+    // Test submit actions (Phase 1: Spell Casting)
+    console.log('Testing submitActions...');
+    socket.emit('submitActions', {
+        roomId: 'test-room-123',
+        actions: {
+            actions: [{ playerId: 'test-player', spellId: 'fireball', spellCastInfo: {} }],
+            signature: 'test-signature'
+        }
+    });
+
+    // Test submit trusted state (Phase 4: End of Round)
+    console.log('Testing submitTrustedState...');
+    socket.emit('submitTrustedState', {
+        roomId: 'test-room-123',
+        trustedState: {
+            playerId: 'test-player',
+            stateCommit: 'test-commit',
+            publicState: { playerId: 'test-player' },
+            signature: 'test-signature'
+        }
+    });
+
+    // Test report dead
+    console.log('Testing reportDead...');
+    socket.emit('reportDead', {
+        roomId: 'test-room-123',
+        dead: { playerId: 'test-player' }
+    });
+
+    // Wait and cleanup
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    console.log('\n7. Cleaning up...');
     socket.disconnect();
     
     console.log('\n✅ Single instance test completed!');

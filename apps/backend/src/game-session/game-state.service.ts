@@ -1,20 +1,50 @@
 import { Injectable } from '@nestjs/common';
 import { createClient } from 'redis';
 import { Socket } from 'socket.io';
+import { GamePhase, IUserActions, ITrustedState } from '../../../common/types/gameplay.types';
 
+/**
+ * @title Game State Service - 5-Phase Turn Management
+ * @notice Manages game state and orchestrates the 5-phase turn-based gameplay system
+ * @dev Provides Redis-backed state persistence with multi-instance support for horizontal scaling
+ * 
+ * ## 5-Phase Turn System:
+ * 1. SPELL_CASTING: Players submit actions via storePlayerActions()
+ * 2. SPELL_PROPAGATION: Server broadcasts all actions via getAllPlayerActions()
+ * 3. SPELL_EFFECTS: Automatic phase advancement 
+ * 4. END_OF_ROUND: Players submit trusted states via storeTrustedState()
+ * 5. STATE_UPDATE: Server broadcasts states via getAllTrustedStates()
+ * 
+ * ## Multi-Instance Architecture:
+ * - Uses Redis for shared state across multiple server instances
+ * - Cross-instance communication via Redis pub/sub
+ * - Socket mappings track which instance manages each connection
+ */
+
+/**
+ * @notice Core game state structure stored in Redis
+ * @dev Extended to support 5-phase gameplay with player lifecycle management
+ */
 interface GameState {
     roomId: string;
     players: {
-        id: string;
-        instanceId: string;
-        socketId: string;
-        state: any;
+        id: string;                          // Unique player identifier
+        instanceId: string;                  // Which server instance manages this player
+        socketId: string;                    // Socket.IO connection ID
+        state: any;                          // Player's private game state
+        isAlive: boolean;                    // Whether player is still in the game
+        currentActions?: IUserActions;       // Phase 1: Actions submitted by player
+        trustedState?: ITrustedState;        // Phase 4: Computed state after spell effects
     }[];
-    gameData: any;
-    turn: number;
-    status: 'waiting' | 'active' | 'finished';
-    createdAt: number;
-    updatedAt: number;
+    gameData: any;                          // Additional game-specific data
+    turn: number;                           // Current turn number (increments after each cycle)
+    currentPhase: GamePhase;                // Current phase within the turn
+    phaseStartTime: number;                 // Timestamp when current phase started
+    phaseTimeout: number;                   // Phase duration in milliseconds
+    playersReady: string[];                 // Players who completed current phase
+    status: 'waiting' | 'active' | 'finished'; // Overall game status
+    createdAt: number;                      // Game creation timestamp
+    updatedAt: number;                      // Last modification timestamp
 }
 
 interface SocketMapping {
@@ -121,9 +151,16 @@ export class GameStateService {
                 socketId: p.socketId,
                 instanceId: this.instanceId,
                 state: null,
+                isAlive: true,
+                currentActions: undefined,
+                trustedState: undefined,
             })),
             gameData: {},
             turn: 0,
+            currentPhase: GamePhase.SPELL_CASTING,
+            phaseStartTime: Date.now(),
+            phaseTimeout: 30000, // 30 seconds default
+            playersReady: [],
             status: 'waiting',
             createdAt: Date.now(),
             updatedAt: Date.now(),
@@ -289,5 +326,288 @@ export class GameStateService {
         await this.cleanupInstance();
         await this.redisClient.quit();
         console.log('GameStateService Redis Disconnected');
+    }
+
+    // ==================== GAMEPLAY PHASE MANAGEMENT ====================
+    
+    /**
+     * @notice Advances the game to the next phase in the 5-phase turn cycle
+     * @dev Automatically handles turn transitions when reaching end of STATE_UPDATE phase
+     * @param roomId The unique identifier for the game room
+     * @return The new phase after advancement, or null if room doesn't exist
+     * 
+     * Phase Progression:
+     * SPELL_CASTING → SPELL_PROPAGATION → SPELL_EFFECTS → END_OF_ROUND → STATE_UPDATE → (new turn) SPELL_CASTING
+     * 
+     * Side Effects:
+     * - Updates currentPhase, phaseStartTime, and clears playersReady
+     * - Increments turn counter when cycling back to SPELL_CASTING
+     * - Persists changes to Redis for multi-instance consistency
+     */
+    async advanceGamePhase(roomId: string): Promise<GamePhase | null> {
+        const gameState = await this.getGameState(roomId);
+        if (!gameState) return null;
+
+        const phases = Object.values(GamePhase);
+        const currentPhaseIndex = phases.indexOf(gameState.currentPhase);
+        const nextPhase = phases[currentPhaseIndex + 1];
+        
+        if (nextPhase) {
+            await this.updateGameState(roomId, {
+                currentPhase: nextPhase,
+                phaseStartTime: Date.now(),
+                playersReady: []
+            });
+            return nextPhase;
+        } else {
+            // Start new turn
+            await this.updateGameState(roomId, {
+                turn: gameState.turn + 1,
+                currentPhase: GamePhase.SPELL_CASTING,
+                phaseStartTime: Date.now(),
+                playersReady: []
+            });
+            return GamePhase.SPELL_CASTING;
+        }
+    }
+
+    /**
+     * @notice Marks a player as having completed the current phase
+     * @dev Used to track phase completion and trigger automatic advancement
+     * @param roomId The unique identifier for the game room
+     * @param playerId The unique identifier for the player
+     * @return True if all alive players are now ready, false otherwise
+     * 
+     * Usage:
+     * - Called when player submits actions (Phase 1)
+     * - Called when player submits trusted state (Phase 4)
+     * - Server uses return value to determine if phase can advance
+     * 
+     * Implementation Notes:
+     * - Only counts alive players for readiness calculation
+     * - Prevents duplicate entries for same player
+     * - Automatically persists to Redis
+     */
+    async markPlayerReady(roomId: string, playerId: string): Promise<boolean> {
+        const gameState = await this.getGameState(roomId);
+        if (!gameState) return false;
+
+        if (!gameState.playersReady.includes(playerId)) {
+            gameState.playersReady.push(playerId);
+            await this.updateGameState(roomId, { playersReady: gameState.playersReady });
+        }
+
+        // Check if all alive players are ready
+        const alivePlayers = gameState.players.filter(p => p.isAlive);
+        return gameState.playersReady.length >= alivePlayers.length;
+    }
+
+    /**
+     * @notice Stores player's intended actions for Phase 1 (Spell Casting)
+     * @dev Actions are held until all players submit, then broadcast in Phase 2
+     * @param roomId The unique identifier for the game room
+     * @param playerId The unique identifier for the player
+     * @param actions The player's actions including spells and signatures
+     * 
+     * Validation:
+     * - Ensures game state exists
+     * - Verifies player exists in the game
+     * - Should only be called during SPELL_CASTING phase
+     * 
+     * Storage:
+     * - Actions stored in player's currentActions field
+     * - Persisted to Redis for multi-instance access
+     * - Retrieved later via getAllPlayerActions()
+     */
+    async storePlayerActions(roomId: string, playerId: string, actions: IUserActions): Promise<void> {
+        const gameState = await this.getGameState(roomId);
+        if (!gameState) throw new Error(`Game state not found for room ${roomId}`);
+
+        const playerIndex = gameState.players.findIndex(p => p.id === playerId);
+        
+        if (playerIndex === -1 || !gameState.players[playerIndex]) throw new Error(`Player ${playerId} not found in room ${roomId}`);
+       
+        gameState.players[playerIndex].currentActions = actions;
+        await this.updateGameState(roomId, { players: gameState.players });
+    }
+
+    /**
+     * @notice Retrieves all player actions for Phase 2 (Spell Propagation)
+     * @dev Called when all players have submitted actions to broadcast them
+     * @param roomId The unique identifier for the game room
+     * @return Record mapping player IDs to their submitted actions
+     * 
+     * Usage:
+     * - Server calls this when transitioning to SPELL_PROPAGATION
+     * - Result is broadcast to all players via WebSocket
+     * - Players use this data to apply spell effects locally
+     * 
+     * Filtering:
+     * - Only includes actions from alive players
+     * - Only includes players who have submitted actions
+     * - Returns empty object if no actions available
+     */
+    async getAllPlayerActions(roomId: string): Promise<Record<string, IUserActions>> {
+        const gameState = await this.getGameState(roomId);
+        if (!gameState) return {};
+
+        const actions: Record<string, IUserActions> = {};
+        for (const player of gameState.players) {
+            if (player.isAlive && player.currentActions) {
+                actions[player.id] = player.currentActions;
+            }
+        }
+        return actions;
+    }
+
+    /**
+     * @notice Stores player's computed state for Phase 4 (End of Round)
+     * @dev Players submit this after locally applying all spell effects
+     * @param roomId The unique identifier for the game room
+     * @param playerId The unique identifier for the player
+     * @param trustedState The player's computed state with cryptographic proofs
+     * 
+     * Trusted State Contents:
+     * - stateCommit: Cryptographic commitment to private state
+     * - publicState: Visible information (HP, position, effects)
+     * - signature: Proof of state validity
+     * 
+     * Validation:
+     * - Ensures game state exists
+     * - Verifies player exists and is alive
+     * - Should only be called during END_OF_ROUND phase
+     * 
+     * Storage:
+     * - Stored in player's trustedState field
+     * - Retrieved later via getAllTrustedStates()
+     */
+    async storeTrustedState(roomId: string, playerId: string, trustedState: ITrustedState): Promise<void> {
+        const gameState = await this.getGameState(roomId);
+        if (!gameState) throw new Error(`Game state not found for room ${roomId}`);
+
+        const playerIndex = gameState.players.findIndex(p => p.id === playerId);
+        if (playerIndex === -1 || !gameState.players[playerIndex]) throw new Error(`Player ${playerId} not found in room ${roomId}`);
+
+        gameState.players[playerIndex].trustedState = trustedState;
+        await this.updateGameState(roomId, { players: gameState.players });
+    }
+
+    /**
+     * Get all trusted states for current turn
+     * @param roomId - The room identifier
+     * @returns Array of trusted states from alive players
+     */
+    async getAllTrustedStates(roomId: string): Promise<ITrustedState[]> {
+        const gameState = await this.getGameState(roomId);
+        if (!gameState) return [];
+
+        return gameState.players
+            .filter(p => p.isAlive && p.trustedState)
+            .map(p => p.trustedState!);
+    }
+
+    /**
+     * @notice Eliminates a player from the game and checks win conditions
+     * @dev Called when a player's HP reaches zero or they're eliminated by game rules
+     * @param roomId The unique identifier for the game room
+     * @param playerId The unique identifier for the eliminated player
+     * @return Winner's player ID if game ended, 'draw' if no players remain, null if game continues
+     * 
+     * Win Condition Logic:
+     * - If 1 player remains alive: Return winner ID, set status to 'finished'
+     * - If 0 players remain alive: Return 'draw', set status to 'finished'  
+     * - If 2+ players remain: Return null, game continues
+     * 
+     * Side Effects:
+     * - Sets player's isAlive flag to false
+     * - Updates game status when win conditions are met
+     * - Persists changes to Redis
+     * 
+     * Usage:
+     * - Gateway calls this when receiving 'reportDead' message
+     * - Return value determines if 'gameEnd' event should be broadcast
+     */
+    async markPlayerDead(roomId: string, playerId: string): Promise<string | null> {
+        const gameState = await this.getGameState(roomId);
+        if (!gameState) return null;
+
+        const playerIndex = gameState.players.findIndex(p => p.id === playerId);
+        if (playerIndex === -1 || !gameState.players[playerIndex]) return null;
+
+        gameState.players[playerIndex].isAlive = false;
+        
+        // Check for winner
+        const alivePlayers = gameState.players.filter(p => p.isAlive);
+        if (alivePlayers.length === 1) {
+            await this.updateGameState(roomId, { 
+                players: gameState.players,
+                status: 'finished' 
+            });
+            return alivePlayers[0]?.id || null; // Winner ID
+        } else if (alivePlayers.length === 0) {
+            // Draw - no winner
+            await this.updateGameState(roomId, { 
+                players: gameState.players,
+                status: 'finished' 
+            });
+            return 'draw';
+        }
+        
+        await this.updateGameState(roomId, { players: gameState.players });
+        return null;
+    }
+
+    /**
+     * Get alive players count
+     * @param roomId - The room identifier
+     * @returns Number of alive players
+     */
+    async getAlivePlayersCount(roomId: string): Promise<number> {
+        const gameState = await this.getGameState(roomId);
+        if (!gameState) return 0;
+
+        return gameState.players.filter(p => p.isAlive).length;
+    }
+
+    /**
+     * Clear turn data (actions and trusted states) for new turn
+     * @param roomId - The room identifier
+     */
+    async clearTurnData(roomId: string): Promise<void> {
+        const gameState = await this.getGameState(roomId);
+        if (!gameState) return;
+
+        // Clear actions and trusted states for all players
+        for (const player of gameState.players) {
+            player.currentActions = undefined;
+            player.trustedState = undefined;
+        }
+
+        await this.updateGameState(roomId, { 
+            players: gameState.players,
+            playersReady: []
+        });
+    }
+
+    /**
+     * Check if phase has timed out
+     * @param roomId - The room identifier
+     * @returns True if current phase has exceeded timeout
+     */
+    async hasPhaseTimedOut(roomId: string): Promise<boolean> {
+        const gameState = await this.getGameState(roomId);
+        if (!gameState) return false;
+
+        const elapsed = Date.now() - gameState.phaseStartTime;
+        return elapsed > gameState.phaseTimeout;
+    }
+
+    /**
+     * Set phase timeout for current phase
+     * @param roomId - The room identifier
+     * @param timeoutMs - Timeout in milliseconds
+     */
+    async setPhaseTimeout(roomId: string, timeoutMs: number): Promise<void> {
+        await this.updateGameState(roomId, { phaseTimeout: timeoutMs });
     }
 } 

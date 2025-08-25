@@ -21,6 +21,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:multi-instance": "node test-multi-instance.js",
     "test:single-instance": "node test-single-instance.js",
+    "test:gameplay": "node test-gameplay-phases.js",
+    "test:all-integration": "npm run test:single-instance && npm run test:multi-instance && npm run test:gameplay",
     "start:multi": "./start-multi-instance.sh",
     "start:instances": "./start-instances-only.sh"
   },
