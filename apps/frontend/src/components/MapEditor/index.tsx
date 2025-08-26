@@ -9,7 +9,6 @@ import { SaveSlot } from './SaveSlot';
 import { TrashBtn } from './assets/trash-btn';
 import { RandomBtn } from './assets/random-btn';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
-import { useTilemapStore, type SlotNumber } from '@/lib/store/tilemapStore';
 import { Button } from '../shared/Button';
 import { useMinaAppkit } from 'mina-appkit';
 
@@ -21,11 +20,9 @@ enum Tiles {
 
 export default function MapEditor() {
   const { stater, setMap } = useUserInformationStore();
-  const { getTilemap, saveTilemap, removeTilemap, hasTilemap } =
-    useTilemapStore();
   const [selectedTile, setSelectedTile] = useState<Tiles>(Tiles.Air);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [activeSlot, setActiveSlot] = useState<SlotNumber>('1');
+  const [activeSlot, setActiveSlot] = useState<'1' | '2' | '3' | '4'>('1');
   const [hasChanges, setHasChanges] = useState(false);
   const [originalTilemap, setOriginalTilemap] = useState<Tiles[]>([
     ...Array(64).fill(Tiles.Air),
@@ -47,7 +44,6 @@ export default function MapEditor() {
 
   const tilemap = stater?.state.map.map((elem) => +elem);
 
-  // Load tilemap from API (when wallet is connected)
   useEffect(() => {
     if (tilemapData) {
       setMap(tilemapData);
@@ -55,23 +51,6 @@ export default function MapEditor() {
       setHasChanges(false);
     }
   }, [tilemapData]);
-
-  // Load tilemap from localStorage (when wallet is not connected)
-  useEffect(() => {
-    if (!address) {
-      const localTilemap = getTilemap(activeSlot);
-      if (localTilemap) {
-        setMap(localTilemap);
-        setOriginalTilemap(localTilemap);
-      } else {
-        // If there is no saved tilemap, create an empty one
-        const emptyTilemap = Array(64).fill(Tiles.Air);
-        setMap(emptyTilemap);
-        setOriginalTilemap(emptyTilemap);
-      }
-      setHasChanges(false);
-    }
-  }, [address, activeSlot, getTilemap, setMap]);
 
   const handleTileDraw = (index: number) => {
     if (selectedTile === tilemap?.[index]) return;
@@ -119,7 +98,7 @@ export default function MapEditor() {
   };
 
   useEffect(() => {
-    const handleGlobalMouseUp = () => {
+    const handleGlobalMouseUp = (event: MouseEvent) => {
       setIsDrawing(false);
     };
 
@@ -152,27 +131,22 @@ export default function MapEditor() {
     };
   }, [isDrawing]);
 
-  const handleSlotChange = (newSlot: SlotNumber) => {
-    // Save the current slot if there are changes
+  const handleSlotChange = (newSlot: '1' | '2' | '3' | '4') => {
+    if (!address) return;
+    // Save the current slot only if there are changes
     if (hasChanges && activeSlot !== newSlot) {
-      if (address) {
-        // Save to API if wallet is connected
-        updateTilemap(
-          {
-            userAddress: address,
-            tilemap: tilemap ?? [],
-            slot: activeSlot,
+      updateTilemap(
+        {
+          userAddress: address,
+          tilemap: tilemap ?? [],
+          slot: activeSlot,
+        },
+        {
+          onSuccess: () => {
+            utils.tilemap.getTilemap.refetch();
           },
-          {
-            onSuccess: () => {
-              utils.tilemap.getTilemap.refetch();
-            },
-          }
-        );
-      } else {
-        // Save to localStorage if wallet is not connected
-        saveTilemap(activeSlot, tilemap ?? []);
-      }
+        }
+      );
     }
 
     setActiveSlot(newSlot);
@@ -263,33 +237,27 @@ export default function MapEditor() {
                 text="Save"
                 variant="gray"
                 onClick={() => {
-                  if (address) {
-                    // Save to API if wallet is connected
-                    updateTilemap(
-                      {
-                        userAddress: address,
-                        tilemap: tilemap ?? [],
-                        slot: activeSlot,
+                  if (!address) return;
+                  updateTilemap(
+                    {
+                      userAddress: address,
+                      tilemap: tilemap ?? [],
+                      slot: activeSlot,
+                    },
+                    {
+                      onSuccess: () => {
+                        utils.tilemap.getTilemap.refetch();
                       },
-                      {
-                        onSuccess: () => {
-                          utils.tilemap.getTilemap.refetch();
-                          setHasChanges(false);
-                        },
-                      }
-                    );
-                  } else {
-                    // Save to localStorage if wallet is not connected
-                    saveTilemap(activeSlot, tilemap ?? []);
-                    setOriginalTilemap(tilemap ?? []);
-                    setHasChanges(false);
-                  }
+                    }
+                  );
                 }}
                 className="mr-auto h-full w-[70%]"
               />
               <RandomBtn
                 className="size-12 cursor-pointer transition-transform duration-300 hover:scale-110"
                 onClick={() => {
+                  if (!address) return;
+
                   const randomTilemap = Array.from({ length: 64 }, () =>
                     Math.random() < 0.5 ? Tiles.Water : Tiles.Grass
                   );
@@ -297,52 +265,42 @@ export default function MapEditor() {
                   setOriginalTilemap(randomTilemap);
                   setHasChanges(false);
 
-                  if (address) {
-                    // Save to API if wallet is connected
-                    updateTilemap(
-                      {
-                        userAddress: address,
-                        tilemap: randomTilemap,
-                        slot: activeSlot,
+                  updateTilemap(
+                    {
+                      userAddress: address,
+                      tilemap: randomTilemap,
+                      slot: activeSlot,
+                    },
+                    {
+                      onSuccess: () => {
+                        utils.tilemap.getTilemap.refetch();
                       },
-                      {
-                        onSuccess: () => {
-                          utils.tilemap.getTilemap.refetch();
-                        },
-                      }
-                    );
-                  } else {
-                    // Save to localStorage if wallet is not connected
-                    saveTilemap(activeSlot, randomTilemap);
-                  }
+                    }
+                  );
                 }}
               />
               <TrashBtn
                 className="size-12 cursor-pointer transition-transform duration-300 hover:scale-110"
                 onClick={() => {
+                  if (!address) return;
+
                   const emptyTilemap = Array(64).fill(Tiles.Air);
                   setMap(emptyTilemap);
                   setOriginalTilemap(emptyTilemap);
                   setHasChanges(false);
 
-                  if (address) {
-                    // Delete from API if wallet is connected
-                    updateTilemap(
-                      {
-                        userAddress: address,
-                        tilemap: emptyTilemap,
-                        slot: activeSlot,
+                  updateTilemap(
+                    {
+                      userAddress: address,
+                      tilemap: emptyTilemap,
+                      slot: activeSlot,
+                    },
+                    {
+                      onSuccess: () => {
+                        utils.tilemap.getTilemap.refetch();
                       },
-                      {
-                        onSuccess: () => {
-                          utils.tilemap.getTilemap.refetch();
-                        },
-                      }
-                    );
-                  } else {
-                    // Delete from localStorage if wallet is not connected
-                    removeTilemap(activeSlot);
-                  }
+                    }
+                  );
                 }}
               />
             </div>
