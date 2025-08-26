@@ -238,20 +238,24 @@ export default function MapEditor() {
   };
 
   // Handler for starting drawing
-  const handleMouseDown = (index: number) => {
+  const handleMouseDown = (index: number, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
     setIsDrawing(true);
     handleTileDraw(index);
   };
 
   // Handler for drawing when moving the mouse
-  const handleMouseEnter = (index: number) => {
+  const handleMouseEnter = (index: number, event: React.MouseEvent) => {
     if (isDrawing) {
+      event.preventDefault();
       handleTileDraw(index);
     }
   };
 
   // Handler for ending drawing
-  const handleMouseUp = () => {
+  const handleMouseUp = (event: React.MouseEvent) => {
+    event.preventDefault();
     setIsDrawing(false);
   };
 
@@ -329,8 +333,8 @@ export default function MapEditor() {
               {tilemap?.map((megatile, index) => (
                 <button
                   key={index}
-                  onMouseDown={() => handleMouseDown(index)}
-                  onMouseEnter={() => handleMouseEnter(index)}
+                  onMouseDown={(event) => handleMouseDown(index, event)}
+                  onMouseEnter={(event) => handleMouseEnter(index, event)}
                   onMouseUp={handleMouseUp}
                   className="size-15 cursor-pointer select-none"
                   style={{ userSelect: 'none' }}
