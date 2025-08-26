@@ -77,13 +77,14 @@ describe("Mage Spells", () => {
 
   describe("Mage Spells Array", () => {
     it("should contain all expected mage spells", () => {
-      expect(mageSpells).toHaveLength(4);
+      expect(mageSpells).toHaveLength(5);
 
       const spellNames = mageSpells.map((spell) => spell.name);
       expect(spellNames).toContain("Lightning");
       expect(spellNames).toContain("Fire Ball");
       expect(spellNames).toContain("Teleport");
       expect(spellNames).toContain("Heal");
+      expect(spellNames).toContain("Laser");
     });
 
     it("should have all spells with MAGE wizard ID", () => {
@@ -118,7 +119,7 @@ describe("Mage Spells", () => {
       expect(lightningBoldSpell.description).toBe(
         "A powerful bolt of lightning. High one point damage",
       );
-      expect(lightningBoldSpell.image).toBe("Lightning.png");
+      expect(lightningBoldSpell.image).toBe("/wizards/skills/1.svg");
       expect(lightningBoldSpell.cooldown.toString()).toBe("1");
     });
 
@@ -186,7 +187,7 @@ describe("Mage Spells", () => {
       expect(fireBallSpell.description).toBe(
         "A ball of fire. Deals damage to a single target",
       );
-      expect(fireBallSpell.image).toBe("FireBall.png");
+      expect(fireBallSpell.image).toBe("/wizards/skills/2.svg");
       expect(fireBallSpell.cooldown.toString()).toBe("1");
     });
 
@@ -263,15 +264,21 @@ describe("Mage Spells", () => {
     let laserSpell: any;
 
     beforeEach(() => {
-      // Find laser spell by checking the modifyer since it's not in the current mageSpells array
-      // We'll test the modifyer directly
+      laserSpell = mageSpells.find((spell) => spell.name === "Laser");
+    });
+
+    it("should have correct spell properties", () => {
+      expect(laserSpell.name).toBe("Laser");
+      expect(laserSpell.description).toBe("A beam of laser. Deals damage to a single target");
+      expect(laserSpell.image).toBe("/wizards/skills/5.svg");
+      expect(laserSpell.cooldown.toString()).toBe("1");
     });
 
     it("should deal 50 damage when target is in same row", () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
       const spellCast: SpellCast<LaserData> = {
-        spellId: Field(999), // Dummy ID for testing
+        spellId: laserSpell.id,
         target: Field(1),
         additionalData: new LaserData({
           position: new Position({ x: Int64.from(5), y: Int64.from(10) }), // Same row (x=5), different column
@@ -288,7 +295,7 @@ describe("Mage Spells", () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
       const spellCast: SpellCast<LaserData> = {
-        spellId: Field(999), // Dummy ID for testing
+        spellId: laserSpell.id,
         target: Field(1),
         additionalData: new LaserData({
           position: new Position({ x: Int64.from(10), y: Int64.from(5) }), // Same column (y=5), different row
@@ -305,7 +312,7 @@ describe("Mage Spells", () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
       const spellCast: SpellCast<LaserData> = {
-        spellId: Field(999), // Dummy ID for testing
+        spellId: laserSpell.id,
         target: Field(1),
         additionalData: new LaserData({
           position: new Position({ x: Int64.from(7), y: Int64.from(8) }), // Different row and column
@@ -329,7 +336,7 @@ describe("Mage Spells", () => {
     it("should have correct spell properties", () => {
       expect(teleportSpell.name).toBe("Teleport");
       expect(teleportSpell.description).toBe("Teleport to a random position");
-      expect(teleportSpell.image).toBe("Teleport.png");
+      expect(teleportSpell.image).toBe("/wizards/skills/3.svg");
       expect(teleportSpell.cooldown.toString()).toBe("1");
     });
 
@@ -389,7 +396,7 @@ describe("Mage Spells", () => {
     it("should have correct spell properties", () => {
       expect(healSpell.name).toBe("Heal");
       expect(healSpell.description).toBe("Heal yourself for 100 health");
-      expect(healSpell.image).toBe("Heal.png");
+      expect(healSpell.image).toBe("/wizards/skills/4.svg");
       expect(healSpell.cooldown.toString()).toBe("1");
     });
 

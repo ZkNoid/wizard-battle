@@ -32,6 +32,9 @@ export interface IState {
   socketId: string;
   playerId: string;
   fields: Field[]; // Contain State.toFields(userState)
+  hp: number;
+  position: { x: number; y: number };
+  effects: any[];
   // wizardId: string;
   // maxHP: number;
   // mapStructure: IMap;
@@ -107,11 +110,17 @@ export class TransformedPlayerSetup implements IPublicState {
   socketId: string;
   playerId: string;
   fields: Field[];
+  hp: number;
+  position: { x: number; y: number };
+  effects: any[];
 
-  constructor(socketId: string, playerId: string, fields: Field[]) {
+  constructor(socketId: string, playerId: string, fields: Field[], hp: number, position: { x: number; y: number }, effects: any[]) {
     this.socketId = socketId;
     this.playerId = playerId;
     this.fields = fields;
+    this.hp = hp;
+    this.position = position;
+    this.effects = effects; 
   }
 }
 

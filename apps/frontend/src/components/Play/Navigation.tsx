@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Button } from "../shared/Button";
-import { PlayStepOrder, PlaySteps } from "@/lib/enums/PlaySteps";
-import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { useEffect, useState } from 'react';
+import { Button } from '../shared/Button';
+import { PlayStepOrder, PlaySteps } from '@/lib/enums/PlaySteps';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export function Navigation({
   playStep,
@@ -17,7 +17,7 @@ export function Navigation({
 }) {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(
-    PlayStepOrder.indexOf(playStep),
+    PlayStepOrder.indexOf(playStep)
   );
 
   useEffect(() => {
@@ -25,13 +25,15 @@ export function Navigation({
   }, [playStep]);
 
   return (
-    <nav className={cn("flex w-full items-center justify-between", className)}>
+    <nav
+      className={cn('flex w-full items-center justify-between pt-5', className)}
+    >
       {currentIndex >= 0 && (
         <Button
           variant="blue"
           className="h-15 mr-auto w-80"
           onClick={() => {
-            if (currentIndex === 0) router.push("/");
+            if (currentIndex === 0) router.push('/');
 
             if (currentIndex > 0) {
               const prevStep = PlayStepOrder[currentIndex - 1];

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { type CSSProperties, useEffect, useState } from 'react';
 import { Background } from './assets/background';
 import { Tile } from './Tile';
 import Image from 'next/image';
@@ -9,7 +9,9 @@ import { SaveSlot } from './SaveSlot';
 import { TrashBtn } from './assets/trash-btn';
 import { RandomBtn } from './assets/random-btn';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
+import { useTilemapStore, type SlotNumber } from '@/lib/store/tilemapStore';
 import { Button } from '../shared/Button';
+import { useMinaAppkit } from 'mina-appkit';
 
 enum Tiles {
   Air = '',
@@ -39,23 +41,41 @@ class Megatile {
   }
 }
 
+const getTilemapFromMegatile = (tilemap: Megatile[]) => {
+  return tilemap.map((tile) => tile.getType());
+};
+
+const getNumberTilemapFromMegatile = (tilemap: Megatile[]) => {
+  return tilemap.map((tile) =>
+    tile.getType() === Tiles.Air ? 0 : tile.getType() === Tiles.Water ? 1 : 2
+  );
+};
+
 export default function MapEditor() {
   const { stater, setMap } = useUserInformationStore();
+  const { getTilemap, saveTilemap, removeTilemap, hasTilemap } =
+    useTilemapStore();
   const [selectedTile, setSelectedTile] = useState<Tiles>(Tiles.Air);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [activeSlot, setActiveSlot] = useState<'1' | '2' | '3' | '4'>('1');
+  const [activeSlot, setActiveSlot] = useState<SlotNumber>('1');
   const [hasChanges, setHasChanges] = useState(false);
   const [originalTilemap, setOriginalTilemap] = useState<Tiles[]>([
     ...Array(64).fill(Tiles.Air),
   ]);
 
+  const { address } = useMinaAppkit();
   const utils = api.useUtils();
 
   const { mutate: updateTilemap } = api.tilemap.updateTilemap.useMutation();
-  const { data: tilemapData } = api.tilemap.getTilemap.useQuery({
-    userAddress: '0x123',
-    slot: activeSlot,
-  });
+  const { data: tilemapData } = api.tilemap.getTilemap.useQuery(
+    {
+      userAddress: address ?? '',
+      slot: activeSlot,
+    },
+    {
+      enabled: !!address,
+    }
+  );
 
   const staterTilemap = stater?.state.map.map((elem) => +elem);
 
@@ -200,6 +220,7 @@ export default function MapEditor() {
     return newTilemap;
   }
 
+  // Load tilemap from API (when wallet is connected)
   useEffect(() => {
     if (tilemapData) {
       setMap(tilemapData);
@@ -207,6 +228,27 @@ export default function MapEditor() {
       setHasChanges(false);
     }
   }, [tilemapData]);
+
+  // Load tilemap from localStorage (when wallet is not connected)
+  useEffect(() => {
+    if (!address) {
+      const localTilemap = getTilemap(activeSlot);
+      if (localTilemap) {
+        setMap(localTilemap);
+        setOriginalTilemap(
+          localTilemap.map((tile) =>
+            tile === 0 ? Tiles.Air : tile === 1 ? Tiles.Water : Tiles.Grass
+          )
+        );
+      } else {
+        // If there is no saved tilemap, create an empty one
+        const emptyTilemap = Array(64).fill(Tiles.Air);
+        setMap(emptyTilemap);
+        setOriginalTilemap(emptyTilemap);
+      }
+      setHasChanges(false);
+    }
+  }, [address, activeSlot, getTilemap, setMap]);
 
   const handleTileDraw = (index: number) => {
     if (selectedTile === tilemap?.[index]?.getType()) return;
@@ -241,6 +283,9 @@ export default function MapEditor() {
   const handleMouseDown = (index: number, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
+  const handleMouseDown = (index: number, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
     setIsDrawing(true);
     handleTileDraw(index);
   };
@@ -259,45 +304,94 @@ export default function MapEditor() {
     setIsDrawing(false);
   };
 
+  // Prevent dragging and context menu
+  const handleDragStart = (event: React.DragEvent) => {
+    event.preventDefault();
+    return false;
+  };
+
+  const handleContextMenu = (event: React.MouseEvent) => {
+    event.preventDefault();
+    return false;
+  };
+
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       setIsDrawing(false);
     };
 
+    const handleGlobalMouseLeave = () => {
+      setIsDrawing(false);
+    };
+
+    const handleGlobalDragStart = (event: DragEvent) => {
+      event.preventDefault();
+      return false;
+    };
+
+    const handleGlobalSelectStart = (event: Event) => {
+      if (isDrawing) {
+        event.preventDefault();
+        return false;
+      }
+    };
+
     document.addEventListener('mouseup', handleGlobalMouseUp);
+    document.addEventListener('mouseleave', handleGlobalMouseLeave);
+    document.addEventListener('dragstart', handleGlobalDragStart);
+    document.addEventListener('selectstart', handleGlobalSelectStart);
+
     return () => {
       document.removeEventListener('mouseup', handleGlobalMouseUp);
+      document.removeEventListener('mouseleave', handleGlobalMouseLeave);
+      document.removeEventListener('dragstart', handleGlobalDragStart);
+      document.removeEventListener('selectstart', handleGlobalSelectStart);
     };
-  }, []);
+  }, [isDrawing]);
 
-  const handleSlotChange = (newSlot: '1' | '2' | '3' | '4') => {
-    // Save the current slot only if there are changes
+  const handleSlotChange = (newSlot: SlotNumber) => {
+    // Save the current slot if there are changes
     if (hasChanges && activeSlot !== newSlot) {
-      updateTilemap(
-        {
-          userAddress: '0x123',
-          tilemap: tilemap.map((tile) =>
+      if (address) {
+        // Save to API if wallet is connected
+        updateTilemap(
+          {
+            userAddress: address,
+            tilemap: tilemap.map((tile) =>
+              tile.getType() === Tiles.Air
+                ? 0
+                : tile.getType() === Tiles.Water
+                  ? 1
+                  : 2
+            ),
+            slot: activeSlot,
+          },
+          {
+            onSuccess: () => {
+              utils.tilemap.getTilemap.refetch();
+            },
+          }
+        );
+      } else {
+        // Save to localStorage if wallet is not connected
+        saveTilemap(
+          activeSlot,
+          tilemap.map((tile) =>
             tile.getType() === Tiles.Air
               ? 0
               : tile.getType() === Tiles.Water
                 ? 1
                 : 2
-          ),
-          slot: activeSlot,
-        },
-        {
-          onSuccess: () => {
-            utils.tilemap.getTilemap.refetch();
-          },
-        }
-      );
+          )
+        );
+      }
     }
 
     setActiveSlot(newSlot);
   };
 
   return (
-    <div className="w-290 h-170 relative">
+    <div className="w-290 h-150 relative">
       <div className="p-12.5 relative z-[2] flex size-full flex-col items-center">
         <span className="font-pixel text-main-gray text-3xl font-bold">
           Map Generation
@@ -336,6 +430,8 @@ export default function MapEditor() {
                   onMouseDown={(event) => handleMouseDown(index, event)}
                   onMouseEnter={(event) => handleMouseEnter(index, event)}
                   onMouseUp={handleMouseUp}
+                  onDragStart={handleDragStart}
+                  onContextMenu={handleContextMenu}
                   className="size-15 cursor-pointer select-none"
                   style={{ userSelect: 'none' }}
                   onClick={() => {
@@ -379,6 +475,17 @@ export default function MapEditor() {
                           width={60}
                           height={60}
                           className="size-full"
+                          draggable={false}
+                          style={{
+                            pointerEvents: 'none',
+                            userSelect: 'none',
+                            WebkitUserSelect: 'none',
+                            MozUserSelect: 'none',
+                            msUserSelect: 'none',
+                          }}
+                          onDragStart={(e: React.DragEvent) =>
+                            e.preventDefault()
+                          }
                         />
                       ))}
                     </div>
@@ -391,24 +498,35 @@ export default function MapEditor() {
                 text="Save"
                 variant="gray"
                 onClick={() => {
-                  updateTilemap(
-                    {
-                      userAddress: '0x123',
-                      tilemap: tilemap.map((tile) =>
-                        tile.getType() === Tiles.Air
-                          ? 0
-                          : tile.getType() === Tiles.Water
-                            ? 1
-                            : 2
-                      ),
-                      slot: activeSlot,
-                    },
-                    {
-                      onSuccess: () => {
-                        utils.tilemap.getTilemap.refetch();
+                  if (address) {
+                    updateTilemap(
+                      {
+                        userAddress: '0x123',
+                        tilemap: tilemap.map((tile) =>
+                          tile.getType() === Tiles.Air
+                            ? 0
+                            : tile.getType() === Tiles.Water
+                              ? 1
+                              : 2
+                        ),
+                        slot: activeSlot,
                       },
-                    }
-                  );
+                      {
+                        onSuccess: () => {
+                          utils.tilemap.getTilemap.refetch();
+                        },
+                      }
+                    );
+                    setHasChanges(false);
+                  } else {
+                    // Save to localStorage if wallet is not connected
+                    saveTilemap(
+                      activeSlot,
+                      getNumberTilemapFromMegatile(tilemap) ?? []
+                    );
+                    setOriginalTilemap(getTilemapFromMegatile(tilemap) ?? []);
+                    setHasChanges(false);
+                  }
                 }}
                 className="mr-auto h-full w-[70%]"
               />
@@ -448,24 +566,38 @@ export default function MapEditor() {
                   );
                   setHasChanges(false);
 
-                  updateTilemap(
-                    {
-                      userAddress: '0x123',
-                      tilemap: randomTilemap.map((tile) =>
+                  if (address) {
+                    updateTilemap(
+                      {
+                        userAddress: '0x123',
+                        tilemap: randomTilemap.map((tile) =>
+                          tile.getType() === Tiles.Air
+                            ? 0
+                            : tile.getType() === Tiles.Water
+                              ? 1
+                              : 2
+                        ),
+                        slot: activeSlot,
+                      },
+                      {
+                        onSuccess: () => {
+                          utils.tilemap.getTilemap.refetch();
+                        },
+                      }
+                    );
+                  } else {
+                    // Save to localStorage if wallet is not connected
+                    saveTilemap(
+                      activeSlot,
+                      randomTilemap.map((tile) =>
                         tile.getType() === Tiles.Air
                           ? 0
                           : tile.getType() === Tiles.Water
                             ? 1
                             : 2
-                      ),
-                      slot: activeSlot,
-                    },
-                    {
-                      onSuccess: () => {
-                        utils.tilemap.getTilemap.refetch();
-                      },
-                    }
-                  );
+                      )
+                    );
+                  }
                 }}
               />
               <TrashBtn
@@ -476,18 +608,24 @@ export default function MapEditor() {
                   setOriginalTilemap(emptyTilemap);
                   setHasChanges(false);
 
-                  updateTilemap(
-                    {
-                      userAddress: '0x123',
-                      tilemap: emptyTilemap,
-                      slot: activeSlot,
-                    },
-                    {
-                      onSuccess: () => {
-                        utils.tilemap.getTilemap.refetch();
+                  if (address) {
+                    // Delete from API if wallet is connected
+                    updateTilemap(
+                      {
+                        userAddress: address,
+                        tilemap: emptyTilemap,
+                        slot: activeSlot,
                       },
-                    }
-                  );
+                      {
+                        onSuccess: () => {
+                          utils.tilemap.getTilemap.refetch();
+                        },
+                      }
+                    );
+                  } else {
+                    // Delete from localStorage if wallet is not connected
+                    removeTilemap(activeSlot);
+                  }
                 }}
               />
             </div>

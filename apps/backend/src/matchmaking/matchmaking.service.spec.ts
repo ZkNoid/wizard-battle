@@ -63,9 +63,16 @@ describe("MatchmakingService", () => {
       registerSocket: jest.fn().mockResolvedValue(undefined),
       createGameState: jest.fn().mockResolvedValue({
         roomId: "room",
-        players: [],
+        players: [
+          { id: "player1", socketId: "socket1", instanceId: "test", state: null, isAlive: true },
+          { id: "player2", socketId: "socket2", instanceId: "test", state: null, isAlive: true }
+        ],
         gameData: {},
         turn: 0,
+        currentPhase: "spell_casting",
+        phaseStartTime: Date.now(),
+        phaseTimeout: 30000,
+        playersReady: [],
         status: "waiting",
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -73,6 +80,11 @@ describe("MatchmakingService", () => {
       getSocketMapping: jest.fn().mockResolvedValue(null),
       removeGameState: jest.fn().mockResolvedValue(undefined),
       getGameState: jest.fn().mockResolvedValue(null),
+      advanceGamePhase: jest.fn().mockResolvedValue("spell_propagation"),
+      markPlayerReady: jest.fn().mockResolvedValue(true),
+      storePlayerActions: jest.fn().mockResolvedValue(undefined),
+      storeTrustedState: jest.fn().mockResolvedValue(undefined),
+      markPlayerDead: jest.fn().mockResolvedValue(null),
     }) as any;
 
     const module: TestingModule = await Test.createTestingModule({

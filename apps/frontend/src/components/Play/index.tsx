@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { PlaySteps } from "@/lib/enums/PlaySteps";
-import { ModeSelect } from "./ModeSelect";
-import { Navigation } from "./Navigation";
-import { PlayMode } from "@/lib/enums/PlayMode";
-import CharacterSelect from "@/components/CharacterSelect";
-import { cn, spellIdToSpell } from "@/lib/utils";
-import MapEditor from "@/components/MapEditor";
-import Matchmaking from "./Matchmaking";
-import GameResult from "../GameResult";
-import { allWizards } from "../../../../common/wizards";
-import { useUserInformationStore } from "@/lib/store/userInformationStore";
+import { useEffect, useState } from 'react';
+import { PlaySteps } from '@/lib/enums/PlaySteps';
+import { ModeSelect } from './ModeSelect';
+import { Navigation } from './Navigation';
+import { PlayMode } from '@/lib/enums/PlayMode';
+import CharacterSelect from '@/components/CharacterSelect';
+import { cn, spellIdToSpell } from '@/lib/utils';
+import MapEditor from '@/components/MapEditor';
+import Matchmaking from './Matchmaking';
+import GameResult from '../GameResult';
+import { allWizards } from '../../../../common/wizards';
+import { useUserInformationStore } from '@/lib/store/userInformationStore';
 
 export default function Play() {
   const [playStep, setPlayStep] = useState<PlaySteps>(PlaySteps.SELECT_MODE);
@@ -35,12 +35,12 @@ export default function Play() {
 
   return (
     <section className="flex h-full w-full flex-col items-center justify-center">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-2.5">
         {!noNavigation && (
           <Navigation
             playStep={playStep}
             setPlayStep={setPlayStep}
-            className={cn(playStep === PlaySteps.SELECT_CHARACTER && "pl-25")}
+            className={cn(playStep === PlaySteps.SELECT_CHARACTER && 'pl-25')}
           />
         )}
         {playStep === PlaySteps.SELECT_MODE && (
@@ -52,7 +52,7 @@ export default function Play() {
             currentWizard={
               allWizards.find(
                 (wizard) =>
-                  wizard.id.toString() === stater?.state.wizardId.toString(),
+                  wizard.id.toString() === stater?.state.wizardId.toString()
               )!
             }
             setCurrentWizard={(wizard) => setCurrentWizard(wizard.id)}
@@ -66,7 +66,7 @@ export default function Play() {
         )}
         {(playStep === PlaySteps.LOSE || playStep === PlaySteps.WIN) && (
           <GameResult
-            type={playStep === PlaySteps.LOSE ? "lose" : "win"}
+            type={playStep === PlaySteps.LOSE ? 'lose' : 'win'}
             setPlayStep={setPlayStep}
           />
         )}
