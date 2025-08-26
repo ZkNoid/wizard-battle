@@ -1,4 +1,4 @@
-import { IPublicState } from "./matchmaking.types";
+import type { IPublicState } from "./matchmaking.types";
 
 /**
  * @title 5-Phase Turn-Based Gameplay Types
