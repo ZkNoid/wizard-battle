@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { type CSSProperties, useEffect, useState } from 'react';
 import { Background } from './assets/background';
 import { Tile } from './Tile';
 import Image from 'next/image';
@@ -10,6 +10,7 @@ import { TrashBtn } from './assets/trash-btn';
 import { RandomBtn } from './assets/random-btn';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
 import { Button } from '../shared/Button';
+import { useMinaAppkit } from 'mina-appkit';
 
 enum Tiles {
   Air = 0,
@@ -27,13 +28,19 @@ export default function MapEditor() {
     ...Array(64).fill(Tiles.Air),
   ]);
 
+  const { address } = useMinaAppkit();
   const utils = api.useUtils();
 
   const { mutate: updateTilemap } = api.tilemap.updateTilemap.useMutation();
-  const { data: tilemapData } = api.tilemap.getTilemap.useQuery({
-    userAddress: '0x123',
-    slot: activeSlot,
-  });
+  const { data: tilemapData } = api.tilemap.getTilemap.useQuery(
+    {
+      userAddress: address ?? '',
+      slot: activeSlot,
+    },
+    {
+      enabled: !!address,
+    }
+  );
 
   const tilemap = stater?.state.map.map((elem) => +elem);
 
@@ -58,40 +65,79 @@ export default function MapEditor() {
   };
 
   // Handler for starting drawing
-  const handleMouseDown = (index: number) => {
+  const handleMouseDown = (index: number, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
     setIsDrawing(true);
     handleTileDraw(index);
   };
 
   // Handler for drawing when moving the mouse
-  const handleMouseEnter = (index: number) => {
+  const handleMouseEnter = (index: number, event: React.MouseEvent) => {
     if (isDrawing) {
+      event.preventDefault();
       handleTileDraw(index);
     }
   };
 
   // Handler for ending drawing
-  const handleMouseUp = () => {
+  const handleMouseUp = (event: React.MouseEvent) => {
+    event.preventDefault();
     setIsDrawing(false);
   };
 
+  // Prevent dragging and context menu
+  const handleDragStart = (event: React.DragEvent) => {
+    event.preventDefault();
+    return false;
+  };
+
+  const handleContextMenu = (event: React.MouseEvent) => {
+    event.preventDefault();
+    return false;
+  };
+
   useEffect(() => {
-    const handleGlobalMouseUp = () => {
+    const handleGlobalMouseUp = (event: MouseEvent) => {
       setIsDrawing(false);
     };
 
+    const handleGlobalMouseLeave = () => {
+      setIsDrawing(false);
+    };
+
+    const handleGlobalDragStart = (event: DragEvent) => {
+      event.preventDefault();
+      return false;
+    };
+
+    const handleGlobalSelectStart = (event: Event) => {
+      if (isDrawing) {
+        event.preventDefault();
+        return false;
+      }
+    };
+
     document.addEventListener('mouseup', handleGlobalMouseUp);
+    document.addEventListener('mouseleave', handleGlobalMouseLeave);
+    document.addEventListener('dragstart', handleGlobalDragStart);
+    document.addEventListener('selectstart', handleGlobalSelectStart);
+
     return () => {
       document.removeEventListener('mouseup', handleGlobalMouseUp);
+      document.removeEventListener('mouseleave', handleGlobalMouseLeave);
+      document.removeEventListener('dragstart', handleGlobalDragStart);
+      document.removeEventListener('selectstart', handleGlobalSelectStart);
     };
-  }, []);
+  }, [isDrawing]);
 
   const handleSlotChange = (newSlot: '1' | '2' | '3' | '4') => {
+    if (!address) return;
     // Save the current slot only if there are changes
     if (hasChanges && activeSlot !== newSlot) {
       updateTilemap(
         {
-          userAddress: '0x123',
+          userAddress: address,
           tilemap: tilemap ?? [],
           slot: activeSlot,
         },
@@ -143,14 +189,28 @@ export default function MapEditor() {
               {tilemap?.map((tile, index) => (
                 <button
                   key={index}
-                  onMouseDown={() => handleMouseDown(index)}
-                  onMouseEnter={() => handleMouseEnter(index)}
+                  onMouseDown={(e) => handleMouseDown(index, e)}
+                  onMouseEnter={(e) => handleMouseEnter(index, e)}
                   onMouseUp={handleMouseUp}
+                  onDragStart={handleDragStart}
+                  onContextMenu={handleContextMenu}
                   className="size-15 cursor-pointer select-none"
-                  style={{ userSelect: 'none' }}
+                  style={
+                    {
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      MozUserSelect: 'none',
+                      msUserSelect: 'none',
+                      WebkitTouchCallout: 'none',
+                      KhtmlUserSelect: 'none',
+                    } as CSSProperties
+                  }
                 >
                   {tile === Tiles.Air ? (
-                    <div className="size-full bg-gray-200 hover:bg-gray-400" />
+                    <div
+                      className="size-full bg-gray-200 hover:bg-gray-400"
+                      style={{ pointerEvents: 'none' }}
+                    />
                   ) : (
                     <Image
                       src={`/assets/tiles/${tile}.png`}
@@ -159,6 +219,14 @@ export default function MapEditor() {
                       height={60}
                       className="size-full"
                       draggable={false}
+                      style={{
+                        pointerEvents: 'none',
+                        userSelect: 'none',
+                        WebkitUserSelect: 'none',
+                        MozUserSelect: 'none',
+                        msUserSelect: 'none',
+                      }}
+                      onDragStart={(e: React.DragEvent) => e.preventDefault()}
                     />
                   )}
                 </button>
@@ -169,9 +237,10 @@ export default function MapEditor() {
                 text="Save"
                 variant="gray"
                 onClick={() => {
+                  if (!address) return;
                   updateTilemap(
                     {
-                      userAddress: '0x123',
+                      userAddress: address,
                       tilemap: tilemap ?? [],
                       slot: activeSlot,
                     },
@@ -187,6 +256,8 @@ export default function MapEditor() {
               <RandomBtn
                 className="size-12 cursor-pointer transition-transform duration-300 hover:scale-110"
                 onClick={() => {
+                  if (!address) return;
+
                   const randomTilemap = Array.from({ length: 64 }, () =>
                     Math.random() < 0.5 ? Tiles.Water : Tiles.Grass
                   );
@@ -196,7 +267,7 @@ export default function MapEditor() {
 
                   updateTilemap(
                     {
-                      userAddress: '0x123',
+                      userAddress: address,
                       tilemap: randomTilemap,
                       slot: activeSlot,
                     },
@@ -211,6 +282,8 @@ export default function MapEditor() {
               <TrashBtn
                 className="size-12 cursor-pointer transition-transform duration-300 hover:scale-110"
                 onClick={() => {
+                  if (!address) return;
+
                   const emptyTilemap = Array(64).fill(Tiles.Air);
                   setMap(emptyTilemap);
                   setOriginalTilemap(emptyTilemap);
@@ -218,7 +291,7 @@ export default function MapEditor() {
 
                   updateTilemap(
                     {
-                      userAddress: '0x123',
+                      userAddress: address,
                       tilemap: emptyTilemap,
                       slot: activeSlot,
                     },
