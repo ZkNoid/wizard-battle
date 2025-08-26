@@ -2,6 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { ScheduleModule } from "@nestjs/schedule";
 import { MatchmakingService } from "./matchmaking.service";
 import { GameStateService } from "../game-session/game-state.service";
+import { BotClientService } from "../bot/bot-client.service";
 import { Server, Socket } from "socket.io";
 import { createMock } from "@golevelup/ts-jest";
 import {
@@ -44,6 +45,7 @@ describe("MatchmakingService", () => {
   let service: MatchmakingService;
   let mockServer: Server;
   let mockGameStateService: GameStateService;
+  let mockBotClientService: any;
 
   beforeEach(async () => {
     // Reset all mocks before each test
@@ -87,6 +89,25 @@ describe("MatchmakingService", () => {
       markPlayerDead: jest.fn().mockResolvedValue(null),
     }) as any;
 
+    // Mock BotClientService
+    mockBotClientService = {
+      createBotClient: jest.fn().mockResolvedValue({
+        getCurrentState: jest.fn().mockReturnValue({
+          socketId: 'mock-bot-socket',
+          playerId: 'mock-bot-id',
+          fields: [],
+          hp: 100,
+          position: { x: 0, y: 0 },
+          effects: []
+        }),
+        getSocketId: jest.fn().mockReturnValue('mock-bot-socket')
+      }),
+      disconnectBot: jest.fn().mockResolvedValue(undefined),
+      getBot: jest.fn().mockReturnValue(undefined),
+      getAllBots: jest.fn().mockReturnValue([]),
+      disconnectAllBots: jest.fn().mockResolvedValue(undefined)
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       imports: [ScheduleModule.forRoot()],
       providers: [
@@ -94,6 +115,10 @@ describe("MatchmakingService", () => {
         {
           provide: GameStateService,
           useValue: mockGameStateService,
+        },
+        {
+          provide: BotClientService,
+          useValue: mockBotClientService,
         },
       ],
     }).compile();
@@ -380,6 +405,10 @@ describe("MatchmakingService", () => {
                 updatedAt: Date.now(),
               }),
             }),
+          },
+          {
+            provide: BotClientService,
+            useValue: mockBotClientService,
           },
         ],
       }).compile();
