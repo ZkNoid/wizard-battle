@@ -283,9 +283,6 @@ export default function MapEditor() {
   const handleMouseDown = (index: number, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-  const handleMouseDown = (index: number, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
     setIsDrawing(true);
     handleTileDraw(index);
   };
