@@ -8,6 +8,7 @@ import { api } from '@/trpc/react';
 import { FullscreenLoader } from '@/components/shared/FullscreenLoader';
 import { useMinaAppkit } from 'mina-appkit';
 import { useRouter } from 'next/navigation';
+import { useUserInformationStore } from '@/lib/store/userInformationStore';
 
 const PhaserGame = dynamic(
   () => import('@/PhaserGame').then((mod) => mod.PhaserGame),
@@ -19,6 +20,7 @@ const PhaserGame = dynamic(
 
 export default function GamePage() {
   //  References to the PhaserGame component (game and scene are exposed)
+  const { stater, opponentState } = useUserInformationStore();
   const phaserRefAlly = useRef<IRefPhaserGame | null>(null);
   const phaserRefEnemy = useRef<IRefPhaserGame | null>(null);
   const router = useRouter();
@@ -52,14 +54,14 @@ export default function GamePage() {
         currentActiveScene={currentScene}
         container="game-container-ally"
         isEnemy={false}
-        tilemapData={tilemapData}
+        tilemapData={stater?.state?.map.map((tile) => +tile) || []}
       />
       <PhaserGame
         ref={phaserRefEnemy}
         currentActiveScene={currentScene}
         container="game-container-enemy"
         isEnemy={true}
-        tilemapData={tilemapData}
+        tilemapData={opponentState?.map.map((tile) => +tile) || []}
       />
     </Game>
   );

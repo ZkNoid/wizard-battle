@@ -1,13 +1,13 @@
-import { create } from "zustand";
-import { Socket } from "socket.io-client";
-import { Stater } from "../../../../common/stater/stater";
+import { create } from 'zustand';
+import { Socket } from 'socket.io-client';
+import { Stater } from '../../../../common/stater/stater';
 import {
   spellStatsAmount,
   type PublicState,
   type State,
-} from "../../../../common/stater/state";
-import { Field, Int64 } from "o1js";
-import { SpellStats } from "../../../../common/stater/structs";
+} from '../../../../common/stater/state';
+import { Field, Int64 } from 'o1js';
+import { SpellStats } from '../../../../common/stater/structs';
 interface UserInformationStore {
   socket: Socket | null;
   stater: Stater | null;
@@ -15,7 +15,7 @@ interface UserInformationStore {
   setSocket: (socket: Socket) => void;
   setStater: (stater: Stater) => void;
   setMap: (map: Field[] | number[]) => void;
-  // setOpponentState: (opponentState: PublicState) => void;
+  setOpponentState: (opponentState: State) => void;
   setCurrentWizard: (wizardId: Field) => void;
   setSelectedSkills: (skills: SpellStats[]) => void;
   clearSocket: () => void;
@@ -27,7 +27,7 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
   opponentState: null,
   setSocket: (socket: Socket) => set({ socket }),
   setStater: (stater: Stater) => set({ stater }),
-  // setOpponentState: (opponentState: PublicState) => set({ opponentState }),
+  setOpponentState: (opponentState: State) => set({ opponentState }),
   setCurrentWizard: (wizardId: Field) =>
     set((state) => {
       if (!state.stater) return state;
@@ -44,7 +44,7 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
       const currentState = state.stater.state;
       if (!currentState) return state;
 
-      const nonEmptySkills = skills.filter((s) => s.spellId.toString() !== "0");
+      const nonEmptySkills = skills.filter((s) => s.spellId.toString() !== '0');
 
       currentState.spellStats = [
         ...nonEmptySkills,
@@ -53,7 +53,7 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
             spellId: Field(0),
             cooldown: Int64.from(0),
             currentColldown: Int64.from(0),
-          }),
+          })
         ),
       ];
       return { stater: state.stater };
