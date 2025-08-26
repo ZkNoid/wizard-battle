@@ -1,13 +1,15 @@
-"use client";
+'use client';
 
-import { motion } from "motion/react";
-import { Button } from "../shared/Button";
-import { ScrollBg } from "./assets/scroll-bg";
-import { Tab } from "@/lib/enums/Tab";
-import { useRouter } from "next/navigation";
+import { motion } from 'motion/react';
+import { Button } from '../shared/Button';
+import { ScrollBg } from './assets/scroll-bg';
+import { Tab } from '@/lib/enums/Tab';
+import { useRouter } from 'next/navigation';
+import { useMinaAppkit } from 'mina-appkit';
 
 export function MainMenu({ setTab }: { setTab: (tab: Tab) => void }) {
   const router = useRouter();
+  const { address, triggerWallet } = useMinaAppkit();
 
   return (
     <div className="flex flex-col items-center justify-center gap-8">
@@ -21,7 +23,7 @@ export function MainMenu({ setTab }: { setTab: (tab: Tab) => void }) {
         transition={{
           duration: 2,
           times: [0, 0.5, 1],
-          ease: "easeOut",
+          ease: 'easeOut',
         }}
         className="font-pixel text-5xl font-bold text-white"
       >
@@ -32,26 +34,41 @@ export function MainMenu({ setTab }: { setTab: (tab: Tab) => void }) {
       <motion.div
         initial={{ opacity: 0, y: 50, scale: 0.9 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.7, ease: "easeOut", delay: 1.8 }}
+        transition={{ duration: 0.7, ease: 'easeOut', delay: 1.8 }}
         className="relative w-full"
       >
         <div className="ml-2.5 flex flex-col items-center justify-center gap-2.5 p-4">
           <Button
             variant="gray"
             text="Play"
-            onClick={() => router.push("/play")}
+            onClick={() => {
+              if (!address) {
+                triggerWallet();
+                return;
+              }
+
+              router.push('/play');
+            }}
             className="w-88.5 h-15 text-2xl font-bold"
           />
           <Button
             variant="gray"
             text="Tournaments"
-            onClick={() => setTab(Tab.TOURNAMENTS)}
+            // onClick={() => setTab(Tab.TOURNAMENTS)}
+            onClick={() => {
+              alert('Coming soon..');
+              return;
+            }}
             className="w-88.5 h-15 text-2xl font-bold"
           />
           <Button
             variant="gray"
             text="Customization"
-            onClick={() => setTab(Tab.CUSTOMIZATION)}
+            // onClick={() => setTab(Tab.CUSTOMIZATION)}
+            onClick={() => {
+              alert('Coming soon...');
+              return;
+            }}
             className="w-88.5 h-15 text-2xl font-bold"
           />
           <Button
