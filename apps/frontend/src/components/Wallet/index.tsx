@@ -10,10 +10,9 @@ import { usePathname } from 'next/navigation';
 import { formatAddress, useMinaAppkit } from 'mina-appkit';
 import { api } from '@/trpc/react';
 import { useEffect, useState, useRef, type KeyboardEvent } from 'react';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
+import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 
-// Схема валидации для имени
 const NameSchema = Yup.object().shape({
   name: Yup.string()
     .trim()
@@ -138,7 +137,8 @@ export default function Wallet() {
     }
   };
 
-  const displayName = user?.name || formatAddress(address || '');
+  const displayName =
+    user?.name ?? (address ? formatAddress(address) : 'Unknown');
 
   return (
     <motion.div

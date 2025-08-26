@@ -107,7 +107,7 @@ export default function MapEditor() {
   };
 
   return (
-    <div className="w-290 h-170 relative">
+    <div className="w-290 h-150 relative">
       <div className="p-12.5 relative z-[2] flex size-full flex-col items-center">
         <span className="font-pixel text-main-gray text-3xl font-bold">
           Map Generation
