@@ -1,45 +1,39 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "../shared/Button";
-import { motion } from "motion/react";
-import { WalletBg } from "./assets/wallet-bg";
-import { LevelBg } from "./assets/level-bg";
-import BoxButton from "../shared/BoxButton";
-import { DisconnectIcon } from "./assets/disconnect-icon";
-import type { IUser } from "@/lib/types/IUser";
-import { usePathname } from "next/navigation";
+import { Button } from '../shared/Button';
+import { motion } from 'motion/react';
+import { WalletBg } from './assets/wallet-bg';
+import { LevelBg } from './assets/level-bg';
+import BoxButton from '../shared/BoxButton';
+import { DisconnectIcon } from './assets/disconnect-icon';
+import { usePathname } from 'next/navigation';
+import { formatAddress, useMinaAppkit } from 'mina-appkit';
 
 export default function Wallet() {
   const pathname = usePathname();
-  const isHomePage = pathname === "/";
-  const [isConnected, setIsConnected] = useState<boolean>(false);
-  const user: IUser = {
-    name: "John Doe",
-    level: 99999,
-    address: "0x1234567890123456789012345678901234567890",
-    xp: 100,
-  };
+  const isHomePage = pathname === '/';
+  const { address, isConnected, triggerWallet, disconnect } = useMinaAppkit();
+
   return (
     <motion.div
       initial={isHomePage ? { opacity: 0, y: 50, scale: 0.9 } : false}
       animate={isHomePage ? { opacity: 1, y: 0, scale: 1 } : false}
-      transition={{ duration: 0.7, ease: "easeOut", delay: 2.5 }}
+      transition={{ duration: 0.7, ease: 'easeOut', delay: 2.5 }}
       className="w-full"
     >
       <>
-        {isConnected ? (
+        {isConnected && address ? (
           <div className="h-32.5 p-6.5 relative flex w-full flex-row items-center justify-between gap-8">
             <div className="flex w-full flex-col gap-1">
               {/* Username */}
               <span className="font-pixel text-main-gray text-2xl font-bold">
-                {user.name}
+                {formatAddress(address)}
               </span>
               {/* Level */}
               <div className="relative flex h-full w-full">
                 <div className="z-[1] ml-2 mt-2 flex h-full w-full items-center justify-start">
                   <span className="font-pixel text-main-gray text-[0.417vw] font-bold">
-                    Lvl. {user.level}
+                    Lvl. 99999
                   </span>
                 </div>
                 <LevelBg className="h-6.5 absolute inset-0 z-0 w-full" />
@@ -49,7 +43,7 @@ export default function Wallet() {
             <div className="flex min-w-20 items-center justify-end">
               <BoxButton
                 onClick={() => {
-                  setIsConnected(false);
+                  disconnect();
                 }}
                 className="h-15 w-15"
               >
@@ -64,7 +58,7 @@ export default function Wallet() {
             variant="gray"
             text="Connect Wallet"
             onClick={() => {
-              setIsConnected(!isConnected);
+              triggerWallet();
             }}
             className="w-70 h-15 ml-auto text-base font-bold"
           />

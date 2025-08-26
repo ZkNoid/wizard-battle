@@ -22,6 +22,7 @@
     "copy-webpack-plugin": "^13.0.1",
     "formik": "^2.4.6",
     "immer": "^10.1.1",
+    "mina-appkit": "^1.0.0",
     "mongodb": "^6.18.0",
     "motion": "^12.23.11",
     "next": "^15.4.4",
