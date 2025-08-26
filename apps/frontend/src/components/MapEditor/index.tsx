@@ -9,7 +9,6 @@ import { SaveSlot } from './SaveSlot';
 import { TrashBtn } from './assets/trash-btn';
 import { RandomBtn } from './assets/random-btn';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
-import { useTilemapStore, type SlotNumber } from '@/lib/store/tilemapStore';
 import { Button } from '../shared/Button';
 import { useMinaAppkit } from 'mina-appkit';
 
@@ -243,10 +242,9 @@ const createRandomTilemap = (): Megatile[] =>
 
 export default function MapEditor() {
   const { stater, setMap } = useUserInformationStore();
-  const { getTilemap, saveTilemap, removeTilemap } = useTilemapStore();
   const [selectedTile, setSelectedTile] = useState<Tiles>(Tiles.Air);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [activeSlot, setActiveSlot] = useState<SlotNumber>('1');
+  const [activeSlot, setActiveSlot] = useState<'1' | '2' | '3' | '4'>('1');
   const [hasChanges, setHasChanges] = useState(false);
   const [originalTilemap, setOriginalTilemap] =
     useState<Tiles[]>(createEmptyTilemap());
@@ -273,7 +271,11 @@ export default function MapEditor() {
 
   // Unified save function
   const saveTilemapData = useCallback(
-    (tilemapToSave: Megatile[], slot: SlotNumber, userAddress?: string) => {
+    (
+      tilemapToSave: Megatile[],
+      slot: '1' | '2' | '3' | '4',
+      userAddress?: string
+    ) => {
       const numberTilemap = getNumberTilemapFromMegatile(tilemapToSave);
 
       if (userAddress) {
@@ -290,12 +292,9 @@ export default function MapEditor() {
             },
           }
         );
-      } else {
-        // Save to localStorage if wallet is not connected
-        saveTilemap(slot, numberTilemap);
       }
     },
-    [updateTilemap, utils.tilemap.getTilemap, saveTilemap]
+    [updateTilemap, utils.tilemap.getTilemap]
   );
 
   // Unified tilemap update function
@@ -314,7 +313,6 @@ export default function MapEditor() {
     [setMap, originalTilemap]
   );
 
-  // Load tilemap from API (when wallet is connected)
   useEffect(() => {
     if (tilemapData) {
       setMap(tilemapData);
@@ -323,39 +321,19 @@ export default function MapEditor() {
     }
   }, [tilemapData, setMap]);
 
-  // Load tilemap from localStorage (when wallet is not connected)
-  useEffect(() => {
-    if (!address) {
-      const localTilemap = getTilemap(activeSlot);
-      if (localTilemap) {
-        setMap(localTilemap);
-        setOriginalTilemap(localTilemap.map(numberToTile));
-      } else {
-        // If there is no saved tilemap, create an empty one
-        const emptyTilemap = createEmptyTilemap();
-        setMap(emptyTilemap.map(tileToNumber));
-        setOriginalTilemap(emptyTilemap);
-      }
-      setHasChanges(false);
+  const handleTileDraw = (index: number) => {
+    if (selectedTile === tilemap?.[index]?.getType()) return;
+
+    const newTilemap = [...(tilemap ?? [])];
+    for (let i = 0; i < 9; i++) {
+      newTilemap[index]!.tiles[i] = {
+        type: selectedTile,
+        collisionType: newTilemap[index]!.tiles[i]!.collisionType,
+        position: newTilemap[index]!.tiles[i]!.position,
+      };
     }
-  }, [address, activeSlot, getTilemap, setMap]);
-
-  const handleTileDraw = useCallback(
-    (index: number) => {
-      if (selectedTile === tilemap?.[index]?.getType()) return;
-
-      const newTilemap = [...(tilemap ?? [])];
-      for (let i = 0; i < 9; i++) {
-        newTilemap[index]!.tiles[i] = {
-          type: selectedTile,
-          collisionType: newTilemap[index]!.tiles[i]!.collisionType,
-          position: newTilemap[index]!.tiles[i]!.position,
-        };
-      }
-      updateTilemapState(newTilemap);
-    },
-    [selectedTile, tilemap, updateTilemapState]
-  );
+    updateTilemapState(newTilemap);
+  };
 
   // Unified event handlers
   const handleMouseDown = useCallback(
@@ -419,7 +397,7 @@ export default function MapEditor() {
   }, [isDrawing]);
 
   const handleSlotChange = useCallback(
-    (newSlot: SlotNumber) => {
+    (newSlot: '1' | '2' | '3' | '4') => {
       // Save the current slot if there are changes
       if (hasChanges && activeSlot !== newSlot) {
         saveTilemapData(tilemap, activeSlot, address);
@@ -457,10 +435,8 @@ export default function MapEditor() {
         activeSlot,
         address
       );
-    } else {
-      removeTilemap(activeSlot);
     }
-  }, [setMap, address, activeSlot, saveTilemapData, removeTilemap]);
+  }, [setMap, address, activeSlot, saveTilemapData]);
 
   const saveSlots = ['1', '2', '3', '4'] as const;
   const saveSlotPositions = ['top-10', 'top-50', 'top-90', 'top-130'] as const;
