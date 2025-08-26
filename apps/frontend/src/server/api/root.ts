@@ -1,6 +1,7 @@
-import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
-import { feedbackRouter } from "./routers/feedback";
-import { tilemapRouter } from "./routers/tilemap";
+import { createCallerFactory, createTRPCRouter } from '@/server/api/trpc';
+import { feedbackRouter } from './routers/feedback';
+import { tilemapRouter } from './routers/tilemap';
+import { usersRouter } from './routers/users';
 
 /**
  * This is the primary router for your server.
@@ -10,6 +11,7 @@ import { tilemapRouter } from "./routers/tilemap";
 export const appRouter = createTRPCRouter({
   feedback: feedbackRouter,
   tilemap: tilemapRouter,
+  users: usersRouter,
 });
 
 // export type definition of API
