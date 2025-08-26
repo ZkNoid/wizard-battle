@@ -209,15 +209,32 @@ export default function MapEditor() {
   }, [tilemapData]);
 
   const handleTileDraw = (index: number) => {
-    if (selectedTile === tilemap?.[index]) return;
+    if (selectedTile === tilemap?.[index]?.getType()) return;
 
     const newTilemap = [...(tilemap ?? [])];
-    newTilemap[index] = selectedTile;
-    setMap(newTilemap);
+    for (let i = 0; i < 9; i++) {
+      newTilemap[index]!.tiles[i] = {
+        type: selectedTile,
+        collisionType: newTilemap[index]!.tiles[i]!.collisionType,
+        position: newTilemap[index]!.tiles[i]!.position,
+      };
+    }
+    setMap(
+      newTilemap.map((tile) =>
+        tile.getType() === Tiles.Air
+          ? 0
+          : tile.getType() === Tiles.Water
+            ? 1
+            : 2
+      )
+    );
 
     // Check if there are changes
-    const hasChangesNow = newTilemap.some((t, i) => t !== originalTilemap[i]);
+    const hasChangesNow = newTilemap.some(
+      (t, i) => t.getType() !== originalTilemap[i]
+    );
     setHasChanges(hasChangesNow);
+    setTilemap(updateTilemap2(newTilemap));
   };
 
   // Handler for starting drawing
@@ -318,37 +335,33 @@ export default function MapEditor() {
                   className="size-15 cursor-pointer select-none"
                   style={{ userSelect: 'none' }}
                   onClick={() => {
-                    let mainTile = megatile.getMainTile();
-                    if (selectedTile === mainTile.type) return;
-
-                    const newTilemap = [...tilemap];
-                    for (let i = 0; i < 9; i++) {
-                      newTilemap[index]!.tiles[i] = {
-                        type: selectedTile,
-                        collisionType: mainTile.collisionType,
-                        position: mainTile.position,
-                      };
-                    }
-                    setTilemap(newTilemap);
-                    setTilemap(updateTilemap2(newTilemap));
-
-                    setMap(
-                      newTilemap.map((tile) =>
-                        tile.getType() === Tiles.Air
-                          ? 0
-                          : tile.getType() === Tiles.Water
-                            ? 1
-                            : 2
-                      )
-                    );
-
+                    // let mainTile = megatile.getMainTile();
+                    // if (selectedTile === mainTile.type) return;
+                    // const newTilemap = [...tilemap];
+                    // for (let i = 0; i < 9; i++) {
+                    //   newTilemap[index]!.tiles[i] = {
+                    //     type: selectedTile,
+                    //     collisionType: mainTile.collisionType,
+                    //     position: mainTile.position,
+                    //   };
+                    // }
+                    // setTilemap(newTilemap);
+                    // setTilemap(updateTilemap2(newTilemap));
+                    // setMap(
+                    //   newTilemap.map((tile) =>
+                    //     tile.getType() === Tiles.Air
+                    //       ? 0
+                    //       : tile.getType() === Tiles.Water
+                    //         ? 1
+                    //         : 2
+                    //   )
+                    // );
                     // Check if there are changes
-                    const hasChangesNow = newTilemap.some(
-                      (t, i) => t.getType() !== originalTilemap[i]
-                    );
-                    setHasChanges(hasChangesNow);
+                    // const hasChangesNow = newTilemap.some(
+                    //   (t, i) => t.getType() !== originalTilemap[i]
+                    // );
+                    // setHasChanges(hasChangesNow);
                   }}
-                  className="size-15 cursor-pointer"
                 >
                   {megatile.getMainTile().type === Tiles.Air ? (
                     <div className="size-full bg-gray-200 hover:bg-gray-400" />
@@ -377,7 +390,13 @@ export default function MapEditor() {
                   updateTilemap(
                     {
                       userAddress: '0x123',
-                      tilemap: tilemap ?? [],
+                      tilemap: tilemap.map((tile) =>
+                        tile.getType() === Tiles.Air
+                          ? 0
+                          : tile.getType() === Tiles.Water
+                            ? 1
+                            : 2
+                      ),
                       slot: activeSlot,
                     },
                     {
