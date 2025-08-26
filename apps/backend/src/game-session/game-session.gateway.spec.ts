@@ -152,7 +152,14 @@ describe('GameSessionGateway', () => {
       const trustedState: ITrustedState = {
         playerId: 'player1',
         stateCommit: 'test-commit',
-        publicState: { playerId: 'player1' },
+        publicState: { 
+          playerId: 'player1', 
+          socketId: 'test-socket', 
+          fields: [], 
+          hp: 100, 
+          position: { x: 0, y: 0 }, 
+          effects: [] 
+        },
         signature: 'test-signature'
       };
 
@@ -182,7 +189,14 @@ describe('GameSessionGateway', () => {
       const trustedState: ITrustedState = {
         playerId: 'player1',
         stateCommit: 'test-commit',
-        publicState: { playerId: 'player1' },
+        publicState: { 
+          playerId: 'player1', 
+          socketId: 'test-socket', 
+          fields: [], 
+          hp: 100, 
+          position: { x: 0, y: 0 }, 
+          effects: [] 
+        },
         signature: 'test-signature'
       };
 
