@@ -141,6 +141,9 @@ describe("MatchmakingService", () => {
         socketId,
         playerId,
         defaultStateFields,
+        100,
+        { x: 0, y: 0 },
+        []
       );
       return new TransformedAddToQueue(playerId, setup, 0, null, null);
     };
@@ -424,6 +427,9 @@ describe("MatchmakingService", () => {
             "socket1",
             "Player1",
             defaultStateFields,
+            100,
+            { x: 0, y: 0 },
+            []
           ),
           timestamp: Date.now(),
         }),
@@ -431,7 +437,7 @@ describe("MatchmakingService", () => {
 
       const addToQueue = new TransformedAddToQueue(
         "Player1",
-        new TransformedPlayerSetup("socket1", "Player1", defaultStateFields),
+        new TransformedPlayerSetup("socket1", "Player1", defaultStateFields, 100, { x: 0, y: 0 }, []),
         0,
         null,
         null,
@@ -448,14 +454,14 @@ describe("MatchmakingService", () => {
 
       const addToQueue1 = new TransformedAddToQueue(
         "Player1",
-        new TransformedPlayerSetup("socket1", "Player1", defaultStateFields),
+        new TransformedPlayerSetup("socket1", "Player1", defaultStateFields, 100, { x: 0, y: 0 }, []),
         0,
         null,
         null,
       );
       const addToQueue2 = new TransformedAddToQueue(
         "Player2",
-        new TransformedPlayerSetup("socket2", "Player2", defaultStateFields),
+        new TransformedPlayerSetup("socket2", "Player2", defaultStateFields, 100, { x: 0, y: 0 }, []),
         0,
         null,
         null,
@@ -651,8 +657,8 @@ describe("MatchmakingService", () => {
     });
 
     it("should process two players and create a match", async () => {
-      const player1 = new TransformedPlayerSetup("socket1", "Player1", defaultStateFields);
-      const player2 = new TransformedPlayerSetup("socket2", "Player2", defaultStateFields);
+      const player1 = new TransformedPlayerSetup("socket1", "Player1", defaultStateFields, 100, { x: 0, y: 0 }, []);
+      const player2 = new TransformedPlayerSetup("socket2", "Player2", defaultStateFields, 100, { x: 0, y: 0 }, []);
 
       // Mock Redis responses
       mockRedisClient.lRange.mockResolvedValue([
@@ -680,7 +686,7 @@ describe("MatchmakingService", () => {
       // Mock Redis responses for single player
       mockRedisClient.lRange.mockResolvedValue([
         JSON.stringify({ 
-          player: new TransformedPlayerSetup("socket1", "Player1", defaultStateFields), 
+          player: new TransformedPlayerSetup("socket1", "Player1", defaultStateFields, 100, { x: 0, y: 0 }, []), 
           timestamp: Date.now() 
         }),
       ]);
