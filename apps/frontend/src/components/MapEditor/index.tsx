@@ -1,6 +1,6 @@
 'use client';
 
-import { type CSSProperties, useEffect, useState } from 'react';
+import { type CSSProperties, useEffect, useState, useCallback } from 'react';
 import { Background } from './assets/background';
 import { Tile } from './Tile';
 import Image from 'next/image';
@@ -12,6 +12,14 @@ import { useUserInformationStore } from '@/lib/store/userInformationStore';
 import { useTilemapStore, type SlotNumber } from '@/lib/store/tilemapStore';
 import { Button } from '../shared/Button';
 import { useMinaAppkit } from 'mina-appkit';
+
+// Constants
+const TILEMAP_SIZE = 64;
+const MEGA_W = 8;
+const MEGA_H = 8;
+const S = 3; // inner tile size per megatile dimension
+const W = MEGA_W * S; // 24
+const H = MEGA_H * S; // 24
 
 enum Tiles {
   Air = '',
@@ -41,27 +49,207 @@ class Megatile {
   }
 }
 
-const getTilemapFromMegatile = (tilemap: Megatile[]) => {
+// Utility functions
+const tileToNumber = (tile: Tiles): number => {
+  switch (tile) {
+    case Tiles.Air:
+      return 0;
+    case Tiles.Water:
+      return 1;
+    case Tiles.Grass:
+      return 2;
+    default:
+      return 0;
+  }
+};
+
+const numberToTile = (num: number): Tiles => {
+  switch (num) {
+    case 0:
+      return Tiles.Air;
+    case 1:
+      return Tiles.Water;
+    case 2:
+      return Tiles.Grass;
+    default:
+      return Tiles.Air;
+  }
+};
+
+const getTilemapFromMegatile = (tilemap: Megatile[]): Tiles[] => {
   return tilemap.map((tile) => tile.getType());
 };
 
-const getNumberTilemapFromMegatile = (tilemap: Megatile[]) => {
-  return tilemap.map((tile) =>
-    tile.getType() === Tiles.Air ? 0 : tile.getType() === Tiles.Water ? 1 : 2
+const getNumberTilemapFromMegatile = (tilemap: Megatile[]): number[] => {
+  return tilemap.map((tile) => tileToNumber(tile.getType()));
+};
+
+const createEmptyTilemap = (): Tiles[] => Array(TILEMAP_SIZE).fill(Tiles.Air);
+
+const createEmptyMegatile = (): Megatile =>
+  new Megatile(
+    Array(9).fill({
+      type: Tiles.Air,
+      collisionType: Tiles.Air,
+      position: '',
+    })
+  );
+
+const getTileImage = (tile: ITile): string => {
+  let image = tile.type + '';
+  if (tile.collisionType) {
+    image += `-${tile.collisionType}`;
+    if (tile.position) {
+      image += `-${tile.position}`;
+    }
+  }
+  return `/assets/tiles/${image}.png`;
+};
+
+const getTile = (tiles: ITile[], x: number, y: number): ITile => {
+  if (x < 0 || x >= W || y < 0 || y >= H) {
+    return { type: Tiles.Air, collisionType: Tiles.Air, position: '' };
+  }
+  return (
+    tiles[x + y * W] ?? {
+      type: Tiles.Air,
+      collisionType: Tiles.Air,
+      position: '',
+    }
   );
 };
 
+const getNewTile = (
+  tilemap: ITile[],
+  type: Tiles,
+  x: number,
+  y: number
+): ITile => {
+  // Find Collision Type
+  let collisionType = null;
+  for (let i = -1; i <= 1; i++) {
+    for (let j = -1; j <= 1; j++) {
+      const neighbor = getTile(tilemap, x + i, y + j);
+      if (neighbor && neighbor.type !== Tiles.Air && neighbor.type !== type) {
+        collisionType = neighbor.type;
+      }
+    }
+  }
+
+  if (type === Tiles.Grass) {
+    return {
+      type,
+      collisionType: Tiles.Air,
+      position: '',
+    };
+  }
+
+  // Find Collision Position
+  const topCollision = getTile(tilemap, x, y - 1).type === collisionType;
+  const bottomCollision = getTile(tilemap, x, y + 1).type === collisionType;
+  const leftCollision = getTile(tilemap, x - 1, y).type === collisionType;
+  const rightCollision = getTile(tilemap, x + 1, y).type === collisionType;
+  const hasCollision =
+    topCollision || bottomCollision || leftCollision || rightCollision;
+  const tlCornerCollision =
+    !hasCollision && getTile(tilemap, x - 1, y - 1).type === collisionType;
+  const trCornerCollision =
+    !hasCollision && getTile(tilemap, x + 1, y - 1).type === collisionType;
+  const blCornerCollision =
+    !hasCollision && getTile(tilemap, x - 1, y + 1).type === collisionType;
+  const brCornerCollision =
+    !hasCollision && getTile(tilemap, x + 1, y + 1).type === collisionType;
+
+  let position = '';
+  if (topCollision) position += 't';
+  if (bottomCollision) position += 'b';
+  if (leftCollision) position += 'l';
+  if (rightCollision) position += 'r';
+  if (tlCornerCollision) position += 'corner-tl';
+  if (trCornerCollision) position += 'corner-tr';
+  if (blCornerCollision) position += 'corner-bl';
+  if (brCornerCollision) position += 'corner-br';
+
+  return {
+    type,
+    collisionType: collisionType as Tiles,
+    position: position,
+  };
+};
+
+const toIndex = (I: number, J: number, l: number, k: number): number =>
+  (I * S + l) * W + (J * S + k); // global (24×24) index
+
+const updateTilemap2 = (tilemap: Megatile[]): Megatile[] => {
+  // 1) Flatten 8×8 megatiles -> 24×24 tiles
+  const tiles: ITile[] = new Array(W * H);
+  for (let I = 0; I < MEGA_H; I++) {
+    for (let J = 0; J < MEGA_W; J++) {
+      const m = tilemap[I * MEGA_W + J]!;
+      // m.tiles is row-major 3×3: [r0c0,r0c1,r0c2, r1c0,...]
+      for (let l = 0; l < S; l++) {
+        for (let k = 0; k < S; k++) {
+          tiles[toIndex(I, J, l, k)] = m.tiles[l * S + k]!;
+        }
+      }
+    }
+  }
+
+  // 2) (Optional) produce a NEW tiles array if neighbors matter
+  const nextTiles: ITile[] = new Array(W * H);
+  for (let i = 0; i < W * H; i++) {
+    nextTiles[i] = getNewTile(
+      tiles, // read from ORIGINAL grid
+      tiles[i]!.type,
+      i % W,
+      Math.floor(i / W)
+    );
+  }
+
+  // 3) Rebuild 8×8 megatiles from 24×24 tiles
+  const newTilemap: Megatile[] = [];
+  for (let I = 0; I < MEGA_H; I++) {
+    for (let J = 0; J < MEGA_W; J++) {
+      const nine: ITile[] = [];
+      for (let l = 0; l < S; l++) {
+        const rowStart = (I * S + l) * W + J * S;
+        nine.push(...nextTiles.slice(rowStart, rowStart + S));
+      }
+      newTilemap.push(new Megatile(nine));
+    }
+  }
+
+  return newTilemap;
+};
+
+const createRandomTilemap = (): Megatile[] =>
+  Array.from({ length: TILEMAP_SIZE }, () =>
+    Math.random() < 0.5
+      ? new Megatile(
+          Array(9).fill({
+            type: Tiles.Water,
+            collisionType: Tiles.Air,
+            position: '',
+          })
+        )
+      : new Megatile(
+          Array(9).fill({
+            type: Tiles.Grass,
+            collisionType: Tiles.Air,
+            position: '',
+          })
+        )
+  );
+
 export default function MapEditor() {
   const { stater, setMap } = useUserInformationStore();
-  const { getTilemap, saveTilemap, removeTilemap, hasTilemap } =
-    useTilemapStore();
+  const { getTilemap, saveTilemap, removeTilemap } = useTilemapStore();
   const [selectedTile, setSelectedTile] = useState<Tiles>(Tiles.Air);
   const [isDrawing, setIsDrawing] = useState(false);
   const [activeSlot, setActiveSlot] = useState<SlotNumber>('1');
   const [hasChanges, setHasChanges] = useState(false);
-  const [originalTilemap, setOriginalTilemap] = useState<Tiles[]>([
-    ...Array(64).fill(Tiles.Air),
-  ]);
+  const [originalTilemap, setOriginalTilemap] =
+    useState<Tiles[]>(createEmptyTilemap());
 
   const { address } = useMinaAppkit();
   const utils = api.useUtils();
@@ -77,157 +265,63 @@ export default function MapEditor() {
     }
   );
 
-  const staterTilemap = stater?.state.map.map((elem) => +elem);
-
   const [tilemap, setTilemap] = useState<Megatile[]>(
-    [...Array(64)].map(
-      (_, i) =>
-        new Megatile([
-          ...Array(9).fill({
-            type: Tiles.Air,
-            collisionType: Tiles.Air,
-            position: '',
-          }),
-        ])
-    )
+    Array(TILEMAP_SIZE)
+      .fill(null)
+      .map(() => createEmptyMegatile())
   );
 
-  const getTileImage = (tile: ITile) => {
-    let image = tile.type + '';
-    if (tile.collisionType) {
-      image += `-${tile.collisionType}`;
-      if (tile.position) {
-        image += `-${tile.position}`;
-      }
-    }
-    return `/assets/tiles/${image}.png`;
-  };
+  // Unified save function
+  const saveTilemapData = useCallback(
+    (tilemapToSave: Megatile[], slot: SlotNumber, userAddress?: string) => {
+      const numberTilemap = getNumberTilemapFromMegatile(tilemapToSave);
 
-  const getTile = (tiles: ITile[], x: number, y: number) => {
-    if (x < 0 || x >= W || y < 0 || y >= H) {
-      return { type: Tiles.Air, collisionType: Tiles.Air, position: '' };
-    }
-    return (
-      tiles[x + y * W] ?? {
-        type: Tiles.Air,
-        collisionType: Tiles.Air,
-        position: '',
-      }
-    );
-  };
-
-  const getNewTile = (tilemap: ITile[], type: Tiles, x: number, y: number) => {
-    // Find Collision Type
-    let collisionType = null;
-    for (let i = -1; i <= 1; i++) {
-      for (let j = -1; j <= 1; j++) {
-        const neighbor = getTile(tilemap, x + i, y + j);
-        if (neighbor && neighbor.type !== Tiles.Air && neighbor.type !== type) {
-          collisionType = neighbor.type;
-        }
-      }
-    }
-
-    if (type === Tiles.Grass) {
-      return {
-        type,
-        collisionType: Tiles.Air,
-        position: '',
-      };
-    }
-
-    // Find Collision Position
-    const topCollision = getTile(tilemap, x, y - 1).type === collisionType;
-    const bottomCollision = getTile(tilemap, x, y + 1).type === collisionType;
-    const leftCollision = getTile(tilemap, x - 1, y).type === collisionType;
-    const rightCollision = getTile(tilemap, x + 1, y).type === collisionType;
-    const hasCollision =
-      topCollision || bottomCollision || leftCollision || rightCollision;
-    const tlCornerCollision =
-      !hasCollision && getTile(tilemap, x - 1, y - 1).type === collisionType;
-    const trCornerCollision =
-      !hasCollision && getTile(tilemap, x + 1, y - 1).type === collisionType;
-    const blCornerCollision =
-      !hasCollision && getTile(tilemap, x - 1, y + 1).type === collisionType;
-    const brCornerCollision =
-      !hasCollision && getTile(tilemap, x + 1, y + 1).type === collisionType;
-
-    let position = '';
-    if (topCollision) position += 't';
-    if (bottomCollision) position += 'b';
-    if (leftCollision) position += 'l';
-    if (rightCollision) position += 'r';
-    if (tlCornerCollision) position += 'corner-tl';
-    if (trCornerCollision) position += 'corner-tr';
-    if (blCornerCollision) position += 'corner-bl';
-    if (brCornerCollision) position += 'corner-br';
-
-    return {
-      type,
-      collisionType: collisionType as Tiles,
-      position: position,
-    };
-  };
-
-  const MEGA_W = 8;
-  const MEGA_H = 8;
-  const S = 3; // inner tile size per megatile dimension
-  const W = MEGA_W * S; // 24
-  const H = MEGA_H * S; // 24
-
-  const toIndex = (I: number, J: number, l: number, k: number) =>
-    (I * S + l) * W + (J * S + k); // global (24×24) index
-
-  function updateTilemap2(tilemap: Megatile[]) {
-    // 1) Flatten 8×8 megatiles -> 24×24 tiles
-    const tiles: ITile[] = new Array(W * H);
-    for (let I = 0; I < MEGA_H; I++) {
-      for (let J = 0; J < MEGA_W; J++) {
-        const m = tilemap[I * MEGA_W + J]!;
-        // m.tiles is row-major 3×3: [r0c0,r0c1,r0c2, r1c0,...]
-        for (let l = 0; l < S; l++) {
-          for (let k = 0; k < S; k++) {
-            tiles[toIndex(I, J, l, k)] = m.tiles[l * S + k]!;
+      if (userAddress) {
+        // Save to API if wallet is connected
+        updateTilemap(
+          {
+            userAddress,
+            tilemap: numberTilemap,
+            slot,
+          },
+          {
+            onSuccess: () => {
+              utils.tilemap.getTilemap.refetch();
+            },
           }
-        }
+        );
+      } else {
+        // Save to localStorage if wallet is not connected
+        saveTilemap(slot, numberTilemap);
       }
-    }
+    },
+    [updateTilemap, utils.tilemap.getTilemap, saveTilemap]
+  );
 
-    // 2) (Optional) produce a NEW tiles array if neighbors matter
-    const nextTiles: ITile[] = new Array(W * H);
-    for (let i = 0; i < W * H; i++) {
-      nextTiles[i] = getNewTile(
-        tiles, // read from ORIGINAL grid
-        tiles[i]!.type,
-        i % W,
-        Math.floor(i / W)
+  // Unified tilemap update function
+  const updateTilemapState = useCallback(
+    (newTilemap: Megatile[]) => {
+      const updatedTilemap = updateTilemap2(newTilemap);
+      setTilemap(updatedTilemap);
+      setMap(getNumberTilemapFromMegatile(updatedTilemap));
+
+      // Check if there are changes
+      const hasChangesNow = updatedTilemap.some(
+        (t, i) => t.getType() !== originalTilemap[i]
       );
-    }
-
-    // 3) Rebuild 8×8 megatiles from 24×24 tiles (the part that was wrong)
-    const newTilemap: Megatile[] = [];
-    for (let I = 0; I < MEGA_H; I++) {
-      for (let J = 0; J < MEGA_W; J++) {
-        const nine: ITile[] = [];
-        for (let l = 0; l < S; l++) {
-          const rowStart = (I * S + l) * W + J * S;
-          nine.push(...nextTiles.slice(rowStart, rowStart + S));
-        }
-        newTilemap.push(new Megatile(nine));
-      }
-    }
-
-    return newTilemap;
-  }
+      setHasChanges(hasChangesNow);
+    },
+    [setMap, originalTilemap]
+  );
 
   // Load tilemap from API (when wallet is connected)
   useEffect(() => {
     if (tilemapData) {
       setMap(tilemapData);
-      setOriginalTilemap(tilemapData);
+      setOriginalTilemap(tilemapData.map(numberToTile));
       setHasChanges(false);
     }
-  }, [tilemapData]);
+  }, [tilemapData, setMap]);
 
   // Load tilemap from localStorage (when wallet is not connected)
   useEffect(() => {
@@ -235,97 +329,75 @@ export default function MapEditor() {
       const localTilemap = getTilemap(activeSlot);
       if (localTilemap) {
         setMap(localTilemap);
-        setOriginalTilemap(
-          localTilemap.map((tile) =>
-            tile === 0 ? Tiles.Air : tile === 1 ? Tiles.Water : Tiles.Grass
-          )
-        );
+        setOriginalTilemap(localTilemap.map(numberToTile));
       } else {
         // If there is no saved tilemap, create an empty one
-        const emptyTilemap = Array(64).fill(Tiles.Air);
-        setMap(emptyTilemap);
+        const emptyTilemap = createEmptyTilemap();
+        setMap(emptyTilemap.map(tileToNumber));
         setOriginalTilemap(emptyTilemap);
       }
       setHasChanges(false);
     }
   }, [address, activeSlot, getTilemap, setMap]);
 
-  const handleTileDraw = (index: number) => {
-    if (selectedTile === tilemap?.[index]?.getType()) return;
+  const handleTileDraw = useCallback(
+    (index: number) => {
+      if (selectedTile === tilemap?.[index]?.getType()) return;
 
-    const newTilemap = [...(tilemap ?? [])];
-    for (let i = 0; i < 9; i++) {
-      newTilemap[index]!.tiles[i] = {
-        type: selectedTile,
-        collisionType: newTilemap[index]!.tiles[i]!.collisionType,
-        position: newTilemap[index]!.tiles[i]!.position,
-      };
-    }
-    setMap(
-      newTilemap.map((tile) =>
-        tile.getType() === Tiles.Air
-          ? 0
-          : tile.getType() === Tiles.Water
-            ? 1
-            : 2
-      )
-    );
+      const newTilemap = [...(tilemap ?? [])];
+      for (let i = 0; i < 9; i++) {
+        newTilemap[index]!.tiles[i] = {
+          type: selectedTile,
+          collisionType: newTilemap[index]!.tiles[i]!.collisionType,
+          position: newTilemap[index]!.tiles[i]!.position,
+        };
+      }
+      updateTilemapState(newTilemap);
+    },
+    [selectedTile, tilemap, updateTilemapState]
+  );
 
-    // Check if there are changes
-    const hasChangesNow = newTilemap.some(
-      (t, i) => t.getType() !== originalTilemap[i]
-    );
-    setHasChanges(hasChangesNow);
-    setTilemap(updateTilemap2(newTilemap));
-  };
-
-  // Handler for starting drawing
-  const handleMouseDown = (index: number, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDrawing(true);
-    handleTileDraw(index);
-  };
-
-  // Handler for drawing when moving the mouse
-  const handleMouseEnter = (index: number, event: React.MouseEvent) => {
-    if (isDrawing) {
+  // Unified event handlers
+  const handleMouseDown = useCallback(
+    (index: number, event: React.MouseEvent) => {
       event.preventDefault();
+      event.stopPropagation();
+      setIsDrawing(true);
       handleTileDraw(index);
-    }
-  };
+    },
+    [handleTileDraw]
+  );
 
-  // Handler for ending drawing
-  const handleMouseUp = (event: React.MouseEvent) => {
+  const handleMouseEnter = useCallback(
+    (index: number, event: React.MouseEvent) => {
+      if (isDrawing) {
+        event.preventDefault();
+        handleTileDraw(index);
+      }
+    },
+    [isDrawing, handleTileDraw]
+  );
+
+  const handleMouseUp = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
     setIsDrawing(false);
-  };
+  }, []);
 
-  // Prevent dragging and context menu
-  const handleDragStart = (event: React.DragEvent) => {
-    event.preventDefault();
-    return false;
-  };
-
-  const handleContextMenu = (event: React.MouseEvent) => {
-    event.preventDefault();
-    return false;
-  };
+  const preventDefault = useCallback(
+    (event: React.MouseEvent | React.DragEvent) => {
+      event.preventDefault();
+      return false;
+    },
+    []
+  );
 
   useEffect(() => {
-    const handleGlobalMouseUp = () => {
-      setIsDrawing(false);
-    };
-
-    const handleGlobalMouseLeave = () => {
-      setIsDrawing(false);
-    };
-
+    const handleGlobalMouseUp = () => setIsDrawing(false);
+    const handleGlobalMouseLeave = () => setIsDrawing(false);
     const handleGlobalDragStart = (event: DragEvent) => {
       event.preventDefault();
       return false;
     };
-
     const handleGlobalSelectStart = (event: Event) => {
       if (isDrawing) {
         event.preventDefault();
@@ -346,46 +418,52 @@ export default function MapEditor() {
     };
   }, [isDrawing]);
 
-  const handleSlotChange = (newSlot: SlotNumber) => {
-    // Save the current slot if there are changes
-    if (hasChanges && activeSlot !== newSlot) {
-      if (address) {
-        // Save to API if wallet is connected
-        updateTilemap(
-          {
-            userAddress: address,
-            tilemap: tilemap.map((tile) =>
-              tile.getType() === Tiles.Air
-                ? 0
-                : tile.getType() === Tiles.Water
-                  ? 1
-                  : 2
-            ),
-            slot: activeSlot,
-          },
-          {
-            onSuccess: () => {
-              utils.tilemap.getTilemap.refetch();
-            },
-          }
-        );
-      } else {
-        // Save to localStorage if wallet is not connected
-        saveTilemap(
-          activeSlot,
-          tilemap.map((tile) =>
-            tile.getType() === Tiles.Air
-              ? 0
-              : tile.getType() === Tiles.Water
-                ? 1
-                : 2
-          )
-        );
+  const handleSlotChange = useCallback(
+    (newSlot: SlotNumber) => {
+      // Save the current slot if there are changes
+      if (hasChanges && activeSlot !== newSlot) {
+        saveTilemapData(tilemap, activeSlot, address);
       }
-    }
+      setActiveSlot(newSlot);
+    },
+    [hasChanges, activeSlot, tilemap, address, saveTilemapData]
+  );
 
-    setActiveSlot(newSlot);
-  };
+  const handleSave = useCallback(() => {
+    saveTilemapData(tilemap, activeSlot, address);
+    setOriginalTilemap(getTilemapFromMegatile(tilemap));
+    setHasChanges(false);
+  }, [tilemap, activeSlot, address, saveTilemapData]);
+
+  const handleRandom = useCallback(() => {
+    const randomTilemap = createRandomTilemap();
+    updateTilemapState(randomTilemap);
+    setOriginalTilemap(getTilemapFromMegatile(randomTilemap));
+    setHasChanges(false);
+    saveTilemapData(randomTilemap, activeSlot, address);
+  }, [updateTilemapState, activeSlot, address, saveTilemapData]);
+
+  const handleClear = useCallback(() => {
+    const emptyTilemap = createEmptyTilemap();
+    setMap(emptyTilemap.map(tileToNumber));
+    setOriginalTilemap(emptyTilemap);
+    setHasChanges(false);
+
+    if (address) {
+      saveTilemapData(
+        Array(TILEMAP_SIZE)
+          .fill(null)
+          .map(() => createEmptyMegatile()),
+        activeSlot,
+        address
+      );
+    } else {
+      removeTilemap(activeSlot);
+    }
+  }, [setMap, address, activeSlot, saveTilemapData, removeTilemap]);
+
+  const saveSlots = ['1', '2', '3', '4'] as const;
+  const saveSlotPositions = ['top-10', 'top-50', 'top-90', 'top-130'] as const;
 
   return (
     <div className="w-290 h-150 relative">
@@ -404,20 +482,6 @@ export default function MapEditor() {
                 onClick={() => setSelectedTile(tile)}
               />
             ))}
-
-            {/* For testing purposes */}
-            {/* {[...Array(33)].map((_, i) => {
-              const tile = i + 1; // Remove 0 tile
-              return (
-                <Tile
-                  key={tile}
-                  image={`/assets/tiles/${tile}.png`}
-                  title={`Tile ${tile}`}
-                  description={`Tile ${tile} description`}
-                  onClick={() => setSelectedTile(tile)}
-                />
-              );
-            })} */}
           </div>
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-8 grid-rows-8">
@@ -427,46 +491,18 @@ export default function MapEditor() {
                   onMouseDown={(event) => handleMouseDown(index, event)}
                   onMouseEnter={(event) => handleMouseEnter(index, event)}
                   onMouseUp={handleMouseUp}
-                  onDragStart={handleDragStart}
-                  onContextMenu={handleContextMenu}
+                  onDragStart={preventDefault}
+                  onContextMenu={preventDefault}
                   className="size-15 cursor-pointer select-none"
                   style={{ userSelect: 'none' }}
-                  onClick={() => {
-                    // let mainTile = megatile.getMainTile();
-                    // if (selectedTile === mainTile.type) return;
-                    // const newTilemap = [...tilemap];
-                    // for (let i = 0; i < 9; i++) {
-                    //   newTilemap[index]!.tiles[i] = {
-                    //     type: selectedTile,
-                    //     collisionType: mainTile.collisionType,
-                    //     position: mainTile.position,
-                    //   };
-                    // }
-                    // setTilemap(newTilemap);
-                    // setTilemap(updateTilemap2(newTilemap));
-                    // setMap(
-                    //   newTilemap.map((tile) =>
-                    //     tile.getType() === Tiles.Air
-                    //       ? 0
-                    //       : tile.getType() === Tiles.Water
-                    //         ? 1
-                    //         : 2
-                    //   )
-                    // );
-                    // Check if there are changes
-                    // const hasChangesNow = newTilemap.some(
-                    //   (t, i) => t.getType() !== originalTilemap[i]
-                    // );
-                    // setHasChanges(hasChangesNow);
-                  }}
                 >
                   {megatile.getMainTile().type === Tiles.Air ? (
                     <div className="size-full bg-gray-200 hover:bg-gray-400" />
                   ) : (
                     <div className="grid grid-cols-3 grid-rows-3">
-                      {megatile.tiles.map((tile, index) => (
+                      {megatile.tiles.map((tile, tileIndex) => (
                         <Image
-                          key={index}
+                          key={tileIndex}
                           src={getTileImage(tile)}
                           alt="Tile"
                           width={60}
@@ -494,165 +530,30 @@ export default function MapEditor() {
               <Button
                 text="Save"
                 variant="gray"
-                onClick={() => {
-                  if (address) {
-                    updateTilemap(
-                      {
-                        userAddress: '0x123',
-                        tilemap: tilemap.map((tile) =>
-                          tile.getType() === Tiles.Air
-                            ? 0
-                            : tile.getType() === Tiles.Water
-                              ? 1
-                              : 2
-                        ),
-                        slot: activeSlot,
-                      },
-                      {
-                        onSuccess: () => {
-                          utils.tilemap.getTilemap.refetch();
-                        },
-                      }
-                    );
-                    setHasChanges(false);
-                  } else {
-                    // Save to localStorage if wallet is not connected
-                    saveTilemap(
-                      activeSlot,
-                      getNumberTilemapFromMegatile(tilemap) ?? []
-                    );
-                    setOriginalTilemap(getTilemapFromMegatile(tilemap) ?? []);
-                    setHasChanges(false);
-                  }
-                }}
+                onClick={handleSave}
                 className="mr-auto h-full w-[70%]"
               />
               <RandomBtn
                 className="size-12 cursor-pointer transition-transform duration-300 hover:scale-110"
-                onClick={() => {
-                  const randomTilemap = Array.from({ length: 64 }, () =>
-                    Math.random() < 0.5
-                      ? new Megatile(
-                          Array(9).fill({
-                            type: Tiles.Water,
-                            collisionType: Tiles.Air,
-                            position: '',
-                          })
-                        )
-                      : new Megatile(
-                          Array(9).fill({
-                            type: Tiles.Grass,
-                            collisionType: Tiles.Air,
-                            position: '',
-                          })
-                        )
-                  );
-                  setTilemap(updateTilemap2(randomTilemap));
-
-                  setMap(
-                    randomTilemap.map((tile) =>
-                      tile.getType() === Tiles.Air
-                        ? 0
-                        : tile.getType() === Tiles.Water
-                          ? 1
-                          : 2
-                    )
-                  );
-                  setOriginalTilemap(
-                    randomTilemap.map((tile) => tile.getType())
-                  );
-                  setHasChanges(false);
-
-                  if (address) {
-                    updateTilemap(
-                      {
-                        userAddress: '0x123',
-                        tilemap: randomTilemap.map((tile) =>
-                          tile.getType() === Tiles.Air
-                            ? 0
-                            : tile.getType() === Tiles.Water
-                              ? 1
-                              : 2
-                        ),
-                        slot: activeSlot,
-                      },
-                      {
-                        onSuccess: () => {
-                          utils.tilemap.getTilemap.refetch();
-                        },
-                      }
-                    );
-                  } else {
-                    // Save to localStorage if wallet is not connected
-                    saveTilemap(
-                      activeSlot,
-                      randomTilemap.map((tile) =>
-                        tile.getType() === Tiles.Air
-                          ? 0
-                          : tile.getType() === Tiles.Water
-                            ? 1
-                            : 2
-                      )
-                    );
-                  }
-                }}
+                onClick={handleRandom}
               />
               <TrashBtn
                 className="size-12 cursor-pointer transition-transform duration-300 hover:scale-110"
-                onClick={() => {
-                  const emptyTilemap = Array(64).fill(Tiles.Air);
-                  setMap(emptyTilemap);
-                  setOriginalTilemap(emptyTilemap);
-                  setHasChanges(false);
-
-                  if (address) {
-                    // Delete from API if wallet is connected
-                    updateTilemap(
-                      {
-                        userAddress: address,
-                        tilemap: emptyTilemap,
-                        slot: activeSlot,
-                      },
-                      {
-                        onSuccess: () => {
-                          utils.tilemap.getTilemap.refetch();
-                        },
-                      }
-                    );
-                  } else {
-                    // Delete from localStorage if wallet is not connected
-                    removeTilemap(activeSlot);
-                  }
-                }}
+                onClick={handleClear}
               />
             </div>
           </div>
         </div>
       </div>
-      <SaveSlot
-        slot={'1'}
-        className="absolute top-10 z-0 lg:!-right-2 2xl:!-right-20"
-        isActive={activeSlot === '1'}
-        onClick={() => handleSlotChange('1')}
-      />
-      <SaveSlot
-        slot={'2'}
-        className="top-50 absolute z-0 lg:!-right-2 2xl:!-right-20"
-        isActive={activeSlot === '2'}
-        onClick={() => handleSlotChange('2')}
-      />
-      <SaveSlot
-        slot={'3'}
-        className="top-90 absolute z-0 lg:!-right-2 2xl:!-right-20"
-        isActive={activeSlot === '3'}
-        onClick={() => handleSlotChange('3')}
-      />
-      <SaveSlot
-        slot={'4'}
-        className="top-130 absolute z-0 lg:!-right-2 2xl:!-right-20"
-        isActive={activeSlot === '4'}
-        onClick={() => handleSlotChange('4')}
-      />
+      {saveSlots.map((slot, index) => (
+        <SaveSlot
+          key={slot}
+          slot={slot}
+          className={`absolute z-0 lg:!-right-2 2xl:!-right-20 ${saveSlotPositions[index]}`}
+          isActive={activeSlot === slot}
+          onClick={() => handleSlotChange(slot)}
+        />
+      ))}
       <Background className="w-290 h-170 absolute inset-0 z-[1]" />
     </div>
   );
