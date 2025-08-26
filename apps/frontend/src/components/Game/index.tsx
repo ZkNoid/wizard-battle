@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import type { ReactNode } from "react";
-import { Spells } from "./Spells";
-import { Button } from "../shared/Button";
-import BoxButton from "../shared/BoxButton";
-import { HelpIcon } from "./assets/help-icon";
-import { Clock } from "./Clock";
-import { Users } from "./Users";
-import { useRouter } from "next/navigation";
-import { useUserInformationStore } from "@/lib/store/userInformationStore";
-import { spellIdToSpell } from "@/lib/utils";
+import type { ReactNode } from 'react';
+import { Spells } from './Spells';
+import { Button } from '../shared/Button';
+import BoxButton from '../shared/BoxButton';
+import { HelpIcon } from './assets/help-icon';
+import { Clock } from './Clock';
+import { Users } from './Users';
+import { useRouter } from 'next/navigation';
+import { useUserInformationStore } from '@/lib/store/userInformationStore';
+import { spellIdToSpell } from '@/lib/utils';
 
 export default function Game({
   children,
@@ -18,6 +18,7 @@ export default function Game({
 }) {
   const router = useRouter();
   const { stater } = useUserInformationStore();
+
   return (
     <div className="flex h-full w-full flex-grow flex-col pt-40">
       <div className="flex h-full w-full flex-col">
@@ -43,7 +44,7 @@ export default function Game({
           variant="blue"
           text="Give up"
           onClick={() => {
-            router.push("/");
+            router.push('/');
           }}
           className="h-15 w-89 col-span-3 ml-auto"
         />
