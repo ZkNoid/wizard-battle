@@ -309,3 +309,45 @@ npm run test:all-integration
 - **Predictive Loading**: Pre-load next turn data
 - **Dynamic Timeouts**: Adjust phase timing based on game complexity
 - **Advanced Cryptography**: Enhanced zero-knowledge proof systems
+
+## Implementation Files
+
+### Files Changed/Added in Implementation
+
+The following files were created or modified to implement the 5-phase gameplay system:
+
+#### Backend Implementation
+- `apps/backend/GAMEPLAY_PHASES.md` - This documentation file
+- `apps/backend/src/game-session/game-session.gateway.ts` - WebSocket gateway with 5-phase orchestration
+- `apps/backend/src/game-session/game-session.gateway.spec.ts` - Comprehensive test suite for gateway
+- `apps/backend/src/game-session/game-state.service.ts` - Redis-backed state management with phase support
+- `apps/backend/src/types/matchmaking.types.ts` - Updated type definitions
+- `apps/backend/package.json` - Added new test scripts for gameplay phases
+- `apps/backend/test-gameplay-phases.js` - Integration test for 5-phase system
+- `apps/backend/test-multi-instance.js` - Updated multi-instance tests with gameplay events
+- `apps/backend/test-single-instance.js` - Updated single-instance tests with gameplay events
+
+#### Frontend Implementation  
+- `apps/frontend/src/game/GamePhaseManager.ts` - Client-side phase management and WebSocket handling
+- `apps/frontend/tsconfig.json` - Updated TypeScript configuration
+
+#### Common/Shared Implementation
+- `apps/common/types/gameplay.types.ts` - Core gameplay interfaces and enums
+- `apps/common/types/index.ts` - Updated exports to include gameplay types
+- `apps/common/types/matchmaking.types.ts` - Extended interfaces for gameplay support
+- `apps/common/stater/stater.ts` - Enhanced with 5-phase integration methods
+- `apps/common/stater/spells/mage.test.ts` - Updated tests with new Laser spell and image paths
+
+#### Key Implementation Features
+- **5-Phase Turn System**: Complete implementation of spell casting → propagation → effects → end of round → state update
+- **Multi-Instance Support**: Redis pub/sub for horizontal scaling across server instances  
+- **Cryptographic Security**: Zero-knowledge proof integration with Stater class
+- **Comprehensive Testing**: Unit tests, integration tests, and multi-instance validation
+- **WebSocket Communication**: Real-time bidirectional communication between clients and server
+- **Anti-Cheat Protection**: Cryptographic verification of all state transitions
+
+#### Commit History
+- `aa8f2f3` - Enhanced Stater class with 5-phase integration and updated mage spell tests
+- `5dec5af` - Added complete backend infrastructure with gateway, state service, and tests  
+- `ca58a55` - Added comprehensive documentation to gameplay types and Stater class
+- `4662e46` - Implemented frontend GamePhaseManager for client-side phase coordination
