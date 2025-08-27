@@ -14,7 +14,7 @@ interface IProps {
   container: string;
   isEnemy?: boolean;
   tilemapData?: number[];
-  onMapClick?: () => void;
+  onMapClick?: (x: number, y: number) => void;
 }
 
 export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(

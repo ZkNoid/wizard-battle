@@ -135,7 +135,10 @@ export class Game extends Scene {
         const worldPoint = this.camera.getWorldPoint(pointer.x, pointer.y);
 
         console.log('onMapClick', (this.game as any).onMapClick);
-        (this.game as any).onMapClick?.();
+        (this.game as any).onMapClick?.(
+          Math.floor(worldPoint.x / activeTilemap.getConfig().tileSize),
+          Math.floor(worldPoint.y / activeTilemap.getConfig().tileSize)
+        );
 
         const tileCenter = activeTilemap.getTileCenter(
           worldPoint.x,

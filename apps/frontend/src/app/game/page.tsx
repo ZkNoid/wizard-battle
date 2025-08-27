@@ -9,6 +9,8 @@ import { FullscreenLoader } from '@/components/shared/FullscreenLoader';
 import { useMinaAppkit } from 'mina-appkit';
 import { useRouter } from 'next/navigation';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
+import { allSpells } from '../../../../common/stater/spells';
+import { useInGameStore } from '@/lib/store/inGameStore';
 
 const PhaserGame = dynamic(
   () => import('@/PhaserGame').then((mod) => mod.PhaserGame),
@@ -21,6 +23,7 @@ const PhaserGame = dynamic(
 export default function GamePage() {
   //  References to the PhaserGame component (game and scene are exposed)
   const { stater, opponentState } = useUserInformationStore();
+  const { pickedSpellId } = useInGameStore();
   const phaserRefAlly = useRef<IRefPhaserGame | null>(null);
   const phaserRefEnemy = useRef<IRefPhaserGame | null>(null);
   const router = useRouter();
@@ -47,12 +50,26 @@ export default function GamePage() {
     }
   }, [address]);
 
-  const handleEnemyMapClick = () => {
-    console.log('Enemy map clicked:');
+  const handleEnemyMapClick = (x: number, y: number) => {
+    console.log('Enemy map clicked: ', x, y);
+
+    if (!pickedSpellId) {
+      console.log('No spell picked');
+      return;
+    }
+
+    const spell = allSpells.find(
+      (spell) => spell.id.toString() === pickedSpellId.toString()
+    );
+
+    if (!spell) {
+      console.log('Spell not found');
+      return;
+    }
   };
 
-  const handleAllyMapClick = () => {
-    console.log('Ally map clicked:');
+  const handleAllyMapClick = (x: number, y: number) => {
+    console.log('Ally map clicked: ', x, y);
   };
 
   return (

@@ -34,7 +34,7 @@ const config2: Phaser.Types.Core.GameConfig = {
 const StartGameAlly = (
   parent: string,
   tilemapData?: number[],
-  onMapClick?: () => void
+  onMapClick?: (x: number, y: number) => void
 ) => {
   const game = new Game({ ...config1, parent });
   if (tilemapData) {
@@ -50,7 +50,7 @@ const StartGameAlly = (
 const StartGameEnemy = (
   parent: string,
   tilemapData?: number[],
-  onMapClick?: () => void
+  onMapClick?: (x: number, y: number) => void
 ) => {
   const game = new Game({ ...config2, parent });
   if (tilemapData) {
