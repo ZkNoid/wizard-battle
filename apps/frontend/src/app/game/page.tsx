@@ -47,6 +47,14 @@ export default function GamePage() {
     }
   }, [address]);
 
+  const handleEnemyMapClick = () => {
+    console.log('Enemy map clicked:');
+  };
+
+  const handleAllyMapClick = () => {
+    console.log('Ally map clicked:');
+  };
+
   return (
     <Game>
       <PhaserGame
@@ -55,6 +63,7 @@ export default function GamePage() {
         container="game-container-ally"
         isEnemy={false}
         tilemapData={stater?.state?.map.map((tile) => +tile) || []}
+        onMapClick={handleAllyMapClick}
       />
       <PhaserGame
         ref={phaserRefEnemy}
@@ -62,6 +71,7 @@ export default function GamePage() {
         container="game-container-enemy"
         isEnemy={true}
         tilemapData={opponentState?.map.map((tile) => +tile) || []}
+        onMapClick={handleEnemyMapClick}
       />
     </Game>
   );

@@ -1,5 +1,5 @@
-import { Scene } from "phaser";
-import { GameTilemap, createTilemap } from "../objects/GameTilemap";
+import { Scene } from 'phaser';
+import { GameTilemap, createTilemap } from '../objects/GameTilemap';
 
 export class Game extends Scene {
   camera!: Phaser.Cameras.Scene2D.Camera;
@@ -10,10 +10,10 @@ export class Game extends Scene {
   leftTargetPosition!: { x: number; y: number } | null;
   // rightTargetPosition!: { x: number; y: number } | null;
   private highlightTile: Phaser.GameObjects.Rectangle | null = null;
-  private activePlayer: "left" | "right" = "left";
+  private activePlayer: 'left' | 'right' = 'left';
 
   constructor() {
-    super("Game");
+    super('Game');
     this.leftTilemap = new GameTilemap(this, createTilemap());
     // this.rightTilemap = new GameTilemap(this, createTilemap());
   }
@@ -27,7 +27,7 @@ export class Game extends Scene {
 
     try {
       // Initialize tilemaps
-      this.leftTilemap.initialize("tiles", "tiles");
+      this.leftTilemap.initialize('tiles', 'tiles');
       // this.rightTilemap.initialize("tiles", "tiles");
 
       // Load tilemap data if available
@@ -36,7 +36,7 @@ export class Game extends Scene {
       if (tilemapData && Array.isArray(tilemapData)) {
         this.leftTilemap.loadTilemapFromData(tilemapData);
       } else {
-        console.log("No tilemap data available, using default");
+        console.log('No tilemap data available, using default');
       }
 
       // Center layers
@@ -66,7 +66,7 @@ export class Game extends Scene {
         this.leftTilemap.getConfig().tileSize * leftScale,
         this.leftTilemap.getConfig().tileSize * leftScale,
         0xffffff,
-        0.3,
+        0.3
       );
       this.highlightTile.setVisible(false);
 
@@ -85,7 +85,7 @@ export class Game extends Scene {
       this.leftPlayer = this.add.image(
         (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
         (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
-        "player",
+        'player'
       );
       this.leftPlayer.setScale(leftScale);
 
@@ -107,16 +107,16 @@ export class Game extends Scene {
       // this.rightPlayer.setTint(0xff0000); // Делаем правого игрока красным для отличия
 
       // Add mouse move handler
-      this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
+      this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
         const activeTilemap =
-          this.activePlayer === "left" ? this.leftTilemap : this.leftTilemap; // : this.rightTilemap;
+          this.activePlayer === 'left' ? this.leftTilemap : this.leftTilemap; // : this.rightTilemap;
         if (this.highlightTile) {
           const worldPoint = this.camera.getWorldPoint(pointer.x, pointer.y);
 
           if (activeTilemap.isPointInside(worldPoint.x, worldPoint.y)) {
             const tileCenter = activeTilemap.getTileCenter(
               worldPoint.x,
-              worldPoint.y,
+              worldPoint.y
             );
             if (tileCenter) {
               this.highlightTile.setPosition(tileCenter.x, tileCenter.y);
@@ -129,17 +129,20 @@ export class Game extends Scene {
       });
 
       // Add click handler
-      this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
         const activeTilemap =
-          this.activePlayer === "left" ? this.leftTilemap : this.leftTilemap; // : this.rightTilemap;
+          this.activePlayer === 'left' ? this.leftTilemap : this.leftTilemap; // : this.rightTilemap;
         const worldPoint = this.camera.getWorldPoint(pointer.x, pointer.y);
+
+        console.log('onMapClick', (this.game as any).onMapClick);
+        (this.game as any).onMapClick?.();
 
         const tileCenter = activeTilemap.getTileCenter(
           worldPoint.x,
-          worldPoint.y,
+          worldPoint.y
         );
         if (tileCenter) {
-          if (this.activePlayer === "left") {
+          if (this.activePlayer === 'left') {
             this.leftTargetPosition = tileCenter;
           } // else {
           //   this.rightTargetPosition = tileCenter;
@@ -148,12 +151,12 @@ export class Game extends Scene {
       });
 
       // Add key handler for switching players
-      this.input.keyboard?.on("keydown-SPACE", () => {
-        this.activePlayer = this.activePlayer === "left" ? "left" : "left"; // ? "right" : "left";
-        console.log("Active player:", this.activePlayer);
+      this.input.keyboard?.on('keydown-SPACE', () => {
+        this.activePlayer = this.activePlayer === 'left' ? 'left' : 'left'; // ? "right" : "left";
+        console.log('Active player:', this.activePlayer);
       });
     } catch (error) {
-      console.error("Error in create:", error);
+      console.error('Error in create:', error);
     }
   }
 
@@ -164,7 +167,7 @@ export class Game extends Scene {
         this.leftPlayer.x,
         this.leftPlayer.y,
         this.leftTargetPosition.x,
-        this.leftTargetPosition.y,
+        this.leftTargetPosition.y
       );
 
       if (distance > 1) {
@@ -172,7 +175,7 @@ export class Game extends Scene {
           this.leftPlayer.x,
           this.leftPlayer.y,
           this.leftTargetPosition.x,
-          this.leftTargetPosition.y,
+          this.leftTargetPosition.y
         );
 
         const speed = 200;
