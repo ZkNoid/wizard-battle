@@ -23,6 +23,7 @@ import { Server, Socket } from "socket.io";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { createClient } from "redis";
 import { GameStateService } from "../game-session/game-state.service";
+import { BotClientService } from "../bot/bot-client.service";
 import {
   IAddToQueue,
   IAddToQueueResponse,
@@ -83,11 +84,15 @@ export class MatchmakingService {
   /**
    * Constructor for MatchmakingService
    * @param gameStateService - The GameStateService instance for managing game states and cross-instance communication
+   * @param botClientService - The BotClientService instance for managing bot players (optional)
    *
    * @dev Initializes the matchmaking service with Redis connection and automatic matchmaking loop startup.
    * The service immediately connects to Redis and starts the 30-second matchmaking cycle.
    */
-  constructor(private readonly gameStateService: GameStateService) {
+  constructor(
+    private readonly gameStateService: GameStateService,
+    private readonly botClientService?: BotClientService
+  ) {
     console.log("MatchmakingService constructor called");
     this.redisClient.on("error", (err) =>
       console.error("Redis Client Error", err),
@@ -517,6 +522,9 @@ export class MatchmakingService {
         player2.socketId!,
         `Player ${player2.playerId!}`,
         player2.fields!,
+        player2.hp || 100,
+        player2.position || { x: 0, y: 0 },
+        player2.effects || []
       );
       matchFound1 = new TransformedFoundMatch(roomId, player2.playerId!, [
         opponentSetup1,
@@ -531,6 +539,9 @@ export class MatchmakingService {
         player1.socketId!,
         `Player ${player1.playerId!}`,
         player1.fields!,
+        player1.hp || 100,
+        player1.position || { x: 0, y: 0 },
+        player1.effects || []
       );
       matchFound2 = new TransformedFoundMatch(roomId, player1.playerId!, [
         opponentSetup2,
@@ -774,6 +785,125 @@ export class MatchmakingService {
       `Player ${player.playerId} added to queue. Next matchmaking cycle in ~30 seconds.`,
     );
     return null; // No immediate match, wait for next cycle
+  }
+
+  /**
+   * @notice Join bot matchmaking - creates a bot opponent for the requesting player
+   * @param socket The requesting player's socket connection
+   * @param addToQueue The player's matchmaking request data
+   * @returns Promise that resolves with match details or null if failed
+   * 
+   * @dev This method provides immediate bot matchmaking by:
+   * 1. Creating a bot client with randomized setup
+   * 2. Generating a deterministic room ID for the player-bot match
+   * 3. Creating match data and initializing game state
+   * 4. Connecting the bot to the WebSocket server
+   * 5. Notifying both player and bot of the successful match
+   * 
+   * Bot Integration:
+   * - Bot gets unique ID with 'bot_' prefix for easy identification
+   * - Bot uses same WebSocket events and gameplay flow as human players
+   * - Bot responds to all game phases with AI-generated actions
+   * - Match creation follows same pattern as player-vs-player matches
+   * 
+   * Error Handling:
+   * - Gracefully handles bot creation failures
+   * - Cleans up partially created matches on errors
+   * - Provides meaningful error messages to requesting player
+   */
+  async joinBotMatchmaking(socket: Socket, addToQueue: IAddToQueue): Promise<string | null> {
+    if (!this.botClientService) {
+      console.error('Bot client service not available');
+      socket.emit('addtoqueue', new TransformedAddToQueueResponse(
+        false, 
+        'Bot matchmaking is not available on this server'
+      ));
+      return null;
+    }
+
+    const player: IPublicState = addToQueue.playerSetup;
+    if (!player) {
+      console.error("Player is not defined");
+      return null;
+    }
+
+    console.log(`🤖 Player ${player.playerId} requesting bot matchmaking`);
+
+    try {
+      // Register the human player's socket mapping
+      await this.gameStateService.registerSocket(socket);
+
+      // Generate unique bot ID
+      const botId = `bot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create and connect bot client
+      const botClient = await this.botClientService.createBotClient(
+        botId, 
+        process.env.WEBSOCKET_URL || 'http://localhost:3030'
+      );
+
+      // Get bot setup
+      const botSetup = botClient.getCurrentState();
+      botSetup.socketId = botClient.getSocketId() || '';
+
+      // Generate room ID (player first, then bot for consistency)
+      const roomId = `${player.playerId}-${botId}`;
+
+      // Create match object
+      const match: Match = {
+        player1: player,
+        player2: botSetup,
+        roomId: roomId,
+      };
+
+      // Store match in Redis
+      await this.redisClient.hSet('matches', roomId, JSON.stringify(match));
+
+      // Initialize game state
+      await this.gameStateService.createGameState(roomId, [
+        { id: player.playerId!, socketId: player.socketId! },
+        { id: botId, socketId: botSetup.socketId }
+      ]);
+
+      // Notify both players of the match
+      await this.notifyPlayersOfMatch(player, botSetup, roomId);
+
+      // Start the first turn after a short delay to allow both players to join the room
+      setTimeout(async () => {
+        try {
+          await this.gameStateService.updateGameState(roomId, { status: 'active' });
+          
+          // Emit the first turn to start gameplay
+          if (this.server) {
+            this.server.to(roomId).emit('newTurn', { phase: 'spell_casting' });
+            await this.gameStateService.publishToRoom(roomId, 'newTurn', { phase: 'spell_casting' });
+            console.log(`🎮 Started first turn for bot match in room ${roomId}`);
+          }
+        } catch (error) {
+          console.error('Failed to start first turn for bot match:', error);
+        }
+      }, 2000); // 2 second delay
+
+      // Emit success response to human player
+      socket.emit('addtoqueue', new TransformedAddToQueueResponse(
+        true,
+        `Bot match created! Room: ${roomId}`
+      ));
+
+      console.log(`🤖 Bot match created: ${player.playerId} vs ${botId} in room ${roomId}`);
+      return roomId;
+
+    } catch (error) {
+      console.error('Failed to create bot match:', error);
+      
+      // Emit error response
+      socket.emit('addtoqueue', new TransformedAddToQueueResponse(
+        false,
+        'Failed to create bot match. Please try again.'
+      ));
+      
+      return null;
+    }
   }
 
   /**

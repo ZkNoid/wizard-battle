@@ -60,6 +60,7 @@ describe("Stater", () => {
 
     stater = new Stater({
       state: initialState,
+      randomSeed: Field(123),
     });
   });
 

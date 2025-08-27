@@ -35,6 +35,15 @@ export default function Matchmaking({
         socketId: socket.id!,
         playerId: Math.random().toString(),
         fields: State.toFields(stater.state),
+        hp: Number(stater.state.playerStats.hp.toString()),
+        position: {
+          x: Number(stater.state.playerStats.position.x.toString()),
+          y: Number(stater.state.playerStats.position.y.toString())
+        },
+        effects: stater.state.effects.map(effect => ({
+          effectId: effect.effectId.toString(),
+          duration: effect.duration.toString()
+        }))
       } satisfies IPublicState,
       nonce: 0,
       signature: '',

@@ -2,6 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { ScheduleModule } from "@nestjs/schedule";
 import { MatchmakingService } from "./matchmaking.service";
 import { GameStateService } from "../game-session/game-state.service";
+import { BotClientService } from "../bot/bot-client.service";
 import { Server, Socket } from "socket.io";
 import { createMock } from "@golevelup/ts-jest";
 import {
@@ -44,6 +45,7 @@ describe("MatchmakingService", () => {
   let service: MatchmakingService;
   let mockServer: Server;
   let mockGameStateService: GameStateService;
+  let mockBotClientService: any;
 
   beforeEach(async () => {
     // Reset all mocks before each test
@@ -87,6 +89,25 @@ describe("MatchmakingService", () => {
       markPlayerDead: jest.fn().mockResolvedValue(null),
     }) as any;
 
+    // Mock BotClientService
+    mockBotClientService = {
+      createBotClient: jest.fn().mockResolvedValue({
+        getCurrentState: jest.fn().mockReturnValue({
+          socketId: 'mock-bot-socket',
+          playerId: 'mock-bot-id',
+          fields: [],
+          hp: 100,
+          position: { x: 0, y: 0 },
+          effects: []
+        }),
+        getSocketId: jest.fn().mockReturnValue('mock-bot-socket')
+      }),
+      disconnectBot: jest.fn().mockResolvedValue(undefined),
+      getBot: jest.fn().mockReturnValue(undefined),
+      getAllBots: jest.fn().mockReturnValue([]),
+      disconnectAllBots: jest.fn().mockResolvedValue(undefined)
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       imports: [ScheduleModule.forRoot()],
       providers: [
@@ -94,6 +115,10 @@ describe("MatchmakingService", () => {
         {
           provide: GameStateService,
           useValue: mockGameStateService,
+        },
+        {
+          provide: BotClientService,
+          useValue: mockBotClientService,
         },
       ],
     }).compile();
@@ -116,6 +141,9 @@ describe("MatchmakingService", () => {
         socketId,
         playerId,
         defaultStateFields,
+        100,
+        { x: 0, y: 0 },
+        []
       );
       return new TransformedAddToQueue(playerId, setup, 0, null, null);
     };
@@ -381,6 +409,10 @@ describe("MatchmakingService", () => {
               }),
             }),
           },
+          {
+            provide: BotClientService,
+            useValue: mockBotClientService,
+          },
         ],
       }).compile();
       const serviceWithoutServer =
@@ -395,6 +427,9 @@ describe("MatchmakingService", () => {
             "socket1",
             "Player1",
             defaultStateFields,
+            100,
+            { x: 0, y: 0 },
+            []
           ),
           timestamp: Date.now(),
         }),
@@ -402,7 +437,7 @@ describe("MatchmakingService", () => {
 
       const addToQueue = new TransformedAddToQueue(
         "Player1",
-        new TransformedPlayerSetup("socket1", "Player1", defaultStateFields),
+        new TransformedPlayerSetup("socket1", "Player1", defaultStateFields, 100, { x: 0, y: 0 }, []),
         0,
         null,
         null,
@@ -419,14 +454,14 @@ describe("MatchmakingService", () => {
 
       const addToQueue1 = new TransformedAddToQueue(
         "Player1",
-        new TransformedPlayerSetup("socket1", "Player1", defaultStateFields),
+        new TransformedPlayerSetup("socket1", "Player1", defaultStateFields, 100, { x: 0, y: 0 }, []),
         0,
         null,
         null,
       );
       const addToQueue2 = new TransformedAddToQueue(
         "Player2",
-        new TransformedPlayerSetup("socket2", "Player2", defaultStateFields),
+        new TransformedPlayerSetup("socket2", "Player2", defaultStateFields, 100, { x: 0, y: 0 }, []),
         0,
         null,
         null,
@@ -622,8 +657,8 @@ describe("MatchmakingService", () => {
     });
 
     it("should process two players and create a match", async () => {
-      const player1 = new TransformedPlayerSetup("socket1", "Player1", defaultStateFields);
-      const player2 = new TransformedPlayerSetup("socket2", "Player2", defaultStateFields);
+      const player1 = new TransformedPlayerSetup("socket1", "Player1", defaultStateFields, 100, { x: 0, y: 0 }, []);
+      const player2 = new TransformedPlayerSetup("socket2", "Player2", defaultStateFields, 100, { x: 0, y: 0 }, []);
 
       // Mock Redis responses
       mockRedisClient.lRange.mockResolvedValue([
@@ -651,7 +686,7 @@ describe("MatchmakingService", () => {
       // Mock Redis responses for single player
       mockRedisClient.lRange.mockResolvedValue([
         JSON.stringify({ 
-          player: new TransformedPlayerSetup("socket1", "Player1", defaultStateFields), 
+          player: new TransformedPlayerSetup("socket1", "Player1", defaultStateFields, 100, { x: 0, y: 0 }, []), 
           timestamp: Date.now() 
         }),
       ]);

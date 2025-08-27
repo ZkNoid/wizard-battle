@@ -118,6 +118,19 @@ export class GameSessionGateway {
         return await this.matchmakingService.joinMatchmaking(socket, data.addToQueue);
     }
 
+    @SubscribeMessage('joinBotMatchmaking')
+    /**
+     * @param socket - The socket instance
+     * @param data - The data object containing the addToQueue
+     * @returns The result of the matchmaking service's joinMatchmaking method
+     * @dev Entrypoint for clients to join a matchmaking queue. Delegates to the
+     * matchmaking service which enqueues, attempts to match, and returns a
+     * `roomId` when successful.
+     */
+    async handleJoinBotMatchmaking(socket: Socket, data: { addToQueue: IAddToQueue }) {
+        return await this.matchmakingService.joinBotMatchmaking(socket, data.addToQueue);
+    }
+
     @SubscribeMessage('gameMessage')
     /**
      * @param socket - The socket instance
@@ -513,6 +526,12 @@ export class GameSessionGateway {
       // Notify players to apply effects
       this.server.to(roomId).emit('applySpellEffects');
       await this.gameStateService.publishToRoom(roomId, 'applySpellEffects', {});
+      
+      // Auto-advance to END_OF_ROUND phase after players have time to process effects
+      setTimeout(async () => {
+        await this.gameStateService.advanceGamePhase(roomId);
+        console.log(`🔄 Advanced room ${roomId} to END_OF_ROUND phase`);
+      }, 2000); // 2 second delay for effect processing
     }
 
     /**
