@@ -1,6 +1,6 @@
 // import { Socket } from "socket.io-client";
 
-import { Field } from "o1js";
+import { Field } from 'o1js';
 
 /*//////////////////////////////////////////////////////////////
                           NEW TYPES
@@ -8,9 +8,9 @@ import { Field } from "o1js";
 
 // New
 export enum TileTypeNew {
-  "Wood",
-  "Water",
-  "Mountain",
+  'Wood',
+  'Water',
+  'Mountain',
 }
 
 export interface IMap {
@@ -32,9 +32,9 @@ export interface IState {
   socketId: string;
   playerId: string;
   fields: Field[]; // Contain State.toFields(userState)
-  hp: number;
-  position: { x: number; y: number };
-  effects: any[];
+  // hp: number;
+  // position: { x: number; y: number };
+  // effects: any[];
   // wizardId: string;
   // maxHP: number;
   // mapStructure: IMap;
@@ -110,17 +110,11 @@ export class TransformedPlayerSetup implements IPublicState {
   socketId: string;
   playerId: string;
   fields: Field[];
-  hp: number;
-  position: { x: number; y: number };
-  effects: any[];
 
-  constructor(socketId: string, playerId: string, fields: Field[], hp: number, position: { x: number; y: number }, effects: any[]) {
+  constructor(socketId: string, playerId: string, fields: Field[]) {
     this.socketId = socketId;
     this.playerId = playerId;
     this.fields = fields;
-    this.hp = hp;
-    this.position = position;
-    this.effects = effects; 
   }
 }
 
@@ -136,7 +130,7 @@ export class TransformedAddToQueue implements IAddToQueue {
     playerSetup: IPublicState,
     nonce: number,
     signature: any,
-    setupProof: any,
+    setupProof: any
   ) {
     this.playerId = playerId;
     this.playerSetup = playerSetup;
@@ -186,7 +180,7 @@ export class TransformedFoundMatch implements IFoundMatch {
   constructor(
     roomId: string,
     opponentId: string,
-    opponentSetup: IPublicState[],
+    opponentSetup: IPublicState[]
   ) {
     this.roomId = roomId;
     this.opponentId = opponentId;

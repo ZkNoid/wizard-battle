@@ -1,20 +1,27 @@
-import { Field, Int64, Poseidon, Provable, Struct } from "o1js";
-import { Effect, type SpellCast } from "./structs";
-import { allSpells } from "./spells";
-import { allEffectsInfo } from "./effects/effects";
-import { State } from "./state";
-import { GamePhase, type IUserActions, type ITrustedState, type IDead, type IGameEnd, type IUserAction } from '../types/gameplay.types';
+import { Field, Int64, Poseidon, Provable, Struct } from 'o1js';
+import { Effect, type SpellCast } from './structs';
+import { allSpells } from './spells';
+import { allEffectsInfo } from './effects/effects';
+import { State } from './state';
+import {
+  GamePhase,
+  type IUserActions,
+  type ITrustedState,
+  type IDead,
+  type IGameEnd,
+} from '../types/gameplay.types';
+import { IUserAction } from '../types/gameplay.types';
 
 /**
  * @title ZK-Provable Game State Manager
  * @notice Cryptographic state management with zero-knowledge proof generation
  * @dev Integrates with 5-phase gameplay system for secure, verifiable state transitions
- * 
+ *
  * ## Integration with 5-Phase System:
  * - Phase 3: applyActions() processes all player actions received from server
  * - Phase 4: generateTrustedState() creates cryptographic commitments and proofs
  * - Enables anti-cheat through verifiable state transitions
- * 
+ *
  * ## Cryptographic Security:
  * - Uses o1js for zero-knowledge proof generation
  * - State commitments prevent tampering with HP, position, effects
@@ -22,23 +29,21 @@ import { GamePhase, type IUserActions, type ITrustedState, type IDead, type IGam
  */
 export class Stater extends Struct({
   state: State,
-  randomSeed: Field,
 }) {
   static default() {
     return new Stater({
       state: State.default(),
-      randomSeed: Field(0),
     });
   }
 
   applySpellCast(spell: SpellCast<any>) {
     // Find spell
     const spellModifier = allSpells.find(
-      (s) => s.id === spell.spellId,
+      (s) => s.id === spell.spellId
     )?.modifyer;
 
     if (!spellModifier) {
-      throw Error("No such spell modifier");
+      throw Error('No such spell modifier');
     }
 
     spellModifier(this.state, spell);
@@ -57,7 +62,7 @@ export class Stater extends Struct({
     const effectInfo = allEffectsInfo.find((e) => e.id === effect.effectId);
 
     if (!effectInfo) {
-      throw new Error("No such effectInfo");
+      throw new Error('No such effectInfo');
     }
 
     effectInfo.apply(this.state, publicState);
@@ -99,13 +104,13 @@ export class Stater extends Struct({
    * @dev Called by frontend GamePhaseManager when server broadcasts all actions
    * @param userActions All actions from all players with signatures
    * @return Updated public state after applying all spell effects
-   * 
+   *
    * Processing Flow:
    * 1. Convert IUserActions to internal SpellCast format
    * 2. Apply each spell using registered spell modifiers
    * 3. Process spell effects and state changes
    * 4. Return public portion of updated state
-   * 
+   *
    * Security:
    * - Validates action signatures before processing
    * - Ensures deterministic state transitions
@@ -113,11 +118,13 @@ export class Stater extends Struct({
    */
   applyActions(userActions: IUserActions): State {
     // Convert IUserActions to internal format
-    const spellCasts: SpellCast<any>[] = userActions.actions.map((action: IUserAction) => ({
-      spellId: Field(action.spellId),
-      target: Field(action.playerId), // or however you want to map this
-      additionalData: action.spellCastInfo
-    }));
+    const spellCasts: SpellCast<any>[] = userActions.actions.map(
+      (action: IUserAction) => ({
+        spellId: Field(action.spellId),
+        target: Field(action.playerId), // or however you want to map this
+        additionalData: action.spellCastInfo,
+      })
+    );
 
     const result = this.apply(spellCasts);
     return result.publicState;
@@ -129,43 +136,37 @@ export class Stater extends Struct({
    * @param playerId The unique identifier of the player
    * @param userActions The actions that were applied to reach this state
    * @return ITrustedState with commitment, public state, and validity proof
-   * 
+   *
    * Trusted State Components:
    * - stateCommit: Zero-knowledge commitment to complete private state
    * - publicState: Visible information for opponents (HP, position, effects)
    * - signature: Cryptographic proof that state transition is valid
-   * 
+   *
    * Anti-Cheat Protection:
    * - Prevents players from faking HP, position, or spell effects
    * - Server can verify state validity without seeing private data
    * - Enables trustless multiplayer gameplay
-   * 
+   *
    * Integration:
    * - Frontend calls this after applyActions() in Phase 3
    * - Result is submitted to server in Phase 4 (END_OF_ROUND)
    * - Server validates and broadcasts to all players in Phase 5
    */
-  generateTrustedState(playerId: string, userActions: IUserActions): ITrustedState {
+  generateTrustedState(
+    playerId: string,
+    userActions: IUserActions
+  ): ITrustedState {
     const result = this.applyActions(userActions);
-    
+
     return {
       playerId,
       stateCommit: result.getCommit().toString(),
       publicState: {
         playerId,
-        socketId: "",
-        fields: [],
-        hp: Number(result.playerStats.hp.toString()),
-        position: {
-          x: Number(result.playerStats.position.x.toString()),
-          y: Number(result.playerStats.position.y.toString())
-        },
-        effects: result.effects.map(e => ({
-          effectId: e.effectId.toString(),
-          duration: e.duration.toString()
-        }))
+        socketId: '',
+        fields: State.toFields(result),
       },
-      signature: "TODO_IMPLEMENT_SIGNATURE" // Implement actual signing
+      signature: 'TODO_IMPLEMENT_SIGNATURE', // Implement actual signing
     };
   }
 }
