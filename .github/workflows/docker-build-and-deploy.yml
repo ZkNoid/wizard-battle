@@ -159,4 +159,4 @@ jobs:
             docker load -i ${{ steps.calc-container.outputs.container_name }}.tar
             docker stop ${{ steps.calc-container.outputs.container_name }} || true
             docker rm ${{ steps.calc-container.outputs.container_name }} || true
-            docker compose up -d 
+            docker compose up -d
