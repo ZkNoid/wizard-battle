@@ -1,27 +1,40 @@
 import { Injectable } from '@nestjs/common';
-import { IPublicState, ISpell } from '../../../common/types/matchmaking.types';
+import { IPublicState } from '../../../common/types/matchmaking.types';
 import { IUserAction, IUserActions, ITrustedState, GamePhase } from '../../../common/types/gameplay.types';
+import { State } from '../../../common/stater/state';
+import { PlayerStats, Position, SpellStats, Effect } from '../../../common/stater/structs';
 
-// Mock Field class for bot service (since o1js may not be available in all environments)
-class MockField {
-  constructor(private value: number) {}
-  static from(value: number) {
-    return new MockField(value);
-  }
-}
-
-// Use mock Field if o1js is not available
-let Field: any;
+// Import o1js components
+let Field: any, Int64: any, CircuitString: any;
 try {
-  Field = require('o1js').Field;
+  const o1js = require('o1js');
+  Field = o1js.Field;
+  Int64 = o1js.Int64; 
+  CircuitString = o1js.CircuitString;
 } catch {
+  // Mock implementations for environments without o1js
+  class MockField {
+    constructor(private value: number) {}
+    static from(value: number) { return new MockField(value); }
+    toString() { return this.value.toString(); }
+  }
+  class MockInt64 {
+    constructor(private value: number) {}
+    static from(value: number) { return new MockInt64(value); }
+    toString() { return this.value.toString(); }
+  }
+  class MockCircuitString {
+    static fromString(str: string) { return { hash: () => new MockField(str.length) }; }
+  }
   Field = MockField;
+  Int64 = MockInt64;
+  CircuitString = MockCircuitString;
 }
 
 /**
  * @title Bot Service - AI Player Logic
- * @notice Service that manages bot behavior and decision making
- * @dev Provides randomized spell casting and state management for bot players
+ * @notice Service that manages bot behavior and decision making using proper State structure
+ * @dev Uses State.toFields() approach for consistency with frontend
  */
 @Injectable()
 export class BotService {
@@ -29,10 +42,10 @@ export class BotService {
   private readonly mapSize = 10; // Assuming 10x10 map
 
   /**
-   * @notice Generates a bot player setup with randomized initial state
+   * @notice Generates a bot player setup using proper State structure
    * @param botId Unique identifier for the bot
    * @param socketId Socket connection ID for the bot client
-   * @returns Complete bot player setup matching IPublicState interface
+   * @returns Complete bot player setup with State.toFields() approach
    */
   generateBotSetup(botId: string, socketId: string): IPublicState {
     // Generate random starting position
@@ -41,14 +54,22 @@ export class BotService {
       y: Math.floor(Math.random() * this.mapSize)
     };
 
-    // Create bot setup matching the player structure
+    // Create a proper State object for the bot using State.default() and modify it
+    const botState = State.default();
+    
+    // Customize the bot state with unique values
+    botState.playerId = Field(parseInt(botId.replace(/\D/g, '')) || Math.floor(Math.random() * 10000));
+    botState.wizardId = CircuitString.fromString("BotMage").hash();
+    botState.playerStats.hp = Int64.from(100);
+    botState.playerStats.position.x = Int64.from(startPosition.x);
+    botState.playerStats.position.y = Int64.from(startPosition.y);
+    botState.randomSeed = Field(Math.floor(Math.random() * 1000000));
+
+    // Convert to fields using State.toFields() - same approach as frontend
     const botSetup: IPublicState = {
       socketId,
       playerId: botId,
-      fields: [Field(100), Field(startPosition.x), Field(startPosition.y)], // HP, x, y as Fields
-      hp: 100,
-      position: startPosition,
-      effects: []
+      fields: State.toFields(botState)  // Use proper State.toFields() conversion
     };
 
     return botSetup;
@@ -57,8 +78,8 @@ export class BotService {
   /**
    * @notice Generates randomized actions for the bot during spell casting phase
    * @param botId The bot's unique identifier
-   * @param currentState The bot's current game state
-   * @param opponentState The opponent's known state (for targeting)
+   * @param currentState The bot's current game state (as fields)
+   * @param opponentState The opponent's known state (as fields)
    * @returns Bot's actions for the current turn
    */
   generateBotActions(botId: string, currentState: IPublicState, opponentState?: IPublicState): IUserActions {
@@ -74,7 +95,7 @@ export class BotService {
       }
     }
 
-    // Simple signature simulation (in real implementation, this would be cryptographic)
+    // Simple signature simulation
     const signature = `bot_signature_${botId}_${Date.now()}`;
 
     return {
@@ -85,42 +106,34 @@ export class BotService {
 
   /**
    * @notice Generates a single random action based on bot AI logic
-   * @param botId The bot's unique identifier
-   * @param currentState The bot's current state
-   * @param opponentState The opponent's state for targeting decisions
-   * @returns A single action or null if no valid action
    */
   private generateRandomAction(botId: string, currentState: IPublicState, opponentState?: IPublicState): IUserAction | null {
-    // Simple AI decision tree
-    const lowHp = currentState.hp < 30;
-    const mediumHp = currentState.hp < 60;
-    
+    // Simple bot AI - for now we'll use random actions since we can't easily parse fields in backend
+    // In a real implementation, you'd have proper field parsing logic
+    const currentPos = {
+      x: Math.floor(Math.random() * this.mapSize),
+      y: Math.floor(Math.random() * this.mapSize)
+    };
+
     let spellId: string;
     let spellCastInfo: any = {};
 
-    if (lowHp && Math.random() < 0.8) {
-      // Low HP: 80% chance to heal
+    if (Math.random() < 0.2) {
+      // 20% chance to heal
       spellId = 'heal';
       spellCastInfo = { target: 'self' };
-    } else if (opponentState && this.isInRange(currentState.position, opponentState.position, 3)) {
-      // Opponent in range: attack
-      const attackSpells = ['fireball', 'lightning'];
-      spellId = attackSpells[Math.floor(Math.random() * attackSpells.length)] || 'fireball';
-      spellCastInfo = {
-        target: opponentState.position,
-        targetPlayerId: opponentState.playerId
-      };
     } else if (Math.random() < 0.3) {
       // 30% chance to move/teleport
       spellId = 'teleport';
       spellCastInfo = {
-        target: this.generateRandomPosition(currentState.position)
+        target: this.generateRandomPosition(currentPos)
       };
     } else {
       // Default: cast a random offensive spell at random location
-      spellId = this.availableSpells[Math.floor(Math.random() * this.availableSpells.length)] || 'fireball';
+      const attackSpells = ['fireball', 'lightning'];
+      spellId = attackSpells[Math.floor(Math.random() * attackSpells.length)] || 'fireball';
       spellCastInfo = {
-        target: this.generateRandomPosition(currentState.position)
+        target: this.generateRandomPosition(currentPos)
       };
     }
 
@@ -132,70 +145,28 @@ export class BotService {
   }
 
   /**
-   * @notice Generates bot's trusted state after applying spell effects
-   * @param botId The bot's unique identifier
-   * @param currentState The bot's state before effects
-   * @param allActions All actions from the turn (for effect calculation)
-   * @returns Bot's computed trusted state
+   * @notice Generates bot's trusted state using fields approach
    */
   generateBotTrustedState(
     botId: string, 
     currentState: IPublicState, 
     allActions: { [playerId: string]: IUserActions }
   ): ITrustedState {
-    // Simulate effect calculation (simplified)
-    const updatedState = this.simulateSpellEffects(currentState, allActions);
-    
-    // Generate state commitment (simplified)
+    // For now, return the current state with minimal changes
+    // In a real implementation, you'd properly simulate spell effects
     const stateCommit = `bot_commit_${botId}_${Date.now()}_${Math.random()}`;
-    
-    // Simple signature simulation
     const signature = `bot_trusted_signature_${botId}_${Date.now()}`;
 
     return {
       playerId: botId,
       stateCommit,
-      publicState: updatedState,
+      publicState: {
+        socketId: currentState.socketId,
+        playerId: botId,
+        fields: currentState.fields  // Keep the same fields for now
+      },
       signature
     };
-  }
-
-  /**
-   * @notice Simulates spell effects on bot state
-   * @param currentState Bot's current state
-   * @param allActions All player actions from the turn
-   * @returns Updated bot state after effects
-   */
-  private simulateSpellEffects(
-    currentState: IPublicState, 
-    allActions: { [playerId: string]: IUserActions }
-  ): IPublicState {
-    let updatedState = { ...currentState };
-    
-    // Simple effect simulation
-    // In a real game, this would process all spell interactions
-    Object.values(allActions).forEach(playerActions => {
-      playerActions.actions.forEach(action => {
-        if (action.spellId === 'heal' && action.playerId === currentState.playerId) {
-          // Bot healed itself
-          updatedState.hp = Math.min(100, updatedState.hp + 20);
-        } else if (action.spellCastInfo?.targetPlayerId === currentState.playerId) {
-          // Bot was targeted by opponent
-          if (action.spellId === 'fireball' || action.spellId === 'lightning') {
-            updatedState.hp = Math.max(0, updatedState.hp - 25);
-          }
-        }
-      });
-    });
-
-    // Update Fields to match new state
-    updatedState.fields = [
-      Field(updatedState.hp),
-      Field(updatedState.position.x),
-      Field(updatedState.position.y)
-    ];
-
-    return updatedState;
   }
 
   /**

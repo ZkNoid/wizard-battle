@@ -24,6 +24,7 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { createClient } from "redis";
 import { GameStateService } from "../game-session/game-state.service";
 import { BotClientService } from "../bot/bot-client.service";
+import { State } from "../../../common/stater/state";
 import {
   IAddToQueue,
   IAddToQueueResponse,
@@ -517,14 +518,11 @@ export class MatchmakingService {
     let matchFound2: IFoundMatch | undefined;
 
     if (socket1) {
-      // Notify player1 about player2
+      // Notify player1 about player2 - only pass the required 3 parameters
       const opponentSetup1: IPublicState = new TransformedPlayerSetup(
         player2.socketId!,
         `Player ${player2.playerId!}`,
-        player2.fields!,
-        player2.hp || 100,
-        player2.position || { x: 0, y: 0 },
-        player2.effects || []
+        player2.fields  // Keep the original fields array
       );
       matchFound1 = new TransformedFoundMatch(roomId, player2.playerId!, [
         opponentSetup1,
@@ -534,14 +532,11 @@ export class MatchmakingService {
     }
 
     if (socket2) {
-      // Notify player2 about player1
+      // Notify player2 about player1 - only pass the required 3 parameters
       const opponentSetup2: IPublicState = new TransformedPlayerSetup(
         player1.socketId!,
         `Player ${player1.playerId!}`,
-        player1.fields!,
-        player1.hp || 100,
-        player1.position || { x: 0, y: 0 },
-        player1.effects || []
+        player1.fields  // Keep the original fields array
       );
       matchFound2 = new TransformedFoundMatch(roomId, player1.playerId!, [
         opponentSetup2,
