@@ -82,12 +82,14 @@ export class Stater extends Struct({
     stateCommit: Field;
     publicState: State;
   } {
+    console.log('apply', spellCasts);
     // Derive random seed form all [spellCast, turnId, randomSeed]
     // ToDo: Include actual spellCast data
     const randomSeed = Poseidon.hash([this.state.randomSeed]);
 
     // Apply spells
     for (const spell of spellCasts) {
+      console.log('apply spell', spell);
       this.applySpellCast(spell);
     }
 

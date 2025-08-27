@@ -1,8 +1,21 @@
-import { CircuitString, Field, Int64, Poseidon, Provable, Struct } from "o1js";
-import { Effect, PlayerStats, Position, SpellStats } from "./structs";
+import {
+  CircuitString,
+  Field,
+  Int64,
+  Poseidon,
+  Provable,
+  Sign,
+  Struct,
+  UInt64,
+} from 'o1js';
+import { Effect, PlayerStats, Position, SpellStats } from './structs';
 
 export const spellStatsAmount = 5;
 export const maxSpellEffects = 10;
+
+function reify<T>(TProvable: Provable<T>, v: T): T {
+  return TProvable.fromFields(TProvable.toFields(v), []);
+}
 
 export class State extends Struct({
   playerId: Field,
@@ -17,7 +30,7 @@ export class State extends Struct({
   static default() {
     return new State({
       playerId: Field(0),
-      wizardId: CircuitString.fromString("Mage").hash(),
+      wizardId: CircuitString.fromString('Mage').hash(),
       playerStats: new PlayerStats({
         hp: Int64.from(100),
         position: new Position({ x: Int64.from(0), y: Int64.from(0) }),
@@ -27,18 +40,38 @@ export class State extends Struct({
           spellId: Field(0),
           cooldown: Int64.from(0),
           currentColldown: Int64.from(0),
-        }),
+        })
       ),
       effects: Array(maxSpellEffects).fill(
         new Effect({
           effectId: Field(0),
           duration: Field(0),
-        }),
+        })
       ),
       map: Array(64).fill(Field(0)),
       turnId: Int64.from(0),
       randomSeed: Field(0),
     });
+  }
+
+  static fromFieldsHydrated(fields: Field[]) {
+    const state = State.fromFields(fields);
+    state.playerId = reify(Field, state.playerId);
+    state.wizardId = reify(Field, state.wizardId);
+    state.playerStats = reify(PlayerStats, state.playerStats);
+    state.playerStats.position = reify(
+      Position,
+      state.playerStats.position
+    ) as Position;
+    state.playerStats.hp = reify(Int64, state.playerStats.hp) as Int64;
+    state.playerStats.hp.magnitude = reify(
+      UInt64,
+      state.playerStats.hp.magnitude
+    ) as UInt64;
+    state.playerStats.hp.sgn = reify(Sign, state.playerStats.hp.sgn) as Sign;
+    state.spellStats = state.spellStats.map((spell) => new SpellStats(spell));
+    state.effects = state.effects.map((effect) => new Effect(effect));
+    return state;
   }
 
   copy() {
@@ -71,7 +104,7 @@ export class State extends Struct({
   pushSpell(spell: SpellStats) {
     let spellLength = this.getSpellLength();
     if (spellLength >= spellStatsAmount) {
-      throw new Error("Spell stats array is full");
+      throw new Error('Spell stats array is full');
     }
     this.spellStats[spellLength] = spell;
   }
@@ -103,7 +136,7 @@ export class State extends Struct({
   pushEffect(effect: Effect) {
     let effectLength = this.getEffectLength();
     if (effectLength >= maxSpellEffects) {
-      throw new Error("Effect array is full");
+      throw new Error('Effect array is full');
     }
     this.effects[effectLength] = effect;
   }

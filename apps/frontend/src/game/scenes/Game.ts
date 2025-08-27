@@ -140,17 +140,17 @@ export class Game extends Scene {
           Math.floor(worldPoint.y / activeTilemap.getConfig().tileSize)
         );
 
-        const tileCenter = activeTilemap.getTileCenter(
-          worldPoint.x,
-          worldPoint.y
-        );
-        if (tileCenter) {
-          if (this.activePlayer === 'left') {
-            this.leftTargetPosition = tileCenter;
-          } // else {
-          //   this.rightTargetPosition = tileCenter;
-          // }
-        }
+        // const tileCenter = activeTilemap.getTileCenter(
+        //   worldPoint.x,
+        //   worldPoint.y
+        // );
+        // if (tileCenter) {
+        //   if (this.activePlayer === 'left') {
+        //     this.leftTargetPosition = tileCenter;
+        //   } // else {
+        //   //   this.rightTargetPosition = tileCenter;
+        //   // }
+        // }
       });
 
       // Add key handler for switching players
@@ -165,34 +165,31 @@ export class Game extends Scene {
 
   update() {
     // Update left player
-    if (this.leftTargetPosition) {
-      const distance = Phaser.Math.Distance.Between(
-        this.leftPlayer.x,
-        this.leftPlayer.y,
-        this.leftTargetPosition.x,
-        this.leftTargetPosition.y
-      );
-
-      if (distance > 1) {
-        const angle = Phaser.Math.Angle.Between(
-          this.leftPlayer.x,
-          this.leftPlayer.y,
-          this.leftTargetPosition.x,
-          this.leftTargetPosition.y
-        );
-
-        const speed = 200;
-        this.leftPlayer.x +=
-          (Math.cos(angle) * speed * this.game.loop.delta) / 1000;
-        this.leftPlayer.y +=
-          (Math.sin(angle) * speed * this.game.loop.delta) / 1000;
-      } else {
-        this.leftPlayer.x = this.leftTargetPosition.x;
-        this.leftPlayer.y = this.leftTargetPosition.y;
-        this.leftTargetPosition = null;
-      }
-    }
-
+    // if (this.leftTargetPosition) {
+    //   const distance = Phaser.Math.Distance.Between(
+    //     this.leftPlayer.x,
+    //     this.leftPlayer.y,
+    //     this.leftTargetPosition.x,
+    //     this.leftTargetPosition.y
+    //   );
+    //   if (distance > 1) {
+    //     const angle = Phaser.Math.Angle.Between(
+    //       this.leftPlayer.x,
+    //       this.leftPlayer.y,
+    //       this.leftTargetPosition.x,
+    //       this.leftTargetPosition.y
+    //     );
+    //     const speed = 200;
+    //     this.leftPlayer.x +=
+    //       (Math.cos(angle) * speed * this.game.loop.delta) / 1000;
+    //     this.leftPlayer.y +=
+    //       (Math.sin(angle) * speed * this.game.loop.delta) / 1000;
+    //   } else {
+    //     this.leftPlayer.x = this.leftTargetPosition.x;
+    //     this.leftPlayer.y = this.leftTargetPosition.y;
+    //     this.leftTargetPosition = null;
+    //   }
+    // }
     // Update right player
     // if (this.rightTargetPosition) {
     //   const distance = Phaser.Math.Distance.Between(
@@ -201,7 +198,6 @@ export class Game extends Scene {
     //     this.rightTargetPosition.x,
     //     this.rightTargetPosition.y,
     //   );
-
     //   if (distance > 1) {
     //     const angle = Phaser.Math.Angle.Between(
     //       this.rightPlayer.x,
@@ -209,7 +205,6 @@ export class Game extends Scene {
     //       this.rightTargetPosition.x,
     //       this.rightTargetPosition.y,
     //     );
-
     //     const speed = 200;
     //     this.rightPlayer.x +=
     //       (Math.cos(angle) * speed * this.game.loop.delta) / 1000;

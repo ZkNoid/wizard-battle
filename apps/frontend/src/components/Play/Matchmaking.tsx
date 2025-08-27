@@ -13,7 +13,7 @@ import type { IPublicState } from '../../../../common/types/matchmaking.types';
 import { State } from '../../../../common/stater/state';
 import type { IFoundMatch } from '../../../../common/types/matchmaking.types';
 import { GamePhaseManager } from '@/game/GamePhaseManager';
-import { Field } from 'o1js';
+import { Field, Int64 } from 'o1js';
 
 export default function Matchmaking({
   setPlayStep,
@@ -55,7 +55,10 @@ export default function Matchmaking({
     socket.on('matchFound', (response: IFoundMatch) => {
       console.log('Match found');
 
-      let opponentState = State.fromFields(response.opponentSetup[0]!.fields);
+      let opponentState = State.fromFieldsHydrated(
+        response.opponentSetup[0]!.fields
+      );
+
       setOpponentState(opponentState as State);
 
       setGamePhaseManager(

@@ -9,7 +9,7 @@ export function Spells({
   skills,
   className,
 }: {
-  skills: ISpell[];
+  skills: ISpell<any>[];
   className?: string;
 }) {
   const { setPickedSpellId } = useInGameStore();

@@ -1,3 +1,4 @@
+import { Int64 } from 'o1js';
 import { State } from '../../../common/stater/state';
 import type { Stater } from '../../../common/stater/stater';
 import {
@@ -261,8 +262,9 @@ export class GamePhaseManager {
   private updateOpponentState(state: ITrustedState) {
     // Update opponent data in your game state
     console.log('Updating opponent state:', state);
-    const opponentState = State.fromFields(state.publicState.fields);
-    this.setOpponentState(opponentState as State);
+    const opponentState = State.fromFieldsHydrated(state.publicState.fields);
+
+    this.setOpponentState(new State(opponentState));
   }
 
   /**
