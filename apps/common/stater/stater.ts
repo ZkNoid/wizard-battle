@@ -39,7 +39,7 @@ export class Stater extends Struct({
   applySpellCast(spell: SpellCast<any>) {
     // Find spell
     const spellModifier = allSpells.find(
-      (s) => s.id === spell.spellId
+      (s) => s.id.toString() === spell.spellId.toString()
     )?.modifyer;
 
     if (!spellModifier) {
@@ -59,6 +59,10 @@ export class Stater extends Struct({
   }
 
   applyEffect(publicState: State, effect: Effect) {
+    if (effect.effectId.toString() === '0') {
+      return;
+    }
+
     const effectInfo = allEffectsInfo.find((e) => e.id === effect.effectId);
 
     if (!effectInfo) {

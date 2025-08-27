@@ -11,6 +11,6 @@ export interface ISpell<T> {
   description: string;
   image: string;
   modifyer: (state: State, spellCast: SpellCast<T>) => void;
-  cast: (state: State, additionalData: any) => SpellCast<T>;
+  cast: (state: State, target: Field, additionalData: any) => SpellCast<T>;
   defaultValue: SpellStats;
 }

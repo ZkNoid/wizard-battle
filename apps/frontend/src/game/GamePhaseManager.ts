@@ -1,21 +1,28 @@
-import { GamePhase, type IUserActions, type ITrustedState } from '../../../common/types/gameplay.types';
+import { State } from '../../../common/stater/state';
+import type { Stater } from '../../../common/stater/stater';
+import {
+  GamePhase,
+  type IUserActions,
+  type ITrustedState,
+} from '../../../common/types/gameplay.types';
+import type { IPublicState } from '../../../common/types/matchmaking.types';
 
 /**
  * @title Frontend Game Phase Manager
  * @notice Client-side coordinator for 5-phase turn-based gameplay
  * @dev Manages WebSocket communication and local state synchronization with server
- * 
+ *
  * ## Client-Side 5-Phase Flow:
  * 1. SPELL_CASTING: submitPlayerActions() → send to server
- * 2. SPELL_PROPAGATION: handleSpellPropagation() → receive all player actions  
+ * 2. SPELL_PROPAGATION: handleSpellPropagation() → receive all player actions
  * 3. SPELL_EFFECTS: handleSpellEffects() → apply effects locally using Stater
  * 4. END_OF_ROUND: auto-submit trusted state to server
  * 5. STATE_UPDATE: handleStateUpdate() → update opponent information
- * 
+ *
  * ## WebSocket Event Handling:
  * - Listens for: allPlayerActions, applySpellEffects, updateUserStates, newTurn, gameEnd
  * - Emits: submitActions, submitTrustedState
- * 
+ *
  * ## State Management:
  * - Integrates with Stater class for cryptographic state computation
  * - Maintains local game state and opponent information
@@ -25,20 +32,27 @@ export class GamePhaseManager {
   private currentPhase: GamePhase = GamePhase.SPELL_CASTING;
   private socket: any;
   private roomId: string;
-  private stater: any; // Your Stater instance
+  private stater: Stater; // Your Stater instance
   private lastActions?: IUserActions; // Add this property
+  private setOpponentState: (state: State) => void;
 
-  constructor(socket: any, roomId: string, stater: any) {
+  constructor(
+    socket: any,
+    roomId: string,
+    stater: Stater,
+    setOpponentState: (state: State) => void
+  ) {
     this.socket = socket;
     this.roomId = roomId;
     this.stater = stater;
+    this.setOpponentState = setOpponentState;
     this.setupSocketListeners();
   }
 
   /**
    * @notice Initializes WebSocket event listeners for all 5 gameplay phases
    * @dev Sets up bidirectional communication with GameSessionGateway
-   * 
+   *
    * Event Listeners:
    * - allPlayerActions: Phase 2 - Receive all player actions for local processing
    * - applySpellEffects: Phase 3 - Signal to apply effects and generate trusted state
@@ -47,21 +61,41 @@ export class GamePhaseManager {
    * - gameEnd: Game termination with winner announcement
    */
   private setupSocketListeners() {
-    this.socket.on('allPlayerActions', (allActions: Record<string, IUserActions>) => {
-      this.handleSpellPropagation(allActions);
-    });
+    this.socket.on(
+      'allPlayerActions',
+      (allActions: Record<string, IUserActions>) => {
+        console.log('Received all player actions:', allActions);
+        this.handleSpellPropagation(allActions);
+      }
+    );
 
     this.socket.on('applySpellEffects', () => {
+      console.log('Received applySpellEffects');
       this.handleSpellEffects();
     });
 
     this.socket.on('updateUserStates', (data: { states: ITrustedState[] }) => {
+      console.log('Received updateUserStates');
       this.handleStateUpdate(data.states);
     });
 
     this.socket.on('newTurn', (data: { phase: GamePhase }) => {
+      console.log('Received newTurn');
       this.currentPhase = data.phase;
       this.onNewTurn();
+    });
+
+    this.socket.on(
+      'actionSubmitResult',
+      (data: { success: boolean; error: string }) => {
+        console.log('Received actionSubmitResult');
+        console.log(data);
+      }
+    );
+
+    this.socket.on('trustedStateResult', (data: { success: boolean }) => {
+      console.log('Received trustedStateResult');
+      console.log(data);
     });
   }
 
@@ -69,29 +103,34 @@ export class GamePhaseManager {
    * @notice Phase 1: Submits player's intended actions to server
    * @dev Called by game UI when player confirms their spell selections
    * @param actions Player's actions with cryptographic signature
-   * 
+   *
    * Validation:
    * - Ensures current phase is SPELL_CASTING
    * - Actions should contain valid spell IDs and targeting information
-   * 
+   *
    * Server Communication:
    * - Emits 'submitActions' WebSocket event
-   * - Server responds with 'actionSubmitResult' 
+   * - Server responds with 'actionSubmitResult'
    * - Server advances to SPELL_PROPAGATION when all players ready
-   * 
+   *
    * Error Handling:
    * - Logs error and prevents submission if wrong phase
    * - UI should disable action submission outside SPELL_CASTING phase
    */
   submitPlayerActions(actions: IUserActions) {
     if (this.currentPhase !== GamePhase.SPELL_CASTING) {
-      console.error('Cannot submit actions in current phase:', this.currentPhase);
+      console.error(
+        'Cannot submit actions in current phase:',
+        this.currentPhase
+      );
       return;
     }
 
+    console.log('Submitting player actions:', actions);
+
     this.socket.emit('submitActions', {
       roomId: this.roomId,
-      actions
+      actions,
     });
   }
 
@@ -99,12 +138,12 @@ export class GamePhaseManager {
    * @notice Phase 2: Receives and processes all player actions from server
    * @dev Server broadcasts this when all players have submitted actions
    * @param allActions Record mapping player IDs to their submitted actions
-   * 
+   *
    * Processing:
    * - Stores actions for use in Phase 3 (spell effects)
    * - Updates current phase to SPELL_PROPAGATION
    * - Prepares for local spell effect computation
-   * 
+   *
    * Client State:
    * - Now has complete information about all spells being cast this turn
    * - Can display spell animations and prepare effect calculations
@@ -113,25 +152,27 @@ export class GamePhaseManager {
   private handleSpellPropagation(allActions: Record<string, IUserActions>) {
     console.log('Received all player actions:', allActions);
     // Store actions for next phase
+    console.log('Player ID:', this.getPlayerId());
     this.lastActions = allActions[this.getPlayerId()]; // Store our actions
+    console.log(this.lastActions);
     this.currentPhase = GamePhase.SPELL_PROPAGATION;
   }
 
   /**
    * @notice Phase 3: Applies spell effects locally and generates trusted state
    * @dev Called when server emits 'applySpellEffects' signal
-   * 
+   *
    * Local Computation:
    * 1. Apply all spell effects using Stater class
    * 2. Compute damage, healing, movement, status effects
    * 3. Generate cryptographic commitment to new state
    * 4. Create trusted state with public information and proofs
-   * 
+   *
    * State Transition:
    * - Updates currentPhase to SPELL_EFFECTS, then END_OF_ROUND
    * - Automatically submits trusted state to server
    * - No user interaction required - fully automated
-   * 
+   *
    * Cryptographic Security:
    * - Uses Stater to generate verifiable state commitments
    * - Includes signature proving state validity
@@ -139,40 +180,41 @@ export class GamePhaseManager {
    */
   private handleSpellEffects() {
     this.currentPhase = GamePhase.SPELL_EFFECTS;
-    
+
     // Apply effects using your Stater
     // This would typically involve calling stater.applyActions()
     // and generating the trusted state
-    
+
     const trustedState = this.generateTrustedState();
-    
+
     // Move to end of round phase
     this.currentPhase = GamePhase.END_OF_ROUND;
-    
+
     // Submit trusted state
+    console.log('Submitting trusted state:', trustedState);
     this.socket.emit('submitTrustedState', {
       roomId: this.roomId,
-      trustedState
+      trustedState,
     });
   }
 
   // Phase 4: End of Round (handled by submitting trusted state above)
-  
+
   /**
    * @notice Phase 5: Updates opponent information using server-provided states
    * @dev Called when server broadcasts all trusted states from alive players
    * @param trustedStates Array of verified states from all players
-   * 
+   *
    * Opponent Updates:
    * - Updates opponent HP, position, and active effects
    * - Verifies state signatures for anti-cheat protection
    * - Excludes own state (already known locally)
-   * 
+   *
    * UI Updates:
    * - Refreshes opponent health bars and positions
    * - Shows new status effects and spell cooldowns
    * - Prepares UI for next turn
-   * 
+   *
    * State Synchronization:
    * - Ensures all clients have consistent view of game state
    * - Resolves any discrepancies through server authority
@@ -180,7 +222,7 @@ export class GamePhaseManager {
    */
   private handleStateUpdate(trustedStates: ITrustedState[]) {
     this.currentPhase = GamePhase.STATE_UPDATE;
-    
+
     // Update opponent data using received trusted states
     for (const state of trustedStates) {
       if (state.playerId !== this.getPlayerId()) {
@@ -193,45 +235,50 @@ export class GamePhaseManager {
    * @notice Generates cryptographically secure trusted state using Stater
    * @dev Called during Phase 3 after applying all spell effects locally
    * @return ITrustedState with commitment, public state, and signature
-   * 
+   *
    * Trusted State Components:
    * - stateCommit: Cryptographic hash of complete private state
    * - publicState: Visible information (HP, position, effects) for opponents
    * - signature: Cryptographic proof of state validity
-   * 
+   *
    * Security:
    * - Uses zero-knowledge proofs to verify state transitions
    * - Prevents players from cheating by faking HP or positions
    * - Enables server to verify state validity without seeing private data
-   * 
+   *
    * Integration:
    * - Delegates to Stater class for cryptographic operations
    * - Includes player ID and last applied actions for verification
    */
   private generateTrustedState(): ITrustedState {
     // Use your Stater to generate the trusted state
-    return this.stater.generateTrustedState(this.getPlayerId(), this.lastActions);
+    return this.stater.generateTrustedState(
+      this.getPlayerId(),
+      this.lastActions!
+    );
   }
 
   private updateOpponentState(state: ITrustedState) {
     // Update opponent data in your game state
     console.log('Updating opponent state:', state);
+    const opponentState = State.fromFields(state.publicState.fields);
+    this.setOpponentState(opponentState as State);
   }
 
   /**
    * @notice Handles new turn initialization and state reset
    * @dev Called when server broadcasts 'newTurn' event after Phase 5 completes
-   * 
+   *
    * Turn Reset:
    * - Clears previous turn's actions and temporary state
    * - Resets phase to SPELL_CASTING
    * - Updates spell cooldowns and effect durations
-   * 
+   *
    * UI Reset:
    * - Re-enables action selection interface
-   * - Updates turn counter and phase indicator  
+   * - Updates turn counter and phase indicator
    * - Refreshes spell availability based on cooldowns
-   * 
+   *
    * Client Synchronization:
    * - Ensures all clients start new turn simultaneously
    * - Maintains consistent turn timing across instances
@@ -243,6 +290,6 @@ export class GamePhaseManager {
 
   private getPlayerId(): string {
     // Return current player ID
-    return "player_id"; // Implement this
+    return this.stater.state.playerId.toString();
   }
 }
