@@ -82,6 +82,27 @@ async function testMultiInstance() {
         socket.on('gameMessage', (data) => {
             console.log(`📨 Instance ${index + 1} received message:`, data);
         });
+
+        // Listen for gameplay phase events
+        socket.on('allPlayerActions', (data) => {
+            console.log(`🎯 Instance ${index + 1} received all player actions:`, Object.keys(data));
+        });
+
+        socket.on('applySpellEffects', () => {
+            console.log(`⚡ Instance ${index + 1} received apply spell effects`);
+        });
+
+        socket.on('updateUserStates', (data) => {
+            console.log(`🔄 Instance ${index + 1} received update user states:`, data.states.length, 'states');
+        });
+
+        socket.on('newTurn', (data) => {
+            console.log(`🔄 Instance ${index + 1} received new turn:`, data.phase);
+        });
+
+        socket.on('gameEnd', (data) => {
+            console.log(`🏆 Instance ${index + 1} received game end:`, data.winnerId);
+        });
     });
 
     // Test 4: Test health endpoints
@@ -110,8 +131,65 @@ async function testMultiInstance() {
         }
     }
 
+    // Test 6: Test gameplay phase messages across instances
+    console.log('\n6. Testing gameplay phases across instances...');
+    
+    if (sockets.length >= 2) {
+        // Test submit actions from different instances
+        console.log('Testing submitActions from different instances...');
+        
+        sockets[0].emit('submitActions', {
+            roomId: TEST_ROOM_ID,
+            actions: {
+                actions: [{ playerId: 'player1', spellId: 'fireball', spellCastInfo: {} }],
+                signature: 'test-signature-1'
+            }
+        });
+
+        if (sockets[1]) {
+            sockets[1].emit('submitActions', {
+                roomId: TEST_ROOM_ID,
+                actions: {
+                    actions: [{ playerId: 'player2', spellId: 'heal', spellCastInfo: {} }],
+                    signature: 'test-signature-2'
+                }
+            });
+        }
+
+        // Wait for phase progression
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Test trusted state submission
+        console.log('Testing submitTrustedState from different instances...');
+        
+        sockets[0].emit('submitTrustedState', {
+            roomId: TEST_ROOM_ID,
+            trustedState: {
+                playerId: 'player1',
+                stateCommit: 'test-commit-1',
+                publicState: { playerId: 'player1', hp: 100 },
+                signature: 'test-signature-1'
+            }
+        });
+
+        if (sockets[1]) {
+            sockets[1].emit('submitTrustedState', {
+                roomId: TEST_ROOM_ID,
+                trustedState: {
+                    playerId: 'player2',
+                    stateCommit: 'test-commit-2',
+                    publicState: { playerId: 'player2', hp: 90 },
+                    signature: 'test-signature-2'
+                }
+            });
+        }
+
+        // Wait for state updates
+        await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
     // Cleanup
-    console.log('\n6. Cleaning up connections...');
+    console.log('\n7. Cleaning up connections...');
     
     setTimeout(() => {
         sockets.forEach((socket, index) => {

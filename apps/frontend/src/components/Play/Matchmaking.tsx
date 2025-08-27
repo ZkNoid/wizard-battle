@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { PlaySteps } from "@/lib/enums/PlaySteps";
-import { ModeBg } from "./assets/mode-bg";
-import { Button } from "../shared/Button";
-import { TimeIcon } from "./assets/time-icon";
-import { QueueIcon } from "./assets/queue-icon";
-import { useUserInformationStore } from "@/lib/store/userInformationStore";
-import { useEffect, useRef, useState } from "react";
-import type {
-  MatchFoundResponse,
-  MatchPlayerData,
-} from "../../../../common/types/matchmaking.types";
-import { useRouter } from "next/navigation";
+import { PlaySteps } from '@/lib/enums/PlaySteps';
+import { ModeBg } from './assets/mode-bg';
+import { Button } from '../shared/Button';
+import { TimeIcon } from './assets/time-icon';
+import { QueueIcon } from './assets/queue-icon';
+import { useUserInformationStore } from '@/lib/store/userInformationStore';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Stater } from '../../../../common/stater/stater';
+import type { IPublicState } from '../../../../common/types/matchmaking.types';
+import { State } from '../../../../common/stater/state';
+import type { IFoundMatch } from '../../../../common/types/matchmaking.types';
 
 export default function Matchmaking({
   setPlayStep,
@@ -29,17 +29,38 @@ export default function Matchmaking({
     if (!stater) return;
     if (sendRequest.current) return;
     sendRequest.current = true;
-    let state = stater.getPublicState();
-    console.log("state");
-    console.log(state);
-    socket.emit("findMatch", state satisfies MatchPlayerData);
+    let data = {
+      playerId: Math.random().toString(),
+      playerSetup: {
+        socketId: socket.id!,
+        playerId: Math.random().toString(),
+        fields: State.toFields(stater.state),
+      } satisfies IPublicState,
+      nonce: 0,
+      signature: '',
+      setupProof: '',
+    };
 
-    socket.on("matchFound", (response: MatchFoundResponse) => {
-      setOpponentState(
-        response.state.find((player) => player.playerId !== socket.id)!,
-      );
+    console.log(data);
+
+    socket.emit('joinMatchmaking', {
+      addToQueue: data,
+    });
+
+    socket.on('matchFound', (response: IFoundMatch) => {
+      console.log('Match found');
+
+      let opponentState = State.fromFields(response.opponentSetup[0]!.fields);
+      setOpponentState(opponentState as State);
       router.push(`/game`);
     });
+
+    // socket.on("matchFound", (response: MatchFoundResponse) => {
+    //   setOpponentState(
+    //     response.state.find((player) => player.playerId !== socket.id)!,
+    //   );
+    //   router.push(`/game`);
+    // });
   }, [socket, stater]);
 
   useEffect(() => {
@@ -53,7 +74,7 @@ export default function Matchmaking({
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   return (

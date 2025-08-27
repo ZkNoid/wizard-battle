@@ -1,39 +1,13 @@
 "use client";
 
-import HomePage from "@/components/HomePage";
-import { useUserInformationStore } from "@/lib/store/userInformationStore";
-import { useEffect } from "react";
-import { io } from "socket.io-client";
-import { Stater, UserState } from "../../../common/stater";
-import { MapStructure } from "../../../common/types/matchmaking.types";
-import { Position } from "../../../common/types/matchmaking.types";
-import { allSpells } from "../../../common/spells";
-import { WizardId } from "../../../common/wizards";
+import { FullscreenLoader } from "@/components/shared/FullscreenLoader";
+import dynamic from "next/dynamic";
 
-export default function Home() {
-  const { socket, setSocket, setStater } = useUserInformationStore();
-  useEffect(() => {
-    let socket = io(process.env.NEXT_PUBLIC_API_URL!);
-    setSocket(socket);
+const Home = dynamic(() => import("./Home"), {
+  ssr: false,
+  loading: () => <FullscreenLoader />,
+});
 
-    socket.on("connect", () => {
-      const stater = new Stater(
-        new UserState(
-          socket.id!,
-          WizardId.MAGE,
-          MapStructure.random(10, 10),
-          100,
-          [allSpells[0]!, allSpells[1]!, allSpells[2]!],
-          new Position(0, 0),
-          [],
-        ),
-        "",
-      );
-      console.log("stater");
-      console.log(stater);
-      setStater(stater);
-    });
-  }, []);
-
-  return <HomePage />;
+export default function Page() {
+  return <Home />;
 }

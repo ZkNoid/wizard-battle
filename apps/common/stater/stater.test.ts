@@ -1,5 +1,7 @@
 import { Field, Int64 } from "o1js";
-import { State, Stater } from "./stater";
+import { Stater } from "./stater";
+import { State } from "./state";
+
 import {
   Effect,
   PlayerStats,
@@ -7,6 +9,7 @@ import {
   SpellCast,
   SpellStats,
 } from "./structs";
+import { WizardId } from "../wizards";
 
 describe("Stater", () => {
   let initialState: State;
@@ -46,10 +49,13 @@ describe("Stater", () => {
 
     initialState = new State({
       playerId: Field(42),
+      wizardId: WizardId.MAGE,
       playerStats,
       spellStats,
       effects,
+      map: [...Array(64).fill(Field(0))],
       turnId: Int64.from(1),
+      randomSeed: Field(123),
     });
 
     stater = new Stater({
@@ -110,7 +116,7 @@ describe("Stater", () => {
       expect(stater.state.playerId.toString()).toBe("42");
       expect(stater.state.playerStats.hp.toString()).toBe("100");
       expect(stater.state.turnId.toString()).toBe("1");
-      expect(stater.randomSeed.toString()).toBe("123");
+      expect(stater.state.randomSeed.toString()).toBe("123");
     });
   });
 
@@ -357,26 +363,13 @@ describe("Stater", () => {
 
   describe("random seed behavior", () => {
     it("should maintain random seed throughout operations", () => {
-      const originalSeed = stater.randomSeed.toString();
+      const originalSeed = stater.state.randomSeed.toString();
 
       // Try operations that don't modify randomSeed
       stater.generatePublicState();
       stater.generateStateCommit();
 
-      expect(stater.randomSeed.toString()).toBe(originalSeed);
-    });
-
-    it("should create different staters with different seeds", () => {
-      const stater2 = new Stater({
-        state: initialState.copy(),
-        randomSeed: Field(999),
-      });
-
-      expect(stater.randomSeed.toString()).not.toBe(
-        stater2.randomSeed.toString(),
-      );
-      expect(stater.randomSeed.toString()).toBe("123");
-      expect(stater2.randomSeed.toString()).toBe("999");
+      expect(stater.state.randomSeed.toString()).toBe(originalSeed);
     });
   });
 });

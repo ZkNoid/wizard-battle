@@ -8,9 +8,9 @@ import { PlaySteps } from "@/lib/enums/PlaySteps";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { MAX_SELECTED_SKILLS } from "@/lib/constants/wizards";
-import { allWizards, type Wizard } from "../../../../common/wizards";
-import type { Spell } from "../../../../common/types/matchmaking.types";
-import { allSpells } from "../../../../common/spells";
+import { type Wizard } from "../../../../common/wizards";
+import { allSpells } from "../../../../common/stater/spells";
+import type { SpellStats } from "../../../../common/stater/structs";
 
 export default function CharacterSelect({
   setPlayStep,
@@ -22,9 +22,17 @@ export default function CharacterSelect({
   setPlayStep: (playStep: PlaySteps) => void;
   currentWizard: Wizard;
   setCurrentWizard: (wizard: Wizard) => void;
-  selectedSkills: Spell[];
-  setSelectedSkills: (skills: Spell[]) => void;
+  selectedSkills: SpellStats[];
+  setSelectedSkills: (skills: SpellStats[]) => void;
 }) {
+  const currentWizardSpells = allSpells.filter(
+    (spell) => spell.wizardId === currentWizard.id,
+  );
+
+  const selectedSkillsLength = selectedSkills.filter(
+    (s) => s.spellId.toString() !== "0",
+  ).length;
+
   return (
     <div className="gap-15 flex">
       <Carousel
@@ -41,37 +49,45 @@ export default function CharacterSelect({
         </span>
         {/* Skills */}
         <div className="mt-5 grid grid-cols-4 gap-5">
-          {allSpells
-            .filter((spell) => spell.wizardId === currentWizard.id)
-            .map((spell) => (
-              <Image
-                key={spell.id}
-                className={cn(
-                  "w-22.5 h-22.5 cursor-pointer transition-transform duration-300 hover:scale-110",
-                  selectedSkills.includes(spell) && "scale-110",
-                  !selectedSkills.includes(spell) &&
-                    selectedSkills.length >= MAX_SELECTED_SKILLS &&
-                    "hover:scale-none cursor-not-allowed opacity-50",
-                )}
-                src={spell.imageURL ?? ""}
-                alt={"skill"}
-                width={22.5}
-                height={22.5}
-                onClick={() => {
-                  if (selectedSkills.includes(spell)) {
-                    setSelectedSkills(
-                      selectedSkills.filter((s) => s !== spell),
-                    );
-                  } else {
-                    if (selectedSkills.length < MAX_SELECTED_SKILLS) {
-                      setSelectedSkills([...selectedSkills, spell]);
-                    }
+          {currentWizardSpells.map((spell) => (
+            <Image
+              key={spell.id.toString()}
+              className={cn(
+                "w-22.5 h-22.5 cursor-pointer transition-transform duration-300 hover:scale-110",
+                selectedSkills.some(
+                  (s) => s.spellId.toString() === spell.id.toString(),
+                ) && "scale-110",
+                !selectedSkills.some(
+                  (s) => s.spellId.toString() === spell.id.toString(),
+                ) &&
+                  selectedSkillsLength >= MAX_SELECTED_SKILLS &&
+                  "hover:scale-none cursor-not-allowed opacity-50",
+              )}
+              src={spell.image ?? ""}
+              alt={"skill"}
+              width={22.5}
+              height={22.5}
+              onClick={() => {
+                if (
+                  selectedSkills.some(
+                    (s) => s.spellId.toString() === spell.id.toString(),
+                  )
+                ) {
+                  setSelectedSkills(
+                    selectedSkills.filter(
+                      (s) => s.spellId.toString() !== spell.id.toString(),
+                    ),
+                  );
+                } else {
+                  if (selectedSkillsLength < MAX_SELECTED_SKILLS) {
+                    setSelectedSkills([...selectedSkills, spell.defaultValue]);
                   }
-                }}
-              />
-            ))}
+                }
+              }}
+            />
+          ))}
           {/* Empty skills */}
-          {Array.from({ length: 4 - (selectedSkills.length % 4) }).map(
+          {Array.from({ length: 4 - (currentWizardSpells.length % 4) }).map(
             (_, index) => (
               <Image
                 key={index}

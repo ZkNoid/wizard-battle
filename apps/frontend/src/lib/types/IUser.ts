@@ -1,6 +1,5 @@
 export interface IUser {
   address: string;
-  name: string;
-  level: number;
+  name?: string;
   xp: number;
 }

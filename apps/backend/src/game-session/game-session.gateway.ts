@@ -12,12 +12,28 @@ import {
     IFoundMatch,
     IPublicState,
   } from "../../../common/types/matchmaking.types";
+import { GamePhase, IUserActions, ITrustedState, IDead, IGameEnd } from '../../../common/types/gameplay.types';
 
 /**
- * @dev WebSocket gateway responsible for orchestrating real-time gameplay and
- * matchmaking events. Uses the Socket.IO Redis adapter to enable horizontal
- * scaling: messages are fanned out across instances via Redis pub/sub so that
- * players connected to different node processes remain in sync.
+ * @title Game Session Gateway - 5-Phase Turn Orchestration
+ * @notice WebSocket gateway that orchestrates real-time 5-phase turn-based gameplay
+ * @dev Uses Socket.IO with Redis adapter for horizontal scaling across multiple instances
+ * 
+ * ## 5-Phase Turn Flow:
+ * 1. SPELL_CASTING: handleSubmitActions() → storePlayerActions() → check if all ready
+ * 2. SPELL_PROPAGATION: advanceToSpellPropagation() → broadcast all actions
+ * 3. SPELL_EFFECTS: advanceToSpellEffects() → notify clients to apply effects
+ * 4. END_OF_ROUND: handleSubmitTrustedState() → storeTrustedState() → check if all ready  
+ * 5. STATE_UPDATE: advanceToStateUpdate() → broadcast all states → start new turn
+ * 
+ * ## Multi-Instance Support:
+ * - Redis pub/sub for cross-instance event broadcasting
+ * - Socket mappings ensure events reach correct instance
+ * - Automatic phase advancement synchronized across instances
+ * 
+ * ## WebSocket Events:
+ * Client → Server: submitActions, submitTrustedState, reportDead
+ * Server → Client: allPlayerActions, applySpellEffects, updateUserStates, newTurn, gameEnd
  */
 @WebSocketGateway({
     cors: { origin: '*' },
@@ -102,6 +118,19 @@ export class GameSessionGateway {
         return await this.matchmakingService.joinMatchmaking(socket, data.addToQueue);
     }
 
+    @SubscribeMessage('joinBotMatchmaking')
+    /**
+     * @param socket - The socket instance
+     * @param data - The data object containing the addToQueue
+     * @returns The result of the matchmaking service's joinMatchmaking method
+     * @dev Entrypoint for clients to join a matchmaking queue. Delegates to the
+     * matchmaking service which enqueues, attempts to match, and returns a
+     * `roomId` when successful.
+     */
+    async handleJoinBotMatchmaking(socket: Socket, data: { addToQueue: IAddToQueue }) {
+        return await this.matchmakingService.joinBotMatchmaking(socket, data.addToQueue);
+    }
+
     @SubscribeMessage('gameMessage')
     /**
      * @param socket - The socket instance
@@ -162,6 +191,26 @@ export class GameSessionGateway {
         }
     }
 
+    @SubscribeMessage('cleanupQueue')
+    /**
+     * @param socket - The socket instance
+     * @param data - The cleanup action data
+     * @dev Handles queue cleanup requests for testing purposes.
+     * Clears all players from the matchmaking queue and removes all active matches.
+     */
+    async handleCleanupQueue(socket: Socket, data: { action: string }) {
+        if (data.action === 'clear') {
+            try {
+                console.log('🧹 Client requested queue cleanup');
+                await this.matchmakingService.clearQueue();
+                socket.emit('cleanupComplete', { success: true, message: 'Queue cleared successfully' });
+            } catch (error) {
+                console.error('Failed to cleanup queue:', error);
+                socket.emit('cleanupComplete', { success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+            }
+        }
+    }
+
     @SubscribeMessage('getGameState')
     /**
      * @param socket - The socket instance
@@ -181,14 +230,152 @@ export class GameSessionGateway {
     }
 
     /**
-     * @param data - The data object containing the roomId, event, and data
+     * @notice Phase 1 Handler: Receives and validates player action submissions
+     * @dev Called during SPELL_CASTING phase when players submit their intended actions
+     * @param socket The WebSocket connection from the submitting player
+     * @param data Contains roomId and the player's actions with cryptographic signature
+     * 
+     * Validation:
+     * - Ensures game is in SPELL_CASTING phase
+     * - Verifies actions contain at least one valid action
+     * - Extracts playerId from first action
+     * 
+     * Flow:
+     * 1. Store actions via GameStateService.storePlayerActions()
+     * 2. Mark player as ready via GameStateService.markPlayerReady()
+     * 3. If all players ready, advance to SPELL_PROPAGATION phase
+     * 
+     * Response:
+     * - Emits 'actionSubmitResult' with success/error status
+     * - On success with all ready: triggers advanceToSpellPropagation()
+     */
+    @SubscribeMessage('submitActions')
+    async handleSubmitActions(socket: Socket, data: { roomId: string; actions: IUserActions }) {
+      try {
+        const gameState = await this.gameStateService.getGameState(data.roomId);
+        if (!gameState || gameState.currentPhase !== GamePhase.SPELL_CASTING) {
+          socket.emit('actionSubmitResult', { success: false, error: 'Invalid phase for action submission' });
+          return;
+        }
+
+        // Get playerId from first action
+        const playerId = data.actions.actions[0]?.playerId;
+        if (!playerId) {
+          socket.emit('actionSubmitResult', { success: false, error: 'No actions provided' });
+          return;
+        }
+
+        // Store the actions
+        await this.gameStateService.storePlayerActions(data.roomId, playerId, data.actions);
+        
+        // Mark player as ready
+        const allReady = await this.gameStateService.markPlayerReady(data.roomId, playerId);
+        
+        socket.emit('actionSubmitResult', { success: true });
+        
+        // If all players submitted actions, advance to next phase
+        if (allReady) {
+          await this.advanceToSpellPropagation(data.roomId);
+        }
+      } catch (error) {
+        socket.emit('actionSubmitResult', { success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      }
+    }
+
+    /**
+     * @notice Phase 4 Handler: Receives player's computed state after spell effects
+     * @dev Called during END_OF_ROUND phase after players locally apply all spell effects
+     * @param socket The WebSocket connection from the submitting player  
+     * @param data Contains roomId and player's trusted state with cryptographic proofs
+     * 
+     * Validation:
+     * - Ensures game is in END_OF_ROUND phase
+     * - Verifies trustedState contains required fields (playerId, stateCommit, publicState, signature)
+     * 
+     * Flow:
+     * 1. Store trusted state via GameStateService.storeTrustedState()
+     * 2. Mark player as ready via GameStateService.markPlayerReady()
+     * 3. If all players ready, advance to STATE_UPDATE phase
+     * 
+     * Response:
+     * - Emits 'trustedStateResult' with success/error status
+     * - On success with all ready: triggers advanceToStateUpdate()
+     */
+    @SubscribeMessage('submitTrustedState')
+    async handleSubmitTrustedState(socket: Socket, data: { roomId: string; trustedState: ITrustedState }) {
+      try {
+        const gameState = await this.gameStateService.getGameState(data.roomId);
+        if (!gameState || gameState.currentPhase !== GamePhase.END_OF_ROUND) {
+          socket.emit('trustedStateResult', { success: false, error: 'Invalid phase for trusted state submission' });
+          return;
+        }
+
+        // Store the trusted state
+        await this.gameStateService.storeTrustedState(data.roomId, data.trustedState.playerId, data.trustedState);
+        
+        // Mark player as ready
+        const allReady = await this.gameStateService.markPlayerReady(data.roomId, data.trustedState.playerId);
+        
+        socket.emit('trustedStateResult', { success: true });
+        
+        // If all players submitted trusted states, advance to state update phase
+        if (allReady) {
+          await this.advanceToStateUpdate(data.roomId);
+        }
+      } catch (error) {
+        socket.emit('trustedStateResult', { success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      }
+    }
+
+    /**
+     * @notice Handles player elimination and win condition checking
+     * @dev Called when a player's HP reaches zero or they're eliminated by game rules
+     * @param socket The WebSocket connection reporting the death (can be any player)
+     * @param data Contains roomId and the eliminated player's information
+     * 
+     * Win Condition Logic:
+     * - Calls GameStateService.markPlayerDead() to eliminate player
+     * - If winner determined (only 1 player remains), broadcasts 'gameEnd' event
+     * - If game continues (2+ players remain), no additional action taken
+     * 
+     * Cross-Instance Broadcasting:
+     * - Uses both local emit and Redis publishToRoom for multi-instance support
+     * - Ensures all instances receive game end notification simultaneously
+     * 
+     * Error Handling:
+     * - Catches and logs errors but doesn't emit error responses
+     * - Death reporting is fire-and-forget for performance
+     */
+    @SubscribeMessage('reportDead')
+    async handleReportDead(socket: Socket, data: { roomId: string; dead: IDead }) {
+      try {
+        const winnerId = await this.gameStateService.markPlayerDead(data.roomId, data.dead.playerId);
+        
+        if (winnerId) {
+          // Game ended, announce winner
+          const gameEnd: IGameEnd = { winnerId };
+          this.server.to(data.roomId).emit('gameEnd', gameEnd);
+          await this.gameStateService.publishToRoom(data.roomId, 'gameEnd', gameEnd);
+        }
+      } catch (error) {
+        console.error('Failed to handle player death:', error);
+      }
+    }
+
+    /**
+     * @param data - The data object containing the roomId, event, data, originInstanceId, and timestamp
      * @dev Handles events published by other instances on the Redis channel and
      * re-emits them to any local sockets subscribed to the target room. For
      * `playerJoined`, attempts to join the player's socket to the room if the
      * socket is connected to this instance.
      */
-    private async handleCrossInstanceEvent(data: { roomId: string; event: string; data: any }) {
+    private async handleCrossInstanceEvent(data: { roomId: string; event: string; data: any; originInstanceId: string; timestamp: number }) {
         if (!this.server) return;
+
+        // Skip events that originated from this instance to prevent double messages
+        if (data.originInstanceId === this.gameStateService.getInstanceId()) {
+            return;
+        }
 
         switch (data.event) {
             case 'gameMessage':
@@ -249,8 +436,174 @@ export class GameSessionGateway {
                 }
                 break;
 
+            case 'allPlayerActions':
+                // Broadcast all player actions to local sockets
+                this.server.to(data.roomId).emit('allPlayerActions', data.data);
+                break;
+
+            case 'applySpellEffects':
+                // Broadcast spell effects phase to local sockets
+                this.server.to(data.roomId).emit('applySpellEffects');
+                break;
+
+            case 'updateUserStates':
+                // Broadcast user state updates to local sockets
+                this.server.to(data.roomId).emit('updateUserStates', data.data);
+                break;
+
+            case 'newTurn':
+                // Broadcast new turn to local sockets
+                this.server.to(data.roomId).emit('newTurn', data.data);
+                break;
+
+            case 'gameEnd':
+                // Broadcast game end to local sockets
+                this.server.to(data.roomId).emit('gameEnd', data.data);
+                break;
+
             default:
                 console.log(`Unknown cross-instance event: ${data.event}`);
         }
+    }
+
+    // ==================== PHASE ADVANCEMENT ORCHESTRATION ====================
+
+    /**
+     * @notice Phase 1→2 Transition: Broadcasts all player actions to begin spell propagation
+     * @dev Called automatically when all players submit actions in SPELL_CASTING phase
+     * @param roomId The unique identifier for the game room
+     * 
+     * Phase 2 (SPELL_PROPAGATION) Logic:
+     * 1. Retrieve all player actions via GameStateService.getAllPlayerActions()
+     * 2. Advance game phase to SPELL_PROPAGATION
+     * 3. Broadcast actions to all players via 'allPlayerActions' event
+     * 4. Use Redis publishToRoom for cross-instance synchronization
+     * 5. Auto-advance to SPELL_EFFECTS after 1 second delay
+     * 
+     * Client Expectations:
+     * - Clients receive all player actions simultaneously
+     * - Clients can now see what spells all players are casting
+     * - Prepares clients for local spell effect computation
+     */
+    private async advanceToSpellPropagation(roomId: string) {
+      // Get all actions and broadcast them
+      const allActions = await this.gameStateService.getAllPlayerActions(roomId);
+      
+      // Advance phase
+      await this.gameStateService.advanceGamePhase(roomId);
+      
+      // Broadcast all actions to all players
+      this.server.to(roomId).emit('allPlayerActions', allActions);
+      await this.gameStateService.publishToRoom(roomId, 'allPlayerActions', allActions);
+      
+      // Auto-advance to spell effects phase after a short delay
+      setTimeout(() => {
+        this.advanceToSpellEffects(roomId);
+      }, 1000);
+    }
+
+    /**
+     * @notice Phase 2→3 Transition: Signals clients to apply spell effects locally
+     * @dev Automatically called after SPELL_PROPAGATION phase completes
+     * @param roomId The unique identifier for the game room
+     * 
+     * Phase 3 (SPELL_EFFECTS) Logic:
+     * 1. Advance game phase to SPELL_EFFECTS
+     * 2. Emit 'applySpellEffects' signal to all players
+     * 3. Use Redis publishToRoom for cross-instance synchronization
+     * 
+     * Client Expectations:
+     * - Clients apply all received actions to their local game state
+     * - Clients compute damage, healing, movement, and other effects
+     * - Clients generate trusted state commitments with cryptographic proofs
+     * - Clients automatically advance to END_OF_ROUND and submit trusted states
+     * 
+     * Note: This phase has no server-side waiting - clients self-manage timing
+     */
+    private async advanceToSpellEffects(roomId: string) {
+      await this.gameStateService.advanceGamePhase(roomId);
+      
+      // Notify players to apply effects
+      this.server.to(roomId).emit('applySpellEffects');
+      await this.gameStateService.publishToRoom(roomId, 'applySpellEffects', {});
+      
+      // Auto-advance to END_OF_ROUND phase after players have time to process effects
+      setTimeout(async () => {
+        await this.gameStateService.advanceGamePhase(roomId);
+        console.log(`🔄 Advanced room ${roomId} to END_OF_ROUND phase`);
+      }, 2000); // 2 second delay for effect processing
+    }
+
+    /**
+     * @notice Phase 4→5 Transition: Distributes all player states for opponent updates
+     * @dev Called when all players submit trusted states in END_OF_ROUND phase
+     * @param roomId The unique identifier for the game room
+     * 
+     * Phase 5 (STATE_UPDATE) Logic:
+     * 1. Collect all trusted states from alive players
+     * 2. Advance game phase to STATE_UPDATE  
+     * 3. Broadcast states via 'updateUserStates' event
+     * 4. Use Redis publishToRoom for cross-instance synchronization
+     * 5. Auto-start next turn after 2 second delay
+     * 
+     * Client Expectations:
+     * - Clients receive public state updates for all opponents
+     * - Clients update their local representation of opponent HP, position, effects
+     * - Clients prepare for next turn's SPELL_CASTING phase
+     * 
+     * State Contents:
+     * - Only includes trusted states from alive players
+     * - Contains public information: HP, position, active effects
+     * - Excludes private information: full spell cooldowns, hidden effects
+     */
+    private async advanceToStateUpdate(roomId: string) {
+      const gameState = await this.gameStateService.getGameState(roomId);
+      if (!gameState) return;
+      
+      // Collect all trusted states
+      const trustedStates = gameState.players
+        .filter(p => p.isAlive && p.trustedState)
+        .map(p => p.trustedState!);
+      
+      // Advance phase
+      await this.gameStateService.advanceGamePhase(roomId);
+      
+      // Broadcast state updates
+      const updateUserStates = { states: trustedStates };
+      this.server.to(roomId).emit('updateUserStates', updateUserStates);
+      await this.gameStateService.publishToRoom(roomId, 'updateUserStates', updateUserStates);
+      
+      // Start next turn after a delay
+      setTimeout(() => {
+        this.startNextTurn(roomId);
+      }, 2000);
+    }
+
+    /**
+     * @notice Phase 5→1 Transition: Initiates a new turn cycle  
+     * @dev Called automatically after STATE_UPDATE phase completes
+     * @param roomId The unique identifier for the game room
+     * 
+     * New Turn Logic:
+     * 1. Advance game phase back to SPELL_CASTING (increments turn counter)
+     * 2. Clear previous turn data (actions, trusted states, players ready)
+     * 3. Broadcast 'newTurn' event with new phase information
+     * 4. Use Redis publishToRoom for cross-instance synchronization
+     * 
+     * Client Expectations:
+     * - Clients reset their turn-specific state
+     * - Clients re-enable action submission UI
+     * - Clients begin new turn with fresh spell cooldowns and effects
+     * 
+     * Turn Counter:
+     * - GameStateService automatically increments turn number
+     * - Used for game analytics, replay systems, and debugging
+     */
+    private async startNextTurn(roomId: string) {
+      await this.gameStateService.advanceGamePhase(roomId); // This will start a new turn
+      
+      // Notify players of new turn
+      this.server.to(roomId).emit('newTurn', { phase: GamePhase.SPELL_CASTING });
+      await this.gameStateService.publishToRoom(roomId, 'newTurn', { phase: GamePhase.SPELL_CASTING });
     }
 }

@@ -1,105 +1,6 @@
 // import { Socket } from "socket.io-client";
 
-import { Action, type PublicState, UserState } from "../stater";
-// Old
-export enum TileType {
-  VALLEY = 0,
-  ROCK = 1,
-  WATER = 2,
-}
-
-export enum SpellEffect {
-  FRIENDLY_EFFECT = 0,
-  ENEMY_EFFECT = 1,
-}
-
-export class MapStructure {
-  matrix: TileType[][];
-
-  constructor(matrix: TileType[][]) {
-    this.matrix = matrix;
-  }
-
-  static random(width: number, height: number): MapStructure {
-    const matrix = new Array(height)
-      .fill(0)
-      .map(() =>
-        new Array(width)
-          .fill(0)
-          .map(() => (Math.random() > 0.5 ? TileType.VALLEY : TileType.ROCK)),
-      );
-    return new MapStructure(matrix);
-  }
-}
-
-export class Position {
-  x: number;
-  y: number;
-
-  constructor(x: number, y: number) {
-    this.x = x;
-    this.y = y;
-  }
-
-  equals(other: Position): boolean {
-    return this.x === other.x && this.y === other.y;
-  }
-
-  manhattanDistance(other: Position): number {
-    return Math.abs(this.x - other.x) + Math.abs(this.y - other.y);
-  }
-}
-
-export interface Impact {
-  playerId: string;
-  position: Position;
-  spellId: string;
-}
-
-export interface Spell<ADType = any> {
-  id: string;
-  wizardId: string;
-  requiredLevel?: number;
-  cooldown: number;
-  name: string;
-  description: string;
-  image: string;
-  effectType: SpellEffect;
-  effect2: (
-    state: UserState,
-    publicState: PublicState,
-    effects: Effect[],
-    castPosition: Position,
-    additionalData: ADType,
-  ) => void;
-  cast: (position: Position, target: string, additionalData: ADType) => Action;
-  imageURL?: string;
-}
-
-export class Effect {
-  effectId: string;
-  duration: number;
-  effectData: any;
-
-  constructor(effectId: string, duration: number, effectData: any) {
-    this.effectId = effectId;
-    this.duration = duration;
-    this.effectData = effectData;
-  }
-}
-
-export class EffectInfo {
-  effectId: string;
-  apply: (state: UserState, publicState: PublicState) => void;
-
-  constructor(
-    effectId: string,
-    apply: (state: UserState, publicState: PublicState) => void,
-  ) {
-    this.effectId = effectId;
-    this.apply = apply;
-  }
-}
+import { Field } from 'o1js';
 
 /*//////////////////////////////////////////////////////////////
                           NEW TYPES
@@ -107,9 +8,9 @@ export class EffectInfo {
 
 // New
 export enum TileTypeNew {
-  "Wood",
-  "Water",
-  "Mountain",
+  'Wood',
+  'Water',
+  'Mountain',
 }
 
 export interface IMap {
@@ -130,17 +31,21 @@ export interface IPosition {
 export interface IState {
   socketId: string;
   playerId: string;
-  wizardId: string;
-  maxHP: number;
-  mapStructure: IMap;
-  spells: ISpell[];
-  initialPosition: IPosition;
-  stateCommit: any;
-  level: number;
+  fields: Field[]; // Contain State.toFields(userState)
+  // hp: number;
+  // position: { x: number; y: number };
+  // effects: any[];
+  // wizardId: string;
+  // maxHP: number;
+  // mapStructure: IMap;
+  // spells: ISpell[];
+  // initialPosition: IPosition;
+  // stateCommit: any;
+  // level: number;
 }
 
 // Send only public parts of setup
-export type IPublicState = Partial<IState>;
+export type IPublicState = IState;
 
 /*//////////////////////////////////////////////////////////////
                       NEW MATCHMAKING TYPES
@@ -172,12 +77,12 @@ export interface IUpdateQueue {
 }
 
 export interface IFoundMatch {
-  roomId:string;
+  roomId: string;
   opponentId: string;
   opponentSetup: IPublicState[];
 }
 
- /*//////////////////////////////////////////////////////////////
+/*//////////////////////////////////////////////////////////////
                               NEW CLASSES
     //////////////////////////////////////////////////////////////*/
 
@@ -204,20 +109,12 @@ export class TransformedMap implements IMap {
 export class TransformedPlayerSetup implements IPublicState {
   socketId: string;
   playerId: string;
-  wizardId: string;
-  maxHP: number;
-  mapStructure: IMap;
-  spells: ISpell[];
-  level: number;
+  fields: Field[];
 
-  constructor(socketId: string, playerId: string, wizardId: string, maxHP: number, mapStructure: IMap, spells: ISpell[], level: number) {
+  constructor(socketId: string, playerId: string, fields: Field[]) {
     this.socketId = socketId;
     this.playerId = playerId;
-    this.wizardId = wizardId;
-    this.maxHP = maxHP;
-    this.mapStructure = mapStructure;
-    this.spells = spells;
-    this.level = level;
+    this.fields = fields;
   }
 }
 
@@ -233,7 +130,7 @@ export class TransformedAddToQueue implements IAddToQueue {
     playerSetup: IPublicState,
     nonce: number,
     signature: any,
-    setupProof: any,
+    setupProof: any
   ) {
     this.playerId = playerId;
     this.playerSetup = playerSetup;
@@ -280,7 +177,11 @@ export class TransformedFoundMatch implements IFoundMatch {
   opponentId: string;
   opponentSetup: IPublicState[];
 
-  constructor(roomId: string, opponentId: string, opponentSetup: IPublicState[]) {
+  constructor(
+    roomId: string,
+    opponentId: string,
+    opponentSetup: IPublicState[]
+  ) {
     this.roomId = roomId;
     this.opponentId = opponentId;
     this.opponentSetup = opponentSetup;

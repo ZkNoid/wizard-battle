@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { forwardRef, useEffect, useLayoutEffect, useRef } from "react";
-import { StartGameAlly, StartGameEnemy } from "./game/main";
-import { EventBus } from "./game/EventBus";
+import { forwardRef, useEffect, useLayoutEffect, useRef } from 'react';
+import { StartGameAlly, StartGameEnemy } from './game/main';
+import { EventBus } from './game/EventBus';
 
 export interface IRefPhaserGame {
   game: Phaser.Game | null;
@@ -14,22 +14,23 @@ interface IProps {
   container: string;
   isEnemy?: boolean;
   tilemapData?: number[];
+  onMapClick?: (x: number, y: number) => void;
 }
 
 export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
   function PhaserGame(
-    { currentActiveScene, container, isEnemy, tilemapData },
-    ref,
+    { currentActiveScene, container, isEnemy, tilemapData, onMapClick },
+    ref
   ) {
     const game = useRef<Phaser.Game | null>(null!);
 
     useLayoutEffect(() => {
       if (game.current === null) {
         game.current = isEnemy
-          ? StartGameEnemy(container, tilemapData)
-          : StartGameAlly(container, tilemapData);
+          ? StartGameEnemy(container, tilemapData, onMapClick)
+          : StartGameAlly(container, tilemapData, onMapClick);
 
-        if (typeof ref === "function") {
+        if (typeof ref === 'function') {
           ref({ game: game.current, scene: null });
         } else if (ref) {
           ref.current = { game: game.current, scene: null };
@@ -47,22 +48,22 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
     }, [ref, tilemapData]);
 
     useEffect(() => {
-      EventBus.on("current-scene-ready", (scene_instance: Phaser.Scene) => {
-        if (currentActiveScene && typeof currentActiveScene === "function") {
+      EventBus.on('current-scene-ready', (scene_instance: Phaser.Scene) => {
+        if (currentActiveScene && typeof currentActiveScene === 'function') {
           currentActiveScene(scene_instance);
         }
 
-        if (typeof ref === "function") {
+        if (typeof ref === 'function') {
           ref({ game: game.current, scene: scene_instance });
         } else if (ref) {
           ref.current = { game: game.current, scene: scene_instance };
         }
       });
       return () => {
-        EventBus.removeListener("current-scene-ready");
+        EventBus.removeListener('current-scene-ready');
       };
     }, [currentActiveScene, ref, tilemapData]);
 
     return <div id={container}></div>;
-  },
+  }
 );

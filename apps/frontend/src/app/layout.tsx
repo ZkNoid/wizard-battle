@@ -1,14 +1,14 @@
-import "@/styles/globals.css";
+import '@/styles/globals.css';
 
-import { type Metadata } from "next";
-import { dePixel } from "@/lib/fonts/dePixel";
+import { type Metadata } from 'next';
+import { dePixel } from '@/lib/fonts/dePixel';
 
-import { TRPCReactProvider } from "@/trpc/react";
+import { TRPCReactProvider } from '@/trpc/react';
 
 export const metadata: Metadata = {
-  title: "Wizard Battle",
-  description: "Wizard Battle",
-  icons: [{ rel: "icon", url: "/favicon.png" }],
+  title: 'Wizard Battle',
+  description: 'Wizard Battle',
+  icons: [{ rel: 'icon', url: '/favicon.png' }],
 };
 
 export default function RootLayout({
