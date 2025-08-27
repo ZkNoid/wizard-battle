@@ -72,7 +72,6 @@ describe('Mage Spells', () => {
 
     stater = new Stater({
       state: initialState,
-      randomSeed: Field(123),
     });
   });
 
