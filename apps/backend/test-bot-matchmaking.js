@@ -32,14 +32,11 @@ const playerSocket = io(SERVER_URL, {
 playerSocket.on('connect', () => {
   console.log(`✅ Human player connected with socket ID: ${playerSocket.id}`);
   
-  // Create player setup
+  // Create player setup - only use fields array (consistent with our updates)
   const playerSetup = {
     socketId: playerSocket.id,
     playerId: TEST_PLAYER_ID,
-    fields: [new Field(100), new Field(2), new Field(2)], // HP=100, x=2, y=2
-    hp: 100,
-    position: { x: 2, y: 2 },
-    effects: []
+    fields: [new Field(100), new Field(2), new Field(2)] // HP=100, x=2, y=2 as fields only
   };
 
   // Create matchmaking request
@@ -131,10 +128,7 @@ playerSocket.on('applySpellEffects', () => {
       publicState: {
         socketId: playerSocket.id,
         playerId: TEST_PLAYER_ID,
-        fields: [new Field(90), new Field(3), new Field(3)], // Simulated damage and movement
-        hp: 90,
-        position: { x: 3, y: 3 },
-        effects: []
+        fields: [new Field(90), new Field(3), new Field(3)] // Simulated damage and movement as fields only
       },
       signature: `test_trusted_signature_${Date.now()}`
     };

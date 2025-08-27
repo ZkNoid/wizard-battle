@@ -50,14 +50,11 @@ playerSocket.on('connect', () => {
   console.log(`✅ Human player connected with socket ID: ${playerSocket.id}`);
   testResults.connection = true;
   
-  // Create player setup
+  // Create player setup - only use fields array (consistent with our updates)
   const playerSetup = {
     socketId: playerSocket.id,
     playerId: TEST_PLAYER_ID,
-    fields: [new Field(100), new Field(2), new Field(2)], // HP=100, x=2, y=2
-    hp: 100,
-    position: { x: 2, y: 2 },
-    effects: []
+    fields: [new Field(100), new Field(2), new Field(2)] // HP=100, x=2, y=2 as fields only
   };
 
   // Create matchmaking request
@@ -167,10 +164,7 @@ playerSocket.on('applySpellEffects', () => {
       publicState: {
         socketId: playerSocket.id,
         playerId: TEST_PLAYER_ID,
-        fields: [new Field(85), new Field(3), new Field(3)], // Simulated damage and movement
-        hp: 85,
-        position: { x: 3, y: 3 },
-        effects: []
+        fields: [new Field(85), new Field(3), new Field(3)] // Simulated damage and movement as fields only
       },
       signature: `test_trusted_signature_${Date.now()}`
     };
@@ -195,10 +189,10 @@ playerSocket.on('updateUserStates', (data) => {
     data.states.forEach(state => {
       if (state.playerId.startsWith('bot_')) {
         testResults.botStateReceived = true;
-        console.log(`   🤖 Bot state: HP=${state.publicState.hp}, Position=(${state.publicState.position.x},${state.publicState.position.y})`);
+        console.log(`   🤖 Bot state received with fields:`, state.publicState.fields.length, 'fields');
         console.log('   ✅ Bot successfully participated in state update phase!');
       } else {
-        console.log(`   👤 Human state: HP=${state.publicState.hp}, Position=(${state.publicState.position.x},${state.publicState.position.y})`);
+        console.log(`   👤 Human state received with fields:`, state.publicState.fields.length, 'fields');
       }
     });
   }
