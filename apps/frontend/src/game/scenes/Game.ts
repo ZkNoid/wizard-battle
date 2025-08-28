@@ -224,4 +224,19 @@ export class Game extends Scene {
       this.leftTilemap.loadTilemapFromData(tilemapData);
     }
   }
+
+  public handlePositionUpdate(x: number, y: number) {
+    // Update the leftPlayer position
+    if (this.leftPlayer) {
+      const leftScale = this.leftTilemap.getScale();
+      const tileSize = this.leftTilemap.getConfig().tileSize * leftScale;
+
+      // Convert tile coordinates to world coordinates
+      const worldX = x * tileSize + tileSize / 2;
+      const worldY = y * tileSize + tileSize / 2;
+
+      this.leftPlayer.setPosition(worldX, worldY);
+      console.log(`Updated leftPlayer position to: (${worldX}, ${worldY})`);
+    }
+  }
 }

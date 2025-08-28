@@ -1,4 +1,4 @@
-import { CircuitString, Field } from "o1js";
+import { CircuitString, Field } from 'o1js';
 
 export interface Wizard {
   id: Field;
@@ -10,25 +10,26 @@ export interface Wizard {
 }
 
 export const WizardId = {
-  MAGE: CircuitString.fromString("Mage").hash(),
-  WARRIOR: CircuitString.fromString("Warrior").hash(),
-  ROGUE: CircuitString.fromString("Rogue").hash(),
+  MAGE: CircuitString.fromString('Mage').hash(),
+  WARRIOR: CircuitString.fromString('Warrior').hash(),
+  ROGUE: CircuitString.fromString('Rogue').hash(),
+  COMMON: CircuitString.fromString('Common').hash(),
 };
 
 export const allWizards: Wizard[] = [
   {
     id: WizardId.MAGE,
-    name: "Wizard",
+    name: 'Wizard',
     defaultHealth: 100,
-    publicFields: ["map", "health"],
-    imageURL: "/wizards/base-wizard.svg",
+    publicFields: ['map', 'health'],
+    imageURL: '/wizards/base-wizard.svg',
   },
   {
     id: WizardId.WARRIOR,
-    name: "Warrior",
+    name: 'Warrior',
     defaultHealth: 300,
-    publicFields: ["playerPosition", "map", "health"],
+    publicFields: ['playerPosition', 'map', 'health'],
     requiredLevel: 2,
-    imageURL: "/wizards/base-wizard.svg",
+    imageURL: '/wizards/base-wizard.svg',
   },
 ];

@@ -1,0 +1,47 @@
+import { CircuitString, Field, Int64, Struct } from 'o1js';
+import { Position, SpellCast } from '../structs';
+import { State } from '../state';
+import { WizardId } from '../../wizards';
+import { ISpell } from './interface';
+
+export class MoveData extends Struct({
+  position: Position,
+}) {}
+
+export const MoveCast = (
+  state: State,
+  target: Field,
+  position: Position
+): SpellCast<MoveData> => {
+  state.playerStats.position = position;
+
+  return {
+    spellId: CircuitString.fromString('Move').hash(),
+    target,
+    additionalData: {
+      position,
+    },
+  };
+};
+
+export const MoveModifyer = (state: State, spellCast: SpellCast<MoveData>) => {
+  state.playerStats.position = spellCast.additionalData.position;
+};
+
+export const allCommonSpells: ISpell<any>[] = [
+  {
+    id: CircuitString.fromString('Move').hash(),
+    wizardId: WizardId.COMMON,
+    cooldown: Field(1),
+    name: 'Move',
+    description: 'Move to a new position',
+    image: '/wizards/skills/1.svg',
+    modifyer: MoveModifyer,
+    cast: MoveCast,
+    defaultValue: {
+      spellId: CircuitString.fromString('Move').hash(),
+      cooldown: Int64.from(1),
+      currentColldown: Int64.from(0),
+    },
+  },
+];
