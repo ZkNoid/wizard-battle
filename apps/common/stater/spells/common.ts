@@ -1,8 +1,8 @@
 import { CircuitString, Field, Int64, Struct } from 'o1js';
-import { Position, SpellCast } from '../structs';
+import { Position, type SpellCast } from '../structs';
 import { State } from '../state';
 import { WizardId } from '../../wizards';
-import { ISpell } from './interface';
+import { type ISpell } from './interface';
 
 export class MoveData extends Struct({
   position: Position,

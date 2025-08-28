@@ -3,14 +3,8 @@ import { Effect, type SpellCast } from './structs';
 import { allSpells } from './spells';
 import { allEffectsInfo } from './effects/effects';
 import { State } from './state';
-import {
-  GamePhase,
-  type IUserActions,
-  type ITrustedState,
-  type IDead,
-  type IGameEnd,
-} from '../types/gameplay.types';
-import { IUserAction } from '../types/gameplay.types';
+import { type IUserActions, type ITrustedState } from '../types/gameplay.types';
+import { type IUserAction } from '../types/gameplay.types';
 
 /**
  * @title ZK-Provable Game State Manager
