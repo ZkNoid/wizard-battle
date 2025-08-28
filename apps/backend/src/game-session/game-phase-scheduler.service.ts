@@ -2,6 +2,7 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { GameStateService } from './game-state.service';
 import { GameSessionGateway } from './game-session.gateway';
+import { GamePhase } from '../../../common/types/gameplay.types';
 
 /**
  * @title Game Phase Scheduler - Cron-Based Phase Management
@@ -128,37 +129,37 @@ export class GamePhaseSchedulerService {
       
       // Check for specific phase transition conditions
       switch (gameState.currentPhase) {
-        case 'SPELL_PROPAGATION':
+        case GamePhase.SPELL_PROPAGATION:
           // Auto-advance to SPELL_EFFECTS after 1 second
           if (timeSincePhaseStart >= 1000) {
             transitions.push({
               roomId,
-              currentPhase: 'SPELL_PROPAGATION',
-              nextPhase: 'SPELL_EFFECTS',
+              currentPhase: GamePhase.SPELL_PROPAGATION,
+              nextPhase: GamePhase.SPELL_EFFECTS,
               delayMs: 0
             });
           }
           break;
           
-        case 'SPELL_EFFECTS':
+        case GamePhase.SPELL_EFFECTS:
           // Auto-advance to END_OF_ROUND after 2 seconds
           if (timeSincePhaseStart >= 2000) {
             transitions.push({
               roomId,
-              currentPhase: 'SPELL_EFFECTS', 
-              nextPhase: 'END_OF_ROUND',
+              currentPhase: GamePhase.SPELL_EFFECTS, 
+              nextPhase: GamePhase.END_OF_ROUND,
               delayMs: 0
             });
           }
           break;
           
-        case 'STATE_UPDATE':
+        case GamePhase.STATE_UPDATE:
           // Auto-advance to next turn after 2 seconds
           if (timeSincePhaseStart >= 2000) {
             transitions.push({
               roomId,
-              currentPhase: 'STATE_UPDATE',
-              nextPhase: 'SPELL_CASTING',
+              currentPhase: GamePhase.STATE_UPDATE,
+              nextPhase: GamePhase.SPELL_CASTING,
               delayMs: 0
             });
           }
@@ -181,14 +182,14 @@ export class GamePhaseSchedulerService {
       // GameSessionGateway is now properly injected
 
       switch (nextPhase) {
-        case 'SPELL_EFFECTS':
+        case GamePhase.SPELL_EFFECTS:
           await this.gameSessionGateway.advanceToSpellEffects(roomId);
           break;
-        case 'END_OF_ROUND':
+        case GamePhase.END_OF_ROUND:
           // Advance phase directly since we don't have a specific method
           await this.gameStateService.advanceGamePhase(roomId);
           break;
-        case 'SPELL_CASTING':
+        case GamePhase.SPELL_CASTING:
           await this.gameSessionGateway.startNextTurn(roomId);
           break;
         default:
@@ -241,7 +242,7 @@ export class GamePhaseSchedulerService {
 
 interface PhaseTransition {
   roomId: string;
-  currentPhase: string;
-  nextPhase: string;
+  currentPhase: GamePhase;
+  nextPhase: GamePhase;
   delayMs: number;
 }
