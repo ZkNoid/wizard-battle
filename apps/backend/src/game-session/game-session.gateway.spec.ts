@@ -5,6 +5,11 @@ import { GameStateService } from './game-state.service';
 import { Server, Socket } from 'socket.io';
 import { createMock } from '@golevelup/ts-jest';
 import { GamePhase, IUserActions, ITrustedState, IDead } from '../../../common/types/gameplay.types';
+import { State } from '../../../common/stater/state';
+
+// Create default state fields for testing
+const defaultState = State.default();
+const defaultStateFields = State.toFields(defaultState);
 
 describe('GameSessionGateway', () => {
   let gateway: GameSessionGateway;
@@ -155,10 +160,7 @@ describe('GameSessionGateway', () => {
         publicState: { 
           playerId: 'player1', 
           socketId: 'test-socket', 
-          fields: [], 
-          hp: 100, 
-          position: { x: 0, y: 0 }, 
-          effects: [] 
+          fields: [],
         },
         signature: 'test-signature'
       };
@@ -192,10 +194,7 @@ describe('GameSessionGateway', () => {
         publicState: { 
           playerId: 'player1', 
           socketId: 'test-socket', 
-          fields: [], 
-          hp: 100, 
-          position: { x: 0, y: 0 }, 
-          effects: [] 
+          fields: defaultStateFields  // Use proper fields array - consistent with our updates
         },
         signature: 'test-signature'
       };
