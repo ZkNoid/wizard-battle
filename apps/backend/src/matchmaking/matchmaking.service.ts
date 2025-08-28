@@ -21,7 +21,7 @@
 import { Injectable, Scope } from "@nestjs/common";
 import { Server, Socket } from "socket.io";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { createClient } from "redis";
+import { createClient, RedisClientType } from "redis";
 import { GameStateService } from "../game-session/game-state.service";
 import { BotClientService } from "../bot/bot-client.service";
 import { State } from "../../../common/stater/state";
@@ -79,9 +79,9 @@ interface Match {
 @Injectable()
 export class MatchmakingService {
   private server: Server | null = null;
-  private redisClient = createClient({
+  private redisClient: RedisClientType = createClient({
     url: process.env.REDIS_URL || "redis://localhost:6379",
-  }); //process.env.REDIS_URL });
+  });
   /**
    * Constructor for MatchmakingService
    * @param gameStateService - The GameStateService instance for managing game states and cross-instance communication

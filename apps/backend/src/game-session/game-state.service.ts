@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { createClient } from 'redis';
+import { createClient, RedisClientType } from 'redis';
 import { Socket } from 'socket.io';
 import { GamePhase, IUserActions, ITrustedState } from '../../../common/types/gameplay.types';
 
@@ -56,7 +56,7 @@ interface SocketMapping {
 
 @Injectable()
 export class GameStateService {
-    public redisClient = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
+    public redisClient: any = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
     private instanceId = `${process.pid}-${Date.now()}`;
 
     constructor() {
@@ -129,7 +129,7 @@ export class GameStateService {
     async getSocketsInRoom(roomId: string): Promise<SocketMapping[]> {
         const allMappings = await this.redisClient.hGetAll('socket_mappings');
         return Object.values(allMappings)
-            .map(m => JSON.parse(m))
+            .map(m => JSON.parse(m as string))
             .filter(m => m.roomId === roomId);
     }
 
@@ -307,7 +307,7 @@ export class GameStateService {
         const allMappings = await this.redisClient.hGetAll('socket_mappings');
         const instanceMappings = Object.entries(allMappings)
             .filter(([_, mapping]) => {
-                const parsed = JSON.parse(mapping);
+                const parsed = JSON.parse(mapping as string);
                 return parsed.instanceId === this.instanceId;
             });
 
@@ -733,7 +733,7 @@ export class GameStateService {
         const allMappings = await this.redisClient.hGetAll('socket_mappings');
         const instanceMappings = Object.entries(allMappings)
             .filter(([_, mapping]) => {
-                const parsed = JSON.parse(mapping);
+                const parsed = JSON.parse(mapping as string);
                 return parsed.instanceId === instanceId;
             });
 

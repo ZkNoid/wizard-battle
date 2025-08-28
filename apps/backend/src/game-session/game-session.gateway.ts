@@ -5,7 +5,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { createClient } from 'redis';
+import { createClient, RedisClientType } from 'redis';
 import { MatchmakingService } from '../matchmaking/matchmaking.service';
 import { GameStateService } from './game-state.service';
 import {
@@ -69,8 +69,8 @@ export class GameSessionGateway {
 
         // Configure Socket.IO Redis adapter at runtime so env is available
         const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-        const pubClient = createClient({ url: redisUrl });
-        const subClient = pubClient.duplicate();
+        const pubClient: RedisClientType = createClient({ url: redisUrl });
+        const subClient: RedisClientType = pubClient.duplicate();
     pubClient.on('error', (err) =>
       console.error('Redis Pub Client Error', err)
     );
