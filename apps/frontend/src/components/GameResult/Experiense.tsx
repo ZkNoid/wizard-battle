@@ -1,4 +1,4 @@
-import { ExperienceBg } from "./assets/exeprience-bg";
+import { ExperienceBg } from './assets/exeprience-bg';
 
 export function Experience({
   title,

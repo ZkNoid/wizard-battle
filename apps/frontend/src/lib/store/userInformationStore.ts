@@ -8,16 +8,19 @@ import {
 } from '../../../../common/stater/state';
 import { Field, Int64 } from 'o1js';
 import { SpellStats } from '../../../../common/stater/structs';
+import type { GamePhaseManager } from '@/game/GamePhaseManager';
 interface UserInformationStore {
   socket: Socket | null;
   stater: Stater | null;
   opponentState: State | null;
+  gamePhaseManager: GamePhaseManager | null;
   setSocket: (socket: Socket) => void;
   setStater: (stater: Stater) => void;
   setMap: (map: Field[] | number[]) => void;
   setOpponentState: (opponentState: State) => void;
   setCurrentWizard: (wizardId: Field) => void;
   setSelectedSkills: (skills: SpellStats[]) => void;
+  setGamePhaseManager: (gamePhaseManager: GamePhaseManager) => void;
   clearSocket: () => void;
 }
 
@@ -25,6 +28,7 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
   socket: null,
   stater: null,
   opponentState: null,
+  gamePhaseManager: null,
   setSocket: (socket: Socket) => set({ socket }),
   setStater: (stater: Stater) => set({ stater }),
   setOpponentState: (opponentState: State) => set({ opponentState }),
@@ -66,6 +70,8 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
       currentState.map = map.map((item) => Field.from(item));
       return { stater: state.stater };
     }),
+  setGamePhaseManager: (gamePhaseManager: GamePhaseManager) =>
+    set({ gamePhaseManager }),
   clearSocket: () => {
     set((state) => {
       if (state.socket) {

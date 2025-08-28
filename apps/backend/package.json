@@ -22,7 +22,11 @@
     "test:multi-instance": "node test-multi-instance.js",
     "test:single-instance": "node test-single-instance.js",
     "test:gameplay": "node test-gameplay-phases.js",
-    "test:all-integration": "npm run test:single-instance && npm run test:multi-instance && npm run test:gameplay",
+    "test:bot-gameplay": "node test-bot-gameplay.js",
+    "test:bot-matchmaking": "node test-bot-matchmaking.js",
+    "test:multi-round": "node test-multi-round-gameplay.js",
+    "test:human-vs-human": "node test-human-vs-human-rounds.js",
+    "test:all-integration": "npm run test:single-instance && npm run test:multi-instance && npm run test:gameplay && npm run test:bot-gameplay",
     "start:multi": "./start-multi-instance.sh",
     "start:instances": "./start-instances-only.sh"
   },

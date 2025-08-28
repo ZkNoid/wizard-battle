@@ -18,11 +18,12 @@ export class LightningBoldData extends Struct({
 
 export const LightningBoldCast = (
   state: State,
+  target: Field,
   position: Position
 ): SpellCast<LightningBoldData> => {
   return {
     spellId: CircuitString.fromString('LightningBold').hash(),
-    target: Field(0),
+    target,
     additionalData: {
       position,
     },
@@ -34,6 +35,10 @@ export const LightningBoldModifyer = (
 ) => {
   const selfPosition = state.playerStats.position;
   const targetPosition = spellCast.additionalData.position;
+  console.log('LightningBoldModifyer');
+  console.log(selfPosition);
+  console.log(targetPosition);
+  console.log(spellCast.additionalData);
 
   const distance = selfPosition.manhattanDistance(targetPosition);
 
@@ -59,11 +64,12 @@ export class FireBallData extends Struct({
 
 export const FireBallCast = (
   state: State,
+  target: Field,
   position: Position
 ): SpellCast<FireBallData> => {
   return {
     spellId: CircuitString.fromString('FireBall').hash(),
-    target: Field(0),
+    target,
     additionalData: {
       position,
     },
@@ -103,11 +109,12 @@ export class LaserData extends Struct({
 
 export const LaserCast = (
   state: State,
+  target: Field,
   position: Position
 ): SpellCast<LaserData> => {
   return {
     spellId: CircuitString.fromString('Laser').hash(),
-    target: Field(0),
+    target,
     additionalData: {
       position,
     },
@@ -138,11 +145,12 @@ export class TeleportData extends Struct({
 
 export const TeleportCast = (
   state: State,
+  target: Field,
   position: Position
 ): SpellCast<TeleportData> => {
   return {
     spellId: CircuitString.fromString('Teleport').hash(),
-    target: Field(0),
+    target,
     additionalData: {
       position,
     },
@@ -158,10 +166,10 @@ export const TeleportModifyer = (
 
 export class HealData extends Struct({}) {}
 
-export const HealCast = (state: State): SpellCast<HealData> => {
+export const HealCast = (state: State, target: Field): SpellCast<HealData> => {
   return {
     spellId: CircuitString.fromString('Heal').hash(),
-    target: Field(0),
+    target,
     additionalData: {},
   };
 };

@@ -12,6 +12,8 @@ import { Stater } from '../../../../common/stater/stater';
 import type { IPublicState } from '../../../../common/types/matchmaking.types';
 import { State } from '../../../../common/stater/state';
 import type { IFoundMatch } from '../../../../common/types/matchmaking.types';
+import { GamePhaseManager } from '@/game/GamePhaseManager';
+import { Field, Int64 } from 'o1js';
 
 export default function Matchmaking({
   setPlayStep,
@@ -19,7 +21,8 @@ export default function Matchmaking({
   setPlayStep: (playStep: PlaySteps) => void;
 }) {
   const router = useRouter();
-  const { socket, stater, setOpponentState } = useUserInformationStore();
+  const { socket, stater, setOpponentState, setGamePhaseManager } =
+    useUserInformationStore();
 
   const sendRequest = useRef(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -29,11 +32,13 @@ export default function Matchmaking({
     if (!stater) return;
     if (sendRequest.current) return;
     sendRequest.current = true;
+    const playerId = Math.floor(Math.random() * 10000);
+    stater.state.playerId = Field.from(playerId);
     let data = {
-      playerId: Math.random().toString(),
+      playerId,
       playerSetup: {
         socketId: socket.id!,
-        playerId: Math.random().toString(),
+        playerId: playerId.toString(),
         fields: State.toFields(stater.state),
       } satisfies IPublicState,
       nonce: 0,
@@ -50,8 +55,15 @@ export default function Matchmaking({
     socket.on('matchFound', (response: IFoundMatch) => {
       console.log('Match found');
 
-      let opponentState = State.fromFields(response.opponentSetup[0]!.fields);
+      let opponentState = State.fromFieldsHydrated(
+        response.opponentSetup[0]!.fields
+      );
+
       setOpponentState(opponentState as State);
+
+      setGamePhaseManager(
+        new GamePhaseManager(socket, response.roomId, stater, setOpponentState)
+      );
       router.push(`/game`);
     });
 

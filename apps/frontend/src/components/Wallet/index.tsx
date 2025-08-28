@@ -12,6 +12,7 @@ import { api } from '@/trpc/react';
 import { useEffect, useState, useRef, type KeyboardEvent } from 'react';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
+import { levelFromXp } from '@/lib/constants/levels';
 
 const NameSchema = Yup.object().shape({
   name: Yup.string()
@@ -188,7 +189,7 @@ export default function Wallet() {
               <div className="relative flex h-full w-full">
                 <div className="z-[1] ml-2 mt-2 flex h-full w-full items-center justify-start">
                   <span className="font-pixel text-main-gray text-[0.417vw] font-bold">
-                    Lvl. 99999
+                    Lvl. {user?.xp ? levelFromXp(user.xp) : '???'}
                   </span>
                 </div>
                 <LevelBg className="h-6.5 absolute inset-0 z-0 w-full" />

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { createClient } from 'redis';
+import { createClient, RedisClientType } from 'redis';
 
 export interface HealthStatus {
     redis: boolean;
@@ -17,7 +17,7 @@ export interface HealthStatus {
 
 @Injectable()
 export class RedisHealthService {
-    private redisClient = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
+    private redisClient: RedisClientType = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
 
     constructor() {
         this.redisClient.on('error', err => console.error('RedisHealthService Redis Client Error', err));

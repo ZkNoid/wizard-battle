@@ -11,6 +11,10 @@ import { useRouter } from 'next/navigation';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
 import { allSpells } from '../../../../common/stater/spells';
 import { useInGameStore } from '@/lib/store/inGameStore';
+import type {
+  IUserAction,
+  IUserActions,
+} from '../../../../common/types/gameplay.types';
 
 const PhaserGame = dynamic(
   () => import('@/PhaserGame').then((mod) => mod.PhaserGame),
@@ -22,12 +26,14 @@ const PhaserGame = dynamic(
 
 export default function GamePage() {
   //  References to the PhaserGame component (game and scene are exposed)
-  const { stater, opponentState } = useUserInformationStore();
+  const { socket, stater, opponentState, gamePhaseManager } =
+    useUserInformationStore();
   const { pickedSpellId } = useInGameStore();
   const phaserRefAlly = useRef<IRefPhaserGame | null>(null);
   const phaserRefEnemy = useRef<IRefPhaserGame | null>(null);
   const router = useRouter();
   const { address } = useMinaAppkit();
+
   const { data: tilemapData } = api.tilemap.getTilemap.useQuery(
     {
       userAddress: address ?? '',
@@ -66,6 +72,30 @@ export default function GamePage() {
       console.log('Spell not found');
       return;
     }
+
+    let cast = spell.cast(stater?.state!, opponentState!.playerId, {
+      x,
+      y,
+    });
+    console.log('Cast: ', cast);
+
+    if (!opponentState?.playerId) {
+      console.log('Opponent state not found');
+      return;
+    }
+
+    const userAction: IUserAction = {
+      playerId: opponentState!.playerId.toString(),
+      spellId: spell.id.toString(),
+      spellCastInfo: cast.additionalData,
+    };
+
+    const userActions: IUserActions = {
+      actions: [userAction],
+      signature: '',
+    };
+
+    gamePhaseManager?.submitPlayerActions(userActions);
   };
 
   const handleAllyMapClick = (x: number, y: number) => {

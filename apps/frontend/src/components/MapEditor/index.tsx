@@ -11,6 +11,7 @@ import { RandomBtn } from './assets/random-btn';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
 import { Button } from '../shared/Button';
 import { useMinaAppkit } from 'mina-appkit';
+import { ALL_TILES } from '@/lib/constants/tiles';
 
 // Constants
 const TILEMAP_SIZE = 64;
@@ -453,8 +454,8 @@ export default function MapEditor() {
               <Tile
                 key={index}
                 image={`/assets/tiles/${tile}.png`}
-                title={`Tile ${index + 1}`}
-                description={`Tile ${index + 1} description`}
+                title={ALL_TILES[index]!.name}
+                description={ALL_TILES[index]!.description}
                 onClick={() => setSelectedTile(tile)}
               />
             ))}

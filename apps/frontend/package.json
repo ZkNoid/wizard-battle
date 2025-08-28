@@ -39,7 +39,7 @@
     "zustand": "^5.0.6"
   },
   "peerDependencies": {
-    "o1js": "2.7.0"
+    "o1js": "2.8.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

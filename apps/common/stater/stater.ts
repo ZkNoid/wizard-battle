@@ -3,14 +3,8 @@ import { Effect, type SpellCast } from './structs';
 import { allSpells } from './spells';
 import { allEffectsInfo } from './effects/effects';
 import { State } from './state';
-import {
-  GamePhase,
-  type IUserActions,
-  type ITrustedState,
-  type IDead,
-  type IGameEnd,
-} from '../types/gameplay.types';
-import { IUserAction } from '../types/gameplay.types';
+import { type IUserActions, type ITrustedState } from '../types/gameplay.types';
+import { type IUserAction } from '../types/gameplay.types';
 
 /**
  * @title ZK-Provable Game State Manager
@@ -39,7 +33,7 @@ export class Stater extends Struct({
   applySpellCast(spell: SpellCast<any>) {
     // Find spell
     const spellModifier = allSpells.find(
-      (s) => s.id === spell.spellId
+      (s) => s.id.toString() === spell.spellId.toString()
     )?.modifyer;
 
     if (!spellModifier) {
@@ -59,6 +53,10 @@ export class Stater extends Struct({
   }
 
   applyEffect(publicState: State, effect: Effect) {
+    if (effect.effectId.toString() === '0') {
+      return;
+    }
+
     const effectInfo = allEffectsInfo.find((e) => e.id === effect.effectId);
 
     if (!effectInfo) {
@@ -78,12 +76,14 @@ export class Stater extends Struct({
     stateCommit: Field;
     publicState: State;
   } {
+    console.log('apply', spellCasts);
     // Derive random seed form all [spellCast, turnId, randomSeed]
     // ToDo: Include actual spellCast data
     const randomSeed = Poseidon.hash([this.state.randomSeed]);
 
     // Apply spells
     for (const spell of spellCasts) {
+      console.log('apply spell', spell);
       this.applySpellCast(spell);
     }
 

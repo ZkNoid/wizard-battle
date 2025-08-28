@@ -1,7 +1,11 @@
-import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { createClient } from 'redis';
+import { createClient, RedisClientType } from 'redis';
 import { MatchmakingService } from '../matchmaking/matchmaking.service';
 import { GameStateService } from './game-state.service';
 import {
@@ -11,8 +15,14 @@ import {
     IUpdateQueue,
     IFoundMatch,
     IPublicState,
-  } from "../../../common/types/matchmaking.types";
-import { GamePhase, IUserActions, ITrustedState, IDead, IGameEnd } from '../../../common/types/gameplay.types';
+} from '../../../common/types/matchmaking.types';
+import {
+  GamePhase,
+  IUserActions,
+  ITrustedState,
+  IDead,
+  IGameEnd,
+} from '../../../common/types/gameplay.types';
 
 /**
  * @title Game Session Gateway - 5-Phase Turn Orchestration
@@ -45,7 +55,7 @@ export class GameSessionGateway {
     constructor(
         private readonly matchmakingService: MatchmakingService,
         private readonly gameStateService: GameStateService
-    ) { }
+  ) {}
 
     /**
      * @dev Invoked once the gateway is initialized. Injects the Socket.IO
@@ -59,17 +69,21 @@ export class GameSessionGateway {
 
         // Configure Socket.IO Redis adapter at runtime so env is available
         const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-        const pubClient = createClient({ url: redisUrl });
-        const subClient = pubClient.duplicate();
-        pubClient.on('error', err => console.error('Redis Pub Client Error', err));
-        subClient.on('error', err => console.error('Redis Sub Client Error', err));
+        const pubClient: RedisClientType = createClient({ url: redisUrl });
+        const subClient: RedisClientType = pubClient.duplicate();
+    pubClient.on('error', (err) =>
+      console.error('Redis Pub Client Error', err)
+    );
+    subClient.on('error', (err) =>
+      console.error('Redis Sub Client Error', err)
+    );
         pubClient.on('connect', () => console.log('Redis Pub Client Connected'));
         subClient.on('connect', () => console.log('Redis Sub Client Connected'));
         Promise.all([pubClient.connect(), subClient.connect()])
             .then(() => {
                 this.server.adapter(createAdapter(pubClient, subClient));
             })
-            .catch(err => console.error('Redis Connection Error', err));
+      .catch((err) => console.error('Redis Connection Error', err));
 
         // Subscribe to cross-instance room events
         this.gameStateService.subscribeToRoomEvents(async (data) => {
@@ -86,9 +100,9 @@ export class GameSessionGateway {
     handleConnection(socket: Socket) {
         console.log(`Client connected: ${socket.id}, Process ID: ${process.pid}`);
         // Register socket mapping
-        this.gameStateService.registerSocket(socket).catch(err => 
-            console.error('Failed to register socket mapping:', err)
-        );
+    this.gameStateService
+      .registerSocket(socket)
+      .catch((err) => console.error('Failed to register socket mapping:', err));
     }
 
     /**
@@ -99,7 +113,9 @@ export class GameSessionGateway {
     handleDisconnect(socket: Socket) {
         console.log(`Client disconnected: ${socket.id}`);
         // Clean up socket mapping and matchmaking
-        this.gameStateService.unregisterSocket(socket.id).catch(err => 
+    this.gameStateService
+      .unregisterSocket(socket.id)
+      .catch((err) =>
             console.error('Failed to unregister socket mapping:', err)
         );
         this.matchmakingService.leaveMatchmaking(socket);
@@ -114,8 +130,14 @@ export class GameSessionGateway {
      * matchmaking service which enqueues, attempts to match, and returns a
      * `roomId` when successful.
      */
-    async handleJoinMatchmaking(socket: Socket, data: { addToQueue: IAddToQueue }) {
-        return await this.matchmakingService.joinMatchmaking(socket, data.addToQueue);
+  async handleJoinMatchmaking(
+    socket: Socket,
+    data: { addToQueue: IAddToQueue }
+  ) {
+    return await this.matchmakingService.joinMatchmaking(
+      socket,
+      data.addToQueue
+    );
     }
 
     @SubscribeMessage('joinBotMatchmaking')
@@ -127,8 +149,14 @@ export class GameSessionGateway {
      * matchmaking service which enqueues, attempts to match, and returns a
      * `roomId` when successful.
      */
-    async handleJoinBotMatchmaking(socket: Socket, data: { addToQueue: IAddToQueue }) {
-        return await this.matchmakingService.joinBotMatchmaking(socket, data.addToQueue);
+  async handleJoinBotMatchmaking(
+    socket: Socket,
+    data: { addToQueue: IAddToQueue }
+  ) {
+    return await this.matchmakingService.joinBotMatchmaking(
+      socket,
+      data.addToQueue
+    );
     }
 
     @SubscribeMessage('gameMessage')
@@ -141,12 +169,17 @@ export class GameSessionGateway {
      * the same event via Redis so other instances rebroadcast to their local
      * listeners.
      */
-    async handleGameMessage(socket: Socket, data: { roomId: string; message: any }) {
+  async handleGameMessage(
+    socket: Socket,
+    data: { roomId: string; message: any }
+  ) {
         const match = await this.matchmakingService.getMatchInfo(data.roomId);
         const gameState = await this.gameStateService.getGameState(data.roomId);
         
         if (match && gameState && this.server) {
-            console.log(`Broadcasting gameMessage to room ${data.roomId}: ${JSON.stringify(data.message)}`);
+      console.log(
+        `Broadcasting gameMessage to room ${data.roomId}: ${JSON.stringify(data.message)}`
+      );
             
             // Emit to local sockets in the room
             this.server.to(data.roomId).emit('gameMessage', {
@@ -161,7 +194,9 @@ export class GameSessionGateway {
                 message: data.message,
             });
         } else {
-            console.error(`Failed to broadcast gameMessage: match=${!!match}, gameState=${!!gameState}, server=${!!this.server}, roomId=${data.roomId}`);
+      console.error(
+        `Failed to broadcast gameMessage: match=${!!match}, gameState=${!!gameState}, server=${!!this.server}, roomId=${data.roomId}`
+      );
         }
     }
 
@@ -174,20 +209,34 @@ export class GameSessionGateway {
      * per-player state via `GameStateService`, then publishes a
      * `playerStateUpdated` event to other instances and acknowledges the caller.
      */
-    async handleUpdatePlayerState(socket: Socket, data: { roomId: string; playerId: string; state: any }) {
-        try {
-            await this.gameStateService.updatePlayerState(data.roomId, data.playerId, data.state);
+  async handleUpdatePlayerState(
+    socket: Socket,
+    data: { roomId: string; playerId: string; state: any }
+  ) {
+    try {
+      await this.gameStateService.updatePlayerState(
+        data.roomId,
+        data.playerId,
+        data.state
+      );
             
             // Publish state update to other instances
-            await this.gameStateService.publishToRoom(data.roomId, 'playerStateUpdated', {
+      await this.gameStateService.publishToRoom(
+        data.roomId,
+        'playerStateUpdated',
+        {
                 playerId: data.playerId,
                 state: data.state,
-            });
+        }
+      );
             
             socket.emit('playerStateUpdated', { success: true });
         } catch (error) {
             console.error('Failed to update player state:', error);
-            socket.emit('playerStateUpdated', { success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      socket.emit('playerStateUpdated', {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
         }
     }
 
@@ -203,10 +252,16 @@ export class GameSessionGateway {
             try {
                 console.log('🧹 Client requested queue cleanup');
                 await this.matchmakingService.clearQueue();
-                socket.emit('cleanupComplete', { success: true, message: 'Queue cleared successfully' });
+        socket.emit('cleanupComplete', {
+          success: true,
+          message: 'Queue cleared successfully',
+        });
             } catch (error) {
                 console.error('Failed to cleanup queue:', error);
-                socket.emit('cleanupComplete', { success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+        socket.emit('cleanupComplete', {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
             }
         }
     }
@@ -225,7 +280,11 @@ export class GameSessionGateway {
             socket.emit('gameState', { roomId: data.roomId, state: gameState });
         } catch (error) {
             console.error('Failed to get game state:', error);
-            socket.emit('gameState', { roomId: data.roomId, state: null, error: error instanceof Error ? error.message : 'Unknown error' });
+      socket.emit('gameState', {
+        roomId: data.roomId,
+        state: null,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
         }
     }
 
@@ -250,26 +309,42 @@ export class GameSessionGateway {
      * - On success with all ready: triggers advanceToSpellPropagation()
      */
     @SubscribeMessage('submitActions')
-    async handleSubmitActions(socket: Socket, data: { roomId: string; actions: IUserActions }) {
+  async handleSubmitActions(
+    socket: Socket,
+    data: { roomId: string; actions: IUserActions }
+  ) {
       try {
         const gameState = await this.gameStateService.getGameState(data.roomId);
         if (!gameState || gameState.currentPhase !== GamePhase.SPELL_CASTING) {
-          socket.emit('actionSubmitResult', { success: false, error: 'Invalid phase for action submission' });
+        socket.emit('actionSubmitResult', {
+          success: false,
+          error: 'Invalid phase for action submission',
+        });
           return;
         }
 
         // Get playerId from first action
         const playerId = data.actions.actions[0]?.playerId;
         if (!playerId) {
-          socket.emit('actionSubmitResult', { success: false, error: 'No actions provided' });
+        socket.emit('actionSubmitResult', {
+          success: false,
+          error: 'No actions provided',
+        });
           return;
         }
 
         // Store the actions
-        await this.gameStateService.storePlayerActions(data.roomId, playerId, data.actions);
+      await this.gameStateService.storePlayerActions(
+        data.roomId,
+        playerId,
+        data.actions
+      );
         
         // Mark player as ready
-        const allReady = await this.gameStateService.markPlayerReady(data.roomId, playerId);
+      const allReady = await this.gameStateService.markPlayerReady(
+        data.roomId,
+        playerId
+      );
         
         socket.emit('actionSubmitResult', { success: true });
         
@@ -278,7 +353,10 @@ export class GameSessionGateway {
           await this.advanceToSpellPropagation(data.roomId);
         }
       } catch (error) {
-        socket.emit('actionSubmitResult', { success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      socket.emit('actionSubmitResult', {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       }
     }
 
@@ -302,19 +380,32 @@ export class GameSessionGateway {
      * - On success with all ready: triggers advanceToStateUpdate()
      */
     @SubscribeMessage('submitTrustedState')
-    async handleSubmitTrustedState(socket: Socket, data: { roomId: string; trustedState: ITrustedState }) {
+  async handleSubmitTrustedState(
+    socket: Socket,
+    data: { roomId: string; trustedState: ITrustedState }
+  ) {
       try {
         const gameState = await this.gameStateService.getGameState(data.roomId);
         if (!gameState || gameState.currentPhase !== GamePhase.END_OF_ROUND) {
-          socket.emit('trustedStateResult', { success: false, error: 'Invalid phase for trusted state submission' });
+        socket.emit('trustedStateResult', {
+          success: false,
+          error: 'Invalid phase for trusted state submission',
+        });
           return;
         }
 
         // Store the trusted state
-        await this.gameStateService.storeTrustedState(data.roomId, data.trustedState.playerId, data.trustedState);
+      await this.gameStateService.storeTrustedState(
+        data.roomId,
+        data.trustedState.playerId,
+        data.trustedState
+      );
         
         // Mark player as ready
-        const allReady = await this.gameStateService.markPlayerReady(data.roomId, data.trustedState.playerId);
+      const allReady = await this.gameStateService.markPlayerReady(
+        data.roomId,
+        data.trustedState.playerId
+      );
         
         socket.emit('trustedStateResult', { success: true });
         
@@ -323,7 +414,10 @@ export class GameSessionGateway {
           await this.advanceToStateUpdate(data.roomId);
         }
       } catch (error) {
-        socket.emit('trustedStateResult', { success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      socket.emit('trustedStateResult', {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       }
     }
 
@@ -347,18 +441,58 @@ export class GameSessionGateway {
      * - Death reporting is fire-and-forget for performance
      */
     @SubscribeMessage('reportDead')
-    async handleReportDead(socket: Socket, data: { roomId: string; dead: IDead }) {
+  async handleReportDead(
+    socket: Socket,
+    data: { roomId: string; dead: IDead }
+  ) {
       try {
-        const winnerId = await this.gameStateService.markPlayerDead(data.roomId, data.dead.playerId);
+      const winnerId = await this.gameStateService.markPlayerDead(
+        data.roomId,
+        data.dead.playerId
+      );
         
         if (winnerId) {
           // Game ended, announce winner
           const gameEnd: IGameEnd = { winnerId };
           this.server.to(data.roomId).emit('gameEnd', gameEnd);
-          await this.gameStateService.publishToRoom(data.roomId, 'gameEnd', gameEnd);
+        await this.gameStateService.publishToRoom(
+          data.roomId,
+          'gameEnd',
+          gameEnd
+        );
+        
+        // ✅ FIXED: Mark room for cleanup (cron job will handle it)
+        await this.gameStateService.markRoomForCleanup(data.roomId, 'game_ended');
         }
       } catch (error) {
         console.error('Failed to handle player death:', error);
+      // ✅ FIXED: Mark room for cleanup on error too
+      await this.gameStateService.markRoomForCleanup(data.roomId, 'error_in_death_handling');
+    }
+  }
+
+  /**
+   * ✅ NEW: Room cleanup method (called by cron job)
+   */
+  async cleanupRoom(roomId: string, reason: string): Promise<void> {
+    console.log(`🧹 Cleaning up room ${roomId} (reason: ${reason})`);
+    
+    try {
+      // Notify players that room is being cleaned up
+      this.server.to(roomId).emit('roomCleanup', { reason });
+      
+      // Remove all sockets from room
+      const sockets = await this.server.in(roomId).allSockets();
+      for (const socketId of sockets) {
+        const socket = this.server.sockets.sockets.get(socketId);
+        if (socket) {
+          socket.leave(roomId);
+        }
+      }
+      
+      console.log(`✅ Room ${roomId} cleaned up successfully`);
+    } catch (error) {
+      console.error(`Failed to cleanup room ${roomId}:`, error);
       }
     }
 
@@ -369,7 +503,13 @@ export class GameSessionGateway {
      * `playerJoined`, attempts to join the player's socket to the room if the
      * socket is connected to this instance.
      */
-    private async handleCrossInstanceEvent(data: { roomId: string; event: string; data: any; originInstanceId: string; timestamp: number }) {
+  private async handleCrossInstanceEvent(data: {
+    roomId: string;
+    event: string;
+    data: any;
+    originInstanceId: string;
+    timestamp: number;
+  }) {
         if (!this.server) return;
 
         // Skip events that originated from this instance to prevent double messages
@@ -399,12 +539,16 @@ export class GameSessionGateway {
                 // Handle match found event from other instances
                 // If a specific socket is targeted, emit only to that socket; otherwise to room
                 if (data.data?.targetSocketId) {
-                    const target = this.server.sockets.sockets.get(data.data.targetSocketId);
+          const target = this.server.sockets.sockets.get(
+            data.data.targetSocketId
+          );
                     if (target) {
                         target.emit('matchFound', data.data.payload);
                     }
                 } else {
-                    this.server.to(data.roomId).emit('matchFound', data.data?.payload ?? data.data);
+          this.server
+            .to(data.roomId)
+            .emit('matchFound', data.data?.payload ?? data.data);
                 }
                 break;
 
@@ -412,12 +556,18 @@ export class GameSessionGateway {
                 // Handle player joined event from other instances
                 // data.data contains { playerId, roomId } from publisher
                 // Look up by socketId; if not provided, try playerId as fallback
-                const socketMapping = await this.gameStateService.getSocketMapping(data.data.socketId ?? data.data.playerId);
+        const socketMapping = await this.gameStateService.getSocketMapping(
+          data.data.socketId ?? data.data.playerId
+        );
                 if (socketMapping && this.server) {
-                    const socket = this.server.sockets.sockets.get(socketMapping.socketId);
+          const socket = this.server.sockets.sockets.get(
+            socketMapping.socketId
+          );
                     if (socket) {
                         socket.join(data.roomId);
-                        console.log(`Player ${data.data.playerId} joined room ${data.roomId} via cross-instance event`);
+            console.log(
+              `Player ${data.data.playerId} joined room ${data.roomId} via cross-instance event`
+            );
                     }
                 }
                 break;
@@ -426,9 +576,13 @@ export class GameSessionGateway {
                 // Handle opponent disconnection
                 const gameState = await this.gameStateService.getGameState(data.roomId);
                 if (gameState) {
-                    const remainingPlayer = gameState.players.find(p => p.id === data.data.remainingPlayer);
+          const remainingPlayer = gameState.players.find(
+            (p) => p.id === data.data.remainingPlayer
+          );
                     if (remainingPlayer && this.server) {
-                        const socket = this.server.sockets.sockets.get(remainingPlayer.socketId);
+            const socket = this.server.sockets.sockets.get(
+              remainingPlayer.socketId
+            );
                         if (socket) {
                             socket.emit('opponentDisconnected');
                         }
@@ -485,7 +639,7 @@ export class GameSessionGateway {
      * - Clients can now see what spells all players are casting
      * - Prepares clients for local spell effect computation
      */
-    private async advanceToSpellPropagation(roomId: string) {
+  async advanceToSpellPropagation(roomId: string) {
       // Get all actions and broadcast them
       const allActions = await this.gameStateService.getAllPlayerActions(roomId);
       
@@ -494,12 +648,16 @@ export class GameSessionGateway {
       
       // Broadcast all actions to all players
       this.server.to(roomId).emit('allPlayerActions', allActions);
-      await this.gameStateService.publishToRoom(roomId, 'allPlayerActions', allActions);
+    await this.gameStateService.publishToRoom(
+      roomId,
+      'allPlayerActions',
+      allActions
+    );
       
       // Auto-advance to spell effects phase after a short delay
-      setTimeout(() => {
+    // setTimeout(() => {
         this.advanceToSpellEffects(roomId);
-      }, 1000);
+    // }, 1000);
     }
 
     /**
@@ -520,7 +678,7 @@ export class GameSessionGateway {
      * 
      * Note: This phase has no server-side waiting - clients self-manage timing
      */
-    private async advanceToSpellEffects(roomId: string) {
+    async advanceToSpellEffects(roomId: string) {
       await this.gameStateService.advanceGamePhase(roomId);
       
       // Notify players to apply effects
@@ -528,10 +686,10 @@ export class GameSessionGateway {
       await this.gameStateService.publishToRoom(roomId, 'applySpellEffects', {});
       
       // Auto-advance to END_OF_ROUND phase after players have time to process effects
-      setTimeout(async () => {
+    //   setTimeout(async () => {
         await this.gameStateService.advanceGamePhase(roomId);
         console.log(`🔄 Advanced room ${roomId} to END_OF_ROUND phase`);
-      }, 2000); // 2 second delay for effect processing
+    //   }, 2000); // 2 second delay for effect processing
     }
 
     /**
@@ -562,8 +720,8 @@ export class GameSessionGateway {
       
       // Collect all trusted states
       const trustedStates = gameState.players
-        .filter(p => p.isAlive && p.trustedState)
-        .map(p => p.trustedState!);
+      .filter((p) => p.isAlive && p.trustedState)
+      .map((p) => p.trustedState!);
       
       // Advance phase
       await this.gameStateService.advanceGamePhase(roomId);
@@ -571,12 +729,16 @@ export class GameSessionGateway {
       // Broadcast state updates
       const updateUserStates = { states: trustedStates };
       this.server.to(roomId).emit('updateUserStates', updateUserStates);
-      await this.gameStateService.publishToRoom(roomId, 'updateUserStates', updateUserStates);
+    await this.gameStateService.publishToRoom(
+      roomId,
+      'updateUserStates',
+      updateUserStates
+    );
       
       // Start next turn after a delay
-      setTimeout(() => {
+    // setTimeout(() => {
         this.startNextTurn(roomId);
-      }, 2000);
+    // }, 2000);
     }
 
     /**
@@ -599,11 +761,13 @@ export class GameSessionGateway {
      * - GameStateService automatically increments turn number
      * - Used for game analytics, replay systems, and debugging
      */
-    private async startNextTurn(roomId: string) {
+    async startNextTurn(roomId: string) {
       await this.gameStateService.advanceGamePhase(roomId); // This will start a new turn
       
       // Notify players of new turn
       this.server.to(roomId).emit('newTurn', { phase: GamePhase.SPELL_CASTING });
-      await this.gameStateService.publishToRoom(roomId, 'newTurn', { phase: GamePhase.SPELL_CASTING });
+    await this.gameStateService.publishToRoom(roomId, 'newTurn', {
+      phase: GamePhase.SPELL_CASTING,
+    });
     }
 }
