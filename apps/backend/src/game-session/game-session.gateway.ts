@@ -460,9 +460,39 @@ export class GameSessionGateway {
           'gameEnd',
           gameEnd
         );
+        
+        // ✅ FIXED: Mark room for cleanup (cron job will handle it)
+        await this.gameStateService.markRoomForCleanup(data.roomId, 'game_ended');
       }
     } catch (error) {
       console.error('Failed to handle player death:', error);
+      // ✅ FIXED: Mark room for cleanup on error too
+      await this.gameStateService.markRoomForCleanup(data.roomId, 'error_in_death_handling');
+    }
+  }
+
+  /**
+   * ✅ NEW: Room cleanup method (called by cron job)
+   */
+  async cleanupRoom(roomId: string, reason: string): Promise<void> {
+    console.log(`🧹 Cleaning up room ${roomId} (reason: ${reason})`);
+    
+    try {
+      // Notify players that room is being cleaned up
+      this.server.to(roomId).emit('roomCleanup', { reason });
+      
+      // Remove all sockets from room
+      const sockets = await this.server.in(roomId).allSockets();
+      for (const socketId of sockets) {
+        const socket = this.server.sockets.sockets.get(socketId);
+        if (socket) {
+          socket.leave(roomId);
+        }
+      }
+      
+      console.log(`✅ Room ${roomId} cleaned up successfully`);
+    } catch (error) {
+      console.error(`Failed to cleanup room ${roomId}:`, error);
     }
   }
 

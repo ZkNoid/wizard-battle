@@ -610,4 +610,137 @@ export class GameStateService {
     async setPhaseTimeout(roomId: string, timeoutMs: number): Promise<void> {
         await this.updateGameState(roomId, { phaseTimeout: timeoutMs });
     }
+
+    /**
+     * ✅ NEW: Mark room for cleanup (used by cron job)
+     */
+    async markRoomForCleanup(roomId: string, reason: string): Promise<void> {
+        const cleanupKey = `room_cleanup:${roomId}`;
+        await this.redisClient.set(cleanupKey, JSON.stringify({
+            roomId,
+            reason,
+            markedAt: Date.now()
+        }), { EX: 3600 }); // Expire in 1 hour as backup
+        
+        console.log(`📝 Marked room ${roomId} for cleanup (reason: ${reason})`);
+    }
+
+    /**
+     * ✅ NEW: Get rooms marked for cleanup
+     */
+    async getRoomsMarkedForCleanup(): Promise<Array<{ roomId: string; reason: string; markedAt: number }>> {
+        const keys = await this.redisClient.keys('room_cleanup:*');
+        const rooms: Array<{ roomId: string; reason: string; markedAt: number }> = [];
+        
+        for (const key of keys) {
+            const data = await this.redisClient.get(key);
+            if (data) {
+                const roomData = JSON.parse(data) as { roomId: string; reason: string; markedAt: number };
+                rooms.push(roomData);
+                await this.redisClient.del(key); // Remove after reading
+            }
+        }
+        
+        return rooms;
+    }
+
+    /**
+     * ✅ NEW: Clean up dead instances (called by cron)
+     */
+    async cleanupDeadInstances(): Promise<void> {
+        const instanceKeys = await this.redisClient.keys('instance_heartbeat:*');
+        const now = Date.now();
+        
+        for (const key of instanceKeys) {
+            const instanceId = key.replace('instance_heartbeat:', '');
+            const lastHeartbeat = await this.redisClient.get(key);
+            
+            if (!lastHeartbeat || (now - parseInt(lastHeartbeat)) > 120000) { // 2 minute timeout
+                console.log(`🚨 Dead instance detected: ${instanceId}`);
+                await this.cleanupInstanceResources(instanceId);
+                await this.redisClient.del(key);
+            }
+        }
+    }
+
+    /**
+     * ✅ NEW: Update instance heartbeat (called by cron)
+     */
+    async updateHeartbeat(): Promise<void> {
+        await this.redisClient.set(
+            `instance_heartbeat:${this.instanceId}`,
+            Date.now().toString(),
+            { EX: 180 } // 3 minute expiry
+        );
+    }
+
+    /**
+     * ✅ NEW: Get inactive rooms (called by cron)
+     */
+    async getInactiveRooms(maxAge: number = 3600000): Promise<string[]> {
+        const now = Date.now();
+        const inactiveRooms: string[] = [];
+        
+        const keys = await this.redisClient.keys('game_state:*');
+        
+        for (const key of keys) {
+            const roomId = key.replace('game_state:', '');
+            const gameState = await this.getGameState(roomId);
+            
+            if (gameState && (now - gameState.updatedAt) > maxAge) {
+                inactiveRooms.push(roomId);
+            }
+        }
+        
+        return inactiveRooms;
+    }
+
+    /**
+     * ✅ ENHANCED: Room cleanup with proper resource management
+     */
+    async cleanupRoom(roomId: string): Promise<void> {
+        console.log(`🧹 Cleaning up room state for ${roomId}`);
+        
+        try {
+            // Remove all room-related keys
+            const keysToDelete = [
+                `game_state:${roomId}`,
+                `player_actions:${roomId}`,
+                `trusted_states:${roomId}`,
+                `room_cleanup:${roomId}`
+            ];
+            
+            for (const key of keysToDelete) {
+                await this.redisClient.del(key);
+            }
+            
+            // Notify other instances
+            await this.publishToRoom(roomId, 'room_cleanup', { 
+                roomId, 
+                timestamp: Date.now(),
+                instanceId: this.instanceId 
+            });
+            
+            console.log(`✅ Room state cleaned up for ${roomId}`);
+        } catch (error) {
+            console.error(`Failed to cleanup room state for ${roomId}:`, error);
+            throw error;
+        }
+    }
+
+    private async cleanupInstanceResources(instanceId: string): Promise<void> {
+        // Remove all socket mappings for this instance
+        const allMappings = await this.redisClient.hGetAll('socket_mappings');
+        const instanceMappings = Object.entries(allMappings)
+            .filter(([_, mapping]) => {
+                const parsed = JSON.parse(mapping);
+                return parsed.instanceId === instanceId;
+            });
+
+        for (const [socketId, _] of instanceMappings) {
+            await this.redisClient.hDel('socket_mappings', socketId);
+        }
+
+        console.log(`Cleaned up ${instanceMappings.length} socket mappings for dead instance ${instanceId}`);
+    }
 } 
