@@ -1,48 +1,89 @@
-"use client";
+'use client';
 
-import { useBackgroundImageStore } from "@/lib/store/backgroundImageStore";
-import { motion } from "motion/react";
-import { useEffect } from "react";
-import { CrownImage } from "./assets/crown-image";
-import { SkullImage } from "./assets/skull-image";
-import { Button } from "../shared/Button";
-import { DividerImage } from "./assets/divider-image";
-import { Experience } from "./Experiense";
-import { PlaySteps } from "@/lib/enums/PlaySteps";
-import { useRouter } from "next/navigation";
+import { useBackgroundImageStore } from '@/lib/store/backgroundImageStore';
+import { motion } from 'motion/react';
+import { useEffect } from 'react';
+import { CrownImage } from './assets/crown-image';
+import { SkullImage } from './assets/skull-image';
+import { Button } from '../shared/Button';
+import { DividerImage } from './assets/divider-image';
+import { Experience } from './Experiense';
+import { PlaySteps } from '@/lib/enums/PlaySteps';
+import { useRouter } from 'next/navigation';
+import {
+  LOSE_XP,
+  WIN_XP,
+  levelFromXp,
+  xpToNextLevel,
+} from '@/lib/constants/levels';
+import { useMinaAppkit } from 'mina-appkit';
+import { api } from '@/trpc/react';
 
 export default function GameResult({
   type,
   setPlayStep,
 }: {
-  type: "win" | "lose";
+  type: 'win' | 'lose';
   setPlayStep: (step: PlaySteps) => void;
 }) {
   const router = useRouter();
   const { setBackground } = useBackgroundImageStore();
-  const text = type === "win" ? "You Win" : "You Lose";
+  const text = type === 'win' ? 'You Win' : 'You Lose';
   const phraseDelay = 0.5 + text.length * 0.1 + 0.2;
+  const { address } = useMinaAppkit();
+  const { mutate: gainXp } = api.users.gainXp.useMutation();
+  const { data: user } = api.users.get.useQuery(
+    { address: address ?? '' },
+    {
+      enabled: !!address,
+    }
+  );
+  const xpToGain = type === 'win' ? WIN_XP : LOSE_XP;
 
   // Set background image on mount and reset on unmount
   useEffect(() => {
     setBackground(type);
     return () => {
-      setBackground("base");
+      setBackground('base');
     };
   }, []);
+
+  // Gain XP process, need to improve when changed xp logic
+  useEffect(() => {
+    if (!address || !user) return;
+
+    const lastGameResultXp = sessionStorage.getItem('lastGameResultXp');
+
+    if (lastGameResultXp && Number(lastGameResultXp) === user.xp) {
+      throw new Error(
+        `Already claimed reward, lastGameResultXp: ${lastGameResultXp}, currentUserXp: ${user.xp}`
+      );
+    }
+
+    sessionStorage.setItem(
+      'lastGameResultXp',
+      (Number(lastGameResultXp) + xpToGain).toString()
+    );
+
+    if (type === 'win') {
+      gainXp({ address, xp: xpToGain });
+    } else {
+      gainXp({ address, xp: xpToGain });
+    }
+  }, [address, type]);
 
   return (
     <div className="flex h-full w-full flex-col">
       {/* Image */}
       <div className="mt-5 flex w-full items-center justify-center">
-        {type === "win" && <CrownImage className="w-71 h-71" />}
-        {type === "lose" && <SkullImage className="w-71 h-71" />}
+        {type === 'win' && <CrownImage className="w-71 h-71" />}
+        {type === 'lose' && <SkullImage className="w-71 h-71" />}
       </div>
 
       <div className="mt-5 flex flex-col items-center justify-center gap-5">
         {/* Title */}
         <span className="font-pixel text-[23.529vw] font-bold text-white lg:!text-[5.208vw]">
-          {text.split("").map((char, index) => (
+          {text.split('').map((char, index) => (
             <motion.span
               key={index}
               initial={{
@@ -58,7 +99,7 @@ export default function GameResult({
                 rotate: 0,
               }}
               transition={{
-                type: "spring",
+                type: 'spring',
                 stiffness: 200,
                 damping: 10,
                 delay: 0.5 + index * 0.1,
@@ -77,10 +118,10 @@ export default function GameResult({
           transition={{
             duration: 0.5,
             delay: phraseDelay,
-            ease: "easeOut",
+            ease: 'easeOut',
           }}
         >
-          {type === "win" ? "Play more?" : "Try again?"}
+          {type === 'win' ? 'Play more?' : 'Try again?'}
         </motion.span>
 
         {/* Nav buttons */}
@@ -102,7 +143,7 @@ export default function GameResult({
           <Button
             variant="red"
             onClick={() => {
-              router.push("/");
+              router.push('/');
             }}
             className="w-69 h-15"
           >
@@ -131,17 +172,29 @@ export default function GameResult({
           </span>
           <Experience
             title="Account Experience"
-            expWidth={30}
+            expWidth={
+              user?.xp
+                ? (levelFromXp(user.xp + xpToGain) /
+                    xpToNextLevel(user.xp + xpToGain)) *
+                  100
+                : 0
+            }
             expColor="#557FE8"
-            level={1}
-            plusExp={100}
+            level={user?.xp ? levelFromXp(user.xp + xpToGain) : 1}
+            plusExp={xpToGain}
           />
           <Experience
             title="Character Experience: Wizard"
-            expWidth={50}
+            expWidth={
+              user?.xp
+                ? (levelFromXp(user.xp + xpToGain) /
+                    xpToNextLevel(user.xp + xpToGain)) *
+                  100
+                : 0
+            }
             expColor="#FF5627"
-            level={1}
-            plusExp={100}
+            level={user?.xp ? levelFromXp(user.xp + xpToGain) : 1}
+            plusExp={xpToGain}
           />
         </motion.div>
       </div>
