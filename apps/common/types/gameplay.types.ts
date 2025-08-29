@@ -1,4 +1,4 @@
-import type { IPublicState } from "./matchmaking.types";
+import type { IPublicState } from './matchmaking.types';
 
 /**
  * @title 5-Phase Turn-Based Gameplay Types
@@ -14,11 +14,11 @@ import type { IPublicState } from "./matchmaking.types";
  * @param spellCastInfo Additional data required for the spell (position, target, etc.)
  */
 export interface IUserAction<T = any> {
-    playerId: string;
-    spellId: string;
-    spellCastInfo: T; // Depends on skill
-  }
-  
+  playerId: string;
+  spellId: string;
+  spellCastInfo: T; // Depends on skill
+}
+
 /**
  * @notice Container for all actions a player submits in Phase 1 (Spell Casting)
  * @dev Includes cryptographic signature for action verification
@@ -26,9 +26,9 @@ export interface IUserAction<T = any> {
  * @param signature Cryptographic signature to verify action authenticity
  */
 export interface IUserActions<T = any> {
-    actions: IUserAction<T>[];
-    signature: any;
-  }
+  actions: IUserAction<T>[];
+  signature: any;
+}
 /**
  * @notice Player's computed state after applying spell effects in Phase 3
  * @dev Submitted in Phase 4 (End of Round) after player processes all actions locally
@@ -38,56 +38,56 @@ export interface IUserActions<T = any> {
  * @param signature Cryptographic signature proving state validity
  */
 export interface ITrustedState {
-    playerId: string;
-    stateCommit: string;
-    publicState: IPublicState;
-    signature: any;
-  }
-  
+  playerId: string;
+  stateCommit: string;
+  publicState: IPublicState;
+  signature: any;
+}
+
 /**
  * @notice Collection of all player states distributed in Phase 5 (State Update)
  * @dev Server broadcasts this to all players so they can update opponent information
  * @param states Array of trusted states from all alive players
  */
 export interface IUpdateUserStates {
-    states: ITrustedState[];
-  }
-  
+  states: ITrustedState[];
+}
+
 /**
  * @notice Notification that a player has been eliminated from the game
  * @dev Triggers win condition check - if only one player remains, game ends
  * @param playerId The unique identifier of the eliminated player
  */
 export interface IDead {
-    playerId: string;
-  }
-  
+  playerId: string;
+}
+
 /**
  * @notice Game termination event sent when win conditions are met
  * @dev Broadcast to all players when only one player remains alive
  * @param winnerId The unique identifier of the winning player
  */
 export interface IGameEnd {
-    winnerId: string;
-  }
-  
+  winnerId: string;
+}
+
 /**
  * @notice Enumeration of the 5 phases in each game turn
  * @dev Each phase has specific timing and player interactions
  * SPELL_CASTING: Players submit their intended actions
- * SPELL_PROPAGATION: Server broadcasts all actions to all players  
+ * SPELL_PROPAGATION: Server broadcasts all actions to all players
  * SPELL_EFFECTS: Players apply actions locally and compute new state
  * END_OF_ROUND: Players submit their computed trusted states
  * STATE_UPDATE: Server broadcasts all states for opponent updates
  */
 export enum GamePhase {
-    SPELL_CASTING = 'spell_casting',
-    SPELL_PROPAGATION = 'spell_propagation', 
-    SPELL_EFFECTS = 'spell_effects',
-    END_OF_ROUND = 'end_of_round',
-    STATE_UPDATE = 'state_update'
-  }
-  
+  SPELL_CASTING = 'spell_casting',
+  SPELL_PROPAGATION = 'spell_propagation',
+  SPELL_EFFECTS = 'spell_effects',
+  END_OF_ROUND = 'end_of_round',
+  STATE_UPDATE = 'state_update',
+}
+
 /**
  * @notice Metadata about the current game turn and phase
  * @dev Used for client synchronization and timeout management
@@ -135,7 +135,12 @@ export class TransformedTrustedState implements ITrustedState {
   publicState: IPublicState;
   signature: any;
 
-  constructor(playerId: string, stateCommit: string, publicState: IPublicState, signature: any) {
+  constructor(
+    playerId: string,
+    stateCommit: string,
+    publicState: IPublicState,
+    signature: any
+  ) {
     this.playerId = playerId;
     this.stateCommit = stateCommit;
     this.publicState = publicState;
@@ -173,7 +178,12 @@ export class TransformedGameTurn implements IGameTurn {
   timeRemaining: number;
   playersReady: string[];
 
-  constructor(turnId: number, phase: GamePhase, timeRemaining: number, playersReady: string[]) {
+  constructor(
+    turnId: number,
+    phase: GamePhase,
+    timeRemaining: number,
+    playersReady: string[]
+  ) {
     this.turnId = turnId;
     this.phase = phase;
     this.timeRemaining = timeRemaining;

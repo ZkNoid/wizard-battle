@@ -9,12 +9,14 @@ import { FullscreenLoader } from '@/components/shared/FullscreenLoader';
 import { useMinaAppkit } from 'mina-appkit';
 import { useRouter } from 'next/navigation';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
-import { allSpells } from '../../../../common/stater/spells';
+import { allSpells, SpellId } from '../../../../common/stater/spells';
 import { useInGameStore } from '@/lib/store/inGameStore';
 import type {
   IUserAction,
   IUserActions,
 } from '../../../../common/types/gameplay.types';
+import { Position } from '../../../../common/stater/structs';
+import { Int64 } from 'o1js';
 
 const PhaserGame = dynamic(
   () => import('@/PhaserGame').then((mod) => mod.PhaserGame),
@@ -100,6 +102,54 @@ export default function GamePage() {
 
   const handleAllyMapClick = (x: number, y: number) => {
     console.log('Ally map clicked: ', x, y);
+
+    let spellId = pickedSpellId;
+
+    if (!pickedSpellId) {
+      spellId = SpellId['Move'] ?? null;
+    }
+
+    if (!spellId) {
+      console.log('No move spell id ');
+      return;
+    }
+
+    const spell = allSpells.find(
+      (spell) => spell.id.toString() === spellId.toString()
+    );
+
+    if (!spell) {
+      console.log('Spell not found');
+      return;
+    }
+
+    let cast = spell.cast(
+      stater?.state!,
+      opponentState!.playerId,
+      new Position({
+        x: Int64.from(x),
+        y: Int64.from(y),
+      })
+    );
+    console.log('Cast: ', cast);
+
+    if (!stater?.state) {
+      console.log('Stater state not found');
+      return;
+    }
+
+    const userAction: IUserAction = {
+      playerId: stater.state.playerId.toString(),
+      spellId: spell.id.toString(),
+      spellCastInfo: cast.additionalData,
+    };
+
+    const userActions: IUserActions = {
+      actions: [userAction],
+      signature: '',
+    };
+
+    gamePhaseManager?.submitPlayerActions(userActions);
   };
 
   return (

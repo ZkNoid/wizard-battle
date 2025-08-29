@@ -31,6 +31,9 @@ export class Stater extends Struct({
   }
 
   applySpellCast(spell: SpellCast<any>) {
+    if (spell.target.toString() !== this.state.playerId.toString()) {
+      return;
+    }
     // Find spell
     const spellModifier = allSpells.find(
       (s) => s.id.toString() === spell.spellId.toString()

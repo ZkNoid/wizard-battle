@@ -13,8 +13,6 @@ export const MoveCast = (
   target: Field,
   position: Position
 ): SpellCast<MoveData> => {
-  state.playerStats.position = position;
-
   return {
     spellId: CircuitString.fromString('Move').hash(),
     target,
@@ -25,7 +23,13 @@ export const MoveCast = (
 };
 
 export const MoveModifyer = (state: State, spellCast: SpellCast<MoveData>) => {
-  state.playerStats.position = spellCast.additionalData.position;
+  console.log('MoveModifyer', state, spellCast);
+
+  // Fix rehydration
+  state.playerStats.position = new Position({
+    x: Int64.from(spellCast.additionalData.position.x.magnitude),
+    y: Int64.from(spellCast.additionalData.position.y.magnitude),
+  });
 };
 
 export const allCommonSpells: ISpell<any>[] = [

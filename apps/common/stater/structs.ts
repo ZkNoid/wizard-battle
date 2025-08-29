@@ -1,4 +1,4 @@
-import { Field, Int64, Struct } from "o1js";
+import { Field, Int64, Struct } from 'o1js';
 
 export class Position extends Struct({
   x: Int64,
