@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { IRefPhaserGame } from '@/PhaserGame';
 import Game from '@/components/Game';
 import { api } from '@/trpc/react';
@@ -15,8 +15,10 @@ import type {
   IUserAction,
   IUserActions,
 } from '../../../../common/types/gameplay.types';
+import { GamePhase } from '../../../../common/types/gameplay.types';
 import { Position } from '../../../../common/stater/structs';
 import { Int64 } from 'o1js';
+import { Game as GameScene } from '@/game/scenes/Game';
 
 const PhaserGame = dynamic(
   () => import('@/PhaserGame').then((mod) => mod.PhaserGame),
@@ -28,13 +30,14 @@ const PhaserGame = dynamic(
 
 export default function GamePage() {
   //  References to the PhaserGame component (game and scene are exposed)
-  const { socket, stater, opponentState, gamePhaseManager } =
-    useUserInformationStore();
-  const { pickedSpellId } = useInGameStore();
+  const { stater, opponentState, gamePhaseManager } = useUserInformationStore();
+  const { pickedSpellId, currentPhase } = useInGameStore();
   const phaserRefAlly = useRef<IRefPhaserGame | null>(null);
   const phaserRefEnemy = useRef<IRefPhaserGame | null>(null);
   const router = useRouter();
   const { address } = useMinaAppkit();
+
+  const [canPlayerAct, setCanPlayerAct] = useState<boolean>(false);
 
   const { data: tilemapData } = api.tilemap.getTilemap.useQuery(
     {
@@ -49,6 +52,10 @@ export default function GamePage() {
   // Event emitted from the PhaserGame component
   const currentScene = (scene: Phaser.Scene) => {
     console.log('Scene changed:', scene);
+    // Update the ref with the current scene
+    if (phaserRefAlly.current) {
+      phaserRefAlly.current.scene = scene;
+    }
   };
 
   // Redirect to home if no address is found
@@ -152,6 +159,24 @@ export default function GamePage() {
     gamePhaseManager?.submitPlayerActions(userActions);
   };
 
+  // Example for testing the event listener in the Game scene
+  const emitTestEvent = () => {
+    console.log('Emitting test event');
+    const scene = phaserRefAlly.current?.scene;
+
+    if (!scene || !(scene instanceof GameScene)) return;
+
+    scene.events.emit('test-event');
+  };
+
+  useEffect(() => {
+    if (currentPhase === GamePhase.SPELL_CASTING) {
+      setCanPlayerAct(true);
+    } else {
+      setCanPlayerAct(false);
+    }
+  }, [currentPhase]);
+
   return (
     <Game>
       <PhaserGame
@@ -160,7 +185,11 @@ export default function GamePage() {
         container="game-container-ally"
         isEnemy={false}
         tilemapData={stater?.state?.map.map((tile) => +tile) || []}
-        onMapClick={handleAllyMapClick}
+        onMapClick={(x, y) => {
+          if (canPlayerAct) {
+            handleAllyMapClick(x, y);
+          }
+        }}
       />
       <PhaserGame
         ref={phaserRefEnemy}
@@ -168,7 +197,11 @@ export default function GamePage() {
         container="game-container-enemy"
         isEnemy={true}
         tilemapData={opponentState?.map.map((tile) => +tile) || []}
-        onMapClick={handleEnemyMapClick}
+        onMapClick={(x, y) => {
+          if (canPlayerAct) {
+            handleEnemyMapClick(x, y);
+          }
+        }}
       />
     </Game>
   );

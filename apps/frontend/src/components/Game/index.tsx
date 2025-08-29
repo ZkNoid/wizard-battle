@@ -10,6 +10,7 @@ import { Users } from './Users';
 import { useRouter } from 'next/navigation';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
 import { spellIdToSpell } from '@/lib/utils';
+import { useInGameStore } from '@/lib/store/inGameStore';
 
 export default function Game({
   children,
@@ -18,6 +19,7 @@ export default function Game({
 }) {
   const router = useRouter();
   const { stater } = useUserInformationStore();
+  const { currentPhase } = useInGameStore();
 
   return (
     <div className="flex h-full w-full flex-grow flex-col pt-40">
@@ -30,8 +32,11 @@ export default function Game({
         {/* Game area */}
         <div className="px-57 grid h-full w-full grid-cols-8">
           <div className="col-span-3">{children[0]}</div>
-          <div className="col-span-2">
-            <Clock className="" />
+          <div className="col-span-2 mb-auto flex flex-col justify-center gap-5">
+            <Clock />
+            <span className="text-center text-2xl font-bold">
+              CURRENT PHASE: {currentPhase?.toString() ?? 'No phase'}
+            </span>
           </div>
 
           <div className="col-span-3">{children[1]}</div>

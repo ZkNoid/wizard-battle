@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import { GameTilemap, createTilemap } from '../objects/GameTilemap';
+import { EventBus } from '../EventBus';
 
 export class Game extends Scene {
   camera!: Phaser.Cameras.Scene2D.Camera;
@@ -158,6 +159,18 @@ export class Game extends Scene {
         this.activePlayer = this.activePlayer === 'left' ? 'left' : 'left'; // ? "right" : "left";
         console.log('Active player:', this.activePlayer);
       });
+
+      // Add test event handler
+      this.events.on(
+        'test-event',
+        () => {
+          console.log('Test event received in Game scene');
+        },
+        this
+      );
+
+      // Emit current-scene-ready event to notify React components
+      EventBus.emit('current-scene-ready', this);
     } catch (error) {
       console.error('Error in create:', error);
     }
