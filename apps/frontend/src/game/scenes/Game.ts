@@ -76,17 +76,17 @@ export class Game extends Scene {
       });
 
       // Add click handler
-      // this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      //   const activeTilemap =
-      //     this.activePlayer === 'left' ? this.leftTilemap : this.leftTilemap; // : this.rightTilemap;
-      //   const worldPoint = this.camera.getWorldPoint(pointer.x, pointer.y);
+      this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        const activeTilemap =
+          this.activePlayer === 'left' ? this.leftTilemap : this.leftTilemap; // : this.rightTilemap;
+        const worldPoint = this.camera.getWorldPoint(pointer.x, pointer.y);
 
-      //   console.log('onMapClick', (this.game as any).onMapClick);
-      //   (this.game as any).onMapClick?.(
-      //     Math.floor(worldPoint.x / activeTilemap.getConfig().tileSize),
-      //     Math.floor(worldPoint.y / activeTilemap.getConfig().tileSize)
-      //   );
-      // });
+        console.log('onMapClick', (this.game as any).onMapClick);
+        (this.game as any).onMapClick?.(
+          Math.floor(worldPoint.x / activeTilemap.getConfig().tileSize),
+          Math.floor(worldPoint.y / activeTilemap.getConfig().tileSize)
+        );
+      });
 
       // Add key handler for switching players
       // this.input.keyboard?.on('keydown-SPACE', () => {
@@ -96,7 +96,7 @@ export class Game extends Scene {
 
       // Move player event handler
       this.events.on(
-        'move-player',
+        `move-player-${(this.game as any).gameInstance}`,
         (xTile: number, yTile: number, targetInstance: string) => {
           console.log(
             'move-player event received in Game scene, targetInstance:',

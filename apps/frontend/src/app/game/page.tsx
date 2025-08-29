@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import type { IRefPhaserGame } from '@/PhaserGame';
 import Game from '@/components/Game';
 import { api } from '@/trpc/react';
@@ -31,7 +31,7 @@ const PhaserGame = dynamic(
 export default function GamePage() {
   //  References to the PhaserGame component (game and scene are exposed)
   const { stater, opponentState, gamePhaseManager } = useUserInformationStore();
-  const { pickedSpellId, currentPhase } = useInGameStore();
+  const { pickedSpellId } = useInGameStore();
   const phaserRefAlly = useRef<IRefPhaserGame | null>(null);
   const phaserRefEnemy = useRef<IRefPhaserGame | null>(null);
   const router = useRouter();
@@ -48,6 +48,42 @@ export default function GamePage() {
       enabled: !!address,
     }
   );
+
+  // Memoize tilemap data to prevent unnecessary re-renders
+  const allyTilemapData = useMemo(() => {
+    return stater?.state?.map.map((tile) => +tile) || [];
+  }, [stater?.state?.map]);
+
+  const enemyTilemapData = useMemo(() => {
+    return opponentState?.map.map((tile) => +tile) || [];
+  }, [opponentState?.map]);
+
+  // Memoize click handlers to prevent unnecessary re-renders
+  const handleAllyMapClickMemo = useMemo(() => {
+    return (x: number, y: number) => {
+      console.log('Ally map clicked: ', x, y);
+      console.log('Can player act: ', canPlayerAct);
+      if (canPlayerAct) {
+        handleAllyMapClick(x, y);
+      }
+    };
+  }, [canPlayerAct, stater?.state, opponentState?.playerId, gamePhaseManager]);
+
+  const handleEnemyMapClickMemo = useMemo(() => {
+    return (x: number, y: number) => {
+      console.log('Enemy map clicked: ', x, y);
+      console.log('Can player act: ', canPlayerAct);
+      if (canPlayerAct) {
+        handleEnemyMapClick(x, y);
+      }
+    };
+  }, [
+    canPlayerAct,
+    pickedSpellId,
+    stater?.state,
+    opponentState?.playerId,
+    gamePhaseManager,
+  ]);
 
   // Event emitted from the PhaserGame component
   const currentScene = (scene: Phaser.Scene) => {
@@ -160,25 +196,78 @@ export default function GamePage() {
   const emitMovePlayerEvent = (
     xTile: number,
     yTile: number,
-    targetInstance: string
+    targetInstance: 'ally' | 'enemy'
   ) => {
-    const scene =
+    console.log('emitMovePlayerEvent', xTile, yTile, targetInstance);
+    const instance =
       targetInstance === 'ally'
-        ? phaserRefAlly.current?.scene
-        : phaserRefEnemy.current?.scene;
+        ? phaserRefAlly.current
+        : phaserRefEnemy.current;
 
-    if (!scene || !(scene instanceof GameScene)) return;
+    if (!instance) {
+      console.log('Instance not found');
+      return;
+    }
 
-    scene.events.emit('move-player', xTile, yTile, targetInstance);
+    const scene = instance.game?.scene.getScene('Game');
+
+    if (!scene) {
+      console.log('Scene not found');
+      return;
+    }
+
+    scene.events.emit(
+      `move-player-${targetInstance}`,
+      xTile,
+      yTile,
+      targetInstance
+    );
   };
 
   useEffect(() => {
-    if (currentPhase === GamePhase.SPELL_CASTING) {
+    if (gamePhaseManager?.currentPhase === GamePhase.SPELL_CASTING) {
       setCanPlayerAct(true);
     } else {
       setCanPlayerAct(false);
     }
-  }, [currentPhase]);
+  }, [gamePhaseManager?.currentPhase]);
+
+  // Use refs to always access the latest values in the closure
+  const staterRef = useRef(stater);
+  const opponentStateRef = useRef(opponentState);
+
+  // Update refs when values change
+  useEffect(() => {
+    staterRef.current = stater;
+  }, [stater]);
+
+  useEffect(() => {
+    opponentStateRef.current = opponentState;
+  }, [opponentState]);
+
+  useEffect(() => {
+    gamePhaseManager?.setOnNewTurnHook(() => {
+      const newXAlly = +(
+        staterRef.current?.state?.playerStats.position.x.magnitude.toString() ??
+        0
+      );
+      const newYAlly = +(
+        staterRef.current?.state?.playerStats.position.y.magnitude.toString() ??
+        0
+      );
+      emitMovePlayerEvent(newXAlly, newYAlly, 'ally');
+
+      const newXEnemy = +(
+        opponentStateRef.current?.playerStats.position.x.magnitude.toString() ??
+        '0'
+      );
+      const newYEnemy = +(
+        opponentStateRef.current?.playerStats.position.y.magnitude.toString() ??
+        '0'
+      );
+      emitMovePlayerEvent(newXEnemy, newYEnemy, 'enemy');
+    });
+  }, [gamePhaseManager]);
 
   return (
     <Game>
@@ -187,24 +276,16 @@ export default function GamePage() {
         currentActiveScene={currentScene}
         container="game-container-ally"
         isEnemy={false}
-        tilemapData={stater?.state?.map.map((tile) => +tile) || []}
-        onMapClick={(x, y) => {
-          if (canPlayerAct) {
-            handleAllyMapClick(x, y);
-          }
-        }}
+        tilemapData={allyTilemapData}
+        onMapClick={handleAllyMapClickMemo}
       />
       <PhaserGame
         ref={phaserRefEnemy}
         currentActiveScene={currentScene}
         container="game-container-enemy"
         isEnemy={true}
-        tilemapData={opponentState?.map.map((tile) => +tile) || []}
-        onMapClick={(x, y) => {
-          if (canPlayerAct) {
-            handleEnemyMapClick(x, y);
-          }
-        }}
+        tilemapData={enemyTilemapData}
+        onMapClick={handleEnemyMapClickMemo}
       />
     </Game>
   );

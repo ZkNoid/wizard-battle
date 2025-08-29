@@ -6,6 +6,7 @@ import { Button } from '../shared/Button';
 import { TimeIcon } from './assets/time-icon';
 import { QueueIcon } from './assets/queue-icon';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
+import { useInGameStore } from '@/lib/store/inGameStore';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Stater } from '../../../../common/stater/stater';
@@ -23,6 +24,7 @@ export default function Matchmaking({
   const router = useRouter();
   const { socket, stater, setOpponentState, setGamePhaseManager } =
     useUserInformationStore();
+  const { setCurrentPhase } = useInGameStore();
 
   const sendRequest = useRef(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -62,7 +64,13 @@ export default function Matchmaking({
       setOpponentState(opponentState as State);
 
       setGamePhaseManager(
-        new GamePhaseManager(socket, response.roomId, stater, setOpponentState)
+        new GamePhaseManager(
+          socket,
+          response.roomId,
+          stater,
+          setOpponentState,
+          setCurrentPhase
+        )
       );
       router.push(`/game`);
     });

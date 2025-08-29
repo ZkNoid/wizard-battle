@@ -23,6 +23,7 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
     ref
   ) {
     const game = useRef<Phaser.Game | null>(null!);
+    const previousTilemapData = useRef<number[] | undefined>(undefined);
 
     useLayoutEffect(() => {
       if (game.current === null) {
@@ -45,7 +46,29 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
           }
         }
       };
-    }, [ref, tilemapData]);
+    }, [ref, container, isEnemy]); // Removed tilemapData from dependencies
+
+    // Handle tilemap data updates separately
+    useEffect(() => {
+      if (
+        game.current &&
+        tilemapData &&
+        previousTilemapData.current !== tilemapData
+      ) {
+        const scene = game.current.scene.getScene('Game') as any;
+        if (scene && scene.loadTilemap) {
+          scene.loadTilemap(tilemapData);
+        }
+        previousTilemapData.current = tilemapData;
+      }
+    }, [tilemapData]);
+
+    // Handle onMapClick updates
+    useEffect(() => {
+      if (game.current) {
+        (game.current as any).onMapClick = onMapClick;
+      }
+    }, [onMapClick]);
 
     useEffect(() => {
       EventBus.on(
@@ -71,7 +94,7 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
       return () => {
         EventBus.removeListener('current-scene-ready');
       };
-    }, [currentActiveScene, ref, tilemapData, isEnemy]);
+    }, [currentActiveScene, ref, isEnemy]);
 
     return <div id={container}></div>;
   }

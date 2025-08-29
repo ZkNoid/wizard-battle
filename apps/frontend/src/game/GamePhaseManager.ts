@@ -30,24 +30,31 @@ import type { IPublicState } from '../../../common/types/matchmaking.types';
  * - Handles phase transitions and timing
  */
 export class GamePhaseManager {
-  private currentPhase: GamePhase = GamePhase.SPELL_CASTING;
+  public currentPhase: GamePhase = GamePhase.SPELL_CASTING;
   private socket: any;
   private roomId: string;
   private stater: Stater; // Your Stater instance
   private lastActions?: IUserActions; // Add this property
   private setOpponentState: (state: State) => void;
+  private onNewTurnHook: (() => void) | null = null;
+  private setCurrentPhaseCallback?: (phase: GamePhase) => void;
 
   constructor(
     socket: any,
     roomId: string,
     stater: Stater,
-    setOpponentState: (state: State) => void
+    setOpponentState: (state: State) => void,
+    setCurrentPhaseCallback?: (phase: GamePhase) => void
   ) {
     this.socket = socket;
     this.roomId = roomId;
     this.stater = stater;
     this.setOpponentState = setOpponentState;
+    this.setCurrentPhaseCallback = setCurrentPhaseCallback;
     this.setupSocketListeners();
+
+    // Initialize the store with the current phase
+    this.setCurrentPhaseCallback?.(this.currentPhase);
   }
 
   /**
@@ -82,7 +89,7 @@ export class GamePhaseManager {
 
     this.socket.on('newTurn', (data: { phase: GamePhase }) => {
       console.log('Received newTurn');
-      this.currentPhase = data.phase;
+      this.updateCurrentPhase(data.phase);
       this.onNewTurn();
     });
 
@@ -156,7 +163,7 @@ export class GamePhaseManager {
     console.log('Player ID:', this.getPlayerId());
     this.lastActions = allActions[this.getPlayerId()]; // Store our actions
     console.log(this.lastActions);
-    this.currentPhase = GamePhase.SPELL_PROPAGATION;
+    this.updateCurrentPhase(GamePhase.SPELL_PROPAGATION);
   }
 
   /**
@@ -180,7 +187,7 @@ export class GamePhaseManager {
    * - Prevents cheating through cryptographic verification
    */
   private handleSpellEffects() {
-    this.currentPhase = GamePhase.SPELL_EFFECTS;
+    this.updateCurrentPhase(GamePhase.SPELL_EFFECTS);
 
     // Apply effects using your Stater
     // This would typically involve calling stater.applyActions()
@@ -189,7 +196,7 @@ export class GamePhaseManager {
     const trustedState = this.generateTrustedState();
 
     // Move to end of round phase
-    this.currentPhase = GamePhase.END_OF_ROUND;
+    this.updateCurrentPhase(GamePhase.END_OF_ROUND);
 
     // Submit trusted state
     console.log('Submitting trusted state:', trustedState);
@@ -222,7 +229,7 @@ export class GamePhaseManager {
    * - Maintains game integrity across all players
    */
   private handleStateUpdate(trustedStates: ITrustedState[]) {
-    this.currentPhase = GamePhase.STATE_UPDATE;
+    this.updateCurrentPhase(GamePhase.STATE_UPDATE);
 
     // Update opponent data using received trusted states
     for (const state of trustedStates) {
@@ -285,9 +292,26 @@ export class GamePhaseManager {
    * - Ensures all clients start new turn simultaneously
    * - Maintains consistent turn timing across instances
    */
+
+  public setOnNewTurnHook(hook: () => void) {
+    this.onNewTurnHook = hook;
+  }
+
+  /**
+   * @notice Updates the current phase and notifies the store
+   * @dev Called whenever the phase changes to keep UI in sync
+   */
+  private updateCurrentPhase(phase: GamePhase) {
+    this.currentPhase = phase;
+    this.setCurrentPhaseCallback?.(phase);
+  }
+
   private onNewTurn() {
     console.log('New turn started, phase:', this.currentPhase);
     // Reset for new turn
+    if (this.onNewTurnHook) {
+      this.onNewTurnHook();
+    }
   }
 
   private getPlayerId(): string {

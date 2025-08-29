@@ -9,6 +9,7 @@ import { Clock } from './Clock';
 import { Users } from './Users';
 import { useRouter } from 'next/navigation';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
+import { useInGameStore } from '@/lib/store/inGameStore';
 import { spellIdToSpell } from '@/lib/utils';
 import type { GamePhase } from '../../../../common/types/gameplay.types';
 import { useEffect, useState } from 'react';
@@ -20,7 +21,7 @@ export default function Game({
 }) {
   const router = useRouter();
   const { stater, gamePhaseManager } = useUserInformationStore();
-  const [currentPhase, setCurrentPhase] = useState<GamePhase | null>(null);
+  const { currentPhase } = useInGameStore();
 
   // gamePhaseManager?.onNewTurn();
 

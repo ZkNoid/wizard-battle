@@ -26,10 +26,12 @@ export const MoveModifyer = (state: State, spellCast: SpellCast<MoveData>) => {
   console.log('MoveModifyer', state, spellCast);
 
   // Fix rehydration
+  console.log(state.playerStats.position.x);
   state.playerStats.position = new Position({
-    x: Int64.from(spellCast.additionalData.position.x.magnitude),
-    y: Int64.from(spellCast.additionalData.position.y.magnitude),
+    x: Int64.from(+(spellCast.additionalData.position.x.magnitude as any)),
+    y: Int64.from(+(spellCast.additionalData.position.y.magnitude as any)),
   });
+  console.log(state.playerStats.position.x);
 };
 
 export const allCommonSpells: ISpell<any>[] = [
