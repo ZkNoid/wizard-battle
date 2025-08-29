@@ -52,10 +52,7 @@ export default function GamePage() {
   // Event emitted from the PhaserGame component
   const currentScene = (scene: Phaser.Scene) => {
     console.log('Scene changed:', scene);
-    // Update the ref with the current scene
-    if (phaserRefAlly.current) {
-      phaserRefAlly.current.scene = scene;
-    }
+    // Refs are now updated in PhaserGame component based on instance type
   };
 
   // Redirect to home if no address is found
@@ -159,14 +156,20 @@ export default function GamePage() {
     gamePhaseManager?.submitPlayerActions(userActions);
   };
 
-  // Example for testing the event listener in the Game scene
-  const emitTestEvent = () => {
-    console.log('Emitting test event');
-    const scene = phaserRefAlly.current?.scene;
+  // Emit move ally | enemy event to the scene
+  const emitMovePlayerEvent = (
+    xTile: number,
+    yTile: number,
+    targetInstance: string
+  ) => {
+    const scene =
+      targetInstance === 'ally'
+        ? phaserRefAlly.current?.scene
+        : phaserRefEnemy.current?.scene;
 
     if (!scene || !(scene instanceof GameScene)) return;
 
-    scene.events.emit('test-event');
+    scene.events.emit('move-player', xTile, yTile, targetInstance);
   };
 
   useEffect(() => {

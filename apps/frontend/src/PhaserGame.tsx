@@ -48,21 +48,30 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
     }, [ref, tilemapData]);
 
     useEffect(() => {
-      EventBus.on('current-scene-ready', (scene_instance: Phaser.Scene) => {
-        if (currentActiveScene && typeof currentActiveScene === 'function') {
-          currentActiveScene(scene_instance);
-        }
+      EventBus.on(
+        'current-scene-ready',
+        (scene_instance: Phaser.Scene, gameInstance: string) => {
+          // Only update refs if this is the correct instance
+          const expectedInstance = isEnemy ? 'enemy' : 'ally';
+          if (gameInstance !== expectedInstance) {
+            return;
+          }
 
-        if (typeof ref === 'function') {
-          ref({ game: game.current, scene: scene_instance });
-        } else if (ref) {
-          ref.current = { game: game.current, scene: scene_instance };
+          if (currentActiveScene && typeof currentActiveScene === 'function') {
+            currentActiveScene(scene_instance);
+          }
+
+          if (typeof ref === 'function') {
+            ref({ game: game.current, scene: scene_instance });
+          } else if (ref) {
+            ref.current = { game: game.current, scene: scene_instance };
+          }
         }
-      });
+      );
       return () => {
         EventBus.removeListener('current-scene-ready');
       };
-    }, [currentActiveScene, ref, tilemapData]);
+    }, [currentActiveScene, ref, tilemapData, isEnemy]);
 
     return <div id={container}></div>;
   }

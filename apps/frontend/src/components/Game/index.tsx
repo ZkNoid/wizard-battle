@@ -10,7 +10,8 @@ import { Users } from './Users';
 import { useRouter } from 'next/navigation';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
 import { spellIdToSpell } from '@/lib/utils';
-import { useInGameStore } from '@/lib/store/inGameStore';
+import type { GamePhase } from '../../../../common/types/gameplay.types';
+import { useEffect, useState } from 'react';
 
 export default function Game({
   children,
@@ -18,8 +19,16 @@ export default function Game({
   children: [ReactNode, ReactNode];
 }) {
   const router = useRouter();
-  const { stater } = useUserInformationStore();
-  const { currentPhase } = useInGameStore();
+  const { stater, gamePhaseManager } = useUserInformationStore();
+  const [currentPhase, setCurrentPhase] = useState<GamePhase | null>(null);
+
+  // gamePhaseManager?.onNewTurn();
+
+  // useEffect(() => {
+  //   if (gamePhaseManager) {
+  //     setCurrentPhase(gamePhaseManager.onNewTurn());
+  //   }
+  // }, [gamePhaseManager]);
 
   return (
     <div className="flex h-full w-full flex-grow flex-col pt-40">

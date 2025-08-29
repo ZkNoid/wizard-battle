@@ -37,6 +37,8 @@ const StartGameAlly = (
   onMapClick?: (x: number, y: number) => void
 ) => {
   const game = new Game({ ...config1, parent });
+  // Mark this as ally instance
+  (game as any).gameInstance = 'ally';
   if (tilemapData) {
     // Store tilemap data for later use
     (game as any).tilemapData = tilemapData;
@@ -53,6 +55,8 @@ const StartGameEnemy = (
   onMapClick?: (x: number, y: number) => void
 ) => {
   const game = new Game({ ...config2, parent });
+  // Mark this as enemy instance
+  (game as any).gameInstance = 'enemy';
   if (tilemapData) {
     // Store tilemap data for later use
     (game as any).tilemapData = tilemapData;
