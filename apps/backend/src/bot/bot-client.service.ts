@@ -1,8 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { io, Socket } from 'socket.io-client';
 import { BotService } from './bot.service';
-import { IAddToQueue, IPublicState } from '../../../common/types/matchmaking.types';
-import { IUserActions, ITrustedState, GamePhase } from '../../../common/types/gameplay.types';
+import {
+  IAddToQueue,
+  IPublicState,
+} from '../../../common/types/matchmaking.types';
+import {
+  IUserActions,
+  ITrustedState,
+  GamePhase,
+} from '../../../common/types/gameplay.types';
 
 /**
  * @title Bot Client Service - WebSocket Client Simulation
@@ -12,7 +19,7 @@ import { IUserActions, ITrustedState, GamePhase } from '../../../common/types/ga
 @Injectable()
 export class BotClientService {
   private activeBots: Map<string, BotClient> = new Map();
-  
+
   constructor(private readonly botService: BotService) {}
 
   /**
@@ -21,7 +28,10 @@ export class BotClientService {
    * @param serverUrl WebSocket server URL to connect to
    * @returns Promise that resolves when bot is connected and ready
    */
-  async createBotClient(botId: string, serverUrl: string = 'http://localhost:3030'): Promise<BotClient> {
+  async createBotClient(
+    botId: string,
+    serverUrl: string = 'http://localhost:3030'
+  ): Promise<BotClient> {
     const bot = new BotClient(botId, serverUrl, this.botService);
     await bot.connect();
     this.activeBots.set(botId, bot);
@@ -61,7 +71,9 @@ export class BotClientService {
    * @notice Disconnects all active bots
    */
   async disconnectAllBots(): Promise<void> {
-    const disconnectPromises = Array.from(this.activeBots.values()).map(bot => bot.disconnect());
+    const disconnectPromises = Array.from(this.activeBots.values()).map((bot) =>
+      bot.disconnect()
+    );
     await Promise.all(disconnectPromises);
     this.activeBots.clear();
   }
@@ -99,7 +111,9 @@ export class BotClient {
       });
 
       this.socket.on('connect', () => {
-        console.log(`🤖 Bot ${this.botId} connected with socket ID: ${this.socket?.id}`);
+        console.log(
+          `🤖 Bot ${this.botId} connected with socket ID: ${this.socket?.id}`
+        );
         // Update socket ID in current state
         this.currentState.socketId = this.socket?.id || '';
         this.setupEventHandlers();
@@ -175,12 +189,15 @@ export class BotClient {
     this.socket.on('newTurn', (data) => {
       console.log(`🤖 Bot ${this.botId} new turn:`, data);
       this.gamePhase = data.phase;
-      
+
       // If it's spell casting phase, submit actions after a short delay
       if (data.phase === GamePhase.SPELL_CASTING) {
-        setTimeout(() => {
-          this.submitActions();
-        }, Math.random() * 2000 + 1000); // Random delay 1-3 seconds
+        setTimeout(
+          () => {
+            this.submitActions();
+          },
+          Math.random() * 2000 + 1000
+        ); // Random delay 1-3 seconds
       }
     });
 
@@ -192,21 +209,24 @@ export class BotClient {
     this.socket.on('applySpellEffects', () => {
       console.log(`🤖 Bot ${this.botId} applying spell effects...`);
       this.gamePhase = GamePhase.SPELL_EFFECTS;
-      
+
       // Simulate processing time, then submit trusted state (wait for END_OF_ROUND phase)
-      setTimeout(() => {
-        this.submitTrustedState();
-      }, Math.random() * 1000 + 2500); // Random delay 2.5-3.5 seconds to wait for phase advancement
+      setTimeout(
+        () => {
+          this.submitTrustedState();
+        },
+        Math.random() * 1000 + 2500
+      ); // Random delay 2.5-3.5 seconds to wait for phase advancement
     });
 
     this.socket.on('updateUserStates', (data) => {
       console.log(`🤖 Bot ${this.botId} received state updates:`, data);
       this.gamePhase = GamePhase.STATE_UPDATE;
-      
+
       // Update opponent state if available
       if (data.states) {
-        const opponentUpdate = data.states.find((state: ITrustedState) => 
-          state.playerId !== this.botId
+        const opponentUpdate = data.states.find(
+          (state: ITrustedState) => state.playerId !== this.botId
         );
         if (opponentUpdate) {
           this.opponentState = opponentUpdate.publicState;
@@ -227,13 +247,19 @@ export class BotClient {
     // Error handling
     this.socket.on('actionSubmitResult', (result) => {
       if (!result.success) {
-        console.error(`🤖 Bot ${this.botId} action submission failed:`, result.error);
+        console.error(
+          `🤖 Bot ${this.botId} action submission failed:`,
+          result.error
+        );
       }
     });
 
     this.socket.on('trustedStateResult', (result) => {
       if (!result.success) {
-        console.error(`🤖 Bot ${this.botId} trusted state submission failed:`, result.error);
+        console.error(
+          `🤖 Bot ${this.botId} trusted state submission failed:`,
+          result.error
+        );
       }
     });
   }
@@ -242,20 +268,24 @@ export class BotClient {
    * @notice Submits bot actions during spell casting phase
    */
   private submitActions(): void {
-    if (!this.socket || !this.currentRoomId || this.gamePhase !== GamePhase.SPELL_CASTING) {
+    if (
+      !this.socket ||
+      !this.currentRoomId ||
+      this.gamePhase !== GamePhase.SPELL_CASTING
+    ) {
       return;
     }
 
     const actions = this.botService.generateBotActions(
-      this.botId, 
-      this.currentState, 
+      this.botId,
+      this.currentState,
       this.opponentState || undefined
     );
 
     console.log(`🤖 Bot ${this.botId} submitting actions:`, actions);
     this.socket.emit('submitActions', {
       roomId: this.currentRoomId,
-      actions
+      actions,
     });
   }
 
@@ -281,7 +311,7 @@ export class BotClient {
     console.log(`🤖 Bot ${this.botId} submitting trusted state:`, trustedState);
     this.socket.emit('submitTrustedState', {
       roomId: this.currentRoomId,
-      trustedState
+      trustedState,
     });
   }
 }

@@ -1,315 +1,303 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
+import { GameStateService } from './game-state.service';
 import { GameSessionGateway } from './game-session.gateway';
 import { MatchmakingService } from '../matchmaking/matchmaking.service';
-import { GameStateService } from './game-state.service';
-import { Server, Socket } from 'socket.io';
 import { createMock } from '@golevelup/ts-jest';
-import { GamePhase, IUserActions, ITrustedState, IDead, IGameEnd } from '../../../common/types/gameplay.types';
-import { State } from '../../../common/stater/state';
-
-// Create default state fields for testing
-const defaultState = State.default();
-const defaultStateFields = State.toFields(defaultState);
+import { GamePhase } from '../../../common/types/gameplay.types';
 
 /**
- * @title Timer Cleanup Tests - Critical Memory Leak Detection
- * @notice Tests to verify that timers are properly cleaned up to prevent memory leaks
- * @dev These tests address the warnings from Jest about async operations not being cleaned up
- * 
- * Issues Being Tested:
- * 1. setTimeout in advanceToSpellPropagation (line 500) - 1 second delay
- * 2. setTimeout in advanceToStateUpdate (line 577) - 2 second delay  
- * 3. Memory leaks when games end before timers fire
- * 4. Concurrent timer management
- * 5. Room cleanup when all players disconnect
+ * @title Game Phase Scheduler Tests - Cron-Based Phase Management
+ * @notice Tests to verify that the cron-based phase scheduler works correctly
+ * @dev These tests verify the current architecture using GamePhaseSchedulerService
+ *
+ * Current Architecture:
+ * 1. GamePhaseSchedulerService handles phase transitions via cron jobs
+ * 2. No setTimeout/clearTimeout usage (eliminates timer leak issues)
+ * 3. Redis-based state management with automatic cleanup
+ * 4. Cross-instance coordination via Redis pub/sub
  */
-describe('GameSessionGateway - Timer Cleanup Tests', () => {
-  let gateway: GameSessionGateway;
-  let mockMatchmakingService: any;
+describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
+  let scheduler: GamePhaseSchedulerService;
   let mockGameStateService: any;
-  let mockServer: any;
-  let mockSocket: Socket;
-
-  // Track original setTimeout to restore later
-  const originalSetTimeout = global.setTimeout;
-  const originalClearTimeout = global.clearTimeout;
-  
-  // Mock timer tracking
-  let activeTimers: NodeJS.Timeout[] = [];
-  let timerCallbacks: (() => void)[] = [];
+  let mockGameSessionGateway: any;
 
   beforeEach(async () => {
-    // Reset timer tracking
-    activeTimers = [];
-    timerCallbacks = [];
-
-    // Mock setTimeout to track active timers
-    global.setTimeout = jest.fn().mockImplementation((callback: () => void, delay: number) => {
-      const timerId = Symbol('timer') as any;
-      activeTimers.push(timerId);
-      timerCallbacks.push(callback);
-      return timerId;
-    });
-
-    // Mock clearTimeout to remove from tracking
-    global.clearTimeout = jest.fn().mockImplementation((timerId: NodeJS.Timeout) => {
-      const index = activeTimers.indexOf(timerId);
-      if (index > -1) {
-        activeTimers.splice(index, 1);
-        timerCallbacks.splice(index, 1);
-      }
-    });
-
     // Mock services
-    mockMatchmakingService = createMock<MatchmakingService>();
     mockGameStateService = createMock<GameStateService>();
-    mockServer = createMock<Server>();
-    mockSocket = createMock<Socket>();
-
-    // Setup server.to() chain
-    mockServer.to = jest.fn().mockReturnValue({
-      emit: jest.fn()
-    });
+    mockGameSessionGateway = createMock<GameSessionGateway>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        GameSessionGateway,
-        { provide: MatchmakingService, useValue: mockMatchmakingService },
+        GamePhaseSchedulerService,
         { provide: GameStateService, useValue: mockGameStateService },
+        { provide: GameSessionGateway, useValue: mockGameSessionGateway },
       ],
     }).compile();
 
-    gateway = module.get<GameSessionGateway>(GameSessionGateway);
-    gateway.server = mockServer;
+    scheduler = module.get<GamePhaseSchedulerService>(
+      GamePhaseSchedulerService
+    );
   });
 
-  afterEach(() => {
-    // Restore original timer functions
-    global.setTimeout = originalSetTimeout;
-    global.clearTimeout = originalClearTimeout;
-  });
-
-  describe('Timer Memory Leak Detection', () => {
-    it('should detect timer leak in advanceToSpellPropagation', async () => {
+  describe('Phase Transition Logic', () => {
+    it('should identify SPELL_PROPAGATION rooms ready for SPELL_EFFECTS transition', async () => {
       const roomId = 'test-room';
-      
-      // Mock successful phase advancement
-      mockGameStateService.advanceGamePhase.mockResolvedValue(undefined);
-      mockGameStateService.getAllPlayerActions.mockResolvedValue({
-        player1: { actions: [] },
-        player2: { actions: [] }
+      const gameState = {
+        roomId,
+        status: 'active',
+        currentPhase: GamePhase.SPELL_PROPAGATION,
+        phaseStartTime: Date.now() - 1500, // 1.5 seconds ago (>1 second threshold)
+        players: [{ id: 'player1', isAlive: true }],
+      };
+
+      // Mock Redis keys and game state
+      mockGameStateService.redisClient = {
+        keys: jest.fn().mockResolvedValue([`game_state:${roomId}`]),
+      };
+      mockGameStateService.getGameState.mockResolvedValue(gameState);
+      mockGameSessionGateway.advanceToSpellEffects.mockResolvedValue(undefined);
+
+      // Call the private method via reflection for testing
+      const pendingTransitions = await (
+        scheduler as any
+      ).getPendingPhaseTransitions();
+
+      expect(pendingTransitions).toHaveLength(1);
+      expect(pendingTransitions[0]).toEqual({
+        roomId,
+        currentPhase: GamePhase.SPELL_PROPAGATION,
+        nextPhase: GamePhase.SPELL_EFFECTS,
+        delayMs: 0,
       });
-
-      // Call the method that creates a timer
-      await gateway.advanceToSpellPropagation(roomId);
-
-      // Verify timer was created
-      expect(global.setTimeout).toHaveBeenCalledWith(expect.any(Function), 1000);
-      expect(activeTimers).toHaveLength(1);
-      
-      // CRITICAL TEST: What happens if game ends before timer fires?
-      // This simulates the real-world scenario causing the Jest warnings
-      console.log('⚠️  TIMER LEAK DETECTED: Timer will fire even if game/room no longer exists');
-      console.log(`Active timers: ${activeTimers.length}`);
-      console.log('This is the root cause of Jest warnings about async operations');
     });
 
-    it('should detect timer leak in advanceToStateUpdate', async () => {
+    it('should identify SPELL_EFFECTS rooms ready for END_OF_ROUND transition', async () => {
       const roomId = 'test-room';
-      
-      // Mock successful state update
-      mockGameStateService.advanceGamePhase.mockResolvedValue(undefined);
-      mockGameStateService.getAllTrustedStates.mockResolvedValue({
-        player1: { 
-          playerId: 'player1', 
-          stateCommit: 'commit1', 
-          publicState: { 
-            socketId: 'socket1', 
-            playerId: 'player1', 
-            fields: defaultStateFields 
-          }, 
-          signature: 'sig1' 
-        }
-      });
+      const gameState = {
+        roomId,
+        status: 'active',
+        currentPhase: GamePhase.SPELL_EFFECTS,
+        phaseStartTime: Date.now() - 2500, // 2.5 seconds ago (>2 second threshold)
+        players: [{ id: 'player1', isAlive: true }],
+      };
 
-      // Call the method that creates a timer
-      await gateway.advanceToStateUpdate(roomId);
+      mockGameStateService.redisClient = {
+        keys: jest.fn().mockResolvedValue([`game_state:${roomId}`]),
+      };
+      mockGameStateService.getGameState.mockResolvedValue(gameState);
 
-      // Verify timer was created
-      expect(global.setTimeout).toHaveBeenCalledWith(expect.any(Function), 2000);
-      expect(activeTimers).toHaveLength(1);
-      
-      console.log('⚠️  TIMER LEAK DETECTED: 2-second timer will fire regardless of game state');
-      console.log(`Active timers: ${activeTimers.length}`);
-    });
+      const pendingTransitions = await (
+        scheduler as any
+      ).getPendingPhaseTransitions();
 
-    it('should demonstrate the memory leak scenario', async () => {
-      const roomId = 'test-room-leak';
-      
-      // Setup mocks
-      mockGameStateService.advanceGamePhase.mockResolvedValue(undefined);
-      mockGameStateService.getAllPlayerActions.mockResolvedValue({});
-      mockGameStateService.getAllTrustedStates.mockResolvedValue({});
-
-      // Start multiple phases that create timers
-      await gateway.advanceToSpellPropagation(roomId);  // Creates 1-second timer
-      await gateway.advanceToStateUpdate(roomId);       // Creates 2-second timer
-
-      expect(activeTimers).toHaveLength(2);
-      console.log(`🚨 MEMORY LEAK: ${activeTimers.length} timers active for room that might be destroyed`);
-
-      // Simulate game ending (no cleanup mechanism exists)
-      const gameEnd: IGameEnd = { winnerId: 'player1' };
-      mockServer.to(roomId).emit('gameEnd', gameEnd);
-
-      // CRITICAL ISSUE: Timers are still active even though game ended!
-      expect(activeTimers).toHaveLength(2);
-      console.log('🚨 CRITICAL: Game ended but timers still active - MEMORY LEAK CONFIRMED');
-      
-      // If timers fire now, they'll operate on non-existent room data
-      timerCallbacks.forEach(callback => {
-        expect(() => callback()).not.toThrow(); // They shouldn't crash, but they're wasteful
+      expect(pendingTransitions).toHaveLength(1);
+      expect(pendingTransitions[0]).toEqual({
+        roomId,
+        currentPhase: GamePhase.SPELL_EFFECTS,
+        nextPhase: GamePhase.END_OF_ROUND,
+        delayMs: 0,
       });
     });
-  });
 
-  describe('Concurrent Timer Management', () => {
-    it('should handle multiple overlapping phase transitions', async () => {
-      const roomId = 'concurrent-room';
-      
-      // Mock services
-      mockGameStateService.advanceGamePhase.mockResolvedValue(undefined);
-      mockGameStateService.getAllPlayerActions.mockResolvedValue({});
-      mockGameStateService.getAllTrustedStates.mockResolvedValue({});
+    it('should identify STATE_UPDATE rooms ready for new turn', async () => {
+      const roomId = 'test-room';
+      const gameState = {
+        roomId,
+        status: 'active',
+        currentPhase: GamePhase.STATE_UPDATE,
+        phaseStartTime: Date.now() - 2500, // 2.5 seconds ago (>2 second threshold)
+        players: [{ id: 'player1', isAlive: true }],
+      };
 
-      // Rapidly trigger multiple phases (simulating fast gameplay)
-      const promises = [
-        gateway.advanceToSpellPropagation(roomId),
-        gateway.advanceToStateUpdate(roomId),
-        gateway.advanceToSpellPropagation(roomId + '2'),
-      ];
+      mockGameStateService.redisClient = {
+        keys: jest.fn().mockResolvedValue([`game_state:${roomId}`]),
+      };
+      mockGameStateService.getGameState.mockResolvedValue(gameState);
 
-      await Promise.all(promises);
+      const pendingTransitions = await (
+        scheduler as any
+      ).getPendingPhaseTransitions();
 
-      expect(activeTimers.length).toBeGreaterThan(0);
-      console.log(`⚠️  CONCURRENT TIMERS: ${activeTimers.length} timers running simultaneously`);
-      console.log('Risk: Multiple timers for same room or overlapping operations');
+      expect(pendingTransitions).toHaveLength(1);
+      expect(pendingTransitions[0]).toEqual({
+        roomId,
+        currentPhase: GamePhase.STATE_UPDATE,
+        nextPhase: GamePhase.SPELL_CASTING,
+        delayMs: 0,
+      });
     });
 
-    it('should demonstrate race condition potential', async () => {
-      const roomId = 'race-room';
-      
-      mockGameStateService.advanceGamePhase.mockResolvedValue(undefined);
-      mockGameStateService.getAllPlayerActions.mockResolvedValue({});
+    it('should not transition rooms that are not ready', async () => {
+      const roomId = 'test-room';
+      const gameState = {
+        roomId,
+        status: 'active',
+        currentPhase: GamePhase.SPELL_PROPAGATION,
+        phaseStartTime: Date.now() - 500, // 0.5 seconds ago (<1 second threshold)
+        players: [{ id: 'player1', isAlive: true }],
+      };
 
-      // Start spell propagation (1-second timer)
-      await gateway.advanceToSpellPropagation(roomId);
-      
-      // Immediately start state update (2-second timer) - this could happen in fast games
-      await gateway.advanceToStateUpdate(roomId);
+      mockGameStateService.redisClient = {
+        keys: jest.fn().mockResolvedValue([`game_state:${roomId}`]),
+      };
+      mockGameStateService.getGameState.mockResolvedValue(gameState);
 
-      expect(activeTimers).toHaveLength(2);
-      
-      // Fire the first timer (spell effects)
-      if (timerCallbacks[0]) {
-        timerCallbacks[0]();
-      }
+      const pendingTransitions = await (
+        scheduler as any
+      ).getPendingPhaseTransitions();
 
-      console.log('⚠️  RACE CONDITION: First timer fired, but second timer still pending');
-      console.log('This could cause phase transitions to happen out of order');
-    });
-  });
-
-  describe('Room Cleanup Scenarios', () => {
-    it('should identify missing cleanup when all players disconnect', async () => {
-      const roomId = 'disconnect-room';
-      
-      // Setup active game with timers
-      mockGameStateService.advanceGamePhase.mockResolvedValue(undefined);
-      mockGameStateService.getAllPlayerActions.mockResolvedValue({});
-      
-      await gateway.advanceToSpellPropagation(roomId);
-      expect(activeTimers).toHaveLength(1);
-
-      // Simulate all players disconnecting (no cleanup mechanism exists in current code)
-      mockSocket.disconnect();
-      
-      // ISSUE: Timer is still active even though room should be cleaned up
-      expect(activeTimers).toHaveLength(1);
-      console.log('🚨 CLEANUP ISSUE: Player disconnected but room timer still active');
-      console.log('Room should be cleaned up but timer will still fire');
+      expect(pendingTransitions).toHaveLength(0);
     });
 
-    it('should identify missing cleanup on game end', async () => {
-      const roomId = 'game-end-room';
-      
-      // Start game with active timers
-      mockGameStateService.advanceGamePhase.mockResolvedValue(undefined);
-      mockGameStateService.getAllPlayerActions.mockResolvedValue({});
-      mockGameStateService.getAllTrustedStates.mockResolvedValue({});
-      
-      await gateway.advanceToSpellPropagation(roomId);
-      await gateway.advanceToStateUpdate(roomId);
-      expect(activeTimers).toHaveLength(2);
+    it('should ignore inactive rooms', async () => {
+      const roomId = 'test-room';
+      const gameState = {
+        roomId,
+        status: 'finished', // Not active
+        currentPhase: GamePhase.SPELL_PROPAGATION,
+        phaseStartTime: Date.now() - 2000,
+        players: [{ id: 'player1', isAlive: true }],
+      };
 
-      // Game ends with winner
-      const dead: IDead = { playerId: 'player1' };
-      mockGameStateService.markPlayerDead.mockResolvedValue('player2'); // Winner found
-      
-      await gateway.handleReportDead(mockSocket, { roomId, dead });
-      
-      // Game ended, but timers still active!
-      expect(activeTimers).toHaveLength(2);
-      console.log('🚨 GAME END LEAK: Game finished but timers still running');
-      console.log('These timers will try to advance phases in a finished game');
+      mockGameStateService.redisClient = {
+        keys: jest.fn().mockResolvedValue([`game_state:${roomId}`]),
+      };
+      mockGameStateService.getGameState.mockResolvedValue(gameState);
+
+      const pendingTransitions = await (
+        scheduler as any
+      ).getPendingPhaseTransitions();
+
+      expect(pendingTransitions).toHaveLength(0);
     });
   });
 
-  describe('Error Scenarios', () => {
-    it('should handle timer firing after room destruction', async () => {
-      const roomId = 'destroyed-room';
-      
-      // Mock room operations to fail (simulating destroyed room)
-      mockGameStateService.advanceGamePhase.mockRejectedValue(new Error('Room not found'));
-      mockGameStateService.getAllPlayerActions.mockResolvedValue({});
-      
-      await gateway.advanceToSpellPropagation(roomId);
-      expect(activeTimers).toHaveLength(1);
+  describe('Phase Transition Execution', () => {
+    it('should execute SPELL_EFFECTS transition correctly', async () => {
+      const transition = {
+        roomId: 'test-room',
+        currentPhase: GamePhase.SPELL_PROPAGATION,
+        nextPhase: GamePhase.SPELL_EFFECTS,
+        delayMs: 0,
+      };
 
-      // Fire the timer - it should handle the error gracefully
-      const timerCallback = timerCallbacks[0];
-      expect(timerCallback).toBeDefined();
-      
-      // This should not crash, but it's wasted computation
-      await expect(async () => {
-        if (timerCallback) {
-          await timerCallback();
-        }
-      }).not.toThrow();
+      mockGameSessionGateway.advanceToSpellEffects.mockResolvedValue(undefined);
 
-      console.log('⚠️  ERROR HANDLING: Timer fired on destroyed room - handled but wasteful');
+      await (scheduler as any).executePhaseTransition(transition);
+
+      expect(mockGameSessionGateway.advanceToSpellEffects).toHaveBeenCalledWith(
+        'test-room'
+      );
+    });
+
+    it('should execute new turn transition correctly', async () => {
+      const transition = {
+        roomId: 'test-room',
+        currentPhase: GamePhase.STATE_UPDATE,
+        nextPhase: GamePhase.SPELL_CASTING,
+        delayMs: 0,
+      };
+
+      mockGameSessionGateway.startNextTurn.mockResolvedValue(undefined);
+
+      await (scheduler as any).executePhaseTransition(transition);
+
+      expect(mockGameSessionGateway.startNextTurn).toHaveBeenCalledWith(
+        'test-room'
+      );
+    });
+
+    it('should handle transition errors by cleaning up room', async () => {
+      const transition = {
+        roomId: 'test-room',
+        currentPhase: GamePhase.SPELL_PROPAGATION,
+        nextPhase: GamePhase.SPELL_EFFECTS,
+        delayMs: 0,
+      };
+
+      mockGameSessionGateway.advanceToSpellEffects.mockRejectedValue(
+        new Error('Transition failed')
+      );
+      mockGameStateService.cleanupRoom.mockResolvedValue(undefined);
+
+      await (scheduler as any).executePhaseTransition(transition);
+
+      expect(mockGameStateService.cleanupRoom).toHaveBeenCalledWith(
+        'test-room'
+      );
     });
   });
 
-  describe('Performance Impact', () => {
-    it('should measure timer accumulation over time', async () => {
-      const baseRoomId = 'perf-room';
-      
-      mockGameStateService.advanceGamePhase.mockResolvedValue(undefined);
-      mockGameStateService.getAllPlayerActions.mockResolvedValue({});
-      mockGameStateService.getAllTrustedStates.mockResolvedValue({});
+  describe('Cleanup Operations', () => {
+    it('should identify inactive rooms for cleanup', async () => {
+      const oldRoomId = 'old-room';
+      const recentRoomId = 'recent-room';
 
-      // Simulate multiple games over time
-      for (let i = 0; i < 10; i++) {
-        const roomId = `${baseRoomId}-${i}`;
-        await gateway.advanceToSpellPropagation(roomId);
-        await gateway.advanceToStateUpdate(roomId);
-      }
+      const oldGameState = {
+        roomId: oldRoomId,
+        updatedAt: Date.now() - 2000000, // Very old
+        players: [],
+      };
 
-      expect(activeTimers).toHaveLength(20); // 2 timers per game * 10 games
-      console.log(`📊 PERFORMANCE IMPACT: ${activeTimers.length} active timers across multiple games`);
-      console.log('In production, this could accumulate to hundreds or thousands of timers');
-      console.log('Each timer holds memory and will eventually fire, consuming CPU');
+      const recentGameState = {
+        roomId: recentRoomId,
+        updatedAt: Date.now() - 1000, // Recent
+        players: [],
+      };
+
+      mockGameStateService.getInactiveRooms.mockResolvedValue([oldRoomId]);
+      mockGameStateService.cleanupRoom.mockResolvedValue(undefined);
+      mockGameSessionGateway.cleanupRoom.mockResolvedValue(undefined);
+
+      await scheduler.cleanupInactiveRooms();
+
+      expect(mockGameStateService.getInactiveRooms).toHaveBeenCalledWith(
+        1800000
+      ); // 30 minutes
+      expect(mockGameStateService.cleanupRoom).toHaveBeenCalledWith(oldRoomId);
+      expect(mockGameSessionGateway.cleanupRoom).toHaveBeenCalledWith(
+        oldRoomId,
+        'inactive'
+      );
+    });
+
+    it('should handle cleanup errors gracefully', async () => {
+      mockGameStateService.getInactiveRooms.mockRejectedValue(
+        new Error('Redis error')
+      );
+
+      // Should not throw
+      await expect(scheduler.cleanupInactiveRooms()).resolves.toBeUndefined();
+    });
+  });
+
+  describe('System Health Monitoring', () => {
+    it('should update instance heartbeat', async () => {
+      mockGameStateService.updateHeartbeat.mockResolvedValue(undefined);
+
+      await scheduler.updateInstanceHeartbeat();
+
+      expect(mockGameStateService.updateHeartbeat).toHaveBeenCalled();
+    });
+
+    it('should cleanup dead instances', async () => {
+      mockGameStateService.cleanupDeadInstances.mockResolvedValue(undefined);
+
+      await scheduler.cleanupDeadInstances();
+
+      expect(mockGameStateService.cleanupDeadInstances).toHaveBeenCalled();
+    });
+
+    it('should handle heartbeat errors gracefully', async () => {
+      mockGameStateService.updateHeartbeat.mockRejectedValue(
+        new Error('Redis error')
+      );
+
+      // Should not throw
+      await expect(
+        scheduler.updateInstanceHeartbeat()
+      ).resolves.toBeUndefined();
     });
   });
 });

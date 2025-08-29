@@ -14,8 +14,7 @@ import {
   TransformedRemoveFromQueue,
   TransformedUpdateQueue,
   TransformedFoundMatch,
-} from "../../../common/types/matchmaking.types";
-
+} from '../../../common/types/matchmaking.types';
 
 export default {
   TransformedMap,
@@ -25,4 +24,4 @@ export default {
   TransformedRemoveFromQueue,
   TransformedUpdateQueue,
   TransformedFoundMatch,
-} 
+};

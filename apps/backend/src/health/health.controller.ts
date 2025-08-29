@@ -3,20 +3,20 @@ import { RedisHealthService, HealthStatus } from './redis-health.service';
 
 @Controller('health')
 export class HealthController {
-    constructor(private readonly redisHealthService: RedisHealthService) {}
+  constructor(private readonly redisHealthService: RedisHealthService) {}
 
-    @Get()
-    async getHealth(): Promise<HealthStatus> {
-        return await this.redisHealthService.checkHealth();
-    }
+  @Get()
+  async getHealth(): Promise<HealthStatus> {
+    return await this.redisHealthService.checkHealth();
+  }
 
-    @Get('stats')
-    async getStats() {
-        return await this.redisHealthService.getDetailedStats();
-    }
+  @Get('stats')
+  async getStats() {
+    return await this.redisHealthService.getDetailedStats();
+  }
 
-    @Post('cleanup')
-    async cleanupOrphanedData() {
-        return await this.redisHealthService.cleanupOrphanedData();
-    }
-} 
+  @Post('cleanup')
+  async cleanupOrphanedData() {
+    return await this.redisHealthService.cleanupOrphanedData();
+  }
+}

@@ -7,16 +7,16 @@ import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
 import { BotModule } from '../bot/bot.module';
 
 @Module({
-    imports: [
-        BotModule,
-        ScheduleModule.forRoot(), // ✅ Enable cron jobs
-    ],
-    providers: [
-        GameSessionGateway, 
-        MatchmakingService, 
-        GameStateService,
-        GamePhaseSchedulerService, // ✅ Add scheduler service
-    ],
-    exports: [MatchmakingService, GameStateService],
+  imports: [
+    BotModule,
+    ScheduleModule.forRoot(), // ✅ Enable cron jobs
+  ],
+  providers: [
+    GameSessionGateway,
+    MatchmakingService,
+    GameStateService,
+    GamePhaseSchedulerService, // ✅ Add scheduler service
+  ],
+  exports: [MatchmakingService, GameStateService],
 })
-export class GameSessionModule { }
+export class GameSessionModule {}

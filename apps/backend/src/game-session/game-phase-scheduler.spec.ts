@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
 import { GameStateService } from './game-state.service';
 import { GameSessionGateway } from './game-session.gateway';
+import { GamePhase } from '../../../common/types/gameplay.types';
 import { createMock } from '@golevelup/ts-jest';
 
 /**
@@ -45,24 +46,30 @@ describe('GamePhaseSchedulerService', () => {
       const mockGameState = {
         roomId: 'test-room',
         status: 'active',
-        currentPhase: 'SPELL_PROPAGATION',
+        currentPhase: GamePhase.SPELL_PROPAGATION,
         phaseStartTime: Date.now() - 2000, // 2 seconds ago
         phaseTimeout: 1000, // 1 second timeout
         players: [{ id: 'player1' }, { id: 'player2' }],
         createdAt: Date.now() - 10000,
-        updatedAt: Date.now() - 1000
+        updatedAt: Date.now() - 1000,
       };
 
-      mockGameStateService.redisClient.keys.mockResolvedValue(['game_state:test-room']);
+      mockGameStateService.redisClient.keys.mockResolvedValue([
+        'game_state:test-room',
+      ]);
       mockGameStateService.getGameState.mockResolvedValue(mockGameState);
 
       // Call the cron method directly
       await service.processPhaseTransitions();
 
       // Verify phase transition was triggered
-      expect(mockGameSessionGateway.advanceToSpellEffects).toHaveBeenCalledWith('test-room');
-      
-      console.log('✅ CRON-BASED SOLUTION: Phase transition processed without setTimeout');
+      expect(mockGameSessionGateway.advanceToSpellEffects).toHaveBeenCalledWith(
+        'test-room'
+      );
+
+      console.log(
+        '✅ CRON-BASED SOLUTION: Phase transition processed without setTimeout'
+      );
       console.log('✅ NO MEMORY LEAKS: No timer objects created or tracked');
     });
 
@@ -75,8 +82,10 @@ describe('GamePhaseSchedulerService', () => {
       // Verify cleanup was called for each room
       expect(mockGameStateService.cleanupRoom).toHaveBeenCalledTimes(2);
       expect(mockGameSessionGateway.cleanupRoom).toHaveBeenCalledTimes(2);
-      
-      console.log('✅ CRON-BASED CLEANUP: Inactive rooms cleaned up automatically');
+
+      console.log(
+        '✅ CRON-BASED CLEANUP: Inactive rooms cleaned up automatically'
+      );
       console.log('✅ NO RESOURCE LEAKS: Rooms properly removed from memory');
     });
 
@@ -84,35 +93,44 @@ describe('GamePhaseSchedulerService', () => {
       await service.updateInstanceHeartbeat();
 
       expect(mockGameStateService.updateHeartbeat).toHaveBeenCalled();
-      
-      console.log('✅ CRON-BASED HEARTBEAT: Instance heartbeat updated automatically');
-      console.log('✅ CROSS-INSTANCE COORDINATION: Dead instances will be detected');
+
+      console.log(
+        '✅ CRON-BASED HEARTBEAT: Instance heartbeat updated automatically'
+      );
+      console.log(
+        '✅ CROSS-INSTANCE COORDINATION: Dead instances will be detected'
+      );
     });
 
     it('should clean up dead instances via cron', async () => {
       await service.cleanupDeadInstances();
 
       expect(mockGameStateService.cleanupDeadInstances).toHaveBeenCalled();
-      
-      console.log('✅ CRON-BASED DEAD INSTANCE CLEANUP: Orphaned resources cleaned up');
+
+      console.log(
+        '✅ CRON-BASED DEAD INSTANCE CLEANUP: Orphaned resources cleaned up'
+      );
     });
 
     it('should monitor system health via cron', async () => {
       // Mock room keys for health monitoring
-      mockGameStateService.redisClient.keys.mockResolvedValue(['game_state:room1', 'game_state:room2']);
-      
+      mockGameStateService.redisClient.keys.mockResolvedValue([
+        'game_state:room1',
+        'game_state:room2',
+      ]);
+
       const mockGameState1 = {
         roomId: 'room1',
         players: [{ id: 'p1' }, { id: 'p2' }],
         createdAt: Date.now() - 1000000, // Old room
-        updatedAt: Date.now() - 1000
+        updatedAt: Date.now() - 1000,
       };
-      
+
       const mockGameState2 = {
-        roomId: 'room2', 
+        roomId: 'room2',
         players: [{ id: 'p3' }],
         createdAt: Date.now() - 5000, // New room
-        updatedAt: Date.now() - 100
+        updatedAt: Date.now() - 100,
       };
 
       mockGameStateService.getGameState
@@ -121,8 +139,12 @@ describe('GamePhaseSchedulerService', () => {
 
       await service.monitorSystemHealth();
 
-      console.log('✅ CRON-BASED MONITORING: System health monitored automatically');
-      console.log('✅ PROACTIVE DETECTION: Issues detected before they become critical');
+      console.log(
+        '✅ CRON-BASED MONITORING: System health monitored automatically'
+      );
+      console.log(
+        '✅ PROACTIVE DETECTION: Issues detected before they become critical'
+      );
     });
   });
 
@@ -155,7 +177,7 @@ describe('GamePhaseSchedulerService', () => {
    - Timer-based: Custom implementation, edge cases
    - Cron-based: Battle-tested NestJS scheduling
       `);
-      
+
       expect(true).toBe(true); // This test always passes but documents benefits
     });
 
@@ -175,7 +197,7 @@ CRON-BASED APPROACH:
 ✅ Resource Leaks: Zero - automatic cleanup
 ✅ Scalability: Handles thousands of rooms efficiently
       `);
-      
+
       expect(true).toBe(true);
     });
   });
@@ -183,39 +205,51 @@ CRON-BASED APPROACH:
   describe('Error Scenarios', () => {
     it('should handle errors gracefully in cron jobs', async () => {
       // Simulate Redis error
-      mockGameStateService.redisClient.keys.mockRejectedValue(new Error('Redis connection lost'));
+      mockGameStateService.redisClient.keys.mockRejectedValue(
+        new Error('Redis connection lost')
+      );
 
       // Cron jobs should not crash the application
       await expect(service.processPhaseTransitions()).resolves.not.toThrow();
       await expect(service.cleanupInactiveRooms()).resolves.not.toThrow();
       await expect(service.cleanupDeadInstances()).resolves.not.toThrow();
-      
+
       console.log('✅ ERROR RESILIENCE: Cron jobs handle errors gracefully');
-      console.log('✅ SERVICE STABILITY: Application continues running despite errors');
+      console.log(
+        '✅ SERVICE STABILITY: Application continues running despite errors'
+      );
     });
 
     it('should continue processing after individual room errors', async () => {
       const mockGameState = {
         roomId: 'error-room',
         status: 'active',
-        currentPhase: 'SPELL_PROPAGATION',
+        currentPhase: GamePhase.SPELL_PROPAGATION,
         phaseStartTime: Date.now() - 2000,
         phaseTimeout: 1000,
         players: [],
         createdAt: Date.now(),
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
       };
 
-      mockGameStateService.redisClient.keys.mockResolvedValue(['game_state:error-room']);
+      mockGameStateService.redisClient.keys.mockResolvedValue([
+        'game_state:error-room',
+      ]);
       mockGameStateService.getGameState.mockResolvedValue(mockGameState);
-      mockGameSessionGateway.advanceToSpellEffects.mockRejectedValue(new Error('Room processing failed'));
+      mockGameSessionGateway.advanceToSpellEffects.mockRejectedValue(
+        new Error('Room processing failed')
+      );
 
       await service.processPhaseTransitions();
 
       // Should attempt cleanup after error
-      expect(mockGameStateService.cleanupRoom).toHaveBeenCalledWith('error-room');
-      
-      console.log('✅ ERROR RECOVERY: Failed rooms are automatically cleaned up');
+      expect(mockGameStateService.cleanupRoom).toHaveBeenCalledWith(
+        'error-room'
+      );
+
+      console.log(
+        '✅ ERROR RECOVERY: Failed rooms are automatically cleaned up'
+      );
     });
   });
 });
