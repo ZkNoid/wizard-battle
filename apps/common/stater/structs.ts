@@ -1,4 +1,4 @@
-import { Field, Int64, Struct } from 'o1js';
+import { Field, InferProvable, Int64, Struct } from 'o1js';
 
 export class Position extends Struct({
   x: Int64,
@@ -9,9 +9,14 @@ export class Position extends Struct({
   }
 }
 
+export class PositionOption extends Struct({
+  value: Position,
+  isSome: Field,
+}) {}
+
 export class PlayerStats extends Struct({
   hp: Int64,
-  position: Position,
+  position: PositionOption,
 }) {}
 
 export class SpellStats extends Struct({

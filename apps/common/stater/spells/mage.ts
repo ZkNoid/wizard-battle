@@ -7,7 +7,7 @@ import {
   CircuitString,
   Field,
 } from 'o1js';
-import { Position, type SpellCast } from '../structs';
+import { Position, PositionOption, type SpellCast } from '../structs';
 import { WizardId } from '../../wizards';
 import { type ISpell } from './interface';
 import type { State } from '../state';
@@ -33,7 +33,7 @@ export const LightningBoldModifyer = (
   state: State,
   spellCast: SpellCast<LightningBoldData>
 ) => {
-  const selfPosition = state.playerStats.position;
+  const selfPosition = state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
   console.log('LightningBoldModifyer');
   console.log(selfPosition);
@@ -80,7 +80,7 @@ export const FireBallModifyer = (
   state: State,
   spellCast: SpellCast<FireBallData>
 ) => {
-  const selfPosition = state.playerStats.position;
+  const selfPosition = state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
 
   const distance = selfPosition.manhattanDistance(targetPosition);
@@ -125,7 +125,7 @@ export const LaserModifyer = (
   state: State,
   spellCast: SpellCast<LaserData>
 ) => {
-  const selfPosition = state.playerStats.position;
+  const selfPosition = state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
 
   const sameRow = selfPosition.x.equals(targetPosition.x);
@@ -161,7 +161,10 @@ export const TeleportModifyer = (
   state: State,
   spellCast: SpellCast<TeleportData>
 ) => {
-  state.playerStats.position = spellCast.additionalData.position;
+  state.playerStats.position = new PositionOption({
+    value: spellCast.additionalData.position,
+    isSome: Field(1),
+  });
 };
 
 export class HealData extends Struct({}) {}

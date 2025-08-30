@@ -1,6 +1,6 @@
 import { Field, Int64 } from 'o1js';
 import { State } from '../state';
-import { Position } from '../structs';
+import { Position, PositionOption } from '../structs';
 
 export interface IEffectInfo {
   id: Field;
@@ -13,9 +13,12 @@ const invisibleEffect: IEffectInfo = {
   id: Field(1),
   name: 'Invisible',
   apply: (state: State, publicState: State) => {
-    publicState.playerStats.position = new Position({
-      x: Int64.from(0),
-      y: Int64.from(0),
+    publicState.playerStats.position = new PositionOption({
+      value: new Position({
+        x: Int64.from(0),
+        y: Int64.from(0),
+      }),
+      isSome: Field(0),
     });
   },
 };

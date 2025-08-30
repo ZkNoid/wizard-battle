@@ -36,12 +36,15 @@ export default function Matchmaking({
     sendRequest.current = true;
     const playerId = Math.floor(Math.random() * 10000);
     stater.state.playerId = Field.from(playerId);
+
+    let publicState = stater.generatePublicState();
+
     let data = {
       playerId,
       playerSetup: {
         socketId: socket.id!,
         playerId: playerId.toString(),
-        fields: State.toFields(stater.state),
+        fields: State.toFields(publicState),
       } satisfies IPublicState,
       nonce: 0,
       signature: '',
@@ -60,6 +63,8 @@ export default function Matchmaking({
       let opponentState = State.fromFieldsHydrated(
         response.opponentSetup[0]!.fields
       );
+      console.log('opponentState');
+      console.log(opponentState.playerStats.position);
 
       setOpponentState(opponentState as State);
 

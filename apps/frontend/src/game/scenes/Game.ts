@@ -52,6 +52,7 @@ export class Game extends Scene {
         'player'
       );
       this.leftPlayer.setScale(leftScale);
+      this.leftPlayer.setVisible(false);
 
       // Add mouse move handler
       this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
@@ -106,7 +107,12 @@ export class Game extends Scene {
           const gameInstance = (this.game as any).gameInstance;
           console.log('gameInstance:', gameInstance);
           if (gameInstance === targetInstance) {
-            this.movePlayer(xTile, yTile);
+            if (xTile === -1 && yTile === -1) {
+              this.leftPlayer.setVisible(false);
+            } else {
+              this.leftPlayer.setVisible(true);
+              this.movePlayer(xTile, yTile);
+            }
           }
         },
         this

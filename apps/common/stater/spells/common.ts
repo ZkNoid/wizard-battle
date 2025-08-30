@@ -1,5 +1,5 @@
 import { CircuitString, Field, Int64, Struct } from 'o1js';
-import { Position, type SpellCast } from '../structs';
+import { Position, PositionOption, type SpellCast } from '../structs';
 import { State } from '../state';
 import { WizardId } from '../../wizards';
 import { type ISpell } from './interface';
@@ -26,12 +26,15 @@ export const MoveModifyer = (state: State, spellCast: SpellCast<MoveData>) => {
   console.log('MoveModifyer', state, spellCast);
 
   // Fix rehydration
-  console.log(state.playerStats.position.x);
-  state.playerStats.position = new Position({
-    x: Int64.from(+(spellCast.additionalData.position.x.magnitude as any)),
-    y: Int64.from(+(spellCast.additionalData.position.y.magnitude as any)),
+  console.log(state.playerStats.position.value.x);
+  state.playerStats.position = new PositionOption({
+    value: new Position({
+      x: Int64.from(+(spellCast.additionalData.position.x.magnitude as any)),
+      y: Int64.from(+(spellCast.additionalData.position.y.magnitude as any)),
+    }),
+    isSome: Field(1),
   });
-  console.log(state.playerStats.position.x);
+  console.log(state.playerStats.position.value.x);
 };
 
 export const allCommonSpells: ISpell<any>[] = [

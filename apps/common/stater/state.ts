@@ -8,7 +8,13 @@ import {
   Struct,
   UInt64,
 } from 'o1js';
-import { Effect, PlayerStats, Position, SpellStats } from './structs';
+import {
+  Effect,
+  PlayerStats,
+  Position,
+  PositionOption,
+  SpellStats,
+} from './structs';
 
 export const spellStatsAmount = 5;
 export const maxSpellEffects = 10;
@@ -22,7 +28,7 @@ export class State extends Struct({
   wizardId: Field,
   playerStats: PlayerStats,
   spellStats: Provable.Array(SpellStats, spellStatsAmount),
-  effects: Provable.Array(Effect, maxSpellEffects),
+  publicStateEffects: Provable.Array(Effect, maxSpellEffects),
   map: Provable.Array(Field, 64),
   turnId: Int64,
   randomSeed: Field,
@@ -33,7 +39,10 @@ export class State extends Struct({
       wizardId: CircuitString.fromString('Mage').hash(),
       playerStats: new PlayerStats({
         hp: Int64.from(100),
-        position: new Position({ x: Int64.from(0), y: Int64.from(0) }),
+        position: new PositionOption({
+          value: new Position({ x: Int64.from(0), y: Int64.from(0) }),
+          isSome: Field(1),
+        }),
       }),
       spellStats: Array(spellStatsAmount).fill(
         new SpellStats({
@@ -42,7 +51,7 @@ export class State extends Struct({
           currentColldown: Int64.from(0),
         })
       ),
-      effects: Array(maxSpellEffects).fill(
+      publicStateEffects: Array(maxSpellEffects).fill(
         new Effect({
           effectId: Field(0),
           duration: Field(0),
@@ -60,9 +69,9 @@ export class State extends Struct({
     state.wizardId = reify(Field, state.wizardId);
     state.playerStats = reify(PlayerStats, state.playerStats);
     state.playerStats.position = reify(
-      Position,
+      PositionOption,
       state.playerStats.position
-    ) as Position;
+    ) as PositionOption;
     state.playerStats.hp = reify(Int64, state.playerStats.hp) as Int64;
     state.playerStats.hp.magnitude = reify(
       UInt64,
@@ -70,7 +79,9 @@ export class State extends Struct({
     ) as UInt64;
     state.playerStats.hp.sgn = reify(Sign, state.playerStats.hp.sgn) as Sign;
     state.spellStats = state.spellStats.map((spell) => new SpellStats(spell));
-    state.effects = state.effects.map((effect) => new Effect(effect));
+    state.publicStateEffects = state.publicStateEffects.map(
+      (effect) => new Effect(effect)
+    );
     return state;
   }
 
@@ -116,12 +127,12 @@ export class State extends Struct({
   }
 
   getEffectLength() {
-    for (let i = 0; i < this.effects.length; i++) {
-      if (this.effects[i]!.effectId.equals(Field(0))) {
+    for (let i = 0; i < this.publicStateEffects.length; i++) {
+      if (this.publicStateEffects[i]!.effectId.equals(Field(0))) {
         return i;
       }
     }
-    return this.effects.length;
+    return this.publicStateEffects.length;
   }
 
   pushEffect(effect: Effect) {
@@ -129,16 +140,16 @@ export class State extends Struct({
     if (effectLength >= maxSpellEffects) {
       throw new Error('Effect array is full');
     }
-    this.effects[effectLength] = effect;
+    this.publicStateEffects[effectLength] = effect;
   }
 
   removeEffect(effectId: Field) {
     let effectLength = this.getEffectLength();
     for (let i = 0; i < effectLength; i++) {
-      if (this.effects[i]!.effectId.equals(effectId)) {
-        this.effects[i] = this.effects[effectLength - 1]!;
+      if (this.publicStateEffects[i]!.effectId.equals(effectId)) {
+        this.publicStateEffects[i] = this.publicStateEffects[effectLength - 1]!;
       }
-      this.effects[effectLength - 1] = new Effect({
+      this.publicStateEffects[effectLength - 1] = new Effect({
         effectId: Field(0),
         duration: Field(0),
       });

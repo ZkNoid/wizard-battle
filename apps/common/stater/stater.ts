@@ -48,7 +48,11 @@ export class Stater extends Struct({
   }
 
   generatePublicState() {
-    return this.state.copy();
+    let state = this.state.copy();
+
+    this.applyEffects(state);
+
+    return state;
   }
 
   generateStateCommit() {
@@ -72,7 +76,7 @@ export class Stater extends Struct({
   }
 
   applyEffects(publicState: State) {
-    for (const effect of this.state.effects) {
+    for (const effect of this.state.publicStateEffects) {
       this.applyEffect(publicState, effect);
     }
   }

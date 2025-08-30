@@ -19,6 +19,7 @@ import { GamePhase } from '../../../../common/types/gameplay.types';
 import { Position } from '../../../../common/stater/structs';
 import { Int64 } from 'o1js';
 import { Game as GameScene } from '@/game/scenes/Game';
+import { EventBus } from '@/game/EventBus';
 
 const PhaserGame = dynamic(
   () => import('@/PhaserGame').then((mod) => mod.PhaserGame),
@@ -246,27 +247,52 @@ export default function GamePage() {
   }, [opponentState]);
 
   useEffect(() => {
-    gamePhaseManager?.setOnNewTurnHook(() => {
+    const onNewTurnHook = () => {
       const newXAlly = +(
-        staterRef.current?.state?.playerStats.position.x.magnitude.toString() ??
+        staterRef.current?.state?.playerStats.position.value.x.magnitude.toString() ??
         0
       );
       const newYAlly = +(
-        staterRef.current?.state?.playerStats.position.y.magnitude.toString() ??
+        staterRef.current?.state?.playerStats.position.value.y.magnitude.toString() ??
         0
       );
       emitMovePlayerEvent(newXAlly, newYAlly, 'ally');
 
-      const newXEnemy = +(
-        opponentStateRef.current?.playerStats.position.x.magnitude.toString() ??
-        '0'
-      );
-      const newYEnemy = +(
-        opponentStateRef.current?.playerStats.position.y.magnitude.toString() ??
-        '0'
-      );
-      emitMovePlayerEvent(newXEnemy, newYEnemy, 'enemy');
+      // Fix this terrible code with hydration
+      if (+(opponentStateRef.current?.playerStats.position.isSome as any)) {
+        const newXEnemy = +(
+          opponentStateRef.current?.playerStats.position.value.x.magnitude.toString() ??
+          '0'
+        );
+        const newYEnemy = +(
+          opponentStateRef.current?.playerStats.position.value.y.magnitude.toString() ??
+          '0'
+        );
+        emitMovePlayerEvent(newXEnemy, newYEnemy, 'enemy');
+      } else {
+        emitMovePlayerEvent(-1, -1, 'enemy');
+      }
+    };
+    gamePhaseManager?.setOnNewTurnHook(() => {
+      onNewTurnHook();
     });
+
+    // TODO not working
+    EventBus.on(
+      'current-scene-ready',
+      (scene_instance: Phaser.Scene, gameInstance: string) => {
+        console.log('!!current-scene-ready', scene_instance, gameInstance);
+        onNewTurnHook();
+      }
+    );
+
+    setTimeout(() => {
+      onNewTurnHook();
+    }, 2000);
+
+    return () => {
+      EventBus.removeListener('current-scene-ready');
+    };
   }, [gamePhaseManager]);
 
   return (
