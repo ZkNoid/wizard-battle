@@ -66,6 +66,8 @@ export class Stater extends Struct({
       throw new Error('No such effectInfo');
     }
 
+    console.log('applyEffect', effectInfo.name);
+
     effectInfo.apply(this.state, publicState);
   }
 

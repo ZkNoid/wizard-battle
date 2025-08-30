@@ -1,4 +1,7 @@
-import { CircuitString, Field } from 'o1js';
+import { CircuitString, Field, Int64 } from 'o1js';
+import { State } from './stater/state';
+import { Effect } from './stater/structs';
+import { EffectsId } from './stater/effects/effects';
 
 export interface Wizard {
   id: Field;
@@ -7,6 +10,7 @@ export interface Wizard {
   publicFields?: string[];
   requiredLevel?: number;
   imageURL?: string;
+  defaultState: () => State;
 }
 
 export const WizardId = {
@@ -16,6 +20,20 @@ export const WizardId = {
   COMMON: CircuitString.fromString('Common').hash(),
 };
 
+const mageDefaultState = () => {
+  let state = State.default();
+  state.wizardId = WizardId.MAGE;
+
+  state.pushEffect(
+    new Effect({
+      effectId: EffectsId.Invisible!,
+      duration: Field(-1),
+    })
+  );
+
+  return state;
+};
+
 export const allWizards: Wizard[] = [
   {
     id: WizardId.MAGE,
@@ -23,13 +41,14 @@ export const allWizards: Wizard[] = [
     defaultHealth: 100,
     publicFields: ['map', 'health'],
     imageURL: '/wizards/base-wizard.svg',
+    defaultState: mageDefaultState,
   },
-  {
-    id: WizardId.WARRIOR,
-    name: 'Warrior',
-    defaultHealth: 300,
-    publicFields: ['playerPosition', 'map', 'health'],
-    requiredLevel: 2,
-    imageURL: '/wizards/base-wizard.svg',
-  },
+  // {
+  //   id: WizardId.WARRIOR,
+  //   name: 'Warrior',
+  //   defaultHealth: 300,
+  //   publicFields: ['playerPosition', 'map', 'health'],
+  //   requiredLevel: 2,
+  //   imageURL: '/wizards/base-wizard.svg',
+  // },
 ];

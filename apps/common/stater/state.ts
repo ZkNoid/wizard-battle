@@ -74,17 +74,8 @@ export class State extends Struct({
     return state;
   }
 
-  copy() {
-    return new State({
-      playerId: this.playerId,
-      wizardId: this.wizardId,
-      playerStats: this.playerStats,
-      spellStats: this.spellStats,
-      effects: this.effects,
-      map: this.map,
-      turnId: this.turnId,
-      randomSeed: this.randomSeed,
-    });
+  copy(): State {
+    return State.fromFields(State.toFields(this)) as State;
   }
 
   getCommit() {
