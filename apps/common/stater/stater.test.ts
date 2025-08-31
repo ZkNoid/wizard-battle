@@ -6,6 +6,7 @@ import {
   Effect,
   PlayerStats,
   Position,
+  PositionOption,
   SpellCast,
   SpellStats,
 } from './structs';
@@ -19,9 +20,12 @@ describe('Stater', () => {
     // Create initial state
     const playerStats = new PlayerStats({
       hp: Int64.from(100),
-      position: new Position({
-        x: Int64.from(0),
-        y: Int64.from(0),
+      position: new PositionOption({
+        value: new Position({
+          x: Int64.from(0),
+          y: Int64.from(0),
+        }),
+        isSome: Field(1),
       }),
     });
 
@@ -37,7 +41,7 @@ describe('Stater', () => {
       );
 
     // Create effects array with default empty effects
-    const effects = Array(10)
+    const publicStateEffects = Array(10)
       .fill(null)
       .map(
         () =>
@@ -52,7 +56,7 @@ describe('Stater', () => {
       wizardId: WizardId.MAGE,
       playerStats,
       spellStats,
-      effects,
+      publicStateEffects,
       map: [...Array(64).fill(Field(0))],
       turnId: Int64.from(1),
       randomSeed: Field(123),
@@ -74,11 +78,11 @@ describe('Stater', () => {
         initialState.playerStats.hp.toString()
       );
       expect(stateCopy.turnId.toString()).toBe(initialState.turnId.toString());
-      expect(stateCopy.playerStats.position.x.toString()).toBe(
-        initialState.playerStats.position.x.toString()
+      expect(stateCopy.playerStats.position.value.x.toString()).toBe(
+        initialState.playerStats.position.value.x.toString()
       );
-      expect(stateCopy.playerStats.position.y.toString()).toBe(
-        initialState.playerStats.position.y.toString()
+      expect(stateCopy.playerStats.position.value.y.toString()).toBe(
+        initialState.playerStats.position.value.y.toString()
       );
     });
 
@@ -98,11 +102,11 @@ describe('Stater', () => {
       expect(publicState.playerStats.hp.toString()).toBe(
         stater.state.playerStats.hp.toString()
       );
-      expect(publicState.playerStats.position.x.toString()).toBe(
-        stater.state.playerStats.position.x.toString()
+      expect(publicState.playerStats.position.value.x.toString()).toBe(
+        stater.state.playerStats.position.value.x.toString()
       );
-      expect(publicState.playerStats.position.y.toString()).toBe(
-        stater.state.playerStats.position.y.toString()
+      expect(publicState.playerStats.position.value.y.toString()).toBe(
+        stater.state.playerStats.position.value.y.toString()
       );
     });
 
@@ -178,7 +182,7 @@ describe('Stater', () => {
   describe('applyEffects', () => {
     it('should attempt to apply non-zero effect IDs', () => {
       // Set up an effect with non-zero ID
-      stater.state.effects[0] = new Effect({
+      stater.state.publicStateEffects[0] = new Effect({
         effectId: Field(10),
         duration: Field(3),
       });
@@ -260,12 +264,12 @@ describe('Stater', () => {
       const position = new Position({ x: Int64.from(5), y: Int64.from(10) });
       const playerStats = new PlayerStats({
         hp: Int64.from(150),
-        position: position,
+        position: new PositionOption({ value: position, isSome: Field(1) }),
       });
 
       expect(playerStats.hp.toString()).toBe('150');
-      expect(playerStats.position.x.toString()).toBe('5');
-      expect(playerStats.position.y.toString()).toBe('10');
+      expect(playerStats.position.value.x.toString()).toBe('5');
+      expect(playerStats.position.value.y.toString()).toBe('10');
     });
 
     it('should create SpellStats correctly', () => {
@@ -305,10 +309,10 @@ describe('Stater', () => {
     });
 
     it('should initialize with correct number of effects', () => {
-      expect(stater.state.effects.length).toBe(10);
+      expect(stater.state.publicStateEffects.length).toBe(10);
 
       for (let i = 0; i < 10; i++) {
-        const effect = stater.state.effects[i];
+        const effect = stater.state.publicStateEffects[i];
         expect(effect).toBeDefined();
         expect(effect!.effectId.toString()).toBe('0');
         expect(effect!.duration.toString()).toBe('0');
@@ -319,7 +323,9 @@ describe('Stater', () => {
       const stateCopy = stater.state.copy();
 
       expect(stateCopy.spellStats.length).toBe(stater.state.spellStats.length);
-      expect(stateCopy.effects.length).toBe(stater.state.effects.length);
+      expect(stateCopy.publicStateEffects.length).toBe(
+        stater.state.publicStateEffects.length
+      );
 
       for (let i = 0; i < 5; i++) {
         const originalSpellStat = stater.state.spellStats[i];

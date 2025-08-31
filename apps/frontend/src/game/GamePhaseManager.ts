@@ -105,6 +105,10 @@ export class GamePhaseManager {
       console.log('Received trustedStateResult');
       console.log(data);
     });
+
+    this.socket.on('gameEnd', (data: { winnerId: string }) => {
+      console.log('Received game end. Winner is: ', data.winnerId);
+    });
   }
 
   /**

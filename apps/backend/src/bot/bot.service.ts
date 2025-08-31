@@ -89,8 +89,8 @@ export class BotService {
     );
     botState.wizardId = CircuitString.fromString('BotMage').hash();
     botState.playerStats.hp = Int64.from(100);
-    botState.playerStats.position.x = Int64.from(startPosition.x);
-    botState.playerStats.position.y = Int64.from(startPosition.y);
+    botState.playerStats.position.value.x = Int64.from(startPosition.x);
+    botState.playerStats.position.value.y = Int64.from(startPosition.y);
     botState.randomSeed = Field(Math.floor(Math.random() * 1000000));
 
     // Convert to fields using State.toFields() - same approach as frontend
