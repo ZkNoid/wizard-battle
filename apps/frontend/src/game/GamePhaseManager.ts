@@ -38,13 +38,15 @@ export class GamePhaseManager {
   private setOpponentState: (state: State) => void;
   private onNewTurnHook: (() => void) | null = null;
   private setCurrentPhaseCallback?: (phase: GamePhase) => void;
+  private onGameEnd?: (winner: boolean) => void;
 
   constructor(
     socket: any,
     roomId: string,
     stater: Stater,
     setOpponentState: (state: State) => void,
-    setCurrentPhaseCallback?: (phase: GamePhase) => void
+    setCurrentPhaseCallback?: (phase: GamePhase) => void,
+    onGameEnd?: (winner: boolean) => void
   ) {
     this.socket = socket;
     this.roomId = roomId;
@@ -55,6 +57,7 @@ export class GamePhaseManager {
 
     // Initialize the store with the current phase
     this.setCurrentPhaseCallback?.(this.currentPhase);
+    this.onGameEnd = onGameEnd;
   }
 
   /**
@@ -108,6 +111,7 @@ export class GamePhaseManager {
 
     this.socket.on('gameEnd', (data: { winnerId: string }) => {
       console.log('Received game end. Winner is: ', data.winnerId);
+      this.onGameEnd?.(data.winnerId === this.getPlayerId());
     });
   }
 
@@ -204,6 +208,17 @@ export class GamePhaseManager {
 
     // Submit trusted state
     console.log('Submitting trusted state:', trustedState);
+
+    if (+this.stater.state.playerStats.hp <= 0) {
+      this.socket.emit('reportDead', {
+        roomId: this.roomId,
+        dead: {
+          playerId: this.getPlayerId(),
+        },
+      });
+      return;
+    }
+
     this.socket.emit('submitTrustedState', {
       roomId: this.roomId,
       trustedState,

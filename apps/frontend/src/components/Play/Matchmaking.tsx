@@ -29,6 +29,10 @@ export default function Matchmaking({
   const sendRequest = useRef(false);
   const [elapsedTime, setElapsedTime] = useState(0);
 
+  const onGameEnd = (winner: boolean) => {
+    router.push(`/gameResults?winner=${winner}`);
+  };
+
   useEffect(() => {
     if (!socket) return;
     if (!stater) return;
@@ -74,7 +78,8 @@ export default function Matchmaking({
           response.roomId,
           stater,
           setOpponentState,
-          setCurrentPhase
+          setCurrentPhase,
+          onGameEnd
         )
       );
       router.push(`/game`);
