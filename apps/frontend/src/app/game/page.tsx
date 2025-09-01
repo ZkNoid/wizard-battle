@@ -258,37 +258,40 @@ export default function GamePage() {
     opponentStateRef.current = opponentState;
   }, [opponentState]);
 
+  const onNewTurnHook = () => {
+    if (!staterRef.current) {
+      console.log('Stater not found');
+      return;
+    }
+
+    console.log('staterRef.current.state');
+    console.log(staterRef.current.state);
+    const newXAlly = +staterRef.current.state.playerStats.position.value.x;
+    const newYAlly = +staterRef.current.state.playerStats.position.value.y;
+    emitMovePlayerEvent(newXAlly, newYAlly, 'ally');
+
+    if (!opponentStateRef.current) {
+      console.log('Opponent state not found');
+      return;
+    }
+
+    if (+opponentStateRef.current.playerStats.position.isSome) {
+      const newXEnemy = +opponentStateRef.current.playerStats.position;
+      const newYEnemy = +opponentStateRef.current.playerStats.position;
+      emitMovePlayerEvent(newXEnemy, newYEnemy, 'enemy');
+    } else {
+      emitMovePlayerEvent(-1, -1, 'enemy');
+    }
+  };
+
   useEffect(() => {
-    const onNewTurnHook = () => {
-      if (!staterRef.current) {
-        console.log('Stater not found');
-        return;
-      }
-
-      console.log('staterRef.current.state');
-      console.log(staterRef.current.state);
-      const newXAlly = +staterRef.current.state.playerStats.position.value.x;
-      const newYAlly = +staterRef.current.state.playerStats.position.value.y;
-      emitMovePlayerEvent(newXAlly, newYAlly, 'ally');
-
-      if (!opponentStateRef.current) {
-        console.log('Opponent state not found');
-        return;
-      }
-
-      // Fix this terrible code with hydration
-      if (+opponentStateRef.current.playerStats.position.isSome) {
-        const newXEnemy = +opponentStateRef.current.playerStats.position;
-        const newYEnemy = +opponentStateRef.current.playerStats.position;
-        emitMovePlayerEvent(newXEnemy, newYEnemy, 'enemy');
-      } else {
-        emitMovePlayerEvent(-1, -1, 'enemy');
-      }
-    };
     gamePhaseManager?.setOnNewTurnHook(() => {
       onNewTurnHook();
     });
+  }, [gamePhaseManager]);
 
+  useEffect(() => {
+    onNewTurnHook();
     // TODO not working
     EventBus.on(
       'current-scene-ready',
@@ -300,12 +303,12 @@ export default function GamePage() {
 
     setTimeout(() => {
       onNewTurnHook();
-    }, 2000);
+    }, 3000);
 
     return () => {
       EventBus.removeListener('current-scene-ready');
     };
-  }, [gamePhaseManager]);
+  }, []);
 
   return (
     <Game>
