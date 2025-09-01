@@ -7,6 +7,7 @@ import {
   SpellCast,
   SpellStats,
   Effect,
+  PositionOption,
 } from '../structs';
 import {
   mageSpells,
@@ -31,9 +32,12 @@ describe('Mage Spells', () => {
     // Create initial state with a player at position (5, 5) with 100 HP
     const playerStats = new PlayerStats({
       hp: Int64.from(100),
-      position: new Position({
-        x: Int64.from(5),
-        y: Int64.from(5),
+      position: new PositionOption({
+        value: new Position({
+          x: Int64.from(5),
+          y: Int64.from(5),
+        }),
+        isSome: Field(1),
       }),
     });
 
@@ -64,7 +68,7 @@ describe('Mage Spells', () => {
       wizardId: WizardId.MAGE,
       playerStats,
       spellStats,
-      effects,
+      publicStateEffects: effects,
       map: [...Array(64).fill(Field(0))],
       turnId: Int64.from(1),
       randomSeed: Field(123),
@@ -343,8 +347,8 @@ describe('Mage Spells', () => {
     });
 
     it('should change player position to target position', () => {
-      const initialX = stater.state.playerStats.position.x.toString();
-      const initialY = stater.state.playerStats.position.y.toString();
+      const initialX = stater.state.playerStats.position.value.x.toString();
+      const initialY = stater.state.playerStats.position.value.y.toString();
 
       const targetPosition = new Position({
         x: Int64.from(10),
@@ -361,8 +365,8 @@ describe('Mage Spells', () => {
 
       TeleportModifyer(stater.state, spellCast);
 
-      const finalX = stater.state.playerStats.position.x.toString();
-      const finalY = stater.state.playerStats.position.y.toString();
+      const finalX = stater.state.playerStats.position.value.x.toString();
+      const finalY = stater.state.playerStats.position.value.y.toString();
 
       expect(finalX).toBe('10');
       expect(finalY).toBe('15');
@@ -418,8 +422,8 @@ describe('Mage Spells', () => {
     });
 
     it('should not affect player position', () => {
-      const initialX = stater.state.playerStats.position.x.toString();
-      const initialY = stater.state.playerStats.position.y.toString();
+      const initialX = stater.state.playerStats.position.value.x.toString();
+      const initialY = stater.state.playerStats.position.value.y.toString();
 
       const spellCast: SpellCast<HealData> = {
         spellId: healSpell.id,
@@ -429,8 +433,8 @@ describe('Mage Spells', () => {
 
       HealModifyer(stater.state, spellCast);
 
-      const finalX = stater.state.playerStats.position.x.toString();
-      const finalY = stater.state.playerStats.position.y.toString();
+      const finalX = stater.state.playerStats.position.value.x.toString();
+      const finalY = stater.state.playerStats.position.value.y.toString();
 
       expect(finalX).toBe(initialX);
       expect(finalY).toBe(initialY);
@@ -509,8 +513,8 @@ describe('Mage Spells', () => {
 
       stater.applySpellCast(spellCast);
 
-      const finalX = stater.state.playerStats.position.x.toString();
-      const finalY = stater.state.playerStats.position.y.toString();
+      const finalX = stater.state.playerStats.position.value.x.toString();
+      const finalY = stater.state.playerStats.position.value.y.toString();
 
       expect(finalX).toBe('20');
       expect(finalY).toBe('25');
@@ -520,9 +524,12 @@ describe('Mage Spells', () => {
   describe('Edge Cases', () => {
     it('should handle negative coordinates for distance calculations', () => {
       // Move player to negative coordinates
-      stater.state.playerStats.position = new Position({
-        x: Int64.from(-5),
-        y: Int64.from(-5),
+      stater.state.playerStats.position = new PositionOption({
+        value: new Position({
+          x: Int64.from(-5),
+          y: Int64.from(-5),
+        }),
+        isSome: Field(1),
       });
       const initialHp = stater.state.playerStats.hp.toString();
 

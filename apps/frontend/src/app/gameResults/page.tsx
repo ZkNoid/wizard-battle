@@ -4,7 +4,7 @@ import { FullscreenLoader } from '@/components/shared/FullscreenLoader';
 import { useMinaAppkit } from 'mina-appkit';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { PlaySteps } from '@/lib/enums/PlaySteps';
 
 const GameResult = dynamic(() => import('@/components/GameResult'), {
@@ -12,7 +12,7 @@ const GameResult = dynamic(() => import('@/components/GameResult'), {
   loading: () => <FullscreenLoader />,
 });
 
-export default function GameResultsPage() {
+function GameResultsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { address } = useMinaAppkit();
@@ -59,5 +59,13 @@ export default function GameResultsPage() {
         />
       </div>
     </section>
+  );
+}
+
+export default function GameResultsPage() {
+  return (
+    <Suspense fallback={<FullscreenLoader />}>
+      <GameResultsContent />
+    </Suspense>
   );
 }
