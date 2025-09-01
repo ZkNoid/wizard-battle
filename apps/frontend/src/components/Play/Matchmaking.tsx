@@ -63,7 +63,7 @@ export default function Matchmaking({
       addToQueue: data,
     });
 
-    socket.on('matchFound', (response: IFoundMatch) => {
+    socket.once('matchFound', (response: IFoundMatch) => {
       console.log('Match found');
 
       let opponentState = State.fromJSON(
