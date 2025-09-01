@@ -60,10 +60,10 @@ pm2 set pm2-server-monit:threshold 80
 
 # Start the application with PM2 and wait for it to initialize
 #pm2 start apps/backend/dist/backend/src/main.js --name nestjs-app --instances max --max-memory-restart 1G --env production --log /usr/share/temp/log/nestjs-app.log
-pm2 start apps/backend/dist/backend/src/main.js --name nestjs-app --instances max --max-memory-restart 1G --env production
+pm2 start apps/backend/dist/backend/src/main.js --name nestjs-app --instances 1 --max-memory-restart 1G --env production
 # Add a small delay to ensure PM2 is ready
 sleep 5
-# Save the PM2 configuration
+# Save the PM2 configuration    
 pm2 save
 EOF
 VOLUME ["/temp"]
