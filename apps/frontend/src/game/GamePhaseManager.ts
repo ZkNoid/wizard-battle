@@ -209,20 +209,26 @@ export class GamePhaseManager {
     // Submit trusted state
     console.log('Submitting trusted state:', trustedState);
 
+    // END_OF_ROUND - issue fix
+    // Always submit trusted state first, even if player is dead
+    // This ensures the server can properly track phase completion
+    this.socket.emit('submitTrustedState', {
+      roomId: this.roomId,
+      trustedState,
+    });
+
+    // Report death after submitting trusted state to prevent phase blocking
     if (+this.stater.state.playerStats.hp <= 0) {
+      console.log(
+        'Player died, reporting death after submitting trusted state'
+      );
       this.socket.emit('reportDead', {
         roomId: this.roomId,
         dead: {
           playerId: this.getPlayerId(),
         },
       });
-      return;
     }
-
-    this.socket.emit('submitTrustedState', {
-      roomId: this.roomId,
-      trustedState,
-    });
   }
 
   // Phase 4: End of Round (handled by submitting trusted state above)

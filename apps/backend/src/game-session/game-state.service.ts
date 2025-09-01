@@ -639,6 +639,24 @@ export class GameStateService {
       targetPlayer.isAlive = false;
       console.log(`💀 Player ${playerId} marked as dead in room ${roomId}`);
 
+      // END_OF_ROUND - issue fix
+      // Clean up playersReady list - remove dead player to prevent readiness calculation issues
+      const updatedPlayersReady = gameState.playersReady.filter(
+        (id) => id !== playerId
+      );
+      if (updatedPlayersReady.length !== gameState.playersReady.length) {
+        console.log(
+          `🧹 Removed dead player ${playerId} from playersReady list`
+        );
+        gameState.playersReady = updatedPlayersReady;
+      }
+
+      // Clear trusted state of dead player to prevent state corruption
+      if (targetPlayer.trustedState) {
+        targetPlayer.trustedState = undefined;
+        console.log(`🧹 Cleared trusted state for dead player ${playerId}`);
+      }
+
       // Check for winner - filter out null/undefined players and check isAlive safely
       const alivePlayers = gameState.players.filter(
         (p) => p && p.isAlive === true
@@ -651,6 +669,7 @@ export class GameStateService {
         const winner = alivePlayers[0]!;
         await this.updateGameState(roomId, {
           players: gameState.players,
+          playersReady: gameState.playersReady,
           status: 'finished',
         });
         console.log(`🏆 Winner detected: ${winner.id} in room ${roomId}`);
@@ -659,6 +678,7 @@ export class GameStateService {
         // Draw - no winner
         await this.updateGameState(roomId, {
           players: gameState.players,
+          playersReady: gameState.playersReady,
           status: 'finished',
         });
         console.log(`🤝 Draw detected in room ${roomId}`);
@@ -666,7 +686,10 @@ export class GameStateService {
       }
 
       // Game continues - 2+ players still alive
-      await this.updateGameState(roomId, { players: gameState.players });
+      await this.updateGameState(roomId, {
+        players: gameState.players,
+        playersReady: gameState.playersReady,
+      });
       console.log(
         `🎮 Game continues in room ${roomId} (${alivePlayers.length} players alive)`
       );

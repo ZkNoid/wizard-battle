@@ -155,6 +155,23 @@ export class GamePhaseSchedulerService {
           }
           break;
 
+        case GamePhase.END_OF_ROUND:
+          // END_OF_ROUND - issue fix
+          // Auto-advance to STATE_UPDATE if stuck for more than 10 seconds
+          // This prevents games from getting stuck when players fail to submit trusted states
+          if (timeSincePhaseStart >= 10000) {
+            console.log(
+              `⚠️ END_OF_ROUND timeout reached for room ${roomId}, force advancing to STATE_UPDATE`
+            );
+            transitions.push({
+              roomId,
+              currentPhase: GamePhase.END_OF_ROUND,
+              nextPhase: GamePhase.STATE_UPDATE,
+              delayMs: 0,
+            });
+          }
+          break;
+
         case GamePhase.STATE_UPDATE:
           // Auto-advance to next turn after 2 seconds
           if (timeSincePhaseStart >= 2000) {
@@ -194,6 +211,18 @@ export class GamePhaseSchedulerService {
         case GamePhase.END_OF_ROUND:
           // Advance phase directly since we don't have a specific method
           await this.gameStateService.advanceGamePhase(roomId);
+          break;
+        case GamePhase.STATE_UPDATE:
+          // END_OF_ROUND - issue fix
+          // Handle timeout from END_OF_ROUND - force advance to state update
+          if (currentPhase === GamePhase.END_OF_ROUND) {
+            console.log(
+              `🚨 Force advancing ${roomId} from END_OF_ROUND timeout to STATE_UPDATE`
+            );
+            await this.gameSessionGateway.advanceToStateUpdate(roomId);
+          } else {
+            await this.gameStateService.advanceGamePhase(roomId);
+          }
           break;
         case GamePhase.SPELL_CASTING:
           await this.gameSessionGateway.startNextTurn(roomId);

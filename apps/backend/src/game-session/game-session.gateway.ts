@@ -385,14 +385,31 @@ export class GameSessionGateway {
     data: { roomId: string; trustedState: ITrustedState }
   ) {
     try {
+      // END_OF_ROUND - issue fix
+      console.log(
+        `📝 Received trusted state submission from ${data.trustedState.playerId} in room ${data.roomId}`
+      );
+
       const gameState = await this.gameStateService.getGameState(data.roomId);
       if (!gameState || gameState.currentPhase !== GamePhase.END_OF_ROUND) {
+        console.log(
+          `❌ Invalid phase for trusted state: current=${gameState?.currentPhase}, expected=END_OF_ROUND`
+        );
         socket.emit('trustedStateResult', {
           success: false,
           error: 'Invalid phase for trusted state submission',
         });
         return;
       }
+
+      // Log current state before processing
+      const alivePlayers = gameState.players.filter((p) => p.isAlive);
+      const playersWithTrustedState = gameState.players.filter(
+        (p) => p.isAlive && p.trustedState
+      );
+      console.log(
+        `🔍 END_OF_ROUND state: ${alivePlayers.length} alive, ${playersWithTrustedState.length} with trusted states, ${gameState.playersReady.length} ready`
+      );
 
       // Store the trusted state
       await this.gameStateService.storeTrustedState(
@@ -407,13 +424,36 @@ export class GameSessionGateway {
         data.trustedState.playerId
       );
 
+      console.log(
+        `✅ Player ${data.trustedState.playerId} marked ready. All ready: ${allReady}`
+      );
+
       socket.emit('trustedStateResult', { success: true });
 
       // If all players submitted trusted states, advance to state update phase
       if (allReady) {
+        console.log(
+          `🚀 All players ready in room ${data.roomId}, advancing to STATE_UPDATE`
+        );
         await this.advanceToStateUpdate(data.roomId);
+      } else {
+        // Log who we're still waiting for
+        const updatedGameState = await this.gameStateService.getGameState(
+          data.roomId
+        );
+        if (updatedGameState) {
+          const stillWaiting = updatedGameState.players
+            .filter(
+              (p) => p.isAlive && !updatedGameState.playersReady.includes(p.id)
+            )
+            .map((p) => p.id);
+          console.log(
+            `⏳ Still waiting for trusted states from: ${stillWaiting.join(', ')}`
+          );
+        }
       }
     } catch (error) {
+      console.error(`❌ Error handling trusted state submission:`, error);
       socket.emit('trustedStateResult', {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -741,14 +781,26 @@ export class GameSessionGateway {
    * - Contains public information: HP, position, active effects
    * - Excludes private information: full spell cooldowns, hidden effects
    */
-  private async advanceToStateUpdate(roomId: string) {
+  async advanceToStateUpdate(roomId: string) {
+    // END_OF_ROUND - issue fix
+    console.log(`🔄 Advancing room ${roomId} to STATE_UPDATE phase`);
+
     const gameState = await this.gameStateService.getGameState(roomId);
-    if (!gameState) return;
+    if (!gameState) {
+      console.log(
+        `❌ Cannot advance to STATE_UPDATE: room ${roomId} not found`
+      );
+      return;
+    }
 
     // Collect all trusted states
     const trustedStates = gameState.players
       .filter((p) => p.isAlive && p.trustedState)
       .map((p) => p.trustedState!);
+
+    console.log(
+      `📊 Collected ${trustedStates.length} trusted states from alive players`
+    );
 
     // Advance phase
     await this.gameStateService.advanceGamePhase(roomId);
@@ -761,6 +813,8 @@ export class GameSessionGateway {
       'updateUserStates',
       updateUserStates
     );
+
+    console.log(`📡 Broadcasted state updates to room ${roomId}`);
 
     // Start next turn after a delay
     // setTimeout(() => {
