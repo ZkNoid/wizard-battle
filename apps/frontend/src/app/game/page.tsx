@@ -258,16 +258,15 @@ export default function GamePage() {
       );
       emitMovePlayerEvent(newXAlly, newYAlly, 'ally');
 
+      if (!opponentStateRef.current) {
+        console.log('Opponent state not found');
+        return;
+      }
+
       // Fix this terrible code with hydration
-      if (+(opponentStateRef.current?.playerStats.position.isSome as any)) {
-        const newXEnemy = +(
-          opponentStateRef.current?.playerStats.position.value.x.magnitude.toString() ??
-          '0'
-        );
-        const newYEnemy = +(
-          opponentStateRef.current?.playerStats.position.value.y.magnitude.toString() ??
-          '0'
-        );
+      if (+opponentStateRef.current.playerStats.position.isSome) {
+        const newXEnemy = +opponentStateRef.current.playerStats.position;
+        const newYEnemy = +opponentStateRef.current.playerStats.position;
         emitMovePlayerEvent(newXEnemy, newYEnemy, 'enemy');
       } else {
         emitMovePlayerEvent(-1, -1, 'enemy');

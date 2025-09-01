@@ -31,7 +31,7 @@ export interface IPosition {
 export interface IState {
   socketId: string;
   playerId: string;
-  fields: Field[]; // Contain State.toFields(userState)
+  fields: string; // JSON.stringify(State.toJSON(publicState))
   // hp: number;
   // position: { x: number; y: number };
   // effects: any[];
@@ -79,7 +79,7 @@ export interface IUpdateQueue {
 export interface IFoundMatch {
   roomId: string;
   opponentId: string;
-  opponentSetup: IPublicState[];
+  opponentSetup: IPublicState[]; // JSON.stringify(State.toJSON())
 }
 
 /*//////////////////////////////////////////////////////////////
@@ -109,9 +109,9 @@ export class TransformedMap implements IMap {
 export class TransformedPlayerSetup implements IPublicState {
   socketId: string;
   playerId: string;
-  fields: Field[];
+  fields: string;
 
-  constructor(socketId: string, playerId: string, fields: Field[]) {
+  constructor(socketId: string, playerId: string, fields: string) {
     this.socketId = socketId;
     this.playerId = playerId;
     this.fields = fields;

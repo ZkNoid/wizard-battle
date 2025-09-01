@@ -30,7 +30,9 @@ export default function Matchmaking({
   const [elapsedTime, setElapsedTime] = useState(0);
 
   const onGameEnd = (winner: boolean) => {
-    router.push(`/gameResults?winner=${winner}`);
+    setTimeout(() => {
+      router.push(`/gameResults?winner=${winner}`);
+    }, 1000);
   };
 
   useEffect(() => {
@@ -48,7 +50,7 @@ export default function Matchmaking({
       playerSetup: {
         socketId: socket.id!,
         playerId: playerId.toString(),
-        fields: State.toFields(publicState),
+        fields: JSON.stringify(State.toJSON(publicState)),
       } satisfies IPublicState,
       nonce: 0,
       signature: '',
@@ -64,11 +66,9 @@ export default function Matchmaking({
     socket.on('matchFound', (response: IFoundMatch) => {
       console.log('Match found');
 
-      let opponentState = State.fromFieldsHydrated(
-        response.opponentSetup[0]!.fields
+      let opponentState = State.fromJSON(
+        JSON.parse(response.opponentSetup[0]!.fields)
       );
-      console.log('opponentState');
-      console.log(opponentState.playerStats.position);
 
       setOpponentState(opponentState as State);
 

@@ -97,7 +97,7 @@ export class BotService {
     const botSetup: IPublicState = {
       socketId,
       playerId: botId,
-      fields: State.toFields(botState), // Use proper State.toFields() conversion
+      fields: JSON.stringify(State.toJSON(botState)), // Use proper State.toFields() conversion
     };
 
     return botSetup;

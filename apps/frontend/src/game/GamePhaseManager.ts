@@ -288,9 +288,11 @@ export class GamePhaseManager {
   private updateOpponentState(state: ITrustedState) {
     // Update opponent data in your game state
     console.log('Updating opponent state:', state);
-    const opponentState = State.fromFieldsHydrated(state.publicState.fields);
+    const opponentState = State.fromJSON(
+      JSON.parse(state.publicState.fields)
+    ) as State;
 
-    this.setOpponentState(new State(opponentState));
+    this.setOpponentState(opponentState);
   }
 
   /**

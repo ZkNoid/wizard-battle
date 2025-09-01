@@ -21,8 +21,7 @@ export function Users() {
       <UserBar
         name={opponentState?.playerId.toString() ?? ''}
         level={30}
-        // Fix it. playerStats.hp should be enough but it hydrated badly
-        health={+opponentState!.playerStats.hp.magnitude}
+        health={+opponentState!.playerStats.hp}
         maxHealth={100}
         className="col-span-3"
       />

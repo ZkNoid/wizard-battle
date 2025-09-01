@@ -173,7 +173,7 @@ export class Stater extends Struct({
       publicState: {
         playerId,
         socketId: '',
-        fields: State.toFields(result),
+        fields: JSON.stringify(State.toJSON(result)),
       },
       signature: 'TODO_IMPLEMENT_SIGNATURE', // Implement actual signing
     };
