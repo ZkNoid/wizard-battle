@@ -28,10 +28,7 @@ export const MoveModifyer = (state: State, spellCast: SpellCast<MoveData>) => {
   // Fix rehydration
   console.log(state.playerStats.position.value.x);
   state.playerStats.position = new PositionOption({
-    value: new Position({
-      x: Int64.from(+(spellCast.additionalData.position.x.magnitude as any)),
-      y: Int64.from(+(spellCast.additionalData.position.y.magnitude as any)),
-    }),
+    value: spellCast.additionalData.position,
     isSome: Field(1),
   });
   console.log(state.playerStats.position.value.x);
@@ -45,6 +42,7 @@ export const allCommonSpells: ISpell<any>[] = [
     name: 'Move',
     description: 'Move to a new position',
     image: '/wizards/skills/1.svg',
+    modifyerData: MoveData,
     modifyer: MoveModifyer,
     cast: MoveCast,
     defaultValue: {

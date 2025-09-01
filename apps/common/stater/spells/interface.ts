@@ -10,6 +10,7 @@ export interface ISpell<T> {
   name: string;
   description: string;
   image: string;
+  modifyerData: any;
   modifyer: (state: State, spellCast: SpellCast<T>) => void;
   cast: (state: State, target: Field, additionalData: any) => SpellCast<T>;
   defaultValue: SpellStats;

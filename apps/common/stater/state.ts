@@ -63,28 +63,6 @@ export class State extends Struct({
     });
   }
 
-  static fromFieldsHydrated(fields: Field[]) {
-    const state = State.fromFields(fields);
-    state.playerId = reify(Field, state.playerId);
-    state.wizardId = reify(Field, state.wizardId);
-    state.playerStats = reify(PlayerStats, state.playerStats);
-    state.playerStats.position = reify(
-      PositionOption,
-      state.playerStats.position
-    ) as PositionOption;
-    state.playerStats.hp = reify(Int64, state.playerStats.hp) as Int64;
-    state.playerStats.hp.magnitude = reify(
-      UInt64,
-      state.playerStats.hp.magnitude
-    ) as UInt64;
-    state.playerStats.hp.sgn = reify(Sign, state.playerStats.hp.sgn) as Sign;
-    state.spellStats = state.spellStats.map((spell) => new SpellStats(spell));
-    state.publicStateEffects = state.publicStateEffects.map(
-      (effect) => new Effect(effect)
-    );
-    return state;
-  }
-
   copy(): State {
     return State.fromFields(State.toFields(this)) as State;
   }

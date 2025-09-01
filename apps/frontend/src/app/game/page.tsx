@@ -116,10 +116,14 @@ export default function GamePage() {
       return;
     }
 
-    let cast = spell.cast(stater?.state!, opponentState!.playerId, {
-      x,
-      y,
-    });
+    let cast = spell.cast(
+      stater?.state!,
+      opponentState!.playerId,
+      new Position({
+        x: Int64.from(x),
+        y: Int64.from(y),
+      })
+    );
     console.log('Cast: ', cast);
 
     if (!opponentState?.playerId) {
@@ -130,8 +134,12 @@ export default function GamePage() {
     const userAction: IUserAction = {
       playerId: opponentState!.playerId.toString(),
       spellId: spell.id.toString(),
-      spellCastInfo: cast.additionalData,
+      spellCastInfo: JSON.stringify(
+        spell.modifyerData.toJSON(cast.additionalData)
+      ),
     };
+
+    console.log('userAction: ', userAction);
 
     const userActions: IUserActions = {
       actions: [userAction],
@@ -182,8 +190,12 @@ export default function GamePage() {
     const userAction: IUserAction = {
       playerId: stater.state.playerId.toString(),
       spellId: spell.id.toString(),
-      spellCastInfo: cast.additionalData,
+      spellCastInfo: JSON.stringify(
+        spell.modifyerData.toJSON(cast.additionalData)
+      ),
     };
+
+    console.log('userAction: ', userAction);
 
     const userActions: IUserActions = {
       actions: [userAction],
@@ -248,14 +260,15 @@ export default function GamePage() {
 
   useEffect(() => {
     const onNewTurnHook = () => {
-      const newXAlly = +(
-        staterRef.current?.state?.playerStats.position.value.x.magnitude.toString() ??
-        0
-      );
-      const newYAlly = +(
-        staterRef.current?.state?.playerStats.position.value.y.magnitude.toString() ??
-        0
-      );
+      if (!staterRef.current) {
+        console.log('Stater not found');
+        return;
+      }
+
+      console.log('staterRef.current.state');
+      console.log(staterRef.current.state);
+      const newXAlly = +staterRef.current.state.playerStats.position.value.x;
+      const newYAlly = +staterRef.current.state.playerStats.position.value.y;
       emitMovePlayerEvent(newXAlly, newYAlly, 'ally');
 
       if (!opponentStateRef.current) {

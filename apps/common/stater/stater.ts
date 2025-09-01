@@ -127,13 +127,24 @@ export class Stater extends Struct({
    */
   applyActions(userActions: IUserActions): State {
     // Convert IUserActions to internal format
-    const spellCasts: SpellCast<any>[] = userActions.actions.map(
-      (action: IUserAction) => ({
+    const spellCasts: SpellCast<any>[] = userActions.actions
+      .map((action: IUserAction) => ({
+        spell: allSpells.find(
+          (s) => s.id.toString() === action.spellId.toString()
+        ),
         spellId: Field(action.spellId),
         target: Field(action.playerId), // or however you want to map this
         additionalData: action.spellCastInfo,
-      })
-    );
+      }))
+      .map((action) => {
+        return {
+          spellId: action.spellId,
+          target: action.target,
+          additionalData: action.spell!.modifyerData.fromJSON(
+            JSON.parse(action.additionalData)
+          ),
+        };
+      });
 
     const result = this.apply(spellCasts);
     return result.publicState;

@@ -189,6 +189,7 @@ export const mageSpells: ISpell<any>[] = [
     name: 'Lightning',
     description: 'A powerful bolt of lightning. High one point damage',
     image: '/wizards/skills/1.svg',
+    modifyerData: LightningBoldData,
     modifyer: LightningBoldModifyer,
     cast: LightningBoldCast,
     defaultValue: {
@@ -204,6 +205,7 @@ export const mageSpells: ISpell<any>[] = [
     name: 'Fire Ball',
     description: 'A ball of fire. Deals damage to a single target',
     image: '/wizards/skills/2.svg',
+    modifyerData: FireBallData,
     modifyer: FireBallModifyer,
     cast: FireBallCast,
     defaultValue: {
@@ -219,6 +221,7 @@ export const mageSpells: ISpell<any>[] = [
     name: 'Teleport',
     description: 'Teleport to a random position',
     image: '/wizards/skills/3.svg',
+    modifyerData: TeleportData,
     modifyer: TeleportModifyer,
     cast: TeleportCast,
     defaultValue: {
@@ -234,6 +237,7 @@ export const mageSpells: ISpell<any>[] = [
     name: 'Heal',
     description: 'Heal yourself for 100 health',
     image: '/wizards/skills/4.svg',
+    modifyerData: HealData,
     modifyer: HealModifyer,
     cast: HealCast,
     defaultValue: {
@@ -249,6 +253,7 @@ export const mageSpells: ISpell<any>[] = [
     name: 'Laser',
     description: 'A beam of laser. Deals damage to a single target',
     image: '/wizards/skills/5.svg',
+    modifyerData: LaserData,
     modifyer: LaserModifyer,
     cast: LaserCast,
     defaultValue: {

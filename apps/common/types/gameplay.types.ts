@@ -13,10 +13,10 @@ import type { IPublicState } from './matchmaking.types';
  * @param spellId The unique identifier of the spell being cast
  * @param spellCastInfo Additional data required for the spell (position, target, etc.)
  */
-export interface IUserAction<T = any> {
+export interface IUserAction {
   playerId: string;
   spellId: string;
-  spellCastInfo: T; // Depends on skill
+  spellCastInfo: string; // Depends on skill. JSON.stringify(Type.toJSON(spellCastInfo))
 }
 
 /**
@@ -25,8 +25,8 @@ export interface IUserAction<T = any> {
  * @param actions Array of actions the player wants to perform this turn
  * @param signature Cryptographic signature to verify action authenticity
  */
-export interface IUserActions<T = any> {
-  actions: IUserAction<T>[];
+export interface IUserActions {
+  actions: IUserAction[];
   signature: any;
 }
 /**
@@ -107,23 +107,23 @@ export interface IGameTurn {
                         TRANSFORMED CLASSES
 //////////////////////////////////////////////////////////////*/
 
-export class TransformedUserAction<T = any> implements IUserAction<T> {
+export class TransformedUserAction implements IUserAction {
   playerId: string;
   spellId: string;
-  spellCastInfo: T;
+  spellCastInfo: string;
 
-  constructor(playerId: string, spellId: string, spellCastInfo: T) {
+  constructor(playerId: string, spellId: string, spellCastInfo: string) {
     this.playerId = playerId;
     this.spellId = spellId;
     this.spellCastInfo = spellCastInfo;
   }
 }
 
-export class TransformedUserActions<T = any> implements IUserActions<T> {
-  actions: IUserAction<T>[];
+export class TransformedUserActions implements IUserActions {
+  actions: IUserAction[];
   signature: any;
 
-  constructor(actions: IUserAction<T>[], signature: any) {
+  constructor(actions: IUserAction[], signature: any) {
     this.actions = actions;
     this.signature = signature;
   }
