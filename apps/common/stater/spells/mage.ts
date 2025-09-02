@@ -11,7 +11,7 @@ import { Position, PositionOption, type SpellCast } from '../structs';
 import { WizardId } from '../../wizards';
 import { type ISpell } from './interface';
 import type { State } from '../state';
-import Phaser, { Scene } from 'phaser';
+import { Scene } from 'phaser';
 
 export class LightningBoldData extends Struct({
   position: Position,

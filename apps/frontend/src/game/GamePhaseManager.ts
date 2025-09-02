@@ -41,7 +41,7 @@ export class GamePhaseManager {
   private onNewTurnHook: (() => void) | null = null;
   private setCurrentPhaseCallback?: (phase: GamePhase) => void;
   private onGameEnd?: (winner: boolean) => void;
-  private hasSubmittedActions: boolean = false; // Track if actions were submitted this turn
+  private hasSubmittedActions = false; // Track if actions were submitted this turn
 
   constructor(
     socket: any,
