@@ -323,14 +323,27 @@ export class GameSessionGateway {
         return;
       }
 
-      // Get playerId from first action
-      const playerId = data.actions.actions[0]?.playerId;
+      // Get playerId from first action, or find by socket if no actions
+      let playerId = data.actions.actions[0]?.playerId;
+
       if (!playerId) {
-        socket.emit('actionSubmitResult', {
-          success: false,
-          error: 'No actions provided',
-        });
-        return;
+        // If no actions provided, find player by socket ID
+        const player = gameState.players.find((p) => p.socketId === socket.id);
+        if (!player) {
+          socket.emit('actionSubmitResult', {
+            success: false,
+            error: 'Player not found and no actions provided',
+          });
+          return;
+        }
+        playerId = player.id;
+        console.log(
+          `📝 Player ${playerId} submitted empty actions (no spells cast)`
+        );
+      } else {
+        console.log(
+          `📝 Player ${playerId} submitted ${data.actions.actions.length} actions`
+        );
       }
 
       // Store the actions
@@ -408,49 +421,76 @@ export class GameSessionGateway {
         (p) => p.isAlive && p.trustedState
       );
       console.log(
-        `🔍 END_OF_ROUND state: ${alivePlayers.length} alive, ${playersWithTrustedState.length} with trusted states, ${gameState.playersReady.length} ready`
+        `🔍 END_OF_ROUND state BEFORE: ${alivePlayers.length} alive, ${playersWithTrustedState.length} with trusted states, ${gameState.playersReady.length} ready`
       );
 
-      // Store the trusted state
-      await this.gameStateService.storeTrustedState(
-        data.roomId,
-        data.trustedState.playerId,
-        data.trustedState
+      // Store trusted state AND mark player ready atomically
+      const allReady =
+        await this.gameStateService.storeTrustedStateAndMarkReady(
+          data.roomId,
+          data.trustedState.playerId,
+          data.trustedState
+        );
+
+      // Get updated state after both operations
+      const updatedGameState = await this.gameStateService.getGameState(
+        data.roomId
       );
-
-      // Mark player as ready
-      const allReady = await this.gameStateService.markPlayerReady(
-        data.roomId,
-        data.trustedState.playerId
-      );
-
-      console.log(
-        `✅ Player ${data.trustedState.playerId} marked ready. All ready: ${allReady}`
-      );
-
-      socket.emit('trustedStateResult', { success: true });
-
-      // If all players submitted trusted states, advance to state update phase
-      if (allReady) {
+      if (updatedGameState) {
+        const updatedAlivePlayers = updatedGameState.players.filter(
+          (p) => p.isAlive
+        );
+        const updatedPlayersWithTrustedState = updatedGameState.players.filter(
+          (p) => p.isAlive && p.trustedState
+        );
         console.log(
-          `🚀 All players ready in room ${data.roomId}, advancing to STATE_UPDATE`
+          `🔍 END_OF_ROUND state AFTER: ${updatedAlivePlayers.length} alive, ${updatedPlayersWithTrustedState.length} with trusted states, ${updatedGameState.playersReady.length} ready`
         );
-        await this.advanceToStateUpdate(data.roomId);
-      } else {
-        // Log who we're still waiting for
-        const updatedGameState = await this.gameStateService.getGameState(
-          data.roomId
+
+        // Double-check that all alive players have both trusted states AND are marked ready
+        const allHaveTrustedStates = updatedAlivePlayers.every(
+          (p) => p.trustedState
         );
-        if (updatedGameState) {
-          const stillWaiting = updatedGameState.players
-            .filter(
-              (p) => p.isAlive && !updatedGameState.playersReady.includes(p.id)
-            )
-            .map((p) => p.id);
+        const allMarkedReady =
+          updatedGameState.playersReady.length >= updatedAlivePlayers.length;
+
+        console.log(
+          `✅ Player ${data.trustedState.playerId} processed. All have trusted states: ${allHaveTrustedStates}, All marked ready: ${allMarkedReady}, Combined ready: ${Boolean(allReady)}`
+        );
+
+        socket.emit('trustedStateResult', { success: true });
+
+        // Use a more robust check - both conditions must be true
+        if (allReady && allHaveTrustedStates) {
           console.log(
-            `⏳ Still waiting for trusted states from: ${stillWaiting.join(', ')}`
+            `🚀 All players ready AND have trusted states in room ${data.roomId}, advancing to STATE_UPDATE`
           );
+          await this.advanceToStateUpdate(data.roomId);
+        } else {
+          // More detailed logging about what we're waiting for
+          const playersWithoutTrustedStates = updatedAlivePlayers
+            .filter((p) => !p.trustedState)
+            .map((p) => p.id);
+          const playersNotReady = updatedAlivePlayers
+            .filter((p) => !updatedGameState.playersReady.includes(p.id))
+            .map((p) => p.id);
+
+          if (playersWithoutTrustedStates.length > 0) {
+            console.log(
+              `⏳ Still waiting for trusted states from: ${playersWithoutTrustedStates.join(', ')}`
+            );
+          }
+          if (playersNotReady.length > 0) {
+            console.log(
+              `⏳ Still waiting for readiness confirmation from: ${playersNotReady.join(', ')}`
+            );
+          }
         }
+      } else {
+        console.error(
+          `❌ Could not retrieve updated game state for room ${data.roomId}`
+        );
+        socket.emit('trustedStateResult', { success: true });
       }
     } catch (error) {
       console.error(`❌ Error handling trusted state submission:`, error);
@@ -843,12 +883,20 @@ export class GameSessionGateway {
    * - Used for game analytics, replay systems, and debugging
    */
   async startNextTurn(roomId: string) {
-    await this.gameStateService.advanceGamePhase(roomId); // This will start a new turn
+    console.log(`🔄 Starting new turn for room ${roomId}`);
+
+    // Clear turn-specific data before advancing to new turn
+    await this.gameStateService.clearTurnData(roomId);
+
+    // Advance to new turn (increments turn counter and sets phase to SPELL_CASTING)
+    await this.gameStateService.advanceGamePhase(roomId);
 
     // Notify players of new turn
     this.server.to(roomId).emit('newTurn', { phase: GamePhase.SPELL_CASTING });
     await this.gameStateService.publishToRoom(roomId, 'newTurn', {
       phase: GamePhase.SPELL_CASTING,
     });
+
+    console.log(`✅ New turn started for room ${roomId}`);
   }
 }

@@ -41,6 +41,7 @@ export class GamePhaseManager {
   private onNewTurnHook: (() => void) | null = null;
   private setCurrentPhaseCallback?: (phase: GamePhase) => void;
   private onGameEnd?: (winner: boolean) => void;
+  private hasSubmittedActions: boolean = false; // Track if actions were submitted this turn
 
   constructor(
     socket: any,
@@ -146,11 +147,39 @@ export class GamePhaseManager {
     }
 
     console.log('Submitting player actions:', actions);
+    this.hasSubmittedActions = true;
 
     this.socket.emit('submitActions', {
       roomId: this.roomId,
       actions,
     });
+  }
+
+  /**
+   * @notice Automatically submits empty actions if player hasn't acted
+   * @dev Called when transitioning away from SPELL_CASTING to ensure all players are tracked
+   */
+  private ensureActionsSubmitted() {
+    if (
+      !this.hasSubmittedActions &&
+      this.currentPhase === GamePhase.SPELL_CASTING
+    ) {
+      console.log(
+        `⚠️ Player ${this.getPlayerId()} hasn't submitted actions, auto-submitting empty actions`
+      );
+
+      const emptyActions: IUserActions = {
+        actions: [],
+        signature: '',
+      };
+
+      this.socket.emit('submitActions', {
+        roomId: this.roomId,
+        actions: emptyActions,
+      });
+
+      this.hasSubmittedActions = true;
+    }
   }
 
   /**
@@ -170,10 +199,28 @@ export class GamePhaseManager {
    */
   private handleSpellPropagation(allActions: Record<string, IUserActions>) {
     console.log('Received all player actions:', allActions);
+
+    // Ensure we submitted actions before processing propagation
+    this.ensureActionsSubmitted();
+
     // Store actions for next phase
-    console.log('Player ID:', this.getPlayerId());
-    this.lastActions = allActions[this.getPlayerId()]; // Store our actions
-    console.log(this.lastActions);
+    const playerId = this.getPlayerId();
+    console.log('Player ID:', playerId);
+
+    this.lastActions = allActions[playerId]; // Store our actions
+
+    if (!this.lastActions) {
+      console.warn(
+        `⚠️ No actions found for player ${playerId} in spell propagation`
+      );
+      // Create empty actions if none found
+      this.lastActions = {
+        actions: [],
+        signature: '',
+      };
+    }
+
+    console.log(`📋 Stored actions for player ${playerId}:`, this.lastActions);
     this.updateCurrentPhase(GamePhase.SPELL_PROPAGATION);
   }
 
@@ -215,10 +262,37 @@ export class GamePhaseManager {
     // END_OF_ROUND - issue fix
     // Always submit trusted state first, even if player is dead
     // This ensures the server can properly track phase completion
-    this.socket.emit('submitTrustedState', {
-      roomId: this.roomId,
-      trustedState,
-    });
+    try {
+      console.log(
+        `🚀 Player ${trustedState.playerId} submitting trusted state to room ${this.roomId}`
+      );
+      this.socket.emit('submitTrustedState', {
+        roomId: this.roomId,
+        trustedState,
+      });
+
+      // Listen for submission result
+      this.socket.once(
+        'trustedStateResult',
+        (result: { success: boolean; error?: string }) => {
+          if (result.success) {
+            console.log(
+              `✅ Trusted state submission successful for player ${trustedState.playerId}`
+            );
+          } else {
+            console.error(
+              `❌ Trusted state submission failed for player ${trustedState.playerId}:`,
+              result.error
+            );
+          }
+        }
+      );
+    } catch (error) {
+      console.error(
+        `❌ Error submitting trusted state for player ${trustedState.playerId}:`,
+        error
+      );
+    }
 
     // Report death after submitting trusted state to prevent phase blocking
     if (+this.stater.state.playerStats.hp <= 0) {
@@ -288,10 +362,42 @@ export class GamePhaseManager {
    */
   private generateTrustedState(): ITrustedState {
     // Use your Stater to generate the trusted state
-    return this.stater.generateTrustedState(
-      this.getPlayerId(),
-      this.lastActions!
+    const playerId = this.getPlayerId();
+
+    // If no actions were recorded, create empty actions
+    const actions = this.lastActions || {
+      actions: [],
+      signature: '',
+    };
+
+    console.log(
+      `Generating trusted state for player ${playerId} with actions:`,
+      actions
     );
+
+    try {
+      const trustedState = this.stater.generateTrustedState(playerId, actions);
+      console.log(
+        `✅ Successfully generated trusted state for player ${playerId}`
+      );
+      return trustedState;
+    } catch (error) {
+      console.error(
+        `❌ Error generating trusted state for player ${playerId}:`,
+        error
+      );
+      // Return a fallback trusted state to prevent blocking
+      return {
+        playerId,
+        stateCommit: 'error_fallback',
+        publicState: {
+          playerId,
+          socketId: '',
+          fields: JSON.stringify(State.toJSON(this.stater.state)),
+        },
+        signature: 'error_fallback',
+      };
+    }
   }
 
   private updateOpponentState(state: ITrustedState) {
@@ -338,7 +444,15 @@ export class GamePhaseManager {
 
   private onNewTurn() {
     console.log('New turn started, phase:', this.currentPhase);
+
     // Reset for new turn
+    this.hasSubmittedActions = false;
+    this.lastActions = undefined;
+
+    console.log(
+      `🔄 Reset action tracking for player ${this.getPlayerId()} for new turn`
+    );
+
     if (this.onNewTurnHook) {
       this.onNewTurnHook();
     }

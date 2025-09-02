@@ -160,15 +160,58 @@ export class GamePhaseSchedulerService {
           // Auto-advance to STATE_UPDATE if stuck for more than 10 seconds
           // This prevents games from getting stuck when players fail to submit trusted states
           if (timeSincePhaseStart >= 10000) {
-            console.log(
-              `⚠️ END_OF_ROUND timeout reached for room ${roomId}, force advancing to STATE_UPDATE`
+            const alivePlayers = gameState.players.filter((p) => p.isAlive);
+            const playersWithTrustedState = gameState.players.filter(
+              (p) => p.isAlive && p.trustedState
             );
+            const playersReady = gameState.playersReady.length;
+
+            console.log(
+              `⚠️ END_OF_ROUND timeout reached for room ${roomId} after ${timeSincePhaseStart}ms`
+            );
+            console.log(
+              `📊 Timeout state: ${alivePlayers.length} alive, ${playersWithTrustedState.length} with trusted states, ${playersReady} ready`
+            );
+            console.log(
+              `🚨 Force advancing room ${roomId} to STATE_UPDATE due to timeout`
+            );
+
             transitions.push({
               roomId,
               currentPhase: GamePhase.END_OF_ROUND,
               nextPhase: GamePhase.STATE_UPDATE,
               delayMs: 0,
             });
+          } else if (timeSincePhaseStart >= 5000) {
+            // Log warning at 5 seconds to help with debugging
+            const alivePlayers = gameState.players.filter((p) => p.isAlive);
+            const playersWithTrustedState = gameState.players.filter(
+              (p) => p.isAlive && p.trustedState
+            );
+            const playersWithoutTrustedStates = alivePlayers.filter(
+              (p) => !p.trustedState
+            );
+            const playersNotReady = alivePlayers.filter(
+              (p) => !gameState.playersReady.includes(p.id)
+            );
+
+            console.log(
+              `⏰ END_OF_ROUND phase running for ${timeSincePhaseStart}ms in room ${roomId}`
+            );
+            console.log(
+              `📊 Current state: ${alivePlayers.length} alive, ${playersWithTrustedState.length} with trusted states, ${gameState.playersReady.length} ready`
+            );
+
+            if (playersWithoutTrustedStates.length > 0) {
+              console.log(
+                `⏳ Missing trusted states from: ${playersWithoutTrustedStates.map((p) => p.id).join(', ')}`
+              );
+            }
+            if (playersNotReady.length > 0) {
+              console.log(
+                `⏳ Not ready: ${playersNotReady.map((p) => p.id).join(', ')}`
+              );
+            }
           }
           break;
 

@@ -390,6 +390,37 @@ export class GameStateService {
   // ==================== GAMEPLAY PHASE MANAGEMENT ====================
 
   /**
+   * @notice Clears turn-specific data to prepare for a new turn
+   * @dev Called before starting a new turn to prevent stale data issues
+   * @param roomId The unique identifier for the game room
+   *
+   * Clears:
+   * - Player actions from previous turn
+   * - Trusted states from previous turn
+   * - Players ready list
+   */
+  async clearTurnData(roomId: string): Promise<void> {
+    const gameState = await this.getGameState(roomId);
+    if (!gameState) return;
+
+    console.log(`🧹 Clearing turn data for room ${roomId}`);
+
+    // Clear turn-specific player data
+    const clearedPlayers = gameState.players.map((player) => ({
+      ...player,
+      currentActions: undefined,
+      trustedState: undefined,
+    }));
+
+    await this.updateGameState(roomId, {
+      players: clearedPlayers,
+      playersReady: [],
+    });
+
+    console.log(`✅ Turn data cleared for room ${roomId}`);
+  }
+
+  /**
    * @notice Advances the game to the next phase in the 5-phase turn cycle
    * @dev Automatically handles turn transitions when reaching end of STATE_UPDATE phase
    * @param roomId The unique identifier for the game room
@@ -417,15 +448,20 @@ export class GameStateService {
         phaseStartTime: Date.now(),
         playersReady: [],
       });
+      console.log(
+        `🔄 Advanced room ${roomId} from ${gameState.currentPhase} to ${nextPhase}`
+      );
       return nextPhase;
     } else {
       // Start new turn
+      const newTurn = gameState.turn + 1;
       await this.updateGameState(roomId, {
-        turn: gameState.turn + 1,
+        turn: newTurn,
         currentPhase: GamePhase.SPELL_CASTING,
         phaseStartTime: Date.now(),
         playersReady: [],
       });
+      console.log(`🔄 Started new turn ${newTurn} for room ${roomId}`);
       return GamePhase.SPELL_CASTING;
     }
   }
@@ -446,21 +482,72 @@ export class GameStateService {
    * - Only counts alive players for readiness calculation
    * - Prevents duplicate entries for same player
    * - Automatically persists to Redis
+   * - Added validation to ensure player exists and is alive
    */
   async markPlayerReady(roomId: string, playerId: string): Promise<boolean> {
     const gameState = await this.getGameState(roomId);
     if (!gameState) return false;
 
+    // Validate that the player exists and is alive
+    const player = gameState.players.find((p) => p.id === playerId);
+    if (!player) {
+      console.log(
+        `⚠️ markPlayerReady: Player ${playerId} not found in room ${roomId}`
+      );
+      return false;
+    }
+
+    if (!player.isAlive) {
+      console.log(
+        `⚠️ markPlayerReady: Player ${playerId} is not alive in room ${roomId}`
+      );
+      return false;
+    }
+
+    // Add to ready list if not already present
     if (!gameState.playersReady.includes(playerId)) {
       gameState.playersReady.push(playerId);
       await this.updateGameState(roomId, {
         playersReady: gameState.playersReady,
       });
+      console.log(
+        `✅ Added player ${playerId} to ready list in room ${roomId}`
+      );
+    } else {
+      console.log(
+        `ℹ️ Player ${playerId} already marked ready in room ${roomId}`
+      );
     }
 
+    // Get fresh state after update to ensure consistency
+    const updatedGameState = await this.getGameState(roomId);
+    if (!updatedGameState) return false;
+
     // Check if all alive players are ready
-    const alivePlayers = gameState.players.filter((p) => p.isAlive);
-    return gameState.playersReady.length >= alivePlayers.length;
+    const alivePlayers = updatedGameState.players.filter((p) => p.isAlive);
+    const readyCount = updatedGameState.playersReady.length;
+    const aliveCount = alivePlayers.length;
+
+    console.log(
+      `🔍 Readiness check for room ${roomId}: ${readyCount}/${aliveCount} players ready`
+    );
+
+    // Clean up playersReady list - remove any dead players
+    const cleanedPlayersReady = updatedGameState.playersReady.filter((id) =>
+      alivePlayers.some((p) => p.id === id)
+    );
+
+    if (cleanedPlayersReady.length !== updatedGameState.playersReady.length) {
+      console.log(
+        `🧹 Cleaned up playersReady list in room ${roomId}: removed ${updatedGameState.playersReady.length - cleanedPlayersReady.length} dead players`
+      );
+      await this.updateGameState(roomId, {
+        playersReady: cleanedPlayersReady,
+      });
+      return cleanedPlayersReady.length >= aliveCount;
+    }
+
+    return readyCount >= aliveCount;
   }
 
   /**
@@ -563,6 +650,86 @@ export class GameStateService {
 
     gameState.players[playerIndex].trustedState = trustedState;
     await this.updateGameState(roomId, { players: gameState.players });
+  }
+
+  /**
+   * @notice Atomically stores trusted state and marks player ready
+   * @dev Prevents race conditions by doing both operations in a single Redis update
+   * @param roomId The unique identifier for the game room
+   * @param playerId The unique identifier for the player
+   * @param trustedState The player's trusted state
+   * @return True if all alive players are now ready, false otherwise
+   */
+  async storeTrustedStateAndMarkReady(
+    roomId: string,
+    playerId: string,
+    trustedState: ITrustedState
+  ): Promise<boolean> {
+    const gameState = await this.getGameState(roomId);
+    if (!gameState) return false;
+
+    // Validate that the player exists and is alive
+    const player = gameState.players.find((p) => p.id === playerId);
+    if (!player) {
+      console.log(
+        `⚠️ storeTrustedStateAndMarkReady: Player ${playerId} not found in room ${roomId}`
+      );
+      return false;
+    }
+
+    if (!player.isAlive) {
+      console.log(
+        `⚠️ storeTrustedStateAndMarkReady: Player ${playerId} is not alive in room ${roomId}`
+      );
+      return false;
+    }
+
+    // Find player index for updating
+    const playerIndex = gameState.players.findIndex((p) => p.id === playerId);
+    if (playerIndex === -1 || !gameState.players[playerIndex])
+      throw new Error(`Player ${playerId} not found in room ${roomId}`);
+
+    // Update trusted state
+    gameState.players[playerIndex].trustedState = trustedState;
+
+    // Add to ready list if not already present
+    if (!gameState.playersReady.includes(playerId)) {
+      gameState.playersReady.push(playerId);
+      console.log(
+        `✅ Added player ${playerId} to ready list in room ${roomId}`
+      );
+    } else {
+      console.log(
+        `ℹ️ Player ${playerId} already marked ready in room ${roomId}`
+      );
+    }
+
+    // Clean up playersReady list - remove any dead players
+    const alivePlayers = gameState.players.filter((p) => p.isAlive);
+    const cleanedPlayersReady = gameState.playersReady.filter((id) =>
+      alivePlayers.some((p) => p.id === id)
+    );
+
+    if (cleanedPlayersReady.length !== gameState.playersReady.length) {
+      console.log(
+        `🧹 Cleaned up playersReady list in room ${roomId}: removed ${gameState.playersReady.length - cleanedPlayersReady.length} dead players`
+      );
+    }
+
+    // Atomic update - both trusted state and readiness in one operation
+    await this.updateGameState(roomId, {
+      players: gameState.players,
+      playersReady: cleanedPlayersReady,
+    });
+
+    const readyCount = cleanedPlayersReady.length;
+    const aliveCount = alivePlayers.length;
+
+    console.log(
+      `🔍 Readiness check for room ${roomId}: ${readyCount}/${aliveCount} players ready`
+    );
+
+    return readyCount >= aliveCount;
   }
 
   /**
@@ -713,26 +880,6 @@ export class GameStateService {
     if (!gameState) return 0;
 
     return gameState.players.filter((p) => p.isAlive).length;
-  }
-
-  /**
-   * Clear turn data (actions and trusted states) for new turn
-   * @param roomId - The room identifier
-   */
-  async clearTurnData(roomId: string): Promise<void> {
-    const gameState = await this.getGameState(roomId);
-    if (!gameState) return;
-
-    // Clear actions and trusted states for all players
-    for (const player of gameState.players) {
-      player.currentActions = undefined;
-      player.trustedState = undefined;
-    }
-
-    await this.updateGameState(roomId, {
-      players: gameState.players,
-      playersReady: [],
-    });
   }
 
   /**

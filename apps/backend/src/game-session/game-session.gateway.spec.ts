@@ -39,6 +39,7 @@ describe('GameSessionGateway', () => {
       getGameState: jest.fn(),
       storePlayerActions: jest.fn(),
       markPlayerReady: jest.fn(),
+      storeTrustedStateAndMarkReady: jest.fn(),
       advanceGamePhase: jest.fn(),
       getAllPlayerActions: jest.fn(),
       storeTrustedState: jest.fn(),
@@ -149,7 +150,7 @@ describe('GameSessionGateway', () => {
       expect(mockGameStateService.storePlayerActions).not.toHaveBeenCalled();
     });
 
-    it('should handle missing actions gracefully', async () => {
+    it('should handle empty actions gracefully by finding player via socket', async () => {
       const roomId = 'test-room';
       const actions: IUserActions = {
         actions: [],
@@ -159,16 +160,25 @@ describe('GameSessionGateway', () => {
       const mockGameState = {
         roomId,
         currentPhase: GamePhase.SPELL_CASTING,
-        players: [{ id: 'player1', isAlive: true }],
+        players: [{ id: 'player1', isAlive: true, socketId: 'test-socket-id' }],
       };
 
       mockGameStateService.getGameState.mockResolvedValue(mockGameState as any);
+      mockGameStateService.storePlayerActions.mockResolvedValue();
+      mockGameStateService.markPlayerReady.mockResolvedValue(true);
+
+      // Mock socket.id to match player
+      (mockSocket as any).id = 'test-socket-id';
 
       await gateway.handleSubmitActions(mockSocket, { roomId, actions });
 
+      expect(mockGameStateService.storePlayerActions).toHaveBeenCalledWith(
+        roomId,
+        'player1',
+        actions
+      );
       expect(mockSocket.emit).toHaveBeenCalledWith('actionSubmitResult', {
-        success: false,
-        error: 'No actions provided',
+        success: true,
       });
     });
   });
@@ -198,32 +208,55 @@ describe('GameSessionGateway', () => {
             trustedState: { playerId: 'player2' },
           },
         ],
+        playersReady: ['player2'], // Add playersReady field
       };
 
-      mockGameStateService.getGameState.mockResolvedValue(mockGameState as any);
-      mockGameStateService.storeTrustedState.mockResolvedValue();
-      mockGameStateService.markPlayerReady.mockResolvedValue(true);
+      // Updated state after both operations (for our new validation logic)
+      const updatedGameState = {
+        roomId,
+        currentPhase: GamePhase.END_OF_ROUND,
+        players: [
+          { id: 'player1', isAlive: true, trustedState: trustedState },
+          {
+            id: 'player2',
+            isAlive: true,
+            trustedState: { playerId: 'player2' },
+          },
+        ],
+        playersReady: ['player2', 'player1'], // Both players ready after submission
+      };
+
+      mockGameStateService.getGameState
+        .mockResolvedValueOnce(mockGameState as any)
+        .mockResolvedValueOnce(updatedGameState as any);
+      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue(
+        true
+      );
       mockGameStateService.advanceGamePhase.mockResolvedValue(
         GamePhase.STATE_UPDATE
       );
+
+      // Mock the advanceToStateUpdate method since our new logic calls it
+      const advanceToStateUpdateSpy = jest.spyOn(
+        gateway,
+        'advanceToStateUpdate'
+      );
+      advanceToStateUpdateSpy.mockResolvedValue();
 
       await gateway.handleSubmitTrustedState(mockSocket, {
         roomId,
         trustedState,
       });
 
-      expect(mockGameStateService.storeTrustedState).toHaveBeenCalledWith(
-        roomId,
-        'player1',
-        trustedState
-      );
-      expect(mockGameStateService.markPlayerReady).toHaveBeenCalledWith(
-        roomId,
-        'player1'
-      );
+      expect(
+        mockGameStateService.storeTrustedStateAndMarkReady
+      ).toHaveBeenCalledWith(roomId, 'player1', trustedState);
       expect(mockSocket.emit).toHaveBeenCalledWith('trustedStateResult', {
         success: true,
       });
+
+      // Should advance to state update since both players have trusted states and are ready
+      expect(advanceToStateUpdateSpy).toHaveBeenCalledWith(roomId);
     });
 
     it('should reject trusted state in wrong phase', async () => {
