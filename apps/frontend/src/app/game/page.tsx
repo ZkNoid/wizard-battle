@@ -147,6 +147,10 @@ export default function GamePage() {
     };
 
     gamePhaseManager?.submitPlayerActions(userActions);
+    EventBus.emit(
+      `start-spell-casting-ally`,
+      `${spell.name.toLowerCase()}_cast`
+    );
   };
 
   const handleAllyMapClick = (x: number, y: number) => {
@@ -203,6 +207,10 @@ export default function GamePage() {
     };
 
     gamePhaseManager?.submitPlayerActions(userActions);
+    EventBus.emit(
+      `start-spell-casting-ally`,
+      `${spell.name.toLowerCase()}_cast`
+    );
   };
 
   // Emit move ally | enemy event to the scene

@@ -6,7 +6,7 @@ import type { ISpell } from '../../../../common/stater/spells/interface';
 export class Game extends Scene {
   camera!: Phaser.Cameras.Scene2D.Camera;
   private leftTilemap: GameTilemap;
-  leftPlayer!: Phaser.GameObjects.Image;
+  leftPlayer!: Phaser.GameObjects.Sprite;
   private highlightTile: Phaser.GameObjects.Rectangle | null = null;
   private activePlayer: 'left' | 'right' = 'left';
 
@@ -127,7 +127,20 @@ export class Game extends Scene {
       EventBus.on(
         `cast-spell-${(this.game as any).gameInstance}`,
         (x: number, y: number, spell: ISpell<any>) => {
+          console.log('cast-spell event received in Game scene', x, y, spell);
           this.castSpell(x, y, spell);
+        },
+        this
+      );
+
+      EventBus.on(
+        `start-spell-casting-ally`,
+        (animation: string) => {
+          console.log(
+            'start-spell-casting-ally event received in Game scene',
+            animation
+          );
+          this.startSpellCasting(animation);
         },
         this
       );
@@ -198,8 +211,25 @@ export class Game extends Scene {
     };
   }
 
+  public getSpriteCoordinates2(x: number, y: number) {
+    const leftScale = this.leftTilemap.getScale();
+    const tileSize = this.leftTilemap.getConfig().tileSize * leftScale;
+    return {
+      x: x * tileSize + tileSize,
+      y: (y * tileSize) / 2,
+    };
+  }
+
   public castSpell(x: number, y: number, spell: ISpell<any>) {
     console.log('castSpell scence Effect', x, y, spell);
     spell.sceneEffect?.(x, y, this);
+  }
+
+  public startSpellCasting(animation: string) {
+    this.leftPlayer.play(animation);
+
+    this.leftPlayer.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+      this.leftPlayer.play('sourcer_idle');
+    });
   }
 }

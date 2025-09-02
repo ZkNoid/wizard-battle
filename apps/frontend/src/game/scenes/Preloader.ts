@@ -1,5 +1,48 @@
 import { Scene } from 'phaser';
 
+const spriteshitsInfo = [
+  {
+    name: 'lightning',
+    image: 'spritesheets/Lightning.png',
+    frameWidth: 64,
+    frameHeight: 128,
+    frames: 7,
+    frameRate: 10,
+    repeat: 0,
+    yoyo: false,
+  },
+  {
+    name: 'lightning_cast',
+    image: 'spritesheets/LightningCast.png',
+    frameWidth: 64,
+    frameHeight: 128,
+    frames: 11,
+    frameRate: 10,
+    repeat: 0,
+    yoyo: false,
+  },
+  {
+    name: 'fire_ball',
+    image: 'spritesheets/FireBall.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: 5,
+    frameRate: 10,
+    repeat: 0,
+    yoyo: false,
+  },
+  {
+    name: 'fire_ball_cast',
+    image: 'spritesheets/FireBallCast.png',
+    frameWidth: 128,
+    frameHeight: 64,
+    frames: 20,
+    frameRate: 10,
+    repeat: 0,
+    yoyo: false,
+  },
+];
+
 export class Preloader extends Scene {
   constructor() {
     super('Preloader');
@@ -35,13 +78,14 @@ export class Preloader extends Scene {
       'spritesheets/Sourcer_Idle.json'
     );
 
-    // Lightning bold spritesheet
-    this.load.spritesheet('lightning', 'spritesheets/Lightning.png', {
-      frameWidth: 64,
-      frameHeight: 128,
-      margin: 0,
-      spacing: 0,
-    });
+    for (const spriteInfo of spriteshitsInfo) {
+      this.load.spritesheet(spriteInfo.name, spriteInfo.image, {
+        frameWidth: spriteInfo.frameWidth,
+        frameHeight: spriteInfo.frameHeight,
+        margin: 0,
+        spacing: 0,
+      });
+    }
 
     // Adding error handlers
     this.load.on('loaderror', (file: any) => {
@@ -65,7 +109,7 @@ export class Preloader extends Scene {
         key: 'sourcer_idle',
         frames: this.anims.generateFrameNames('sourcer', {
           start: 0,
-          end: 5,
+          end: 7,
           zeroPad: 0,
           prefix: 'Sourcer_Idle ',
           suffix: '.aseprite',
@@ -76,17 +120,19 @@ export class Preloader extends Scene {
       });
     }
 
-    if (!this.anims.exists('lightning_bold')) {
-      this.anims.create({
-        key: 'lightning_bold',
-        frames: this.anims.generateFrameNames('lightning', {
-          start: 0,
-          end: 7,
-        }),
-        frameRate: 3,
-        repeat: 0,
-        yoyo: false,
-      });
+    for (const spriteInfo of spriteshitsInfo) {
+      if (!this.anims.exists(spriteInfo.name)) {
+        this.anims.create({
+          key: spriteInfo.name,
+          frames: this.anims.generateFrameNumbers(spriteInfo.name, {
+            start: 0,
+            end: spriteInfo.frames - 1,
+          }),
+          frameRate: spriteInfo.frameRate,
+          repeat: spriteInfo.repeat,
+          yoyo: spriteInfo.yoyo,
+        });
+      }
     }
 
     // Tilemap structure will be validated when data is loaded

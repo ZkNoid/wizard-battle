@@ -60,7 +60,6 @@ export const LightningBoldModifyer = (
 };
 
 const LightningBoldSceneEffect = (x: number, y: number, scene: Scene) => {
-  console.log('LightningBoldSceneEffect');
   const positions = [
     { x: x, y: y },
     { x: x + 1, y: y },
@@ -74,7 +73,7 @@ const LightningBoldSceneEffect = (x: number, y: number, scene: Scene) => {
   positions.forEach((position) => {
     scene.add
       .sprite(position.x, position.y, 'lightning')
-      .play('lightning_bold')
+      .play('lightning')
       .once(
         Phaser.Animations.Events.ANIMATION_COMPLETE,
         (anim: any, frame: any, sprite: any) => {
@@ -127,6 +126,38 @@ export const FireBallModifyer = (
   );
 
   state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+};
+
+const FireBallSceneEffect = (x: number, y: number, scene: Scene) => {
+  const positions = [
+    { x: x, y: y },
+    { x: x + 1, y: y },
+    { x: x - 1, y: y },
+    { x: x, y: y + 1 },
+    { x: x, y: y - 1 },
+    { x: x + 1, y: y + 1 },
+    { x: x - 1, y: y + 1 },
+    { x: x + 1, y: y - 1 },
+    { x: x - 1, y: y - 1 },
+    { x: x + 2, y: y },
+    { x: x - 2, y: y },
+    { x: x, y: y + 2 },
+    { x: x, y: y - 2 },
+  ].map((pos) => {
+    return (scene as any).getSpriteCoordinates(pos.x, pos.y);
+  });
+
+  positions.forEach((position) => {
+    scene.add
+      .sprite(position.x, position.y, 'fire_ball')
+      .play('fire_ball')
+      .once(
+        Phaser.Animations.Events.ANIMATION_COMPLETE,
+        (anim: any, frame: any, sprite: any) => {
+          sprite.destroy();
+        }
+      );
+  });
 };
 
 export class LaserData extends Struct({
@@ -229,12 +260,13 @@ export const mageSpells: ISpell<any>[] = [
     id: CircuitString.fromString('FireBall').hash(),
     wizardId: WizardId.MAGE,
     cooldown: Field(1),
-    name: 'Fire Ball',
+    name: 'Fire_Ball',
     description: 'A ball of fire. Deals damage to a single target',
     image: '/wizards/skills/2.svg',
     modifyerData: FireBallData,
     modifyer: FireBallModifyer,
     cast: FireBallCast,
+    sceneEffect: FireBallSceneEffect,
     defaultValue: {
       spellId: CircuitString.fromString('FireBall').hash(),
       cooldown: Int64.from(1),
