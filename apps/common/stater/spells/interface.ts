@@ -13,5 +13,6 @@ export interface ISpell<T> {
   modifyerData: any;
   modifyer: (state: State, spellCast: SpellCast<T>) => void;
   cast: (state: State, target: Field, additionalData: any) => SpellCast<T>;
+  sceneEffect?: (x: number, y: number, scene: any) => void;
   defaultValue: SpellStats;
 }

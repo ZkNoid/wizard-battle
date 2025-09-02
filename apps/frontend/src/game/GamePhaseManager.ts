@@ -7,6 +7,8 @@ import {
   type ITrustedState,
 } from '../../../common/types/gameplay.types';
 import type { IPublicState } from '../../../common/types/matchmaking.types';
+import { EventBus } from './EventBus';
+import { allSpells } from '../../../common/stater/spells';
 
 /**
  * @title Frontend Game Phase Manager
@@ -77,6 +79,7 @@ export class GamePhaseManager {
       (allActions: Record<string, IUserActions>) => {
         console.log('Received all player actions:', allActions);
         this.handleSpellPropagation(allActions);
+        this.handleSpellCastEffects(allActions);
       }
     );
 
@@ -309,7 +312,7 @@ export class GamePhaseManager {
    * - Clears previous turn's actions and temporary state
    * - Resets phase to SPELL_CASTING
    * - Updates spell cooldowns and effect durations
-   *
+   *handleSpellCastEffects
    * UI Reset:
    * - Re-enables action selection interface
    * - Updates turn counter and phase indicator
@@ -344,5 +347,40 @@ export class GamePhaseManager {
   private getPlayerId(): string {
     // Return current player ID
     return this.stater.state.playerId.toString();
+  }
+
+  private handleSpellCastEffects(allActions: Record<string, IUserActions>) {
+    console.log('handleSpellCastEffects');
+    for (const playerId of Object.keys(allActions)) {
+      console.log('Processing playerId', playerId);
+      const actions = allActions[playerId];
+
+      const type = playerId === this.getPlayerId() ? 'ally' : 'enemy';
+      actions?.actions.forEach((action) => {
+        let spell = allSpells.find(
+          (spell) => spell.id.toString() === action.spellId.toString()
+        );
+
+        let coordinates = spell?.modifyerData.fromJSON(
+          JSON.parse(action.spellCastInfo)
+        ).position;
+
+        if (!coordinates) {
+          coordinates = {
+            x: 0,
+            y: 0,
+          };
+        }
+
+        console.log('Emitting event', `cast-spell-${type}`);
+
+        EventBus.emit(
+          `cast-spell-${type}`,
+          +coordinates.x,
+          +coordinates.y,
+          spell
+        );
+      });
+    }
   }
 }

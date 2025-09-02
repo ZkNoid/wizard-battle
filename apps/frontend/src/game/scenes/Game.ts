@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 import { GameTilemap, createTilemap } from '../objects/GameTilemap';
 import { EventBus } from '../EventBus';
+import type { ISpell } from '../../../../common/stater/spells/interface';
 
 export class Game extends Scene {
   camera!: Phaser.Cameras.Scene2D.Camera;
@@ -123,6 +124,14 @@ export class Game extends Scene {
         this
       );
 
+      EventBus.on(
+        `cast-spell-${(this.game as any).gameInstance}`,
+        (x: number, y: number, spell: ISpell<any>) => {
+          this.castSpell(x, y, spell);
+        },
+        this
+      );
+
       // Emit current-scene-ready event to notify React components
       const gameInstance = (this.game as any).gameInstance;
       EventBus.emit('current-scene-ready', this, gameInstance);
@@ -169,5 +178,28 @@ export class Game extends Scene {
         `Moved player to tile (${xTile}, ${yTile}) -> world position (${worldX}, ${worldY})`
       );
     }
+  }
+
+  public getCoordinates(x: number, y: number) {
+    const leftScale = this.leftTilemap.getScale();
+    const tileSize = this.leftTilemap.getConfig().tileSize * leftScale;
+    return {
+      x: x * tileSize + tileSize / 2,
+      y: y * tileSize + tileSize / 2,
+    };
+  }
+
+  public getSpriteCoordinates(x: number, y: number) {
+    const leftScale = this.leftTilemap.getScale();
+    const tileSize = this.leftTilemap.getConfig().tileSize * leftScale;
+    return {
+      x: x * tileSize + tileSize / 2,
+      y: y * tileSize,
+    };
+  }
+
+  public castSpell(x: number, y: number, spell: ISpell<any>) {
+    console.log('castSpell scence Effect', x, y, spell);
+    spell.sceneEffect?.(x, y, this);
   }
 }

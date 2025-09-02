@@ -34,6 +34,15 @@ export class Preloader extends Scene {
       'spritesheets/Sourcer_Idle.png',
       'spritesheets/Sourcer_Idle.json'
     );
+
+    // Lightning bold spritesheet
+    this.load.spritesheet('lightning', 'spritesheets/Lightning.png', {
+      frameWidth: 64,
+      frameHeight: 128,
+      margin: 0,
+      spacing: 0,
+    });
+
     // Adding error handlers
     this.load.on('loaderror', (file: any) => {
       console.error('Error loading file:', file.src);
@@ -56,13 +65,26 @@ export class Preloader extends Scene {
         key: 'sourcer_idle',
         frames: this.anims.generateFrameNames('sourcer', {
           start: 0,
-          end: 7,
+          end: 5,
           zeroPad: 0,
           prefix: 'Sourcer_Idle ',
           suffix: '.aseprite',
         }),
         frameRate: 3, // frames per second
         repeat: -1, // -1 = loop forever
+        yoyo: false,
+      });
+    }
+
+    if (!this.anims.exists('lightning_bold')) {
+      this.anims.create({
+        key: 'lightning_bold',
+        frames: this.anims.generateFrameNames('lightning', {
+          start: 0,
+          end: 7,
+        }),
+        frameRate: 3,
+        repeat: 0,
         yoyo: false,
       });
     }

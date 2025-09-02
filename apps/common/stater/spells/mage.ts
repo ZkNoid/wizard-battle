@@ -11,6 +11,7 @@ import { Position, PositionOption, type SpellCast } from '../structs';
 import { WizardId } from '../../wizards';
 import { type ISpell } from './interface';
 import type { State } from '../state';
+import Phaser, { Scene } from 'phaser';
 
 export class LightningBoldData extends Struct({
   position: Position,
@@ -56,6 +57,31 @@ export const LightningBoldModifyer = (
   );
 
   state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+};
+
+const LightningBoldSceneEffect = (x: number, y: number, scene: Scene) => {
+  console.log('LightningBoldSceneEffect');
+  const positions = [
+    { x: x, y: y },
+    { x: x + 1, y: y },
+    { x: x - 1, y: y },
+    { x: x, y: y + 1 },
+    { x: x, y: y - 1 },
+  ].map((pos) => {
+    return (scene as any).getSpriteCoordinates(pos.x, pos.y);
+  });
+
+  positions.forEach((position) => {
+    scene.add
+      .sprite(position.x, position.y, 'lightning')
+      .play('lightning_bold')
+      .once(
+        Phaser.Animations.Events.ANIMATION_COMPLETE,
+        (anim: any, frame: any, sprite: any) => {
+          sprite.destroy();
+        }
+      );
+  });
 };
 
 export class FireBallData extends Struct({
@@ -192,6 +218,7 @@ export const mageSpells: ISpell<any>[] = [
     modifyerData: LightningBoldData,
     modifyer: LightningBoldModifyer,
     cast: LightningBoldCast,
+    sceneEffect: LightningBoldSceneEffect,
     defaultValue: {
       spellId: CircuitString.fromString('LightningBold').hash(),
       cooldown: Int64.from(1),

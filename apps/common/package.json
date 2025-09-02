@@ -76,7 +76,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "o1js": "^2.7.0"
+    "o1js": "^2.7.0",
+    "phaser": "^3.90.0"
   },
   "jest": {
     "preset": "ts-jest",
