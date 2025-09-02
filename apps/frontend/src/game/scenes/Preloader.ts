@@ -1,8 +1,8 @@
-import { Scene } from "phaser";
+import { Scene } from 'phaser';
 
 export class Preloader extends Scene {
   constructor() {
-    super("Preloader");
+    super('Preloader');
   }
 
   init() {
@@ -16,46 +16,60 @@ export class Preloader extends Scene {
     const bar = this.add.rectangle(512 - 230, 384, 4, 28, 0xffffff);
 
     //  Use the 'progress' event emitted by the LoaderPlugin to update the loading bar
-    this.load.on("progress", (progress: number) => {
+    this.load.on('progress', (progress: number) => {
       //  Update the progress bar (our bar is 464px wide, so 100% = 464px)
       bar.width = 4 + 460 * progress;
     });
   }
 
   preload() {
-    this.load.setPath("assets");
+    this.load.setPath('assets');
     // Load tileset image
-    this.load.image("tiles", "tilemap/tiles.png");
-    this.load.image("tiles2", "tilemap/tiles.png"); // Временно используем тот же тайлсет
+    this.load.image('tiles', 'tilemap/tiles.png');
+    this.load.image('tiles2', 'tilemap/tiles.png'); // Временно используем тот же тайлсет
 
-    // Load player image
-    this.load.image("player", "human.png");
-
+    // Sourcer spritesheet
+    this.load.atlas(
+      'sourcer',
+      'spritesheets/Sourcer_Idle.png',
+      'spritesheets/Sourcer_Idle.json'
+    );
     // Adding error handlers
-    this.load.on("loaderror", (file: any) => {
-      console.error("Error loading file:", file.src);
+    this.load.on('loaderror', (file: any) => {
+      console.error('Error loading file:', file.src);
     });
 
-    this.load.on("complete", () => {
-      console.log("All assets loaded successfully");
+    this.load.on('complete', () => {
+      console.log('All assets loaded successfully');
     });
   }
 
   create() {
     // Проверяем, что все необходимые ресурсы загружены
-    if (!this.textures.exists("tiles") || !this.textures.exists("tiles2")) {
-      console.error("Tilesets not loaded!");
+    if (!this.textures.exists('tiles') || !this.textures.exists('tiles2')) {
+      console.error('Tilesets not loaded!');
       return;
     }
 
-    if (!this.textures.exists("player")) {
-      console.error("Player texture not loaded!");
-      return;
+    if (!this.anims.exists('sourcer_idle')) {
+      this.anims.create({
+        key: 'sourcer_idle',
+        frames: this.anims.generateFrameNames('sourcer', {
+          start: 0,
+          end: 7,
+          zeroPad: 0,
+          prefix: 'Sourcer_Idle ',
+          suffix: '.aseprite',
+        }),
+        frameRate: 3, // frames per second
+        repeat: -1, // -1 = loop forever
+        yoyo: false,
+      });
     }
 
     // Tilemap structure will be validated when data is loaded
 
-    console.log("----- Preloader scene completed -----");
-    this.scene.start("Game");
+    console.log('----- Preloader scene completed -----');
+    this.scene.start('Game');
   }
 }

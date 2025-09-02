@@ -46,11 +46,16 @@ export class Game extends Scene {
       );
       this.highlightTile.setVisible(false);
 
-      this.leftPlayer = this.add.image(
-        (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
-        (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
-        'player'
-      );
+      // this.leftPlayer = this.add.image(
+      //   (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
+      //   (this.leftTilemap.getConfig().tileSize * leftScale) / 2,
+      //   'player'
+      // );
+
+      this.leftPlayer = this.add
+        .sprite(100, 200, 'sourcer')
+        .play('sourcer_idle');
+
       this.leftPlayer.setScale(leftScale);
       this.leftPlayer.setVisible(false);
 
