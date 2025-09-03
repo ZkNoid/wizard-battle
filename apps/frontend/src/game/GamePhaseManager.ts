@@ -207,7 +207,17 @@ export class GamePhaseManager {
     const playerId = this.getPlayerId();
     console.log('Player ID:', playerId);
 
-    this.lastActions = allActions[playerId]; // Store our actions
+    const allActionsList = [];
+    for (const playerId of Object.keys(allActions)) {
+      console.log('Processing playerId', playerId);
+      const actions = allActions[playerId];
+      allActionsList.push(...actions!.actions);
+    }
+
+    this.lastActions = {
+      actions: allActionsList,
+      signature: '',
+    };
 
     if (!this.lastActions) {
       console.warn(
