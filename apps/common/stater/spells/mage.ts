@@ -250,6 +250,7 @@ export const mageSpells: ISpell<any>[] = [
     modifyer: LightningBoldModifyer,
     cast: LightningBoldCast,
     sceneEffect: LightningBoldSceneEffect,
+    target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('LightningBold').hash(),
       cooldown: Int64.from(1),
@@ -267,6 +268,7 @@ export const mageSpells: ISpell<any>[] = [
     modifyer: FireBallModifyer,
     cast: FireBallCast,
     sceneEffect: FireBallSceneEffect,
+    target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('FireBall').hash(),
       cooldown: Int64.from(1),
@@ -283,6 +285,7 @@ export const mageSpells: ISpell<any>[] = [
     modifyerData: TeleportData,
     modifyer: TeleportModifyer,
     cast: TeleportCast,
+    target: 'ally',
     defaultValue: {
       spellId: CircuitString.fromString('Teleport').hash(),
       cooldown: Int64.from(1),
@@ -299,6 +302,7 @@ export const mageSpells: ISpell<any>[] = [
     modifyerData: HealData,
     modifyer: HealModifyer,
     cast: HealCast,
+    target: 'ally',
     defaultValue: {
       spellId: CircuitString.fromString('Heal').hash(),
       cooldown: Int64.from(1),
@@ -315,6 +319,7 @@ export const mageSpells: ISpell<any>[] = [
     modifyerData: LaserData,
     modifyer: LaserModifyer,
     cast: LaserCast,
+    target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('Laser').hash(),
       cooldown: Int64.from(1),

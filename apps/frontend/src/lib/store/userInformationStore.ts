@@ -14,6 +14,7 @@ interface UserInformationStore {
   stater: Stater | null;
   opponentState: State | null;
   gamePhaseManager: GamePhaseManager | null;
+  actionSend: boolean;
   setSocket: (socket: Socket) => void;
   setStater: (stater: Stater) => void;
   setMap: (map: Field[] | number[]) => void;
@@ -21,6 +22,7 @@ interface UserInformationStore {
   setCurrentWizard: (wizardId: Field) => void;
   setSelectedSkills: (skills: SpellStats[]) => void;
   setGamePhaseManager: (gamePhaseManager: GamePhaseManager) => void;
+  setActionSend: (actionSend: boolean) => void;
   clearSocket: () => void;
 }
 
@@ -29,6 +31,7 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
   stater: null,
   opponentState: null,
   gamePhaseManager: null,
+  actionSend: false,
   setSocket: (socket: Socket) => set({ socket }),
   setStater: (stater: Stater) => set({ stater }),
   setOpponentState: (opponentState: State) => set({ opponentState }),
@@ -72,6 +75,7 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
     }),
   setGamePhaseManager: (gamePhaseManager: GamePhaseManager) =>
     set({ gamePhaseManager }),
+  setActionSend: (actionSend: boolean) => set({ actionSend }),
   clearSocket: () => {
     set((state) => {
       if (state.socket) {

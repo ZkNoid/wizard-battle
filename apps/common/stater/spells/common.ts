@@ -45,6 +45,7 @@ export const allCommonSpells: ISpell<any>[] = [
     modifyerData: MoveData,
     modifyer: MoveModifyer,
     cast: MoveCast,
+    target: 'ally',
     defaultValue: {
       spellId: CircuitString.fromString('Move').hash(),
       cooldown: Int64.from(1),

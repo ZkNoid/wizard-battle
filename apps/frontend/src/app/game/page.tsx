@@ -31,7 +31,8 @@ const PhaserGame = dynamic(
 
 export default function GamePage() {
   //  References to the PhaserGame component (game and scene are exposed)
-  const { stater, opponentState, gamePhaseManager } = useUserInformationStore();
+  const { stater, opponentState, gamePhaseManager, setActionSend, actionSend } =
+    useUserInformationStore();
   const { pickedSpellId } = useInGameStore();
   const phaserRefAlly = useRef<IRefPhaserGame | null>(null);
   const phaserRefEnemy = useRef<IRefPhaserGame | null>(null);
@@ -151,6 +152,8 @@ export default function GamePage() {
       `start-spell-casting-ally`,
       `${spell.name.toLowerCase()}_cast`
     );
+
+    setActionSend(true);
   };
 
   const handleAllyMapClick = (x: number, y: number) => {
@@ -211,6 +214,7 @@ export default function GamePage() {
       `start-spell-casting-ally`,
       `${spell.name.toLowerCase()}_cast`
     );
+    setActionSend(true);
   };
 
   // Emit move ally | enemy event to the scene
@@ -272,6 +276,8 @@ export default function GamePage() {
       return;
     }
 
+    setActionSend(false);
+
     console.log('staterRef.current.state');
     console.log(staterRef.current.state);
     const newXAlly = +staterRef.current.state.playerStats.position.value.x;
@@ -320,22 +326,36 @@ export default function GamePage() {
 
   return (
     <Game>
-      <PhaserGame
-        ref={phaserRefAlly}
-        currentActiveScene={currentScene}
-        container="game-container-ally"
-        isEnemy={false}
-        tilemapData={allyTilemapData}
-        onMapClick={handleAllyMapClickMemo}
-      />
-      <PhaserGame
-        ref={phaserRefEnemy}
-        currentActiveScene={currentScene}
-        container="game-container-enemy"
-        isEnemy={true}
-        tilemapData={enemyTilemapData}
-        onMapClick={handleEnemyMapClickMemo}
-      />
+      <div className="relative">
+        {actionSend && (
+          <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 transform text-center text-lg font-bold text-white">
+            Waiting for opponent turn
+          </div>
+        )}
+        <PhaserGame
+          ref={phaserRefAlly}
+          currentActiveScene={currentScene}
+          container="game-container-ally"
+          isEnemy={false}
+          tilemapData={allyTilemapData}
+          onMapClick={handleAllyMapClickMemo}
+        />
+      </div>
+      <div className="relative">
+        {actionSend && (
+          <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 transform text-center text-lg font-bold text-white">
+            Waiting for opponent turn
+          </div>
+        )}
+        <PhaserGame
+          ref={phaserRefEnemy}
+          currentActiveScene={currentScene}
+          container="game-container-enemy"
+          isEnemy={true}
+          tilemapData={enemyTilemapData}
+          onMapClick={handleEnemyMapClickMemo}
+        />
+      </div>
     </Game>
   );
 }

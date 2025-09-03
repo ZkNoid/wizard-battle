@@ -12,7 +12,7 @@ export function Spells({
   skills: ISpell<any>[];
   className?: string;
 }) {
-  const { setPickedSpellId } = useInGameStore();
+  const { pickedSpellId, setPickedSpellId } = useInGameStore();
 
   const MAX_SKILLS = 7;
   return (
@@ -22,16 +22,21 @@ export function Spells({
         {skills.map((skill) => (
           <Image
             key={skill.id.toString()}
-            className={
-              'w-22.5 h-22.5 cursor-pointer transition-transform duration-300 hover:scale-110'
-            }
+            className={cn(
+              'w-22.5 h-22.5 cursor-pointer transition-transform duration-300 hover:scale-110',
+              pickedSpellId === skill.id && 'ring-2 ring-blue-500 ring-offset-2'
+            )}
             src={skill.image ?? ''}
             alt={'skill'}
             width={90}
             height={90}
             onClick={() => {
               console.log('Picked spell', skill.id.toString());
-              setPickedSpellId(skill.id);
+              if (pickedSpellId === skill.id) {
+                setPickedSpellId(null);
+              } else {
+                setPickedSpellId(skill.id);
+              }
             }}
           />
         ))}

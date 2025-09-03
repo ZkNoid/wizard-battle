@@ -11,6 +11,7 @@ export interface ISpell<T> {
   description: string;
   image: string;
   modifyerData: any;
+  target: 'ally' | 'enemy';
   modifyer: (state: State, spellCast: SpellCast<T>) => void;
   cast: (state: State, target: Field, additionalData: any) => SpellCast<T>;
   sceneEffect?: (x: number, y: number, scene: any) => void;
