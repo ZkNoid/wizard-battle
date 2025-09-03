@@ -469,8 +469,8 @@ export class GamePhaseManager {
       console.log('Processing playerId', playerId);
       const actions = allActions[playerId];
 
-      const type = playerId === this.getPlayerId() ? 'ally' : 'enemy';
       actions?.actions.forEach((action) => {
+        const type = action.playerId === this.getPlayerId() ? 'ally' : 'enemy';
         let spell = allSpells.find(
           (spell) => spell.id.toString() === action.spellId.toString()
         );
