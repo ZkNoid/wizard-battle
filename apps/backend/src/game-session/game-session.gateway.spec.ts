@@ -124,7 +124,7 @@ describe('GameSessionGateway', () => {
       });
     });
 
-    it('should reject actions in wrong phase', async () => {
+    it('should reject actions in wrong phase (beyond grace period)', async () => {
       const roomId = 'test-room';
       const actions: IUserActions = {
         actions: [
@@ -136,6 +136,8 @@ describe('GameSessionGateway', () => {
       const mockGameState = {
         roomId,
         currentPhase: GamePhase.SPELL_PROPAGATION, // Wrong phase
+        phaseStartTime: Date.now() - 5000, // 5 seconds ago (beyond grace period)
+        turn: 1,
         players: [{ id: 'player1', isAlive: true }],
       };
 
@@ -145,9 +147,50 @@ describe('GameSessionGateway', () => {
 
       expect(mockSocket.emit).toHaveBeenCalledWith('actionSubmitResult', {
         success: false,
-        error: 'Invalid phase for action submission',
+        error:
+          'Actions can only be submitted during spell casting phase. Current phase: spell_propagation, turn: 1',
+        currentPhase: GamePhase.SPELL_PROPAGATION,
+        currentTurn: 1,
       });
       expect(mockGameStateService.storePlayerActions).not.toHaveBeenCalled();
+    });
+
+    it('should accept late actions within grace period', async () => {
+      const roomId = 'test-room';
+      const actions: IUserActions = {
+        actions: [
+          { playerId: 'player1', spellId: 'fireball', spellCastInfo: {} },
+        ],
+        signature: 'test-signature',
+      };
+
+      const mockGameState = {
+        roomId,
+        currentPhase: GamePhase.SPELL_PROPAGATION, // Wrong phase but within grace period
+        phaseStartTime: Date.now() - 1000, // 1 second ago (within grace period)
+        turn: 1,
+        players: [{ id: 'player1', isAlive: true, socketId: 'test-socket-id' }],
+      };
+
+      mockGameStateService.getGameState.mockResolvedValue(mockGameState as any);
+      mockGameStateService.storePlayerActions.mockResolvedValue();
+      mockGameStateService.markPlayerReady.mockResolvedValue(false);
+
+      // Mock socket.id to match player
+      (mockSocket as any).id = 'test-socket-id';
+
+      await gateway.handleSubmitActions(mockSocket, { roomId, actions });
+
+      expect(mockGameStateService.storePlayerActions).toHaveBeenCalledWith(
+        roomId,
+        'player1',
+        actions
+      );
+      expect(mockSocket.emit).toHaveBeenCalledWith('actionSubmitResult', {
+        success: true,
+        currentPhase: GamePhase.SPELL_PROPAGATION,
+        currentTurn: 1,
+      });
     });
 
     it('should handle empty actions gracefully by finding player via socket', async () => {
@@ -179,6 +222,8 @@ describe('GameSessionGateway', () => {
       );
       expect(mockSocket.emit).toHaveBeenCalledWith('actionSubmitResult', {
         success: true,
+        currentPhase: GamePhase.SPELL_CASTING,
+        currentTurn: 0,
       });
     });
   });

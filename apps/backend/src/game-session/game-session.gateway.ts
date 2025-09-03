@@ -315,39 +315,73 @@ export class GameSessionGateway {
   ) {
     try {
       const gameState = await this.gameStateService.getGameState(data.roomId);
-      if (!gameState || gameState.currentPhase !== GamePhase.SPELL_CASTING) {
-        socket.emit('actionSubmitResult', {
-          success: false,
-          error: 'Invalid phase for action submission',
-        });
+
+      // Enhanced error response with current phase and turn info
+      const errorResponse = (error: string) => ({
+        success: false,
+        error,
+        currentPhase: gameState?.currentPhase || 'unknown',
+        currentTurn: gameState?.turn || 0,
+      });
+
+      if (!gameState) {
+        socket.emit(
+          'actionSubmitResult',
+          errorResponse('Game state not found')
+        );
         return;
       }
 
-      // Get playerId from first action, or find by socket if no actions
-      // let playerId = data.actions.actions[0]?.playerId;
-      let playerId = socket.id;
-      // if (!playerId) {
-      // If no actions provided, find player by socket ID
+      // Lenient approach: Check if we're still in SPELL_CASTING or have just moved past it
+      if (gameState.currentPhase !== GamePhase.SPELL_CASTING) {
+        // Check if we're in a phase that just started (within a few seconds of SPELL_CASTING)
+        const phaseStartTime = gameState.phaseStartTime;
+        const currentTime = Date.now();
+        const timeSincePhaseStart = currentTime - phaseStartTime;
+        const gracePeriod = 2000; // 2 seconds grace period
+
+        // If we're in SPELL_PROPAGATION and just started, be lenient
+        if (
+          gameState.currentPhase === GamePhase.SPELL_PROPAGATION &&
+          timeSincePhaseStart < gracePeriod
+        ) {
+          console.log(
+            `⚠️ Lenient: Accepting late action submission from ${socket.id} (${timeSincePhaseStart}ms after phase start)`
+          );
+        } else {
+          // Reject with detailed phase info
+          socket.emit(
+            'actionSubmitResult',
+            errorResponse(
+              `Actions can only be submitted during spell casting phase. Current phase: ${gameState.currentPhase}, turn: ${gameState.turn}`
+            )
+          );
+          return;
+        }
+      }
+
+      // Find player by socket ID
       const player = gameState.players.find((p) => p.socketId === socket.id);
 
       if (!player) {
-        socket.emit('actionSubmitResult', {
-          success: false,
-          error: 'Player not found and no actions provided',
-        });
+        socket.emit(
+          'actionSubmitResult',
+          errorResponse('Player not found in game')
+        );
         return;
       }
 
-      playerId = player.id;
+      const playerId = player.id;
 
-      console.log(
-        `📝 Player ${playerId} submitted empty actions (no spells cast)`
-      );
-      // } else {
-      //   console.log(
-      //     `📝 Player ${playerId} submitted ${data.actions.actions.length} actions`
-      //   );
-      // }
+      // Log action submission with more detail
+      const actionCount = data.actions.actions?.length || 0;
+      if (actionCount === 0) {
+        console.log(
+          `📝 Player ${playerId} submitted empty actions (no spells cast)`
+        );
+      } else {
+        console.log(`📝 Player ${playerId} submitted ${actionCount} actions`);
+      }
 
       // Store the actions
       await this.gameStateService.storePlayerActions(
@@ -362,16 +396,33 @@ export class GameSessionGateway {
         playerId
       );
 
-      socket.emit('actionSubmitResult', { success: true });
+      socket.emit('actionSubmitResult', {
+        success: true,
+        currentPhase: gameState.currentPhase,
+        currentTurn: gameState.turn,
+      });
 
       // If all players submitted actions, advance to next phase
       if (allReady) {
         await this.advanceToSpellPropagation(data.roomId);
       }
     } catch (error) {
+      // Try to get current game state for context
+      let currentPhase = 'unknown';
+      let currentTurn = 0;
+      try {
+        const gameState = await this.gameStateService.getGameState(data.roomId);
+        currentPhase = gameState?.currentPhase || 'unknown';
+        currentTurn = gameState?.turn || 0;
+      } catch {
+        // Ignore errors when getting state for context
+      }
+
       socket.emit('actionSubmitResult', {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
+        currentPhase,
+        currentTurn,
       });
     }
   }
