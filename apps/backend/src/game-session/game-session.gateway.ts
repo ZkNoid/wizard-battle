@@ -324,27 +324,30 @@ export class GameSessionGateway {
       }
 
       // Get playerId from first action, or find by socket if no actions
-      let playerId = data.actions.actions[0]?.playerId;
+      // let playerId = data.actions.actions[0]?.playerId;
+      let playerId = socket.id;
+      // if (!playerId) {
+      // If no actions provided, find player by socket ID
+      const player = gameState.players.find((p) => p.socketId === socket.id);
 
-      if (!playerId) {
-        // If no actions provided, find player by socket ID
-        const player = gameState.players.find((p) => p.socketId === socket.id);
-        if (!player) {
-          socket.emit('actionSubmitResult', {
-            success: false,
-            error: 'Player not found and no actions provided',
-          });
-          return;
-        }
-        playerId = player.id;
-        console.log(
-          `📝 Player ${playerId} submitted empty actions (no spells cast)`
-        );
-      } else {
-        console.log(
-          `📝 Player ${playerId} submitted ${data.actions.actions.length} actions`
-        );
+      if (!player) {
+        socket.emit('actionSubmitResult', {
+          success: false,
+          error: 'Player not found and no actions provided',
+        });
+        return;
       }
+
+      playerId = player.id;
+
+      console.log(
+        `📝 Player ${playerId} submitted empty actions (no spells cast)`
+      );
+      // } else {
+      //   console.log(
+      //     `📝 Player ${playerId} submitted ${data.actions.actions.length} actions`
+      //   );
+      // }
 
       // Store the actions
       await this.gameStateService.storePlayerActions(
