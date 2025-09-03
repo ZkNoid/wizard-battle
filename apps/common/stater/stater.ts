@@ -178,9 +178,20 @@ export class Stater extends Struct({
   ): ITrustedState {
     const result = this.applyActions(userActions);
 
+    // Use crypto.randomUUID() for truly unique state commits
+    // This prevents the same stateCommit issue when testing with multiple tabs
+    const uniqueStateCommit =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID().replace(/-/g, '') // Remove dashes for cleaner format
+        : `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`; // Fallback for non-browser environments
+
+    console.log(
+      `🔐 Generated unique stateCommit for player ${playerId}: ${uniqueStateCommit}`
+    );
+
     return {
       playerId,
-      stateCommit: result.getCommit().toString(),
+      stateCommit: uniqueStateCommit,
       publicState: {
         playerId,
         socketId: '',

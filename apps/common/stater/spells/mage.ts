@@ -11,7 +11,6 @@ import { Position, PositionOption, type SpellCast } from '../structs';
 import { WizardId } from '../../wizards';
 import { type ISpell } from './interface';
 import type { State } from '../state';
-import { Scene } from 'phaser';
 
 export class LightningBoldData extends Struct({
   position: Position,
@@ -59,7 +58,7 @@ export const LightningBoldModifyer = (
   state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 };
 
-const LightningBoldSceneEffect = (x: number, y: number, scene: Scene) => {
+const LightningBoldSceneEffect = (x: number, y: number, scene: any) => {
   const positions = [
     { x: x, y: y },
     { x: x + 1, y: y },
@@ -75,7 +74,7 @@ const LightningBoldSceneEffect = (x: number, y: number, scene: Scene) => {
       .sprite(position.x, position.y, 'lightning')
       .play('lightning')
       .once(
-        Phaser.Animations.Events.ANIMATION_COMPLETE,
+        'animationcomplete',
         (anim: any, frame: any, sprite: any) => {
           sprite.destroy();
         }
@@ -128,7 +127,7 @@ export const FireBallModifyer = (
   state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 };
 
-const FireBallSceneEffect = (x: number, y: number, scene: Scene) => {
+const FireBallSceneEffect = (x: number, y: number, scene: any) => {
   const positions = [
     { x: x, y: y },
     { x: x + 1, y: y },
@@ -152,7 +151,7 @@ const FireBallSceneEffect = (x: number, y: number, scene: Scene) => {
       .sprite(position.x, position.y, 'fire_ball')
       .play('fire_ball')
       .once(
-        Phaser.Animations.Events.ANIMATION_COMPLETE,
+        'animationcomplete',
         (anim: any, frame: any, sprite: any) => {
           sprite.destroy();
         }
