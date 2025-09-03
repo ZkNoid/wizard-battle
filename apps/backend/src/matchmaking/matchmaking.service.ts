@@ -732,6 +732,9 @@ export class MatchmakingService {
       return null;
     }
 
+    // Ensure socketId is set in the player object
+    player.socketId = socket.id;
+
     console.log(`Player ${player.playerId} joining matchmaking queue`);
 
     // Register socket mapping
@@ -821,6 +824,9 @@ export class MatchmakingService {
       console.error('Player is not defined');
       return null;
     }
+
+    // Ensure socketId is set in the player object
+    player.socketId = socket.id;
 
     console.log(`🤖 Player ${player.playerId} requesting bot matchmaking`);
 
