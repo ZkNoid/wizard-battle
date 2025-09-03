@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { createClient, RedisClientType } from 'redis';
+import { RedisClientType } from 'redis';
 import { Socket } from 'socket.io';
 import {
   GamePhase,
   IUserActions,
   ITrustedState,
 } from '../../../common/types/gameplay.types';
+import { RedisService } from '../redis/redis.service';
 
 /**
  * @title Game State Service - 5-Phase Turn Management
@@ -60,18 +61,12 @@ interface SocketMapping {
 
 @Injectable()
 export class GameStateService {
-  public redisClient: any = createClient({
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
-  });
   private instanceId = `${process.pid}-${Date.now()}`;
 
-  constructor() {
-    this.redisClient.on('error', (err) =>
-      console.error('GameStateService Redis Client Error', err)
-    );
-    this.redisClient
-      .connect()
-      .then(() => console.log('GameStateService Redis Connected'));
+  constructor(private readonly redisService: RedisService) {}
+
+  get redisClient(): RedisClientType {
+    return this.redisService.getClient();
   }
 
   /**
@@ -653,83 +648,182 @@ export class GameStateService {
   }
 
   /**
-   * @notice Atomically stores trusted state and marks player ready
-   * @dev Prevents race conditions by doing both operations in a single Redis update
+   * @notice Atomically stores trusted state and marks player ready with Redis locking
+   * @dev Prevents race conditions by using Redis-based locking for concurrent access
    * @param roomId The unique identifier for the game room
    * @param playerId The unique identifier for the player
    * @param trustedState The player's trusted state
-   * @return True if all alive players are now ready, false otherwise
+   * @return Object with readiness status and updated game state
    */
   async storeTrustedStateAndMarkReady(
     roomId: string,
     playerId: string,
     trustedState: ITrustedState
-  ): Promise<boolean> {
-    const gameState = await this.getGameState(roomId);
-    if (!gameState) return false;
-
-    // Validate that the player exists and is alive
-    const player = gameState.players.find((p) => p.id === playerId);
-    if (!player) {
-      console.log(
-        `⚠️ storeTrustedStateAndMarkReady: Player ${playerId} not found in room ${roomId}`
-      );
-      return false;
-    }
-
-    if (!player.isAlive) {
-      console.log(
-        `⚠️ storeTrustedStateAndMarkReady: Player ${playerId} is not alive in room ${roomId}`
-      );
-      return false;
-    }
-
-    // Find player index for updating
-    const playerIndex = gameState.players.findIndex((p) => p.id === playerId);
-    if (playerIndex === -1 || !gameState.players[playerIndex])
-      throw new Error(`Player ${playerId} not found in room ${roomId}`);
-
-    // Update trusted state
-    gameState.players[playerIndex].trustedState = trustedState;
-
-    // Add to ready list if not already present
-    if (!gameState.playersReady.includes(playerId)) {
-      gameState.playersReady.push(playerId);
-      console.log(
-        `✅ Added player ${playerId} to ready list in room ${roomId}`
-      );
-    } else {
-      console.log(
-        `ℹ️ Player ${playerId} already marked ready in room ${roomId}`
-      );
-    }
-
-    // Clean up playersReady list - remove any dead players
-    const alivePlayers = gameState.players.filter((p) => p.isAlive);
-    const cleanedPlayersReady = gameState.playersReady.filter((id) =>
-      alivePlayers.some((p) => p.id === id)
-    );
-
-    if (cleanedPlayersReady.length !== gameState.playersReady.length) {
-      console.log(
-        `🧹 Cleaned up playersReady list in room ${roomId}: removed ${gameState.playersReady.length - cleanedPlayersReady.length} dead players`
-      );
-    }
-
-    // Atomic update - both trusted state and readiness in one operation
-    await this.updateGameState(roomId, {
-      players: gameState.players,
-      playersReady: cleanedPlayersReady,
-    });
-
-    const readyCount = cleanedPlayersReady.length;
-    const aliveCount = alivePlayers.length;
+  ): Promise<{
+    allReady: boolean;
+    allHaveTrustedStates: boolean;
+    updatedGameState: GameState | null;
+  }> {
+    const lockKey = `lock:${roomId}`;
+    const lockValue = `${playerId}-${Date.now()}`;
+    const lockTimeout = 5000; // 5 seconds
 
     console.log(
-      `🔍 Readiness check for room ${roomId}: ${readyCount}/${aliveCount} players ready`
+      `🔧 Lock details: key=${lockKey}, value=${lockValue}, timeout=${lockTimeout}`
     );
 
-    return readyCount >= aliveCount;
+    try {
+      // Acquire Redis lock with more robust retry logic
+      let lockAcquired = false;
+      let attempts = 0;
+      const maxAttempts = 20;
+      const baseDelay = 10; // Start with 10ms delay
+
+      while (!lockAcquired && attempts < maxAttempts) {
+        // Use a more atomic approach with EXISTS check
+        const exists = await this.redisClient.exists(lockKey);
+        if (exists === 0) {
+          // Lock doesn't exist, try to acquire it
+          const result = await this.redisClient.set(
+            lockKey,
+            String(lockValue),
+            {
+              PX: lockTimeout,
+              NX: true,
+            }
+          );
+          lockAcquired = result === 'OK';
+        }
+
+        if (!lockAcquired) {
+          attempts++;
+          const delay = baseDelay * Math.pow(2, attempts); // Exponential backoff
+          console.log(
+            `⏳ Player ${playerId} waiting for lock on room ${roomId} (attempt ${attempts}/${maxAttempts}, delay ${delay}ms)`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+
+      if (!lockAcquired) {
+        console.error(
+          `❌ Player ${playerId} failed to acquire lock after ${maxAttempts} attempts`
+        );
+        return {
+          allReady: false,
+          allHaveTrustedStates: false,
+          updatedGameState: null,
+        };
+      }
+
+      console.log(`🔒 Player ${playerId} acquired lock for room ${roomId}`);
+
+      const gameState = await this.getGameState(roomId);
+      if (!gameState) {
+        return {
+          allReady: false,
+          allHaveTrustedStates: false,
+          updatedGameState: null,
+        };
+      }
+
+      // Validate that the player exists and is alive
+      const player = gameState.players.find((p) => p.id === playerId);
+      if (!player) {
+        console.log(
+          `⚠️ storeTrustedStateAndMarkReady: Player ${playerId} not found in room ${roomId}`
+        );
+        return {
+          allReady: false,
+          allHaveTrustedStates: false,
+          updatedGameState: null,
+        };
+      }
+
+      if (!player.isAlive) {
+        console.log(
+          `⚠️ storeTrustedStateAndMarkReady: Player ${playerId} is not alive in room ${roomId}`
+        );
+        return {
+          allReady: false,
+          allHaveTrustedStates: false,
+          updatedGameState: null,
+        };
+      }
+
+      // Find player index for updating
+      const playerIndex = gameState.players.findIndex((p) => p.id === playerId);
+      if (playerIndex === -1 || !gameState.players[playerIndex])
+        throw new Error(`Player ${playerId} not found in room ${roomId}`);
+
+      // Update trusted state
+      gameState.players[playerIndex].trustedState = trustedState;
+
+      // Add to ready list if not already present
+      if (!gameState.playersReady.includes(playerId)) {
+        gameState.playersReady.push(playerId);
+        console.log(
+          `✅ Added player ${playerId} to ready list in room ${roomId}`
+        );
+      } else {
+        console.log(
+          `ℹ️ Player ${playerId} already marked ready in room ${roomId}`
+        );
+      }
+
+      // Clean up playersReady list - remove any dead players
+      const alivePlayers = gameState.players.filter((p) => p.isAlive);
+      const cleanedPlayersReady = gameState.playersReady.filter((id) =>
+        alivePlayers.some((p) => p.id === id)
+      );
+
+      if (cleanedPlayersReady.length !== gameState.playersReady.length) {
+        console.log(
+          `🧹 Cleaned up playersReady list in room ${roomId}: removed ${gameState.playersReady.length - cleanedPlayersReady.length} dead players`
+        );
+      }
+
+      // Update the game state with cleaned data
+      gameState.playersReady = cleanedPlayersReady;
+
+      // Atomic update - both trusted state and readiness in one operation
+      await this.updateGameState(roomId, {
+        players: gameState.players,
+        playersReady: cleanedPlayersReady,
+      });
+
+      // Check conditions using the updated local state (no additional Redis read)
+      const allHaveTrustedStates = alivePlayers.every((p) => p.trustedState);
+      const allReady = cleanedPlayersReady.length >= alivePlayers.length;
+
+      console.log(
+        `🔍 Readiness check for room ${roomId}: ${cleanedPlayersReady.length}/${alivePlayers.length} players ready`
+      );
+      console.log(
+        `🔍 Trusted state check for room ${roomId}: ${alivePlayers.filter((p) => p.trustedState).length}/${alivePlayers.length} players have trusted states`
+      );
+
+      return {
+        allReady,
+        allHaveTrustedStates,
+        updatedGameState: gameState,
+      };
+    } finally {
+      // Release the lock - simplified approach
+      try {
+        const currentLockValue = await this.redisClient.get(lockKey);
+        if (currentLockValue === String(lockValue)) {
+          await this.redisClient.del(lockKey);
+          console.log(`🔓 Player ${playerId} released lock for room ${roomId}`);
+        } else {
+          console.log(
+            `⚠️ Lock value mismatch for room ${roomId}, not releasing`
+          );
+        }
+      } catch (error) {
+        console.error(`❌ Error releasing lock for room ${roomId}:`, error);
+      }
+    }
   }
 
   /**

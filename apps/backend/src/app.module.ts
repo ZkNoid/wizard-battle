@@ -6,9 +6,10 @@ import { GameSessionModule } from './game-session/game-session.module';
 import { HealthController } from './health/health.controller';
 import { RedisHealthService } from './health/redis-health.service';
 import { GameStateService } from './game-session/game-state.service';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
-  imports: [GameSessionModule, ScheduleModule.forRoot()],
+  imports: [GameSessionModule, ScheduleModule.forRoot(), RedisModule],
   controllers: [AppController, HealthController],
   providers: [AppService, RedisHealthService, GameStateService],
 })

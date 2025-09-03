@@ -229,9 +229,11 @@ describe('GameSessionGateway', () => {
       mockGameStateService.getGameState
         .mockResolvedValueOnce(mockGameState as any)
         .mockResolvedValueOnce(updatedGameState as any);
-      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue(
-        true
-      );
+      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue({
+        allReady: true,
+        allHaveTrustedStates: true,
+        updatedGameState: updatedGameState,
+      });
       mockGameStateService.advanceGamePhase.mockResolvedValue(
         GamePhase.STATE_UPDATE
       );

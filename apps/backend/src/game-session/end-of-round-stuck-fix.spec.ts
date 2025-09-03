@@ -58,7 +58,11 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
           provide: GameStateService,
           useValue: mockGameStateService,
         },
-        GamePhaseSchedulerService,
+        {
+          provide: GamePhaseSchedulerService,
+          useFactory: () =>
+            new GamePhaseSchedulerService(mockGameStateService, null as any),
+        },
       ],
     }).compile();
 
@@ -82,6 +86,12 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
 
     // Reset all mocks
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    // Clean up all mocks between tests
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('Race Condition Fix - Dual Validation', () => {
@@ -122,9 +132,11 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
       mockGameStateService.getGameState
         .mockResolvedValueOnce(initialGameState)
         .mockResolvedValueOnce(updatedGameState);
-      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue(
-        true
-      ); // Says all ready
+      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue({
+        allReady: true,
+        allHaveTrustedStates: false, // Missing trusted states
+        updatedGameState: updatedGameState,
+      });
 
       const advanceToStateUpdateSpy = jest.spyOn(
         gateway,
@@ -188,9 +200,11 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
       mockGameStateService.getGameState
         .mockResolvedValueOnce(initialGameState)
         .mockResolvedValueOnce(updatedGameState);
-      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue(
-        false
-      ); // Not all ready
+      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue({
+        allReady: false,
+        allHaveTrustedStates: true,
+        updatedGameState: updatedGameState,
+      });
 
       const advanceToStateUpdateSpy = jest.spyOn(
         gateway,
@@ -254,9 +268,11 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
       mockGameStateService.getGameState
         .mockResolvedValueOnce(initialGameState)
         .mockResolvedValueOnce(updatedGameState);
-      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue(
-        true
-      );
+      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue({
+        allReady: true,
+        allHaveTrustedStates: true,
+        updatedGameState: updatedGameState,
+      });
 
       const advanceToStateUpdateSpy = jest.spyOn(
         gateway,
@@ -324,9 +340,11 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
       mockGameStateService.getGameState
         .mockResolvedValueOnce(initialGameState)
         .mockResolvedValueOnce(updatedGameState);
-      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue(
-        true
-      );
+      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue({
+        allReady: true,
+        allHaveTrustedStates: true,
+        updatedGameState: updatedGameState,
+      });
 
       const advanceToStateUpdateSpy = jest.spyOn(
         gateway,
@@ -355,13 +373,28 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
         status: 'active',
         currentPhase: GamePhase.END_OF_ROUND,
         phaseStartTime: now - 12000, // 12 seconds ago
+        phaseTimeout: 30000,
+        turn: 1,
+        gameData: {},
+        createdAt: now - 60000,
+        updatedAt: now - 12000,
         players: [
           {
             id: 'player1',
+            instanceId: 'test-instance',
+            socketId: 'socket1',
+            state: {},
             isAlive: true,
             trustedState: { playerId: 'player1' },
           },
-          { id: 'player2', isAlive: true, trustedState: undefined }, // Missing trusted state
+          {
+            id: 'player2',
+            instanceId: 'test-instance',
+            socketId: 'socket2',
+            state: {},
+            isAlive: true,
+            trustedState: undefined,
+          }, // Missing trusted state
         ],
         playersReady: ['player1'], // Only one ready
       };
@@ -401,13 +434,28 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
         status: 'active',
         currentPhase: GamePhase.END_OF_ROUND,
         phaseStartTime: now - 7000, // 7 seconds ago
+        phaseTimeout: 30000,
+        turn: 1,
+        gameData: {},
+        createdAt: now - 60000,
+        updatedAt: now - 7000,
         players: [
           {
             id: 'player1',
+            instanceId: 'test-instance',
+            socketId: 'socket1',
+            state: {},
             isAlive: true,
             trustedState: { playerId: 'player1' },
           },
-          { id: 'player2', isAlive: true, trustedState: undefined },
+          {
+            id: 'player2',
+            instanceId: 'test-instance',
+            socketId: 'socket2',
+            state: {},
+            isAlive: true,
+            trustedState: undefined,
+          },
         ],
         playersReady: ['player1'],
       };
@@ -426,7 +474,7 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
       // Should not create transition but should log warning
       expect(pendingTransitions).toHaveLength(0);
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('⏰ END_OF_ROUND phase running for 7')
+        expect.stringContaining('⏰ END_OF_ROUND phase running for 700')
       );
 
       consoleSpy.mockRestore();
@@ -524,9 +572,11 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
       mockGameStateService.getGameState
         .mockResolvedValueOnce(initialGameState)
         .mockResolvedValueOnce(updatedGameState);
-      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue(
-        false
-      );
+      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue({
+        allReady: false,
+        allHaveTrustedStates: false,
+        updatedGameState: updatedGameState,
+      });
 
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
@@ -609,8 +659,16 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
         .mockResolvedValueOnce(finalGameState); // Final state after player2
 
       mockGameStateService.storeTrustedStateAndMarkReady
-        .mockResolvedValueOnce(false) // After player1 - not all ready
-        .mockResolvedValueOnce(true); // After player2 - all ready
+        .mockResolvedValueOnce({
+          allReady: false,
+          allHaveTrustedStates: true,
+          updatedGameState: initialGameState,
+        }) // After player1 - not all ready
+        .mockResolvedValueOnce({
+          allReady: true,
+          allHaveTrustedStates: true,
+          updatedGameState: initialGameState,
+        }); // After player2 - all ready
 
       const advanceToStateUpdateSpy = jest.spyOn(
         gateway,

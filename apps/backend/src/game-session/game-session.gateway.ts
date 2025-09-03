@@ -428,43 +428,32 @@ export class GameSessionGateway {
       );
 
       // Store trusted state AND mark player ready atomically
-      const allReady =
-        await this.gameStateService.storeTrustedStateAndMarkReady(
-          data.roomId,
-          data.trustedState.playerId,
-          data.trustedState
-        );
-
-      // Get updated state after both operations
-      const updatedGameState = await this.gameStateService.getGameState(
-        data.roomId
+      const result = await this.gameStateService.storeTrustedStateAndMarkReady(
+        data.roomId,
+        data.trustedState.playerId,
+        data.trustedState
       );
-      if (updatedGameState) {
-        const updatedAlivePlayers = updatedGameState.players.filter(
+
+      if (result.updatedGameState) {
+        const updatedAlivePlayers = result.updatedGameState.players.filter(
           (p) => p.isAlive
         );
-        const updatedPlayersWithTrustedState = updatedGameState.players.filter(
-          (p) => p.isAlive && p.trustedState
-        );
+        const updatedPlayersWithTrustedState =
+          result.updatedGameState.players.filter(
+            (p) => p.isAlive && p.trustedState
+          );
         console.log(
-          `🔍 END_OF_ROUND state AFTER: ${updatedAlivePlayers.length} alive, ${updatedPlayersWithTrustedState.length} with trusted states, ${updatedGameState.playersReady.length} ready`
+          `🔍 END_OF_ROUND state AFTER: ${updatedAlivePlayers.length} alive, ${updatedPlayersWithTrustedState.length} with trusted states, ${result.updatedGameState.playersReady.length} ready`
         );
 
-        // Double-check that all alive players have both trusted states AND are marked ready
-        const allHaveTrustedStates = updatedAlivePlayers.every(
-          (p) => p.trustedState
-        );
-        const allMarkedReady =
-          updatedGameState.playersReady.length >= updatedAlivePlayers.length;
-
         console.log(
-          `✅ Player ${data.trustedState.playerId} processed. All have trusted states: ${allHaveTrustedStates}, All marked ready: ${allMarkedReady}, Combined ready: ${Boolean(allReady)}`
+          `✅ Player ${data.trustedState.playerId} processed. All have trusted states: ${result.allHaveTrustedStates}, All marked ready: ${result.allReady}, Should advance: ${result.allReady && result.allHaveTrustedStates}`
         );
 
         socket.emit('trustedStateResult', { success: true });
 
-        // Use a more robust check - both conditions must be true
-        if (allReady && allHaveTrustedStates) {
+        // Use the atomic result - both conditions must be true
+        if (result.allReady && result.allHaveTrustedStates) {
           console.log(
             `🚀 All players ready AND have trusted states in room ${data.roomId}, advancing to STATE_UPDATE`
           );
@@ -475,7 +464,9 @@ export class GameSessionGateway {
             .filter((p) => !p.trustedState)
             .map((p) => p.id);
           const playersNotReady = updatedAlivePlayers
-            .filter((p) => !updatedGameState.playersReady.includes(p.id))
+            .filter(
+              (p) => !result.updatedGameState!.playersReady.includes(p.id)
+            )
             .map((p) => p.id);
 
           if (playersWithoutTrustedStates.length > 0) {

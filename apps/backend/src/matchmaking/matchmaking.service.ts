@@ -21,9 +21,10 @@
 import { Injectable, Scope } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { createClient, RedisClientType } from 'redis';
+import { RedisClientType } from 'redis';
 import { GameStateService } from '../game-session/game-state.service';
 import { BotClientService } from '../bot/bot-client.service';
+import { RedisService } from '../redis/redis.service';
 import { State } from '../../../common/stater/state';
 import {
   IAddToQueue,
@@ -79,33 +80,26 @@ interface Match {
 @Injectable()
 export class MatchmakingService {
   private server: Server | null = null;
-  private redisClient: RedisClientType = createClient({
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
-  });
+
   /**
    * Constructor for MatchmakingService
    * @param gameStateService - The GameStateService instance for managing game states and cross-instance communication
+   * @param redisService - The RedisService instance for shared Redis connection
    * @param botClientService - The BotClientService instance for managing bot players (optional)
    *
-   * @dev Initializes the matchmaking service with Redis connection and automatic matchmaking loop startup.
-   * The service immediately connects to Redis and starts the 30-second matchmaking cycle.
+   * @dev Initializes the matchmaking service with shared Redis connection and automatic matchmaking loop startup.
+   * The service immediately starts the 30-second matchmaking cycle.
    */
   constructor(
     private readonly gameStateService: GameStateService,
+    private readonly redisService: RedisService,
     private readonly botClientService?: BotClientService
   ) {
     console.log('MatchmakingService constructor called');
-    this.redisClient.on('error', (err) =>
-      console.error('Redis Client Error', err)
-    );
-    this.redisClient
-      .connect()
-      .then(() => {
-        console.log('MatchmakingService Redis Connected');
-      })
-      .catch((err) => {
-        console.error('Failed to connect to Redis:', err);
-      });
+  }
+
+  get redisClient(): RedisClientType {
+    return this.redisService.getClient();
   }
 
   /**
