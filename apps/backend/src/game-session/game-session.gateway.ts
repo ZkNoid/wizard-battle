@@ -383,6 +383,20 @@ export class GameSessionGateway {
         console.log(`📝 Player ${playerId} submitted ${actionCount} actions`);
       }
 
+      // Check if player is already ready to prevent spam
+      if (gameState.playersReady.includes(playerId)) {
+        console.log(
+          `ℹ️ Player ${playerId} already marked ready in room ${data.roomId}`
+        );
+        socket.emit('actionSubmitResult', {
+          success: true,
+          currentPhase: gameState.currentPhase,
+          currentTurn: gameState.turn,
+          message: 'Actions already submitted for this phase',
+        });
+        return;
+      }
+
       // Store the actions
       await this.gameStateService.storePlayerActions(
         data.roomId,
@@ -458,13 +472,43 @@ export class GameSessionGateway {
       );
 
       const gameState = await this.gameStateService.getGameState(data.roomId);
-      if (!gameState || gameState.currentPhase !== GamePhase.END_OF_ROUND) {
+      if (!gameState) {
+        console.log(`❌ Game state not found for room ${data.roomId}`);
+        socket.emit('trustedStateResult', {
+          success: false,
+          error: 'Game state not found',
+          currentPhase: 'unknown',
+          currentTurn: 0,
+        });
+        return;
+      }
+
+      if (gameState.currentPhase !== GamePhase.END_OF_ROUND) {
         console.log(
-          `❌ Invalid phase for trusted state: current=${gameState?.currentPhase}, expected=END_OF_ROUND`
+          `❌ Invalid phase for trusted state: current=${gameState.currentPhase}, expected=END_OF_ROUND, room=${data.roomId}`
         );
         socket.emit('trustedStateResult', {
           success: false,
-          error: 'Invalid phase for trusted state submission',
+          error: `Invalid phase for trusted state submission. Current phase: ${gameState.currentPhase}, expected: END_OF_ROUND`,
+          currentPhase: gameState.currentPhase,
+          currentTurn: gameState.turn,
+        });
+        return;
+      }
+
+      // Check if player already has a trusted state to prevent spam
+      const player = gameState.players.find(
+        (p) => p.id === data.trustedState.playerId
+      );
+      if (player && player.trustedState) {
+        console.log(
+          `ℹ️ Player ${data.trustedState.playerId} already has trusted state in room ${data.roomId}`
+        );
+        socket.emit('trustedStateResult', {
+          success: true,
+          currentPhase: gameState.currentPhase,
+          currentTurn: gameState.turn,
+          message: 'Trusted state already submitted for this phase',
         });
         return;
       }

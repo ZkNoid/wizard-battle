@@ -95,7 +95,9 @@ describe('GameSessionGateway', () => {
       const mockGameState = {
         roomId,
         currentPhase: GamePhase.SPELL_CASTING,
-        players: [{ id: 'player1', isAlive: true }],
+        turn: 0,
+        playersReady: [], // Empty ready list
+        players: [{ id: 'player1', isAlive: true, socketId: 'test-socket-id' }],
       };
 
       mockGameStateService.getGameState.mockResolvedValue(mockGameState as any);
@@ -107,6 +109,9 @@ describe('GameSessionGateway', () => {
       mockGameStateService.advanceGamePhase.mockResolvedValue(
         GamePhase.SPELL_PROPAGATION
       );
+
+      // Mock socket.id to match player
+      (mockSocket as any).id = 'test-socket-id';
 
       await gateway.handleSubmitActions(mockSocket, { roomId, actions });
 
@@ -121,6 +126,8 @@ describe('GameSessionGateway', () => {
       );
       expect(mockSocket.emit).toHaveBeenCalledWith('actionSubmitResult', {
         success: true,
+        currentPhase: GamePhase.SPELL_CASTING,
+        currentTurn: 0,
       });
     });
 
@@ -169,6 +176,7 @@ describe('GameSessionGateway', () => {
         currentPhase: GamePhase.SPELL_PROPAGATION, // Wrong phase but within grace period
         phaseStartTime: Date.now() - 1000, // 1 second ago (within grace period)
         turn: 1,
+        playersReady: [], // Empty ready list
         players: [{ id: 'player1', isAlive: true, socketId: 'test-socket-id' }],
       };
 
@@ -193,6 +201,43 @@ describe('GameSessionGateway', () => {
       });
     });
 
+    it('should prevent spam action submissions from already ready players', async () => {
+      const roomId = 'test-room';
+      const actions: IUserActions = {
+        actions: [
+          { playerId: 'player1', spellId: 'fireball', spellCastInfo: {} },
+        ],
+        signature: 'test-signature',
+      };
+
+      const mockGameState = {
+        roomId,
+        currentPhase: GamePhase.SPELL_CASTING,
+        turn: 1,
+        playersReady: ['player1'], // Player already ready
+        players: [{ id: 'player1', isAlive: true, socketId: 'test-socket-id' }],
+      };
+
+      mockGameStateService.getGameState.mockResolvedValue(mockGameState as any);
+
+      // Mock socket.id to match player
+      (mockSocket as any).id = 'test-socket-id';
+
+      await gateway.handleSubmitActions(mockSocket, { roomId, actions });
+
+      // Should not call storePlayerActions or markPlayerReady
+      expect(mockGameStateService.storePlayerActions).not.toHaveBeenCalled();
+      expect(mockGameStateService.markPlayerReady).not.toHaveBeenCalled();
+
+      // Should return success with message
+      expect(mockSocket.emit).toHaveBeenCalledWith('actionSubmitResult', {
+        success: true,
+        currentPhase: GamePhase.SPELL_CASTING,
+        currentTurn: 1,
+        message: 'Actions already submitted for this phase',
+      });
+    });
+
     it('should handle empty actions gracefully by finding player via socket', async () => {
       const roomId = 'test-room';
       const actions: IUserActions = {
@@ -203,6 +248,8 @@ describe('GameSessionGateway', () => {
       const mockGameState = {
         roomId,
         currentPhase: GamePhase.SPELL_CASTING,
+        turn: 0,
+        playersReady: [], // Empty ready list
         players: [{ id: 'player1', isAlive: true, socketId: 'test-socket-id' }],
       };
 
@@ -306,7 +353,7 @@ describe('GameSessionGateway', () => {
       expect(advanceToStateUpdateSpy).toHaveBeenCalledWith(roomId);
     });
 
-    it('should reject trusted state in wrong phase', async () => {
+    it('should reject trusted state in wrong phase with enhanced error info', async () => {
       const roomId = 'test-room';
       const trustedState: ITrustedState = {
         playerId: 'player1',
@@ -322,6 +369,7 @@ describe('GameSessionGateway', () => {
       const mockGameState = {
         roomId,
         currentPhase: GamePhase.SPELL_CASTING, // Wrong phase
+        turn: 2,
         players: [{ id: 'player1', isAlive: true }],
       };
 
@@ -334,9 +382,92 @@ describe('GameSessionGateway', () => {
 
       expect(mockSocket.emit).toHaveBeenCalledWith('trustedStateResult', {
         success: false,
-        error: 'Invalid phase for trusted state submission',
+        error:
+          'Invalid phase for trusted state submission. Current phase: spell_casting, expected: END_OF_ROUND',
+        currentPhase: GamePhase.SPELL_CASTING,
+        currentTurn: 2,
       });
-      expect(mockGameStateService.storeTrustedState).not.toHaveBeenCalled();
+      expect(
+        mockGameStateService.storeTrustedStateAndMarkReady
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should handle game state not found for trusted state submission', async () => {
+      const roomId = 'test-room';
+      const trustedState: ITrustedState = {
+        playerId: 'player1',
+        stateCommit: 'test-commit',
+        publicState: {
+          playerId: 'player1',
+          socketId: 'test-socket',
+          fields: defaultStateFields,
+        },
+        signature: 'test-signature',
+      };
+
+      mockGameStateService.getGameState.mockResolvedValue(null);
+
+      await gateway.handleSubmitTrustedState(mockSocket, {
+        roomId,
+        trustedState,
+      });
+
+      expect(mockSocket.emit).toHaveBeenCalledWith('trustedStateResult', {
+        success: false,
+        error: 'Game state not found',
+        currentPhase: 'unknown',
+        currentTurn: 0,
+      });
+      expect(
+        mockGameStateService.storeTrustedStateAndMarkReady
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should prevent spam trusted state submissions from players who already submitted', async () => {
+      const roomId = 'test-room';
+      const trustedState: ITrustedState = {
+        playerId: 'player1',
+        stateCommit: 'test-commit',
+        publicState: {
+          playerId: 'player1',
+          socketId: 'test-socket',
+          fields: defaultStateFields,
+        },
+        signature: 'test-signature',
+      };
+
+      const mockGameState = {
+        roomId,
+        currentPhase: GamePhase.END_OF_ROUND,
+        turn: 1,
+        players: [
+          {
+            id: 'player1',
+            isAlive: true,
+            trustedState: trustedState, // Player already has trusted state
+          },
+        ],
+      };
+
+      mockGameStateService.getGameState.mockResolvedValue(mockGameState as any);
+
+      await gateway.handleSubmitTrustedState(mockSocket, {
+        roomId,
+        trustedState,
+      });
+
+      // Should not call storeTrustedStateAndMarkReady
+      expect(
+        mockGameStateService.storeTrustedStateAndMarkReady
+      ).not.toHaveBeenCalled();
+
+      // Should return success with message
+      expect(mockSocket.emit).toHaveBeenCalledWith('trustedStateResult', {
+        success: true,
+        currentPhase: GamePhase.END_OF_ROUND,
+        currentTurn: 1,
+        message: 'Trusted state already submitted for this phase',
+      });
     });
   });
 
