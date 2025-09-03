@@ -60,113 +60,19 @@ export default function GamePage() {
     return opponentState?.map.map((tile) => +tile) || [];
   }, [opponentState?.map]);
 
-  // Memoize click handlers to prevent unnecessary re-renders
-  const handleAllyMapClickMemo = useMemo(() => {
-    return (x: number, y: number) => {
-      console.log('Ally map clicked: ', x, y);
-      console.log('Can player act: ', canPlayerAct);
-      if (canPlayerAct) {
-        handleAllyMapClick(x, y);
-      }
-    };
-  }, [canPlayerAct, stater?.state, opponentState?.playerId, gamePhaseManager]);
-
-  const handleEnemyMapClickMemo = useMemo(() => {
-    return (x: number, y: number) => {
-      console.log('Enemy map clicked: ', x, y);
-      console.log('Can player act: ', canPlayerAct);
-      if (canPlayerAct) {
-        handleEnemyMapClick(x, y);
-      }
-    };
-  }, [
-    canPlayerAct,
-    pickedSpellId,
-    stater?.state,
-    opponentState?.playerId,
-    gamePhaseManager,
-  ]);
-
-  // Event emitted from the PhaserGame component
-  const currentScene = (scene: Phaser.Scene) => {
-    console.log('Scene changed:', scene);
-    // Refs are now updated in PhaserGame component based on instance type
-  };
-
-  // Redirect to home if no address is found
-  useEffect(() => {
-    if (!address) {
-      router.replace('/');
-    }
-  }, [address]);
-
-  const handleEnemyMapClick = (x: number, y: number) => {
-    console.log('Enemy map clicked: ', x, y);
-
-    if (!pickedSpellId) {
-      console.log('No spell picked');
-      return;
-    }
-
-    const spell = allSpells.find(
-      (spell) => spell.id.toString() === pickedSpellId.toString()
-    );
-
-    if (!spell) {
-      console.log('Spell not found');
-      return;
-    }
-
-    let cast = spell.cast(
-      stater?.state!,
-      opponentState!.playerId,
-      new Position({
-        x: Int64.from(x),
-        y: Int64.from(y),
-      })
-    );
-    console.log('Cast: ', cast);
-
-    if (!opponentState?.playerId) {
-      console.log('Opponent state not found');
-      return;
-    }
-
-    const userAction: IUserAction = {
-      playerId: opponentState!.playerId.toString(),
-      spellId: spell.id.toString(),
-      spellCastInfo: JSON.stringify(
-        spell.modifyerData.toJSON(cast.additionalData)
-      ),
-    };
-
-    console.log('userAction: ', userAction);
-
-    const userActions: IUserActions = {
-      actions: [userAction],
-      signature: '',
-    };
-
-    gamePhaseManager?.submitPlayerActions(userActions);
-    EventBus.emit(
-      `start-spell-casting-ally`,
-      `${spell.name.toLowerCase()}_cast`
-    );
-
-    setActionSend(true);
-  };
-
-  const handleAllyMapClick = (x: number, y: number) => {
-    console.log('Ally map clicked: ', x, y);
+  // Unified map click handler for both ally and enemy maps
+  const handleMapClick = (x: number, y: number, isEnemy: boolean) => {
+    console.log(`${isEnemy ? 'Enemy' : 'Ally'} map clicked: `, x, y);
 
     let spellId = pickedSpellId;
 
-    if (!pickedSpellId) {
+    // If no spell is picked and clicking on ally map, default to move spell
+    if (!pickedSpellId && !isEnemy) {
       spellId = SpellId['Move'] ?? null;
     }
 
     if (!spellId) {
-      console.log('No move spell id ');
+      console.log('No spell picked');
       return;
     }
 
@@ -189,13 +95,18 @@ export default function GamePage() {
     );
     console.log('Cast: ', cast);
 
-    if (!stater?.state) {
-      console.log('Stater state not found');
+    // Determine which player ID to use based on map type
+    const targetPlayerId = isEnemy
+      ? opponentState?.playerId?.toString()
+      : stater?.state?.playerId?.toString();
+
+    if (!targetPlayerId) {
+      console.log(`${isEnemy ? 'Opponent' : 'Stater'} state not found`);
       return;
     }
 
     const userAction: IUserAction = {
-      playerId: stater.state.playerId.toString(),
+      playerId: targetPlayerId,
       spellId: spell.id.toString(),
       spellCastInfo: JSON.stringify(
         spell.modifyerData.toJSON(cast.additionalData)
@@ -214,8 +125,49 @@ export default function GamePage() {
       `start-spell-casting-ally`,
       `${spell.name.toLowerCase()}_cast`
     );
+
     setActionSend(true);
   };
+
+  // Memoize click handlers to prevent unnecessary re-renders
+  const handleAllyMapClickMemo = useMemo(() => {
+    return (x: number, y: number) => {
+      console.log('Ally map clicked: ', x, y);
+      console.log('Can player act: ', canPlayerAct);
+      if (canPlayerAct) {
+        handleMapClick(x, y, false);
+      }
+    };
+  }, [canPlayerAct, stater?.state, opponentState?.playerId, gamePhaseManager]);
+
+  const handleEnemyMapClickMemo = useMemo(() => {
+    return (x: number, y: number) => {
+      console.log('Enemy map clicked: ', x, y);
+      console.log('Can player act: ', canPlayerAct);
+      if (canPlayerAct) {
+        handleMapClick(x, y, true);
+      }
+    };
+  }, [
+    canPlayerAct,
+    pickedSpellId,
+    stater?.state,
+    opponentState?.playerId,
+    gamePhaseManager,
+  ]);
+
+  // Event emitted from the PhaserGame component
+  const currentScene = (scene: Phaser.Scene) => {
+    console.log('Scene changed:', scene);
+    // Refs are now updated in PhaserGame component based on instance type
+  };
+
+  // Redirect to home if no address is found
+  useEffect(() => {
+    if (!address) {
+      router.replace('/');
+    }
+  }, [address]);
 
   // Emit move ally | enemy event to the scene
   const emitMovePlayerEvent = (

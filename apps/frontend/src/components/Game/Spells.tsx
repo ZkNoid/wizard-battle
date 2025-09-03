@@ -4,6 +4,7 @@ import Image from 'next/image';
 import type { SpellStats } from '../../../../common/stater/structs';
 import type { ISpell } from '../../../../common/stater/spells/interface';
 import { useInGameStore } from '@/lib/store/inGameStore';
+import { EventBus } from '@/game/EventBus';
 
 export function Spells({
   skills,
@@ -32,9 +33,12 @@ export function Spells({
             height={90}
             onClick={() => {
               console.log('Picked spell', skill.id.toString());
+
               if (pickedSpellId === skill.id) {
+                EventBus.emit('pick-spell', null);
                 setPickedSpellId(null);
               } else {
+                EventBus.emit('pick-spell', skill);
                 setPickedSpellId(skill.id);
               }
             }}

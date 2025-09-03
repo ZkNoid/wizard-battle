@@ -9,6 +9,7 @@ export class Game extends Scene {
   leftPlayer!: Phaser.GameObjects.Sprite;
   private highlightTile: Phaser.GameObjects.Rectangle | null = null;
   private activePlayer: 'left' | 'right' = 'left';
+  private spell: ISpell<any> | null = null;
 
   constructor() {
     super('Game');
@@ -64,7 +65,10 @@ export class Game extends Scene {
       this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
         const activeTilemap =
           this.activePlayer === 'left' ? this.leftTilemap : this.leftTilemap; // : this.rightTilemap;
-        if (this.highlightTile) {
+        const isTargetSpell =
+          (!this.spell && (this.game as any).gameInstance == 'ally') ||
+          (this.spell && this.spell.target == (this.game as any).gameInstance);
+        if (this.highlightTile && isTargetSpell) {
           const worldPoint = this.camera.getWorldPoint(pointer.x, pointer.y);
 
           if (activeTilemap.isPointInside(worldPoint.x, worldPoint.y)) {
@@ -87,6 +91,15 @@ export class Game extends Scene {
         const activeTilemap =
           this.activePlayer === 'left' ? this.leftTilemap : this.leftTilemap; // : this.rightTilemap;
         const worldPoint = this.camera.getWorldPoint(pointer.x, pointer.y);
+
+        const isTargetSpell =
+          (!this.spell && (this.game as any).gameInstance == 'ally') ||
+          (this.spell && this.spell.target == (this.game as any).gameInstance);
+
+        if (!isTargetSpell) {
+          console.log('Wrong map click for such spellCast');
+          return;
+        }
 
         console.log('onMapClick', (this.game as any).onMapClick);
         (this.game as any).onMapClick?.(
@@ -141,6 +154,14 @@ export class Game extends Scene {
             animation
           );
           this.startSpellCasting(animation);
+        },
+        this
+      );
+
+      EventBus.on(
+        `pick-spell`,
+        (spell: ISpell<any> | null) => {
+          this.handleSpellPick(spell);
         },
         this
       );
@@ -231,5 +252,9 @@ export class Game extends Scene {
     this.leftPlayer.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
       this.leftPlayer.play('sourcer_idle');
     });
+  }
+
+  public handleSpellPick(spell: ISpell<any> | null) {
+    this.spell = spell;
   }
 }
