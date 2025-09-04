@@ -1,6 +1,7 @@
 'use client';
 
 import { PlaySteps } from '@/lib/enums/PlaySteps';
+import { PlayMode } from '@/lib/enums/PlayMode';
 import { ModeBg } from './assets/mode-bg';
 import { Button } from '../shared/Button';
 import { TimeIcon } from './assets/time-icon';
@@ -18,8 +19,10 @@ import { Field, Int64 } from 'o1js';
 
 export default function Matchmaking({
   setPlayStep,
+  playMode,
 }: {
   setPlayStep: (playStep: PlaySteps) => void;
+  playMode: PlayMode;
 }) {
   const router = useRouter();
   const { socket, stater, setOpponentState, setGamePhaseManager } =
@@ -59,10 +62,15 @@ export default function Matchmaking({
 
     console.log(data);
 
-    socket.emit('joinMatchmaking', {
-      addToQueue: data,
-    });
-
+    if (playMode === PlayMode.PVE) {
+      socket.emit('joinBotMatchmaking', {
+        addToQueue: data,
+      });
+    } else {
+      socket.emit('joinMatchmaking', {
+        addToQueue: data,
+      });
+    }
     socket.once('matchFound', (response: IFoundMatch) => {
       console.log('Match found');
 

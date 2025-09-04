@@ -13,6 +13,8 @@ import {
   SpellStats,
   Effect,
 } from '../../../common/stater/structs';
+import { allWizards, Wizard } from '../../../common/wizards';
+import { allSpells } from '../../../common/stater/spells';
 
 // Import o1js components
 let Field: any, Int64: any, CircuitString: any;
@@ -66,6 +68,106 @@ export class BotService {
     'shield',
   ];
   private readonly mapSize = 10; // Assuming 10x10 map
+  private readonly tilemapSize = 64; // MapEditor tilemap size
+  private readonly megaW = 8;
+  private readonly megaH = 8;
+  private readonly innerTileSize = 3;
+  private readonly maxSelectedSkills = 4; // MAX_SELECTED_SKILLS from frontend
+
+  /**
+   * @notice Generates a random tilemap for the bot's map
+   * @returns Array of Field objects representing the random tilemap (64 elements)
+   */
+  private generateRandomTilemap(): any[] {
+    const tilemap: any[] = [];
+
+    for (let i = 0; i < 64; i++) {
+      // Generate random tile type: 0 = Air, 1 = Water, 2 = Grass
+      const tileType = Math.random() < 0.5 ? 1 : 2; // 50% water, 50% grass
+      tilemap.push(Field(tileType));
+    }
+
+    return tilemap;
+  }
+
+  /**
+   * @notice Selects a random wizard from available wizards
+   * @returns Randomly selected wizard
+   */
+  private selectRandomWizard(): Wizard {
+    const randomIndex = Math.floor(Math.random() * allWizards.length);
+    const selectedWizard = allWizards[randomIndex];
+    if (!selectedWizard) {
+      throw new Error('No wizards available');
+    }
+    return selectedWizard;
+  }
+
+  /**
+   * @notice Selects random spells for the chosen wizard
+   * @param selectedWizard The wizard to select spells for
+   * @returns Array of SpellStats for the selected spells
+   */
+  private selectRandomSpells(selectedWizard: Wizard): SpellStats[] {
+    // Get spells available for this wizard
+    // Use string comparison since Field.equals() might not work in backend environment
+    const wizardSpells = allSpells.filter((spell) => {
+      const spellWizardIdStr = spell.wizardId.toString();
+      const selectedWizardIdStr = selectedWizard.id.toString();
+      return spellWizardIdStr === selectedWizardIdStr;
+    });
+
+    console.log(
+      `🤖 Found ${wizardSpells.length} spells for wizard ${selectedWizard.name}`
+    );
+
+    if (wizardSpells.length === 0) {
+      console.warn(
+        `No spells found for wizard ${selectedWizard.name}, using default empty spells`
+      );
+      return Array(5).fill(
+        new SpellStats({
+          spellId: Field(0),
+          cooldown: Int64.from(0),
+          currentColldown: Int64.from(0),
+        })
+      );
+    }
+
+    // Select up to maxSelectedSkills spells randomly
+    const numSpellsToSelect = Math.min(
+      this.maxSelectedSkills,
+      wizardSpells.length
+    );
+
+    const selectedSpells: SpellStats[] = [];
+    const availableSpells = [...wizardSpells];
+
+    for (let i = 0; i < numSpellsToSelect; i++) {
+      const randomIndex = Math.floor(Math.random() * availableSpells.length);
+      const selectedSpell = availableSpells[randomIndex];
+      if (selectedSpell) {
+        selectedSpells.push(selectedSpell.defaultValue);
+        availableSpells.splice(randomIndex, 1); // Remove to avoid duplicates
+      }
+    }
+
+    // Fill remaining slots with empty spells
+    while (selectedSpells.length < 5) {
+      selectedSpells.push(
+        new SpellStats({
+          spellId: Field(0),
+          cooldown: Int64.from(0),
+          currentColldown: Int64.from(0),
+        })
+      );
+    }
+
+    console.log(
+      `🤖 Selected ${selectedSpells.filter((s) => !s.spellId.equals(Field(0))).length} spells for ${selectedWizard.name}`
+    );
+    return selectedSpells;
+  }
 
   /**
    * @notice Generates a bot player setup using proper State structure
@@ -74,11 +176,22 @@ export class BotService {
    * @returns Complete bot player setup with State.toFields() approach
    */
   generateBotSetup(botId: string, socketId: string): IPublicState {
+    // Select a random wizard
+    const selectedWizard = this.selectRandomWizard();
+    console.log(`🤖 Bot ${botId} selected wizard: ${selectedWizard.name}`);
+
+    // Select random spells for the chosen wizard
+    const selectedSpells = this.selectRandomSpells(selectedWizard);
+
     // Generate random starting position
     const startPosition = {
       x: Math.floor(Math.random() * this.mapSize),
       y: Math.floor(Math.random() * this.mapSize),
     };
+
+    // Generate random map
+    const randomMap = this.generateRandomTilemap();
+    console.log(`🤖 Bot ${botId} generated random map (64 tiles)`);
 
     // Create a proper State object for the bot using State.default() and modify it
     const botState = State.default();
@@ -87,11 +200,17 @@ export class BotService {
     botState.playerId = Field(
       parseInt(botId.replace(/\D/g, '')) || Math.floor(Math.random() * 10000)
     );
-    botState.wizardId = CircuitString.fromString('BotMage').hash();
-    botState.playerStats.hp = Int64.from(100);
+    botState.wizardId = selectedWizard.id; // Use selected wizard's ID
+    botState.playerStats.hp = Int64.from(selectedWizard.defaultHealth);
     botState.playerStats.position.value.x = Int64.from(startPosition.x);
     botState.playerStats.position.value.y = Int64.from(startPosition.y);
     botState.randomSeed = Field(Math.floor(Math.random() * 1000000));
+
+    // Set the selected spells in the state
+    botState.spellStats = selectedSpells;
+
+    // Set the random map in the state
+    botState.map = randomMap;
 
     // Convert to fields using State.toFields() - same approach as frontend
     const botSetup: IPublicState = {
@@ -148,39 +267,78 @@ export class BotService {
     currentState: IPublicState,
     opponentState?: IPublicState
   ): IUserAction | null {
-    // Simple bot AI - for now we'll use random actions since we can't easily parse fields in backend
-    // In a real implementation, you'd have proper field parsing logic
+    // Parse the bot's current state to get available spells
+    const stateData = JSON.parse(currentState.fields);
+    console.log('🤖 Bot spell stats:', stateData.spellStats);
+
+    const availableSpells = stateData.spellStats.filter(
+      (spell: any) =>
+        spell.spellId !== '0' && spell.currentColldown.magnitude === '0'
+    );
+
+    console.log('🤖 Available spells for bot:', availableSpells.length);
+
+    if (availableSpells.length === 0) {
+      console.log('🤖 No spells available for bot, returning null');
+      return null; // No spells available
+    }
+
+    // Pick a random available spell
+    const selectedSpell =
+      availableSpells[Math.floor(Math.random() * availableSpells.length)];
+    const spellId = selectedSpell.spellId;
+
+    // Generate random position for spell target
     const currentPos = {
       x: Math.floor(Math.random() * this.mapSize),
       y: Math.floor(Math.random() * this.mapSize),
     };
 
-    let spellId: string;
     let spellCastInfo: any = {};
 
-    if (Math.random() < 0.2) {
-      // 20% chance to heal
-      spellId = 'heal';
-      spellCastInfo = { target: 'self' };
-    } else if (Math.random() < 0.3) {
-      // 30% chance to move/teleport
-      spellId = 'teleport';
-      spellCastInfo = {
-        target: this.generateRandomPosition(currentPos),
-      };
+    // Generate appropriate spell cast info based on spell type
+    // The frontend expects spellCastInfo to be JSON that can be parsed by spell.modifyerData.fromJSON()
+    if (spellId === CircuitString.fromString('Teleport').hash().toString()) {
+      // Teleport spell - needs position data in Field format
+      const targetPos = this.generateRandomPosition(currentPos);
+      spellCastInfo = JSON.stringify({
+        position: {
+          x: {
+            magnitude: targetPos.x.toString(),
+            sgn: 'Positive',
+          },
+          y: {
+            magnitude: targetPos.y.toString(),
+            sgn: 'Positive',
+          },
+        },
+      });
+    } else if (spellId === CircuitString.fromString('Heal').hash().toString()) {
+      // Heal spell - no additional data needed
+      spellCastInfo = JSON.stringify({});
     } else {
-      // Default: cast a random offensive spell at random location
-      const attackSpells = ['fireball', 'lightning'];
-      spellId =
-        attackSpells[Math.floor(Math.random() * attackSpells.length)] ||
-        'fireball';
-      spellCastInfo = {
-        target: this.generateRandomPosition(currentPos),
-      };
+      // Attack spells (Lightning, FireBall, etc.) - need position data in Field format
+      const targetPos = this.generateRandomPosition(currentPos);
+      spellCastInfo = JSON.stringify({
+        position: {
+          x: {
+            magnitude: targetPos.x.toString(),
+            sgn: 'Positive',
+          },
+          y: {
+            magnitude: targetPos.y.toString(),
+            sgn: 'Positive',
+          },
+        },
+      });
     }
 
+    // Extract numeric ID from botId for Field conversion compatibility
+    const numericPlayerId =
+      parseInt(botId.replace(/\D/g, '')) || Math.floor(Math.random() * 10000);
+
     return {
-      playerId: botId,
+      playerId: botId, // Use botId for game state lookup
       spellId,
       spellCastInfo,
     };
@@ -200,11 +358,11 @@ export class BotService {
     const signature = `bot_trusted_signature_${botId}_${Date.now()}`;
 
     return {
-      playerId: botId,
+      playerId: botId, // Use botId directly to match game state player ID
       stateCommit,
       publicState: {
         socketId: currentState.socketId,
-        playerId: botId,
+        playerId: botId, // Keep original string for display
         fields: currentState.fields, // Keep the same fields for now
       },
       signature,

@@ -62,7 +62,10 @@ export default function Play() {
         )}
         {playStep === PlaySteps.SELECT_MAP && <MapEditor />}
         {playStep === PlaySteps.MATCHMAKING && (
-          <Matchmaking setPlayStep={setPlayStep} />
+          <Matchmaking
+            setPlayStep={setPlayStep}
+            playMode={playMode ?? PlayMode.PVP}
+          />
         )}
         {(playStep === PlaySteps.LOSE || playStep === PlaySteps.WIN) && (
           <GameResult

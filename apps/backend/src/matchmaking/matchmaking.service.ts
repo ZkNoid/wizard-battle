@@ -834,8 +834,11 @@ export class MatchmakingService {
       // Register the human player's socket mapping
       await this.gameStateService.registerSocket(socket);
 
-      // Generate unique bot ID
-      const botId = `bot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Generate bot ID to mirror human numeric IDs with an extra leading 0
+      // Example: human "8948" → bot "0XXXX" where XXXX is a 4-digit number
+      const botId = `0${Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, '0')}`;
 
       // Create and connect bot client
       const botClient = await this.botClientService.createBotClient(
