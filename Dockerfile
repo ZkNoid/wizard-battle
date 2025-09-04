@@ -6,6 +6,7 @@ ARG MONGODB_URI
 ARG MONGODB_DB
 ARG APP_PORT
 ARG REDIS_URL
+ARG WEBSOCKET_URL
 
 WORKDIR /usr/share/nestjs/main
 COPY . .
@@ -50,6 +51,7 @@ echo "MONGODB_URI=${MONGODB_URI}" >> /usr/share/nestjs/main/.env
 echo "MONGODB_DB=${MONGODB_DB}" >> /usr/share/nestjs/main/.env
 echo "APP_PORT=${APP_PORT}" >> /usr/share/nestjs/main/.env
 echo "REDIS_URL=${REDIS_URL}" >> /usr/share/nestjs/main/.env
+echo "WEBSOCKET_URL=${WEBSOCKET_URL}" >> /usr/share/nestjs/main/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/backend/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/frontend/.env
 pnpm turbo run build

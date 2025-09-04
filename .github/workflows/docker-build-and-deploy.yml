@@ -34,7 +34,7 @@ jobs:
           else
             echo "No Deploy Hook configured for $BRANCH"
           fi
-          
+
   copy-redis-config:
     runs-on: ubuntu-latest
     steps:
@@ -51,10 +51,10 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           port: ${{ secrets.SERVER_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "packages/redis/redis.conf"
+          source: 'packages/redis/redis.conf'
           target: ${{ secrets.TARGET_PATH }}
           strip_components: 1
-        
+
   copy-nginx-config:
     runs-on: ubuntu-latest
     steps:
@@ -71,10 +71,10 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           port: ${{ secrets.SERVER_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "packages/nginx/nginx.conf"
+          source: 'packages/nginx/nginx.conf'
           target: ${{ secrets.TARGET_PATH }}
           strip_components: 1
-            
+
   copy-server-config:
     runs-on: ubuntu-latest
     steps:
@@ -91,15 +91,15 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           port: ${{ secrets.SERVER_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "packages/server/docker-compose.yml"
+          source: 'packages/server/docker-compose.yml'
           target: ${{ secrets.TARGET_PATH }}
           strip_components: 2
 
   build-and-deploy:
     runs-on: ubuntu-latest
     env:
-        DEPLOY_CONTAINER: '{"main": "nestjs-main", "dev": "nestjs-dev"}'
-        APP_PORT: '{"main": "3030", "dev": "3031"}'
+      DEPLOY_CONTAINER: '{"main": "nestjs-main", "dev": "nestjs-dev"}'
+      APP_PORT: '{"main": "3030", "dev": "3031"}'
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -126,6 +126,7 @@ jobs:
             --build-arg MONGODB_DB=${{ secrets.MONGODB_DB }} \
             --build-arg APP_PORT=${{ steps.calc-container.outputs.app_port }} \
             --build-arg REDIS_URL=${{ secrets.REDIS_URL }} \
+            --build-arg WEBSOCKET_URL=${{ secrets.WEBSOCKET_URL }} \
             -t ${{ steps.calc-container.outputs.container_name }} .
 
       - name: Save Docker image to tar
@@ -143,7 +144,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           port: ${{ secrets.SERVER_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "${{ steps.calc-container.outputs.container_name }}.tar"
+          source: '${{ steps.calc-container.outputs.container_name }}.tar'
           target: ${{ secrets.TARGET_PATH }}
 
       - name: SSH into server and load Docker image
