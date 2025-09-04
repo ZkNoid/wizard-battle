@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { Stater } from '../../../common/stater/stater';
 import { Field, Int64 } from 'o1js';
-import { allWizards } from '../../../common/wizards';
+import { allWizards, WizardId } from '../../../common/wizards';
 
 export default function Home() {
   const { socket, setSocket, setStater } = useUserInformationStore();
@@ -17,12 +17,16 @@ export default function Home() {
     console.log(socket);
 
     const stater = Stater.default();
+    let defaultWizard = allWizards[0]!;
+    stater.state = defaultWizard.defaultState();
+
     stater.state.playerStats.position.value.x = Int64.from(
       Math.floor(Math.random() * 8)
     );
     stater.state.playerStats.position.value.y = Int64.from(
       Math.floor(Math.random() * 8)
     );
+
     console.log(stater);
     setStater(stater);
 

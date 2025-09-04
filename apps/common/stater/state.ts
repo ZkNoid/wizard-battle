@@ -74,7 +74,7 @@ export class State extends Struct({
 
   getSpellLength() {
     for (let i = 0; i < this.spellStats.length; i++) {
-      if (this.spellStats[i]!.spellId.equals(Field(0))) {
+      if (this.spellStats[i]!.spellId.equals(Field(0)).toBoolean()) {
         return i;
       }
     }
@@ -92,7 +92,7 @@ export class State extends Struct({
   removeSpell(spellId: Field) {
     let spellLength = this.getSpellLength();
     for (let i = 0; i < spellLength; i++) {
-      if (this.spellStats[i]!.spellId.equals(spellId)) {
+      if (this.spellStats[i]!.spellId.equals(spellId).toBoolean()) {
         this.spellStats[i] = this.spellStats[spellLength - 1]!;
         this.spellStats[spellLength - 1] = new SpellStats({
           spellId: Field(0),
@@ -106,7 +106,7 @@ export class State extends Struct({
 
   getEffectLength() {
     for (let i = 0; i < this.publicStateEffects.length; i++) {
-      if (this.publicStateEffects[i]!.effectId.equals(Field(0))) {
+      if (this.publicStateEffects[i]!.effectId.equals(Field(0)).toBoolean()) {
         return i;
       }
     }
@@ -124,7 +124,7 @@ export class State extends Struct({
   removeEffect(effectId: Field) {
     let effectLength = this.getEffectLength();
     for (let i = 0; i < effectLength; i++) {
-      if (this.publicStateEffects[i]!.effectId.equals(effectId)) {
+      if (this.publicStateEffects[i]!.effectId.equals(effectId).toBoolean()) {
         this.publicStateEffects[i] = this.publicStateEffects[effectLength - 1]!;
       }
       this.publicStateEffects[effectLength - 1] = new Effect({

@@ -13,6 +13,7 @@ const invisibleEffect: IEffectInfo = {
   id: Field(1),
   name: 'Invisible',
   apply: (state: State, publicState: State) => {
+    console.log('Applying invisible effect');
     publicState.playerStats.position = new PositionOption({
       value: new Position({
         x: Int64.from(0),
