@@ -843,7 +843,8 @@ export class MatchmakingService {
       // Create and connect bot client
       const botClient = await this.botClientService.createBotClient(
         botId,
-        process.env.WEBSOCKET_URL || 'http://localhost:3030'
+        process.env.WEBSOCKET_URL + ':' + process.env.APP_PORT ||
+          'http://localhost' + ':' + process.env.APP_PORT
       );
 
       // Get bot setup

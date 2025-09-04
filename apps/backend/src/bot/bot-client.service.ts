@@ -30,7 +30,9 @@ export class BotClientService {
    */
   async createBotClient(
     botId: string,
-    serverUrl: string = 'http://localhost:3030'
+    serverUrl: string = process.env.WEBSOCKET_URL +
+      ':' +
+      process.env.APP_PORT || 'http://localhost' + ':' + process.env.APP_PORT
   ): Promise<BotClient> {
     const bot = new BotClient(botId, serverUrl, this.botService);
     await bot.connect();
