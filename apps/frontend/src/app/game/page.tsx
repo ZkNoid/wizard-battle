@@ -138,7 +138,13 @@ export default function GamePage() {
         handleMapClick(x, y, false);
       }
     };
-  }, [canPlayerAct, stater?.state, opponentState?.playerId, gamePhaseManager]);
+  }, [
+    canPlayerAct,
+    pickedSpellId,
+    stater?.state,
+    opponentState?.playerId,
+    gamePhaseManager,
+  ]);
 
   const handleEnemyMapClickMemo = useMemo(() => {
     return (x: number, y: number) => {
@@ -242,8 +248,8 @@ export default function GamePage() {
     }
 
     if (+opponentStateRef.current.playerStats.position.isSome) {
-      const newXEnemy = +opponentStateRef.current.playerStats.position;
-      const newYEnemy = +opponentStateRef.current.playerStats.position;
+      const newXEnemy = +opponentStateRef.current.playerStats.position.value.x;
+      const newYEnemy = +opponentStateRef.current.playerStats.position.value.y;
       emitMovePlayerEvent(newXEnemy, newYEnemy, 'enemy');
     } else {
       emitMovePlayerEvent(-1, -1, 'enemy');

@@ -34,7 +34,7 @@ export function Spells({
             onClick={() => {
               console.log('Picked spell', skill.id.toString());
 
-              if (pickedSpellId === skill.id) {
+              if (pickedSpellId?.toString() === skill.id.toString()) {
                 EventBus.emit('pick-spell', null);
                 setPickedSpellId(null);
               } else {
