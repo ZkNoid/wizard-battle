@@ -187,7 +187,7 @@ export default function GamePage() {
         ? phaserRefAlly.current
         : phaserRefEnemy.current;
 
-    if (!instance) {
+    if (!instance || !instance.game) {
       console.log('Instance not found');
       return;
     }
@@ -198,6 +198,11 @@ export default function GamePage() {
       console.log('Scene not found');
       return;
     }
+
+    console.log(
+      `move-player event received in Game scene, targetInstance: ${targetInstance}`
+    );
+    console.log(`gameInstance: ${targetInstance}`);
 
     scene.events.emit(
       `move-player-${targetInstance}`,
@@ -234,6 +239,12 @@ export default function GamePage() {
       return;
     }
 
+    // Check if Phaser instances are ready before proceeding
+    if (!phaserRefAlly.current?.game || !phaserRefEnemy.current?.game) {
+      console.log('Phaser instances not ready, skipping move events');
+      return;
+    }
+
     setActionSend(false);
 
     console.log('staterRef.current.state');
@@ -263,22 +274,27 @@ export default function GamePage() {
   }, [gamePhaseManager]);
 
   useEffect(() => {
-    onNewTurnHook();
-    // TODO not working
+    // Don't call onNewTurnHook immediately - wait for scenes to be ready
+
     EventBus.on(
       'current-scene-ready',
       (scene_instance: Phaser.Scene, gameInstance: string) => {
         console.log('!!current-scene-ready', scene_instance, gameInstance);
-        onNewTurnHook();
+        // Call the hook when both scenes are ready
+        setTimeout(() => {
+          onNewTurnHook();
+        }, 100);
       }
     );
 
-    setTimeout(() => {
+    // Fallback timeout to ensure the hook is called eventually
+    const fallbackTimeout = setTimeout(() => {
       onNewTurnHook();
-    }, 3000);
+    }, 5000);
 
     return () => {
       EventBus.removeListener('current-scene-ready');
+      clearTimeout(fallbackTimeout);
     };
   }, []);
 
