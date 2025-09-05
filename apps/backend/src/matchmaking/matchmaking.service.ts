@@ -840,6 +840,10 @@ export class MatchmakingService {
         .toString()
         .padStart(4, '0')}`;
 
+      console.log(
+        '[DEBUG] WEBSOCKET_URL',
+        process.env.WEBSOCKET_URL + ':' + process.env.APP_PORT
+      );
       // Create and connect bot client
       const botClient = await this.botClientService.createBotClient(
         botId,

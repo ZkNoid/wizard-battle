@@ -28,12 +28,18 @@ export class BotClientService {
    * @param serverUrl WebSocket server URL to connect to
    * @returns Promise that resolves when bot is connected and ready
    */
+
   async createBotClient(
     botId: string,
     serverUrl: string = process.env.WEBSOCKET_URL +
       ':' +
       process.env.APP_PORT || 'http://localhost:3030'
   ): Promise<BotClient> {
+    console.log(
+      '[DEBUG] WEBSOCKET_URL',
+      process.env.WEBSOCKET_URL + ':' + process.env.APP_PORT
+    );
+
     const bot = new BotClient(botId, serverUrl, this.botService);
     await bot.connect();
     this.activeBots.set(botId, bot);

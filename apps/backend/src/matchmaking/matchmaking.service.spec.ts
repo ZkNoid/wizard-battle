@@ -3,6 +3,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { MatchmakingService } from './matchmaking.service';
 import { GameStateService } from '../game-session/game-state.service';
 import { BotClientService } from '../bot/bot-client.service';
+import { RedisService } from '../redis/redis.service';
+import { BotService } from '../bot/bot.service';
 import { Server, Socket } from 'socket.io';
 import { createMock } from '@golevelup/ts-jest';
 import {
@@ -46,6 +48,8 @@ describe('MatchmakingService', () => {
   let mockServer: Server;
   let mockGameStateService: GameStateService;
   let mockBotClientService: any;
+  let mockRedisService: RedisService;
+  let mockBotService: BotService;
 
   beforeEach(async () => {
     // Reset all mocks before each test
@@ -59,10 +63,34 @@ describe('MatchmakingService', () => {
       to: mockTo,
     });
 
+    // Create mock RedisService
+    mockRedisService = createMock<RedisService>({
+      getClient: jest.fn().mockReturnValue(mockRedisClient),
+      isRedisConnected: jest.fn().mockReturnValue(true),
+    }) as any;
+
+    // Create mock BotService
+    mockBotService = createMock<BotService>({
+      generateBotSetup: jest.fn().mockReturnValue({
+        socketId: 'mock-bot-socket',
+        playerId: 'mock-bot-id',
+        fields: defaultStateFields,
+      }),
+      generateBotActions: jest.fn().mockReturnValue([]),
+      generateBotTrustedState: jest.fn().mockReturnValue({
+        publicState: {
+          socketId: 'mock-bot-socket',
+          playerId: 'mock-bot-id',
+          fields: defaultStateFields,
+        },
+      }),
+    }) as any;
+
     // Create mock GameStateService with methods used by MatchmakingService
     mockGameStateService = createMock<GameStateService>({
       publishToRoom: jest.fn().mockResolvedValue(undefined),
       registerSocket: jest.fn().mockResolvedValue(undefined),
+      unregisterSocket: jest.fn().mockResolvedValue(undefined),
       createGameState: jest.fn().mockResolvedValue({
         roomId: 'room',
         players: [
@@ -99,6 +127,7 @@ describe('MatchmakingService', () => {
       storePlayerActions: jest.fn().mockResolvedValue(undefined),
       storeTrustedState: jest.fn().mockResolvedValue(undefined),
       markPlayerDead: jest.fn().mockResolvedValue(null),
+      updateGameState: jest.fn().mockResolvedValue(undefined),
     }) as any;
 
     // Mock BotClientService
@@ -126,8 +155,16 @@ describe('MatchmakingService', () => {
           useValue: mockGameStateService,
         },
         {
+          provide: RedisService,
+          useValue: mockRedisService,
+        },
+        {
           provide: BotClientService,
           useValue: mockBotClientService,
+        },
+        {
+          provide: BotService,
+          useValue: mockBotService,
         },
       ],
     }).compile();
@@ -149,7 +186,7 @@ describe('MatchmakingService', () => {
       const setup: IPublicState = new TransformedPlayerSetup(
         socketId,
         playerId,
-        defaultStateFields // Only use fields - consistent with our updates
+        JSON.stringify(defaultStateFields.map((field) => field.toString())) // Convert Field[] to string
       );
       return new TransformedAddToQueue(playerId, setup, 0, null, null);
     };
@@ -404,6 +441,7 @@ describe('MatchmakingService', () => {
             useValue: createMock<GameStateService>({
               publishToRoom: jest.fn().mockResolvedValue(undefined),
               registerSocket: jest.fn().mockResolvedValue(undefined),
+              unregisterSocket: jest.fn().mockResolvedValue(undefined),
               createGameState: jest.fn().mockResolvedValue({
                 roomId: 'room',
                 players: [],
@@ -416,8 +454,16 @@ describe('MatchmakingService', () => {
             }),
           },
           {
+            provide: RedisService,
+            useValue: mockRedisService,
+          },
+          {
             provide: BotClientService,
             useValue: mockBotClientService,
+          },
+          {
+            provide: BotService,
+            useValue: mockBotService,
           },
         ],
       }).compile();
@@ -432,7 +478,7 @@ describe('MatchmakingService', () => {
           player: new TransformedPlayerSetup(
             'socket1',
             'Player1',
-            defaultStateFields
+            JSON.stringify(defaultStateFields.map((field) => field.toString()))
           ),
           timestamp: Date.now(),
         }),
@@ -440,7 +486,11 @@ describe('MatchmakingService', () => {
 
       const addToQueue = new TransformedAddToQueue(
         'Player1',
-        new TransformedPlayerSetup('socket1', 'Player1', defaultStateFields),
+        new TransformedPlayerSetup(
+          'socket1',
+          'Player1',
+          JSON.stringify(defaultStateFields.map((field) => field.toString()))
+        ),
         0,
         null,
         null
@@ -457,14 +507,22 @@ describe('MatchmakingService', () => {
 
       const addToQueue1 = new TransformedAddToQueue(
         'Player1',
-        new TransformedPlayerSetup('socket1', 'Player1', defaultStateFields),
+        new TransformedPlayerSetup(
+          'socket1',
+          'Player1',
+          JSON.stringify(defaultStateFields.map((field) => field.toString()))
+        ),
         0,
         null,
         null
       );
       const addToQueue2 = new TransformedAddToQueue(
         'Player2',
-        new TransformedPlayerSetup('socket2', 'Player2', defaultStateFields),
+        new TransformedPlayerSetup(
+          'socket2',
+          'Player2',
+          JSON.stringify(defaultStateFields.map((field) => field.toString()))
+        ),
         0,
         null,
         null
@@ -669,12 +727,12 @@ describe('MatchmakingService', () => {
       const player1 = new TransformedPlayerSetup(
         'socket1',
         'Player1',
-        defaultStateFields
+        JSON.stringify(defaultStateFields.map((field) => field.toString()))
       );
       const player2 = new TransformedPlayerSetup(
         'socket2',
         'Player2',
-        defaultStateFields
+        JSON.stringify(defaultStateFields.map((field) => field.toString()))
       );
 
       // Mock Redis responses
@@ -708,7 +766,7 @@ describe('MatchmakingService', () => {
           player: new TransformedPlayerSetup(
             'socket1',
             'Player1',
-            defaultStateFields
+            JSON.stringify(defaultStateFields.map((field) => field.toString()))
           ),
           timestamp: Date.now(),
         }),
