@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GameStateService } from './game-state.service';
+import { RedisService } from '../redis/redis.service';
 import { createMock } from '@golevelup/ts-jest';
 import { GamePhase } from '../../../common/types/gameplay.types';
 import * as dotenv from 'dotenv';
@@ -27,6 +28,28 @@ jest.mock('redis', () => ({
   })),
 }));
 
+// Mock the RedisService to prevent real Redis connections
+jest.mock('../redis/redis.service', () => ({
+  RedisService: jest.fn().mockImplementation(() => ({
+    getClient: jest.fn(() => ({
+      on: jest.fn(),
+      connect: jest.fn().mockResolvedValue(undefined),
+      hGet: jest.fn(),
+      hSet: jest.fn(),
+      hDel: jest.fn(),
+      del: jest.fn(),
+      publish: jest.fn(),
+      subscribe: jest.fn(),
+      unsubscribe: jest.fn(),
+      quit: jest.fn(),
+      duplicate: jest.fn(() => ({
+        connect: jest.fn().mockResolvedValue(undefined),
+        subscribe: jest.fn(),
+      })),
+    })),
+  })),
+}));
+
 /**
  * @title GameStateService Unit Tests - Winner/Loser Logic Coverage
  * @notice Comprehensive tests for the markPlayerDead method's winner detection logic
@@ -34,6 +57,7 @@ jest.mock('redis', () => ({
  */
 describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
   let service: GameStateService;
+  let mockRedisService: any;
   let mockRedisClient: any;
 
   beforeEach(async () => {
@@ -51,29 +75,45 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
       connect: jest.fn().mockResolvedValue(undefined),
     };
 
+    // Mock RedisService
+    mockRedisService = createMock<RedisService>();
+    mockRedisService.getClient.mockReturnValue(mockRedisClient);
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [GameStateService],
+      providers: [
+        GameStateService,
+        { provide: RedisService, useValue: mockRedisService },
+      ],
     }).compile();
 
     service = module.get<GameStateService>(GameStateService);
+  });
 
-    // Replace the actual Redis client with our mock
-    service.redisClient = mockRedisClient;
+  // Helper function to create mock game state
+  const createMockGameState = (overrides = {}) => ({
+    roomId: 'test-room',
+    status: 'active',
+    currentPhase: GamePhase.SPELL_CASTING,
+    players: [],
+    playersReady: [],
+    turn: 1,
+    phaseStartTime: Date.now(),
+    phaseTimeout: 30000,
+    gameData: {},
+    ...overrides,
   });
 
   describe('Winner Detection Scenarios', () => {
     it('should detect winner when only 1 player remains alive', async () => {
       const roomId = 'winner-test-room';
-      const mockGameState = {
+      const mockGameState = createMockGameState({
         roomId,
-        status: 'active',
-        currentPhase: GamePhase.SPELL_CASTING,
         players: [
           { id: 'player1', isAlive: true }, // Player to be killed
           { id: 'player2', isAlive: true }, // Winner
           { id: 'player3', isAlive: false }, // Already dead player
         ],
-      };
+      });
 
       // Mock getGameState to return our test state
       mockRedisClient.hGet.mockResolvedValue(JSON.stringify(mockGameState));
@@ -93,17 +133,15 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
 
     it('should handle winner detection with multiple dead players', async () => {
       const roomId = 'multi-dead-room';
-      const mockGameState = {
+      const mockGameState = createMockGameState({
         roomId,
-        status: 'active',
-        currentPhase: GamePhase.SPELL_CASTING,
         players: [
           { id: 'player1', isAlive: true }, // About to die
           { id: 'player2', isAlive: false }, // Already dead
           { id: 'player3', isAlive: false }, // Already dead
           { id: 'player4', isAlive: true }, // Will be winner
         ],
-      };
+      });
 
       mockRedisClient.hGet.mockResolvedValue(JSON.stringify(mockGameState));
       mockRedisClient.hSet.mockResolvedValue('OK');
@@ -115,14 +153,13 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
 
     it('should return winner ID even if winner object is malformed', async () => {
       const roomId = 'malformed-winner-room';
-      const mockGameState = {
+      const mockGameState = createMockGameState({
         roomId,
-        status: 'active',
         players: [
           { id: 'player1', isAlive: true }, // About to die
           { id: 'player2', isAlive: true }, // Winner but potentially malformed
         ],
-      };
+      });
 
       mockRedisClient.hGet.mockResolvedValue(JSON.stringify(mockGameState));
       mockRedisClient.hSet.mockResolvedValue('OK');
@@ -136,15 +173,13 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
   describe('Draw Detection Scenarios', () => {
     it('should detect draw when last 2 players die simultaneously', async () => {
       const roomId = 'draw-test-room';
-      const mockGameState = {
+      const mockGameState = createMockGameState({
         roomId,
-        status: 'active',
-        currentPhase: GamePhase.SPELL_CASTING,
         players: [
           { id: 'player1', isAlive: true }, // About to die (last player)
           { id: 'player2', isAlive: false }, // Already dead
         ],
-      };
+      });
 
       mockRedisClient.hGet.mockResolvedValue(JSON.stringify(mockGameState));
       mockRedisClient.hSet.mockResolvedValue('OK');
@@ -163,15 +198,14 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
 
     it('should detect draw in 3-player game when last player dies', async () => {
       const roomId = 'three-player-draw';
-      const mockGameState = {
+      const mockGameState = createMockGameState({
         roomId,
-        status: 'active',
         players: [
           { id: 'player1', isAlive: true }, // Last alive, about to die
           { id: 'player2', isAlive: false }, // Dead
           { id: 'player3', isAlive: false }, // Dead
         ],
-      };
+      });
 
       mockRedisClient.hGet.mockResolvedValue(JSON.stringify(mockGameState));
       mockRedisClient.hSet.mockResolvedValue('OK');
@@ -183,9 +217,8 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
 
     it('should detect draw in 4+ player game when last player dies', async () => {
       const roomId = 'large-game-draw';
-      const mockGameState = {
+      const mockGameState = createMockGameState({
         roomId,
-        status: 'active',
         players: [
           { id: 'player1', isAlive: false }, // Dead
           { id: 'player2', isAlive: false }, // Dead
@@ -193,7 +226,7 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
           { id: 'player4', isAlive: false }, // Dead
           { id: 'player5', isAlive: true }, // Last alive, about to die
         ],
-      };
+      });
 
       mockRedisClient.hGet.mockResolvedValue(JSON.stringify(mockGameState));
       mockRedisClient.hSet.mockResolvedValue('OK');
@@ -207,15 +240,14 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
   describe('Game Continuation Scenarios', () => {
     it('should return null when 2 players remain alive', async () => {
       const roomId = 'continues-2-players';
-      const mockGameState = {
+      const mockGameState = createMockGameState({
         roomId,
-        status: 'active',
         players: [
           { id: 'player1', isAlive: true }, // About to die
           { id: 'player2', isAlive: true }, // Still alive
           { id: 'player3', isAlive: true }, // Still alive
         ],
-      };
+      });
 
       mockRedisClient.hGet.mockResolvedValue(JSON.stringify(mockGameState));
       mockRedisClient.hSet.mockResolvedValue('OK');
@@ -361,15 +393,14 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
 
     it('should handle undefined player object', async () => {
       const roomId = 'undefined-player-room';
-      const mockGameState = {
+      const mockGameState = createMockGameState({
         roomId,
-        status: 'active',
         players: [
           { id: 'player1', isAlive: true },
           null, // Malformed player entry
           { id: 'player3', isAlive: true },
         ],
-      };
+      });
 
       mockRedisClient.hGet.mockResolvedValue(JSON.stringify(mockGameState));
       mockRedisClient.hSet.mockResolvedValue('OK');
@@ -383,14 +414,13 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
   describe('State Persistence Verification', () => {
     it('should persist correct player death state for winner scenario', async () => {
       const roomId = 'persist-winner-room';
-      const mockGameState = {
+      const mockGameState = createMockGameState({
         roomId,
-        status: 'active',
         players: [
           { id: 'player1', isAlive: true }, // About to die
           { id: 'player2', isAlive: true }, // Winner
         ],
-      };
+      });
 
       mockRedisClient.hGet.mockResolvedValue(JSON.stringify(mockGameState));
       mockRedisClient.hSet.mockResolvedValue('OK');
@@ -407,14 +437,13 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
 
     it('should persist correct state for draw scenario', async () => {
       const roomId = 'persist-draw-room';
-      const mockGameState = {
+      const mockGameState = createMockGameState({
         roomId,
-        status: 'active',
         players: [
           { id: 'player1', isAlive: true }, // Last player, about to die
           { id: 'player2', isAlive: false }, // Already dead
         ],
-      };
+      });
 
       mockRedisClient.hGet.mockResolvedValue(JSON.stringify(mockGameState));
       mockRedisClient.hSet.mockResolvedValue('OK');
@@ -430,15 +459,14 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
 
     it('should persist correct state for game continuation', async () => {
       const roomId = 'persist-continue-room';
-      const mockGameState = {
+      const mockGameState = createMockGameState({
         roomId,
-        status: 'active',
         players: [
           { id: 'player1', isAlive: true }, // About to die
           { id: 'player2', isAlive: true }, // Still alive
           { id: 'player3', isAlive: true }, // Still alive
         ],
-      };
+      });
 
       mockRedisClient.hGet.mockResolvedValue(JSON.stringify(mockGameState));
       mockRedisClient.hSet.mockResolvedValue('OK');
