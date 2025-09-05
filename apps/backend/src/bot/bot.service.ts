@@ -194,7 +194,7 @@ export class BotService {
     console.log(`🤖 Bot ${botId} generated random map (64 tiles)`);
 
     // Create a proper State object for the bot using State.default() and modify it
-    const botState = State.default();
+    const botState = selectedWizard.defaultState();
 
     // Customize the bot state with unique values
     botState.playerId = Field(
@@ -260,6 +260,17 @@ export class BotService {
   }
 
   /**
+   * @notice Gets spell name from spell ID for logging purposes
+   */
+  private getSpellName(spellId: string): string {
+    // Import allSpells to get spell names
+    const { allSpells } = require('../../../common/stater/spells');
+
+    const spell = allSpells.find((s: any) => s.id.toString() === spellId);
+    return spell ? spell.name : `Unknown(${spellId})`;
+  }
+
+  /**
    * @notice Generates a single random action based on bot AI logic
    */
   private generateRandomAction(
@@ -287,38 +298,47 @@ export class BotService {
     const selectedSpell =
       availableSpells[Math.floor(Math.random() * availableSpells.length)];
     const spellId = selectedSpell.spellId;
+    const spellName = this.getSpellName(spellId);
+
+    console.log(
+      `🤖 Bot ${botId} selected spell: ${spellName} (ID: ${spellId})`
+    );
 
     // Generate random position for spell target
-    const currentPos = {
+    const targetPos = {
       x: Math.floor(Math.random() * this.mapSize),
       y: Math.floor(Math.random() * this.mapSize),
     };
 
     let spellCastInfo: any = {};
+    let targetMap = '';
 
     // Generate appropriate spell cast info based on spell type
     // The frontend expects spellCastInfo to be JSON that can be parsed by spell.modifyerData.fromJSON()
     if (spellId === CircuitString.fromString('Teleport').hash().toString()) {
       // Teleport spell - needs position data in Field format
-      const targetPos = this.generateRandomPosition(currentPos);
+      // For teleport, bot should target its own map (self-teleport)
+      const selfTargetPos = this.generateRandomPosition(targetPos);
+      targetMap = 'OWN MAP (self-teleport)';
       spellCastInfo = JSON.stringify({
         position: {
           x: {
-            magnitude: targetPos.x.toString(),
+            magnitude: selfTargetPos.x.toString(),
             sgn: 'Positive',
           },
           y: {
-            magnitude: targetPos.y.toString(),
+            magnitude: selfTargetPos.y.toString(),
             sgn: 'Positive',
           },
         },
       });
     } else if (spellId === CircuitString.fromString('Heal').hash().toString()) {
-      // Heal spell - no additional data needed
+      // Heal spell - no additional data needed (heals self)
+      targetMap = 'SELF (heal)';
       spellCastInfo = JSON.stringify({});
     } else {
-      // Attack spells (Lightning, FireBall, etc.) - need position data in Field format
-      const targetPos = this.generateRandomPosition(currentPos);
+      // Attack spells (Lightning, FireBall, etc.) - target opponent's map
+      targetMap = 'OPPONENT MAP (attack)';
       spellCastInfo = JSON.stringify({
         position: {
           x: {
@@ -332,6 +352,10 @@ export class BotService {
         },
       });
     }
+
+    console.log(
+      `🤖 Bot ${botId} casting ${spellName} targeting: ${targetMap} at position (${targetPos.x}, ${targetPos.y})`
+    );
 
     // Extract numeric ID from botId for Field conversion compatibility
     const numericPlayerId =
