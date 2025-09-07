@@ -12,7 +12,6 @@ import { useUserInformationStore } from '@/lib/store/userInformationStore';
 import { useInGameStore } from '@/lib/store/inGameStore';
 import { spellIdToSpell } from '@/lib/utils';
 import type { GamePhase } from '../../../../common/types/gameplay.types';
-import { useEffect, useState } from 'react';
 
 export default function Game({
   children,
@@ -59,6 +58,7 @@ export default function Game({
           variant="blue"
           text="Give up"
           onClick={() => {
+            // TODO: Add give up logic
             router.push('/');
           }}
           className="h-15 w-89 col-span-3 ml-auto"
@@ -71,7 +71,12 @@ export default function Game({
           }
           className="col-span-5 col-start-4"
         />
-        <BoxButton onClick={() => {}} className="col-span-3 mr-auto h-20 w-20">
+        <BoxButton
+          onClick={() => {
+            // TODO: Add help logic
+          }}
+          className="col-span-3 mr-auto h-20 w-20"
+        >
           <HelpIcon className="h-12.5 w-7.5" />
         </BoxButton>
       </div>
