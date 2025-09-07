@@ -1,0 +1,31 @@
+{
+  "name": "@repo/dev-auth",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    }
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "packageManager": "pnpm@10.13.1",
+  "dependencies": {
+    "@types/node": "^24.3.1",
+    "jose": "^6.1.0",
+    "formik": "^2.4.5",
+    "yup": "^1.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "next": ">=15.0.1"
+  }
+}
