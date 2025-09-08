@@ -98,6 +98,7 @@ export class BotClient {
   private opponentState: IPublicState | null = null;
   private currentRoomId: string | null = null;
   private gamePhase: GamePhase = GamePhase.SPELL_CASTING;
+  private lastAllActions: { [playerId: string]: IUserActions } | null = null;
 
   constructor(
     private readonly botId: string,
@@ -212,6 +213,8 @@ export class BotClient {
     this.socket.on('allPlayerActions', (allActions) => {
       console.log(`🤖 Bot ${this.botId} received all actions:`, allActions);
       this.gamePhase = GamePhase.SPELL_PROPAGATION;
+      // Store actions for use when generating trusted state
+      this.lastAllActions = allActions as { [playerId: string]: IUserActions };
     });
 
     this.socket.on('applySpellEffects', () => {
@@ -310,7 +313,7 @@ export class BotClient {
     const trustedState = this.botService.generateBotTrustedState(
       this.botId,
       this.currentState,
-      {} // Would contain all player actions in real implementation
+      this.lastAllActions || {}
     );
 
     // Update current state
@@ -321,5 +324,32 @@ export class BotClient {
       roomId: this.currentRoomId,
       trustedState,
     });
+
+    // If bot is dead (HP <= 0), report death after submitting trusted state
+    try {
+      const fields = trustedState.publicState.fields as any;
+      let hp = Number.POSITIVE_INFINITY;
+      if (typeof fields === 'string') {
+        const parsed = JSON.parse(fields);
+        hp = parseInt(parsed?.playerStats?.hp?.magnitude ?? '100');
+      } else if (Array.isArray(fields) && fields.length > 0) {
+        hp = parseInt((fields[0] as any)?.value ?? fields[0]);
+      }
+
+      if (Number.isFinite(hp) && hp <= 0) {
+        console.log(`💀 Bot ${this.botId} died (hp=${hp}). Reporting death...`);
+        this.socket.emit('reportDead', {
+          roomId: this.currentRoomId,
+          dead: {
+            playerId: this.botId,
+          },
+        });
+      }
+    } catch (e) {
+      console.warn(
+        `⚠️ Failed to parse bot HP for death report:`,
+        (e as Error).message
+      );
+    }
   }
 }
