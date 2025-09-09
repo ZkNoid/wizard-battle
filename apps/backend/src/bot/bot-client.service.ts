@@ -99,6 +99,9 @@ export class BotClient {
   private currentRoomId: string | null = null;
   private gamePhase: GamePhase = GamePhase.SPELL_CASTING;
   private lastAllActions: { [playerId: string]: IUserActions } | null = null;
+  private hasSubmittedActions: boolean = false;
+  private hasSubmittedTrustedState: boolean = false;
+  private endOfRoundPollingInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly botId: string,
@@ -144,6 +147,9 @@ export class BotClient {
    * @notice Disconnects the bot from the WebSocket server
    */
   async disconnect(): Promise<void> {
+    // Stop any polling
+    this.stopPollingForEndOfRound();
+
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
@@ -199,6 +205,13 @@ export class BotClient {
       console.log(`🤖 Bot ${this.botId} new turn:`, data);
       this.gamePhase = data.phase;
 
+      // Stop any existing polling
+      this.stopPollingForEndOfRound();
+
+      // Reset submission flags for new turn
+      this.hasSubmittedActions = false;
+      this.hasSubmittedTrustedState = false;
+
       // If it's spell casting phase, submit actions after a short delay
       if (data.phase === GamePhase.SPELL_CASTING) {
         setTimeout(
@@ -221,18 +234,24 @@ export class BotClient {
       console.log(`🤖 Bot ${this.botId} applying spell effects...`);
       this.gamePhase = GamePhase.SPELL_EFFECTS;
 
-      // Simulate processing time, then submit trusted state (wait for END_OF_ROUND phase)
+      // Submit trusted state after a delay to allow phase transition to END_OF_ROUND
       setTimeout(
         () => {
+          console.log(
+            `🤖 Bot ${this.botId} submitting trusted state after spell effects delay`
+          );
           this.submitTrustedState();
         },
-        Math.random() * 1000 + 2500
-      ); // Random delay 2.5-3.5 seconds to wait for phase advancement
+        Math.random() * 1000 + 2000
+      ); // Random delay 2-3 seconds
     });
 
     this.socket.on('updateUserStates', (data) => {
       console.log(`🤖 Bot ${this.botId} received state updates:`, data);
       this.gamePhase = GamePhase.STATE_UPDATE;
+
+      // Stop polling since we're now in STATE_UPDATE phase
+      this.stopPollingForEndOfRound();
 
       // Update opponent state if available
       if (data.states) {
@@ -282,7 +301,8 @@ export class BotClient {
     if (
       !this.socket ||
       !this.currentRoomId ||
-      this.gamePhase !== GamePhase.SPELL_CASTING
+      this.gamePhase !== GamePhase.SPELL_CASTING ||
+      this.hasSubmittedActions
     ) {
       return;
     }
@@ -298,13 +318,51 @@ export class BotClient {
       roomId: this.currentRoomId,
       actions,
     });
+
+    // Mark as submitted to prevent duplicate submissions
+    this.hasSubmittedActions = true;
+  }
+
+  /**
+   * @notice Starts polling for END_OF_ROUND phase after spell effects
+   */
+  private startPollingForEndOfRound(): void {
+    // Clear any existing polling interval
+    if (this.endOfRoundPollingInterval) {
+      clearInterval(this.endOfRoundPollingInterval);
+    }
+
+    // Poll every 500ms to check for END_OF_ROUND phase
+    this.endOfRoundPollingInterval = setInterval(() => {
+      // Submit trusted state if we're in END_OF_ROUND phase or any phase after SPELL_EFFECTS
+      if (
+        this.gamePhase === GamePhase.END_OF_ROUND ||
+        this.gamePhase === GamePhase.STATE_UPDATE
+      ) {
+        console.log(
+          `🤖 Bot ${this.botId} detected END_OF_ROUND phase (current: ${this.gamePhase}), submitting trusted state`
+        );
+        this.submitTrustedState();
+        this.stopPollingForEndOfRound();
+      }
+    }, 500);
+  }
+
+  /**
+   * @notice Stops polling for END_OF_ROUND phase
+   */
+  private stopPollingForEndOfRound(): void {
+    if (this.endOfRoundPollingInterval) {
+      clearInterval(this.endOfRoundPollingInterval);
+      this.endOfRoundPollingInterval = null;
+    }
   }
 
   /**
    * @notice Submits bot trusted state during end of round phase
    */
   private submitTrustedState(): void {
-    if (!this.socket || !this.currentRoomId) {
+    if (!this.socket || !this.currentRoomId || this.hasSubmittedTrustedState) {
       return;
     }
 
@@ -324,6 +382,9 @@ export class BotClient {
       roomId: this.currentRoomId,
       trustedState,
     });
+
+    // Mark as submitted to prevent duplicate submissions
+    this.hasSubmittedTrustedState = true;
 
     // If bot is dead (HP <= 0), report death after submitting trusted state
     try {
