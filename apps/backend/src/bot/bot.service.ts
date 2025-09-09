@@ -237,7 +237,7 @@ export class BotService {
     const actions: IUserAction[] = [];
 
     // Bot decision logic - simple AI that casts 1-2 spells per turn
-    const numActions = Math.random() < 0.7 ? 1 : 2; // 70% chance for 1 action, 30% for 2
+    const numActions = 1; //Math.random() < 0.7 ? 1 : 2; // 70% chance for 1 action, 30% for 2
 
     for (let i = 0; i < numActions; i++) {
       const action = this.generateRandomAction(
@@ -313,9 +313,20 @@ export class BotService {
     let spellCastInfo: any = {};
     let targetMap = '';
 
+    // Get pre-generated spell IDs from allSpells array
+    const fireballSpell = allSpells.find((s) => s.name === 'Fire_Ball');
+    const lightningSpell = allSpells.find((s) => s.name === 'Lightning');
+    const teleportSpell = allSpells.find((s) => s.name === 'Teleport');
+    const healSpell = allSpells.find((s) => s.name === 'Heal');
+
+    const FIREBALL_ID = fireballSpell?.id.toString();
+    const LIGHTNING_ID = lightningSpell?.id.toString();
+    const TELEPORT_ID = teleportSpell?.id.toString();
+    const HEAL_ID = healSpell?.id.toString();
+
     // Generate appropriate spell cast info based on spell type
     // The frontend expects spellCastInfo to be JSON that can be parsed by spell.modifyerData.fromJSON()
-    if (spellId === CircuitString.fromString('Teleport').hash().toString()) {
+    if (spellId === TELEPORT_ID) {
       // Teleport spell - needs position data in Field format
       // For teleport, bot should target its own map (self-teleport)
       const selfTargetPos = this.generateRandomPosition(targetPos);
@@ -332,7 +343,7 @@ export class BotService {
           },
         },
       });
-    } else if (spellId === CircuitString.fromString('Heal').hash().toString()) {
+    } else if (spellId === HEAL_ID) {
       // Heal spell - no additional data needed (heals self)
       targetMap = 'ally';
       spellCastInfo = JSON.stringify({});
@@ -405,23 +416,16 @@ export class BotService {
         b: { x: number; y: number }
       ) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 
-      const FIREBALL_ID = CircuitString.fromString('FireBall')
-        .hash()
-        .toString();
-      const LIGHTNING_ID = CircuitString.fromString('LightningBold')
-        .hash()
-        .toString();
-      const isFireball = (id: string) =>
-        id === FIREBALL_ID || id === 'FireBall' || id === 'fireball';
-      const isLightning = (id: string) =>
-        id === LIGHTNING_ID ||
-        id === 'LightningBold' ||
-        id === 'lightning' ||
-        id === 'Lightning';
-      const TELEPORT_ID = CircuitString.fromString('Teleport')
-        .hash()
-        .toString();
-      const HEAL_ID = CircuitString.fromString('Heal').hash().toString();
+      // Get pre-generated spell IDs from allSpells array
+      const fireballSpell = allSpells.find((s) => s.name === 'Fire_Ball');
+      const lightningSpell = allSpells.find((s) => s.name === 'Lightning');
+      const teleportSpell = allSpells.find((s) => s.name === 'Teleport');
+      const healSpell = allSpells.find((s) => s.name === 'Heal');
+
+      const FIREBALL_ID = fireballSpell?.id.toString();
+      const LIGHTNING_ID = lightningSpell?.id.toString();
+      const TELEPORT_ID = teleportSpell?.id.toString();
+      const HEAL_ID = healSpell?.id.toString();
 
       // Apply opponent actions damage to bot (use position BEFORE bot's own actions)
       const preActionPos = { x: botX, y: botY };
@@ -440,11 +444,11 @@ export class BotService {
 
           const distance = manhattan(preActionPos, { x: targetX, y: targetY });
 
-          if (isFireball(action.spellId)) {
+          if (action.spellId === FIREBALL_ID) {
             if (distance === 0) botHP = Math.max(0, botHP - 60);
             else if (distance === 1) botHP = Math.max(0, botHP - 40);
             else if (distance === 2) botHP = Math.max(0, botHP - 20);
-          } else if (isLightning(action.spellId)) {
+          } else if (action.spellId === LIGHTNING_ID) {
             if (distance === 0) botHP = Math.max(0, botHP - 100);
             else if (distance === 1) botHP = Math.max(0, botHP - 50);
           }

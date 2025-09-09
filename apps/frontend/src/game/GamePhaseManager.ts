@@ -396,6 +396,7 @@ export class GamePhaseManager {
         `❌ Error generating trusted state for player ${playerId}:`,
         error
       );
+      console.log('submited to TrustedState actions', JSON.stringify(actions));
       // Return a fallback trusted state to prevent blocking
       return {
         playerId,
@@ -514,33 +515,6 @@ export class GamePhaseManager {
           spell
         );
       });
-
-      // actions?.actions.forEach((action) => {
-      //   const type = action.playerId === this.getPlayerId() ? 'ally' : 'enemy';
-      //   let spell = allSpells.find(
-      //     (spell) => spell.id.toString() === action.spellId.toString()
-      //   );
-
-      //   let coordinates = spell?.modifyerData.fromJSON(
-      //     JSON.parse(action.spellCastInfo)
-      //   ).position;
-
-      //   if (!coordinates) {
-      //     coordinates = {
-      //       x: 0,
-      //       y: 0,
-      //     };
-      //   }
-
-      //   console.log('Emitting event', `cast-spell-${type}`);
-
-      //   EventBus.emit(
-      //     `cast-spell-${type}`,
-      //     +coordinates.x,
-      //     +coordinates.y,
-      //     spell
-      //   );
-      // });
     }
   }
 }

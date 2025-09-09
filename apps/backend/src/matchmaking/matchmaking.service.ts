@@ -515,7 +515,7 @@ export class MatchmakingService {
       // Notify player1 about player2 - only pass the required 3 parameters
       const opponentSetup1: IPublicState = new TransformedPlayerSetup(
         player2.socketId!,
-        `Player ${player2.playerId!}`,
+        player2.playerId!,
         player2.fields // Keep the original fields array
       );
       matchFound1 = new TransformedFoundMatch(roomId, player2.playerId!, [
@@ -529,7 +529,7 @@ export class MatchmakingService {
       // Notify player2 about player1 - only pass the required 3 parameters
       const opponentSetup2: IPublicState = new TransformedPlayerSetup(
         player1.socketId!,
-        `Player ${player1.playerId!}`,
+        player1.playerId!,
         player1.fields // Keep the original fields array
       );
       matchFound2 = new TransformedFoundMatch(roomId, player1.playerId!, [
