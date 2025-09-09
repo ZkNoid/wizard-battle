@@ -835,8 +835,8 @@ export class MatchmakingService {
       await this.gameStateService.registerSocket(socket);
 
       // Generate bot ID to mirror human numeric IDs with an extra leading 0
-      // Example: human "8948" → bot "0XXXX" where XXXX is a 4-digit number
-      const botId = `0${Math.floor(Math.random() * 10000)
+      // Example: human "8948" → bot "0XXXX" where XXXX is a 6-digit number
+      const botId = `100${Math.floor(Math.random() * 10000)
         .toString()
         .padStart(4, '0')}`;
 

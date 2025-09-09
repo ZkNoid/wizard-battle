@@ -474,13 +474,22 @@ export class GamePhaseManager {
   }
 
   private handleSpellCastEffects(allActions: Record<string, IUserActions>) {
+    console.log(
+      '//////////////////////////handleSpellCastEffects////////////////////////////'
+    );
     console.log('handleSpellCastEffects');
+    console.log('thisInstance playerId', this.getPlayerId());
+
+    console.log('allActions', JSON.stringify(allActions));
+
     for (const playerId of Object.keys(allActions)) {
       console.log('Processing playerId', playerId);
+
       const actions = allActions[playerId];
 
       actions?.actions.forEach((action) => {
         const type = action.playerId === this.getPlayerId() ? 'ally' : 'enemy';
+
         let spell = allSpells.find(
           (spell) => spell.id.toString() === action.spellId.toString()
         );
@@ -505,6 +514,33 @@ export class GamePhaseManager {
           spell
         );
       });
+
+      // actions?.actions.forEach((action) => {
+      //   const type = action.playerId === this.getPlayerId() ? 'ally' : 'enemy';
+      //   let spell = allSpells.find(
+      //     (spell) => spell.id.toString() === action.spellId.toString()
+      //   );
+
+      //   let coordinates = spell?.modifyerData.fromJSON(
+      //     JSON.parse(action.spellCastInfo)
+      //   ).position;
+
+      //   if (!coordinates) {
+      //     coordinates = {
+      //       x: 0,
+      //       y: 0,
+      //     };
+      //   }
+
+      //   console.log('Emitting event', `cast-spell-${type}`);
+
+      //   EventBus.emit(
+      //     `cast-spell-${type}`,
+      //     +coordinates.x,
+      //     +coordinates.y,
+      //     spell
+      //   );
+      // });
     }
   }
 }

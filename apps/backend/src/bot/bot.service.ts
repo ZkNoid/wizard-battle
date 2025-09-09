@@ -319,7 +319,7 @@ export class BotService {
       // Teleport spell - needs position data in Field format
       // For teleport, bot should target its own map (self-teleport)
       const selfTargetPos = this.generateRandomPosition(targetPos);
-      targetMap = 'OWN MAP (self-teleport)';
+      targetMap = 'ally';
       spellCastInfo = JSON.stringify({
         position: {
           x: {
@@ -334,11 +334,11 @@ export class BotService {
       });
     } else if (spellId === CircuitString.fromString('Heal').hash().toString()) {
       // Heal spell - no additional data needed (heals self)
-      targetMap = 'SELF (heal)';
+      targetMap = 'ally';
       spellCastInfo = JSON.stringify({});
     } else {
       // Attack spells (Lightning, FireBall, etc.) - target opponent's map
-      targetMap = 'OPPONENT MAP (attack)';
+      targetMap = 'enemy';
       spellCastInfo = JSON.stringify({
         position: {
           x: {
@@ -362,7 +362,8 @@ export class BotService {
       parseInt(botId.replace(/\D/g, '')) || Math.floor(Math.random() * 10000);
 
     return {
-      playerId: botId, // Use botId for game state lookup
+      playerId:
+        targetMap === 'ally' ? botId : (opponentState?.playerId ?? botId), // Use botId for game state lookup
       spellId,
       spellCastInfo,
     };
@@ -370,6 +371,12 @@ export class BotService {
 
   /**
    * @notice Generates bot's trusted state using fields approach
+   * @dev Simulates effects of all actions on bot's state and generates a trusted state commit
+   * @dev Handles damage calculation, position updates, and HP changes from spells
+   * @param botId The unique identifier of the bot
+   * @param currentState The bot's current public state
+   * @param allActions Map of all player actions for the current round
+   * @returns Trusted state with updated fields and signature
    */
   generateBotTrustedState(
     botId: string,
