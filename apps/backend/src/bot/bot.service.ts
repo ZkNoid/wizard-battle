@@ -15,6 +15,7 @@ import {
 } from '../../../common/stater/structs';
 import { allWizards, Wizard } from '../../../common/wizards';
 import { allSpells } from '../../../common/stater/spells';
+import { Stater } from '../../../common/stater/stater';
 
 // Import o1js components
 let Field: any, Int64: any, CircuitString: any;
@@ -202,8 +203,13 @@ export class BotService {
     );
     botState.wizardId = selectedWizard.id; // Use selected wizard's ID
     botState.playerStats.hp = Int64.from(selectedWizard.defaultHealth);
+
+    // DON'T override position for Mage wizard - let invisibility effect work
+    //if (selectedWizard.id.toString() !== WizardId.MAGE.toString()) {
     botState.playerStats.position.value.x = Int64.from(startPosition.x);
     botState.playerStats.position.value.y = Int64.from(startPosition.y);
+    //}
+
     botState.randomSeed = Field(Math.floor(Math.random() * 1000000));
 
     // Set the selected spells in the state
@@ -212,11 +218,16 @@ export class BotService {
     // Set the random map in the state
     botState.map = randomMap;
 
+    // After setting up botState, create a Stater and generate public state
+    const stater = new Stater({ state: botState });
+    const publicState = stater.generatePublicState(); // This applies invisibility effect
+
     // Convert to fields using State.toFields() - same approach as frontend
     const botSetup: IPublicState = {
       socketId,
       playerId: botId,
-      fields: JSON.stringify(State.toJSON(botState)), // Use proper State.toFields() conversion
+      //fields: JSON.stringify(State.toJSON(botState)), // Use proper State.toFields() conversion
+      fields: JSON.stringify(State.toJSON(publicState)), // Use the public state with effects applied
     };
 
     return botSetup;
