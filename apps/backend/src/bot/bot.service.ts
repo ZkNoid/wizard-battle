@@ -248,7 +248,7 @@ export class BotService {
     const actions: IUserAction[] = [];
 
     // Bot decision logic - simple AI that casts 1-2 spells per turn
-    const numActions = 1; //Math.random() < 0.7 ? 1 : 2; // 70% chance for 1 action, 30% for 2
+    const numActions = Math.random() < 0.7 ? 1 : 2; // 70% chance for 1 action, 30% for 2
 
     for (let i = 0; i < numActions; i++) {
       const action = this.generateRandomAction(
