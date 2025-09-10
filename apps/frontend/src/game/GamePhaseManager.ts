@@ -42,6 +42,8 @@ export class GamePhaseManager {
   private setCurrentPhaseCallback?: (phase: GamePhase) => void;
   private onGameEnd?: (winner: boolean) => void;
   private hasSubmittedActions = false; // Track if actions were submitted this turn
+  private hasSubmittedTrustedState = false; // Track if trusted state was submitted this turn
+  private trustedStatePollingInterval: NodeJS.Timeout | null = null;
 
   constructor(
     socket: any,
@@ -108,10 +110,24 @@ export class GamePhaseManager {
       }
     );
 
-    this.socket.on('trustedStateResult', (data: { success: boolean }) => {
-      console.log('Received trustedStateResult');
-      console.log(data);
-    });
+    this.socket.on(
+      'trustedStateResult',
+      (data: { success: boolean; error?: string }) => {
+        console.log('Received trustedStateResult');
+        console.log(data);
+
+        if (data.success) {
+          this.hasSubmittedTrustedState = true;
+          this.stopTrustedStatePolling();
+        } else if (
+          data.error?.includes('Invalid phase for trusted state submission')
+        ) {
+          // Server rejected due to phase mismatch, retry
+          this.hasSubmittedTrustedState = false;
+          this.startTrustedStatePolling();
+        }
+      }
+    );
 
     this.socket.on('gameEnd', (data: { winnerId: string }) => {
       console.log('Received game end. Winner is: ', data.winnerId);
@@ -261,61 +277,11 @@ export class GamePhaseManager {
     // This would typically involve calling stater.applyActions()
     // and generating the trusted state
 
-    const trustedState = this.generateTrustedState();
-
     // Move to end of round phase
     this.updateCurrentPhase(GamePhase.END_OF_ROUND);
 
-    // Submit trusted state
-    console.log('Submitting trusted state:', trustedState);
-
-    // END_OF_ROUND - issue fix
-    // Always submit trusted state first, even if player is dead
-    // This ensures the server can properly track phase completion
-    try {
-      console.log(
-        `🚀 Player ${trustedState.playerId} submitting trusted state to room ${this.roomId}`
-      );
-      this.socket.emit('submitTrustedState', {
-        roomId: this.roomId,
-        trustedState,
-      });
-
-      // Listen for submission result
-      this.socket.once(
-        'trustedStateResult',
-        (result: { success: boolean; error?: string }) => {
-          if (result.success) {
-            console.log(
-              `✅ Trusted state submission successful for player ${trustedState.playerId}`
-            );
-          } else {
-            console.error(
-              `❌ Trusted state submission failed for player ${trustedState.playerId}:`,
-              result.error
-            );
-          }
-        }
-      );
-    } catch (error) {
-      console.error(
-        `❌ Error submitting trusted state for player ${trustedState.playerId}:`,
-        error
-      );
-    }
-
-    // Report death after submitting trusted state to prevent phase blocking
-    if (+this.stater.state.playerStats.hp <= 0) {
-      console.log(
-        'Player died, reporting death after submitting trusted state'
-      );
-      this.socket.emit('reportDead', {
-        roomId: this.roomId,
-        dead: {
-          playerId: this.getPlayerId(),
-        },
-      });
-    }
+    // Start polling to submit trusted state when server is ready
+    this.startTrustedStatePolling();
   }
 
   // Phase 4: End of Round (handled by submitting trusted state above)
@@ -458,7 +424,11 @@ export class GamePhaseManager {
 
     // Reset for new turn
     this.hasSubmittedActions = false;
+    this.hasSubmittedTrustedState = false;
     this.lastActions = undefined;
+
+    // Stop any polling from previous turn
+    this.stopTrustedStatePolling();
 
     console.log(
       `🔄 Reset action tracking for player ${this.getPlayerId()} for new turn`
@@ -514,6 +484,78 @@ export class GamePhaseManager {
           +coordinates.y,
           spell
         );
+      });
+    }
+  }
+
+  /**
+   * @notice Starts polling to submit trusted state when server reaches END_OF_ROUND
+   */
+  private startTrustedStatePolling(): void {
+    // Clear any existing polling interval
+    if (this.trustedStatePollingInterval) {
+      clearInterval(this.trustedStatePollingInterval);
+    }
+
+    // Poll every 500ms to attempt trusted state submission until acknowledged
+    this.trustedStatePollingInterval = setInterval(() => {
+      if (this.hasSubmittedTrustedState) {
+        this.stopTrustedStatePolling();
+        return;
+      }
+
+      // Attempt to submit; server will accept only when phase is END_OF_ROUND
+      this.submitTrustedStateNow();
+    }, 500);
+  }
+
+  /**
+   * @notice Stops polling for trusted state submission
+   */
+  private stopTrustedStatePolling(): void {
+    if (this.trustedStatePollingInterval) {
+      clearInterval(this.trustedStatePollingInterval);
+      this.trustedStatePollingInterval = null;
+    }
+  }
+
+  /**
+   * @notice Actually submits the trusted state to the server
+   */
+  private submitTrustedStateNow(): void {
+    if (this.hasSubmittedTrustedState) {
+      return;
+    }
+
+    const trustedState = this.generateTrustedState();
+
+    console.log('Submitting trusted state:', trustedState);
+
+    try {
+      console.log(
+        `🚀 Player ${trustedState.playerId} submitting trusted state to room ${this.roomId}`
+      );
+      this.socket.emit('submitTrustedState', {
+        roomId: this.roomId,
+        trustedState,
+      });
+    } catch (error) {
+      console.error(
+        `❌ Error submitting trusted state for player ${trustedState.playerId}:`,
+        error
+      );
+    }
+
+    // Report death after submitting trusted state to prevent phase blocking
+    if (+this.stater.state.playerStats.hp <= 0) {
+      console.log(
+        'Player died, reporting death after submitting trusted state'
+      );
+      this.socket.emit('reportDead', {
+        roomId: this.roomId,
+        dead: {
+          playerId: this.getPlayerId(),
+        },
       });
     }
   }

@@ -234,16 +234,8 @@ export class BotClient {
       console.log(`🤖 Bot ${this.botId} applying spell effects...`);
       this.gamePhase = GamePhase.SPELL_EFFECTS;
 
-      // Submit trusted state after a delay to allow phase transition to END_OF_ROUND
-      setTimeout(
-        () => {
-          console.log(
-            `🤖 Bot ${this.botId} submitting trusted state after spell effects delay`
-          );
-          this.submitTrustedState();
-        },
-        Math.random() * 1000 + 2000
-      ); // Random delay 2-3 seconds
+      // Begin polling for END_OF_ROUND before submitting trusted state
+      this.startPollingForEndOfRound();
     });
 
     this.socket.on('updateUserStates', (data) => {
@@ -285,11 +277,22 @@ export class BotClient {
     });
 
     this.socket.on('trustedStateResult', (result) => {
-      if (!result.success) {
-        console.error(
-          `🤖 Bot ${this.botId} trusted state submission failed:`,
-          result.error
-        );
+      // Treat both plain success and "already submitted" as completion
+      if (result?.success) {
+        this.hasSubmittedTrustedState = true;
+        return;
+      }
+
+      const errorMessage: string = result?.error || '';
+      console.error(
+        `🤖 Bot ${this.botId} trusted state submission failed:`,
+        errorMessage
+      );
+
+      // If server rejected due to phase mismatch, resume polling and allow retry
+      if (errorMessage.includes('Invalid phase for trusted state submission')) {
+        this.hasSubmittedTrustedState = false;
+        this.startPollingForEndOfRound();
       }
     });
   }
@@ -332,19 +335,15 @@ export class BotClient {
       clearInterval(this.endOfRoundPollingInterval);
     }
 
-    // Poll every 500ms to check for END_OF_ROUND phase
+    // Poll every 500ms to attempt trusted state submission until acknowledged
     this.endOfRoundPollingInterval = setInterval(() => {
-      // Submit trusted state if we're in END_OF_ROUND phase or any phase after SPELL_EFFECTS
-      if (
-        this.gamePhase === GamePhase.END_OF_ROUND ||
-        this.gamePhase === GamePhase.STATE_UPDATE
-      ) {
-        console.log(
-          `🤖 Bot ${this.botId} detected END_OF_ROUND phase (current: ${this.gamePhase}), submitting trusted state`
-        );
-        this.submitTrustedState();
+      if (this.hasSubmittedTrustedState) {
         this.stopPollingForEndOfRound();
+        return;
       }
+
+      // Attempt to submit; server will accept only when phase is END_OF_ROUND
+      this.submitTrustedState();
     }, 500);
   }
 
@@ -383,8 +382,7 @@ export class BotClient {
       trustedState,
     });
 
-    // Mark as submitted to prevent duplicate submissions
-    this.hasSubmittedTrustedState = true;
+    // Do not mark submitted until server acknowledges success
 
     // If bot is dead (HP <= 0), report death after submitting trusted state
     try {

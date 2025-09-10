@@ -882,10 +882,10 @@ export class GameSessionGateway {
     await this.gameStateService.publishToRoom(roomId, 'applySpellEffects', {});
 
     // Auto-advance to END_OF_ROUND phase after players have time to process effects
-    //   setTimeout(async () => {
-    await this.gameStateService.advanceGamePhase(roomId);
-    console.log(`🔄 Advanced room ${roomId} to END_OF_ROUND phase`);
-    //   }, 2000); // 2 second delay for effect processing
+    setTimeout(async () => {
+      await this.gameStateService.advanceGamePhase(roomId);
+      console.log(`🔄 Advanced room ${roomId} to END_OF_ROUND phase`);
+    }, 2000); // 2 second delay for effect processing
   }
 
   /**
