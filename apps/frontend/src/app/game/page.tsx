@@ -17,7 +17,7 @@ import { GamePhase } from '../../../../common/types/gameplay.types';
 import { Position } from '../../../../common/stater/structs';
 import { Int64 } from 'o1js';
 import { EventBus } from '@/game/EventBus';
-import { Tilemap, EntityOverlay, gameEventEmitter } from '@/engine';
+import { Tilemap, EntityOverlay, gameEventEmitter, EntityType } from '@/engine';
 import { useEngineStore } from '@/lib/store/engineStore';
 
 const MEGA_W = 8;
@@ -180,18 +180,20 @@ export default function GamePage() {
       initMovementHandler();
 
       // Create red square entity
-      const redSquare = {
+      const user = {
         id: 'user',
+        type: EntityType.WIZARD,
         tilemapPosition: { x: 3, y: 3 },
       };
 
-      const blueSquare = {
+      const enemy = {
         id: 'enemy',
+        type: EntityType.BLUE_SQUARE,
         tilemapPosition: { x: 4, y: 4 },
       };
 
-      addEntity(redSquare);
-      addEntity(blueSquare);
+      addEntity(user);
+      addEntity(enemy);
       isInitialized.current = true;
     }
 
@@ -339,6 +341,7 @@ export default function GamePage() {
       `🟥 LEFT tilemap clicked: index=${index}, x=${x}, y=${y} - moving red square`
     );
     gameEventEmitter.move('user', x, y);
+    // gameEventEmitter.playAnimation('user', 'idle', true);
   };
 
   // Handler for right tilemap click to move blue square

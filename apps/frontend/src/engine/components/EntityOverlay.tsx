@@ -2,6 +2,8 @@ import React from 'react';
 import type { IEntity } from '../types/IEntity';
 import { RedSquare } from '../entities/RedSquare';
 import { BlueSquare } from '../entities/BlueSquare';
+import { AnimatedWizard } from '../entities/AnimatedWizard';
+import { EntityType } from '../types/IEntity';
 
 interface EntityOverlayProps {
   entities: IEntity[];
@@ -51,8 +53,15 @@ export function EntityOverlay({
               height: `${entityHeight}%`,
             }}
           >
-            {entity.id === 'user' && <RedSquare entity={entity} />}
-            {entity.id === 'enemy' && <BlueSquare entity={entity} />}
+            {entity.type === EntityType.RED_SQUARE && (
+              <RedSquare entity={entity} />
+            )}
+            {entity.type === EntityType.BLUE_SQUARE && (
+              <BlueSquare entity={entity} />
+            )}
+            {entity.type === EntityType.WIZARD && (
+              <AnimatedWizard entity={entity} />
+            )}
           </div>
         );
       })}

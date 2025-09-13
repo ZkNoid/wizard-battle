@@ -7,6 +7,17 @@ export interface MoveEntityEvent {
   y: number; // tilemap coordinate (0-7)
 }
 
+// Types of events for animations
+export interface PlayAnimationEvent {
+  entityId: string;
+  animationName: string;
+  loop?: boolean;
+}
+
+export interface StopAnimationEvent {
+  entityId: string;
+}
+
 class GameEventEmitter extends EventEmitter {
   private static instance: GameEventEmitter;
 
@@ -43,6 +54,39 @@ class GameEventEmitter extends EventEmitter {
 
   offMove(callback: (event: MoveEntityEvent) => void) {
     this.off('move', callback);
+  }
+
+  // Simple API for animations
+  playAnimation(entityId: string, animationName: string, loop = true) {
+    const event: PlayAnimationEvent = {
+      entityId,
+      animationName,
+      loop,
+    };
+    this.emit('playAnimation', event);
+  }
+
+  stopAnimation(entityId: string) {
+    const event: StopAnimationEvent = {
+      entityId,
+    };
+    this.emit('stopAnimation', event);
+  }
+
+  onPlayAnimation(callback: (event: PlayAnimationEvent) => void) {
+    this.on('playAnimation', callback);
+  }
+
+  offPlayAnimation(callback: (event: PlayAnimationEvent) => void) {
+    this.off('playAnimation', callback);
+  }
+
+  onStopAnimation(callback: (event: StopAnimationEvent) => void) {
+    this.on('stopAnimation', callback);
+  }
+
+  offStopAnimation(callback: (event: StopAnimationEvent) => void) {
+    this.off('stopAnimation', callback);
   }
 }
 

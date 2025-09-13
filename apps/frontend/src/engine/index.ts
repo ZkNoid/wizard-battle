@@ -2,12 +2,16 @@ export { Tilemap } from './components/Tilemap';
 
 export { useEngine } from './hooks/useEngine';
 export { useTilemap } from './hooks/useTilemap';
+export { useAnimatedEntity } from './hooks/useAnimatedEntity';
 
 export { EntityOverlay } from './components/EntityOverlay';
+export { AnimatedCanvas } from './components/AnimatedCanvas';
 export { RedSquare } from './entities/RedSquare';
 export { BlueSquare } from './entities/BlueSquare';
+export { AnimatedWizard } from './entities/AnimatedWizard';
 
 export type { IEntity } from './types/IEntity';
+export { EntityType } from './types/IEntity';
 
 export type {
   ITile,
@@ -29,4 +33,21 @@ export {
   FULL_HEIGHT,
 } from './types/tilemap';
 
-export { gameEventEmitter, type MoveEntityEvent } from './gameEventEmitter';
+export {
+  gameEventEmitter,
+  type MoveEntityEvent,
+  type PlayAnimationEvent,
+  type StopAnimationEvent,
+} from './gameEventEmitter';
+
+export type {
+  Animation,
+  SpriteFrame,
+  SpritesheetData,
+} from './types/animation';
+export {
+  loadAnimation,
+  loadSpritesheet,
+  loadSpritesheetImage,
+  createAnimation,
+} from './utils/animationLoader';
