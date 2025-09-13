@@ -51,3 +51,11 @@ export {
   loadSpritesheetImage,
   createAnimation,
 } from './utils/animationLoader';
+
+export {
+  setupHighQualityCanvas,
+  calculateAspectRatioFit,
+  optimizeImageForPixelArt,
+  isHighDPI,
+  getDevicePixelRatio,
+} from './utils/canvasUtils';

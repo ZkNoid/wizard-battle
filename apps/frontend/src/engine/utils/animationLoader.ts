@@ -1,4 +1,5 @@
 import type { SpritesheetData, Animation } from '../types/animation';
+import { optimizeImageForPixelArt } from './canvasUtils';
 
 // Cache for loaded spritesheets
 const spritesheetCache = new Map<string, SpritesheetData>();
@@ -39,6 +40,10 @@ export async function loadSpritesheetImage(
 
   return new Promise((resolve, reject) => {
     const img = new Image();
+
+    // Optimize image loading for pixel art
+    optimizeImageForPixelArt(img);
+
     img.onload = () => {
       imageCache.set(imagePath, img);
       resolve(img);
@@ -46,6 +51,7 @@ export async function loadSpritesheetImage(
     img.onerror = () => {
       reject(new Error(`Failed to load image: ${imagePath}`));
     };
+
     img.src = imagePath;
   });
 }

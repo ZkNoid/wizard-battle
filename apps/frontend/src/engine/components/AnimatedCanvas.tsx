@@ -1,5 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
 import type { Animation } from '../types/animation';
+import {
+  setupHighQualityCanvas,
+  calculateAspectRatioFit,
+  getDevicePixelRatio,
+} from '../utils/canvasUtils';
 
 interface AnimatedCanvasProps {
   animation: Animation;
@@ -30,8 +35,9 @@ export function AnimatedCanvas({
     height: height || 64,
   });
   const lastTimeRef = useRef<number>(0);
+  const devicePixelRatio = useRef<number>(getDevicePixelRatio());
 
-  // Effect to handle container size changes
+  // Effect to handle container size changes and DPI
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -40,6 +46,9 @@ export function AnimatedCanvas({
         const rect = containerRef.current.getBoundingClientRect();
         const newWidth = width || Math.floor(rect.width);
         const newHeight = height || Math.floor(rect.height);
+
+        // Update device pixel ratio in case it changed
+        devicePixelRatio.current = getDevicePixelRatio();
 
         setCanvasSize({ width: newWidth, height: newHeight });
       }
@@ -53,10 +62,25 @@ export function AnimatedCanvas({
       updateCanvasSize();
     });
 
+    // Listen for changes in device pixel ratio (when moving between monitors)
+    const mediaQuery = window.matchMedia(
+      `(resolution: ${devicePixelRatio.current}dppx)`
+    );
+    const handleDPIChange = () => {
+      updateCanvasSize();
+    };
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleDPIChange);
+    }
+
     resizeObserver.observe(containerRef.current);
 
     return () => {
       resizeObserver.disconnect();
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleDPIChange);
+      }
     };
   }, [width, height]);
 
@@ -118,24 +142,45 @@ export function AnimatedCanvas({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clearing canvas
-    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
+    const dpr = devicePixelRatio.current;
+    const displayWidth = canvasSize.width;
+    const displayHeight = canvasSize.height;
+
+    // Set up canvas for high quality rendering
+    setupHighQualityCanvas(canvas, ctx, displayWidth, displayHeight, dpr);
+
+    // Clear canvas
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
 
     const frame = animation.frames[currentFrameIndex];
-
     if (!frame) return;
 
-    // Drawing current frame
+    // Calculate optimal scaling to maintain aspect ratio
+    const sourceWidth = frame.frame.w;
+    const sourceHeight = frame.frame.h;
+    const {
+      width: drawWidth,
+      height: drawHeight,
+      offsetX,
+      offsetY,
+    } = calculateAspectRatioFit(
+      sourceWidth,
+      sourceHeight,
+      displayWidth,
+      displayHeight
+    );
+
+    // Draw current frame with proper scaling
     ctx.drawImage(
       image,
       frame.frame.x, // source x
       frame.frame.y, // source y
-      frame.frame.w, // source width
-      frame.frame.h, // source height
-      0, // destination x
-      0, // destination y
-      canvasSize.width, // destination width
-      canvasSize.height // destination height
+      sourceWidth, // source width
+      sourceHeight, // source height
+      offsetX, // destination x (centered)
+      offsetY, // destination y (centered)
+      drawWidth, // destination width (scaled)
+      drawHeight // destination height (scaled)
     );
   }, [image, animation, currentFrameIndex, canvasSize]);
 
@@ -150,12 +195,15 @@ export function AnimatedCanvas({
     <div ref={containerRef} className={`h-full w-full ${className}`}>
       <canvas
         ref={canvasRef}
-        width={canvasSize.width}
-        height={canvasSize.height}
         className="h-full w-full"
-        style={{
-          imageRendering: 'pixelated',
-        }}
+        style={
+          {
+            imageRendering: 'pixelated' as any,
+            willChange: 'transform',
+          } as React.CSSProperties & {
+            imageRendering?: string;
+          }
+        }
       />
     </div>
   );

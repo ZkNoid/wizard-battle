@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @layer base {
   *,
@@ -74,33 +74,33 @@
 }
 
 @layer base {
-  input[type="number"].appearance-none::-webkit-inner-spin-button,
-  input[type="number"].appearance-none::-webkit-outer-spin-button {
+  input[type='number'].appearance-none::-webkit-inner-spin-button,
+  input[type='number'].appearance-none::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
-  input[type="number"].appearance-none {
+  input[type='number'].appearance-none {
     -moz-appearance: textfield;
   }
 }
 
 @layer utilities {
   /* clears the 'X' from Internet Explorer */
-  input[type="search"]::-ms-clear {
+  input[type='search']::-ms-clear {
     display: none;
     width: 0;
     height: 0;
   }
-  input[type="search"]::-ms-reveal {
+  input[type='search']::-ms-reveal {
     display: none;
     width: 0;
     height: 0;
   }
   /* clears the 'X' from Chrome */
-  input[type="search"]::-webkit-search-decoration,
-  input[type="search"]::-webkit-search-cancel-button,
-  input[type="search"]::-webkit-search-results-button,
-  input[type="search"]::-webkit-search-results-decoration {
+  input[type='search']::-webkit-search-decoration,
+  input[type='search']::-webkit-search-cancel-button,
+  input[type='search']::-webkit-search-results-button,
+  input[type='search']::-webkit-search-results-decoration {
     display: none;
   }
 
@@ -131,4 +131,28 @@
 
 * {
   scroll-behavior: smooth;
+}
+
+/* Pixel art and canvas optimization */
+canvas,
+img.pixel-art {
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* Optimization for high DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  canvas {
+    /* Better quality for high DPI displays */
+    transform: translateZ(0);
+    will-change: transform;
+  }
+}
+
+/* Prevent blurry text and elements */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
