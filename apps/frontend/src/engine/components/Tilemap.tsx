@@ -36,20 +36,6 @@ class Megatile {
   }
 }
 
-// Utility functions
-const tileToNumber = (tile: Tiles): number => {
-  switch (tile) {
-    case Tiles.Air:
-      return 0;
-    case Tiles.Water:
-      return 1;
-    case Tiles.Grass:
-      return 2;
-    default:
-      return 0;
-  }
-};
-
 const numberToTile = (num: number): Tiles => {
   switch (num) {
     case 0:
@@ -200,6 +186,9 @@ export interface TilemapProps {
   tilemap?: number[]; // array of tile numbers
   className?: string;
   onTileClick?: (index: number) => void;
+  onTileMouseDown?: (index: number) => void;
+  onTileMouseEnter?: (index: number) => void;
+  onTileMouseUp?: (index: number) => void;
 }
 
 export function Tilemap({
@@ -209,6 +198,9 @@ export function Tilemap({
   tilemap = [],
   className = '',
   onTileClick,
+  onTileMouseDown,
+  onTileMouseEnter,
+  onTileMouseUp,
 }: TilemapProps) {
   const [megatiles, setMegatiles] = useState<Megatile[]>(
     Array(TILEMAP_SIZE)
@@ -244,7 +236,7 @@ export function Tilemap({
 
   return (
     <div
-      className={`grid ${className}`}
+      className={`grid size-full ${className}`}
       style={{
         gridTemplateColumns: `repeat(${width}, 1fr)`,
         gridTemplateRows: `repeat(${height}, 1fr)`,
@@ -253,35 +245,43 @@ export function Tilemap({
       {megatiles.slice(0, width * height).map((megatile, index) => (
         <div
           key={index}
-          className="cursor-pointer select-none"
+          className="group relative size-full cursor-pointer select-none"
           style={{
-            width: `calc(${tileSize / 19.2}vw)`,
-            height: `calc(${tileSize / 19.2}vw)`,
             userSelect: 'none',
           }}
           onClick={() => handleTileClick(index)}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onTileMouseDown?.(index);
+          }}
+          onMouseEnter={() => onTileMouseEnter?.(index)}
+          onMouseUp={() => onTileMouseUp?.(index)}
+          onContextMenu={(e) => e.preventDefault()}
+          onDragStart={(e) => e.preventDefault()}
         >
+          {/* Hover overlay */}
+          <div className="pointer-events-none absolute inset-0 z-10 rounded-sm bg-neutral-200 opacity-0 transition-opacity duration-150 group-hover:opacity-30" />
+
           {megatile.getMainTile().type === Tiles.Air ? (
-            <div className="size-full bg-gray-100 hover:bg-gray-300" />
+            <div className="size-full bg-gray-100" />
           ) : (
-            <div className="grid size-full grid-cols-3 grid-rows-3">
+            <div className="grid size-full grid-cols-3 grid-rows-3 gap-0">
               {megatile.tiles.map((tile, tileIndex) => (
                 <Image
                   key={tileIndex}
                   src={getTileImage(tile)}
-                  alt="Tile"
-                  width={tileSize / 3}
-                  height={tileSize / 3}
-                  className="size-full"
+                  alt={'Tile'}
+                  width={tileSize}
+                  height={tileSize}
                   draggable={false}
+                  className="h-full w-full"
                   style={{
+                    imageRendering: 'pixelated',
                     pointerEvents: 'none',
                     userSelect: 'none',
                     WebkitUserSelect: 'none',
                     MozUserSelect: 'none',
                     msUserSelect: 'none',
-                    width: `${(tileSize / 3 / 1920) * 100}vw`,
-                    height: `${(tileSize / 3 / 1920) * 100}vw`,
                   }}
                   onDragStart={(e: React.DragEvent) => e.preventDefault()}
                 />

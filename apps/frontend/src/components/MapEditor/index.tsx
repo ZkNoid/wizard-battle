@@ -11,17 +11,20 @@ import { useUserInformationStore } from '@/lib/store/userInformationStore';
 import { Button } from '../shared/Button';
 import { useMinaAppkit } from 'mina-appkit';
 import { ALL_TILES } from '@/lib/constants/tiles';
-import { Tilemap, useEngine, TileType, TILEMAP_SIZE } from '@/engine';
-
-// Constants (using from engine)
-const MEGA_W = 8;
-const MEGA_H = 8;
+import {
+  Tilemap,
+  useEngine,
+  TileType,
+  TILEMAP_SIZE,
+  MEGA_WIDTH,
+  MEGA_HEIGHT,
+} from '@/engine';
 
 // Utility functions (using from engine)
 const createRandomTilemap = (): number[] =>
-  Array.from({ length: TILEMAP_SIZE }, () =>
-    Math.random() < 0.3 ? 1 : Math.random() < 0.6 ? 2 : 0
-  );
+  Array.from({ length: TILEMAP_SIZE }, () => {
+    return Math.random() < 0.5 ? 1 : 2; // 50% water, 50% grass
+  });
 
 export default function MapEditor() {
   const { setMap } = useUserInformationStore();
@@ -33,6 +36,7 @@ export default function MapEditor() {
     Array(TILEMAP_SIZE).fill(0)
   );
   const [tilemap, setTilemap] = useState<number[]>(Array(TILEMAP_SIZE).fill(0));
+  const [isDrawing, setIsDrawing] = useState(false);
 
   const { address } = useMinaAppkit();
   const utils = api.useUtils();
@@ -98,19 +102,57 @@ export default function MapEditor() {
     }
   }, [tilemapData, setMap]);
 
-  const handleTileDraw = (index: number) => {
-    const tileNumber = tileTypeToNumber(selectedTile);
-    if (tileNumber === tilemap[index]) return;
+  // Add global mouseup event listener to stop drawing when mouse leaves the tilemap
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      setIsDrawing(false);
+    };
 
-    const newTilemap = [...tilemap];
-    newTilemap[index] = tileNumber;
-    updateTilemapState(newTilemap);
-  };
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
+
+  const handleTileDraw = useCallback(
+    (index: number) => {
+      const tileNumber = tileTypeToNumber(selectedTile);
+      if (tileNumber === tilemap[index]) return;
+
+      const newTilemap = [...tilemap];
+      newTilemap[index] = tileNumber;
+      updateTilemapState(newTilemap);
+    },
+    [selectedTile, tilemap, tileTypeToNumber, updateTilemapState]
+  );
 
   // Simple tile click handler
-  const handleTileClick = (index: number) => {
-    handleTileDraw(index);
-  };
+  const handleTileClick = useCallback(
+    (index: number) => {
+      handleTileDraw(index);
+    },
+    [handleTileDraw]
+  );
+
+  // Brush painting handlers
+  const handleMouseDown = useCallback(
+    (index: number) => {
+      setIsDrawing(true);
+      handleTileDraw(index);
+    },
+    [handleTileDraw]
+  );
+
+  const handleMouseEnter = useCallback(
+    (index: number) => {
+      if (isDrawing) {
+        handleTileDraw(index);
+      }
+    },
+    [isDrawing, handleTileDraw]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    setIsDrawing(false);
+  }, []);
 
   const handleSlotChange = useCallback(
     (newSlot: '1' | '2' | '3' | '4') => {
@@ -172,12 +214,15 @@ export default function MapEditor() {
           </div>
           <div className="flex flex-col gap-2">
             <Tilemap
-              width={MEGA_W}
-              height={MEGA_H}
+              width={MEGA_WIDTH}
+              height={MEGA_HEIGHT}
               tileSize={60}
               tilemap={tilemap}
               onTileClick={handleTileClick}
-              className=""
+              onTileMouseDown={handleMouseDown}
+              onTileMouseEnter={handleMouseEnter}
+              onTileMouseUp={handleMouseUp}
+              className="h-120 w-120"
             />
             <div className="flex w-full flex-row items-center justify-end gap-2">
               <Button

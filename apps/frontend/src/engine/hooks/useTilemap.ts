@@ -26,9 +26,9 @@ export function useTilemap(initialTilemap?: TilemapData) {
   }, []);
 
   const randomizeTilemap = useCallback(() => {
-    const randomTilemap = Array.from({ length: TILEMAP_SIZE }, () =>
-      Math.random() < 0.3 ? 1 : Math.random() < 0.6 ? 2 : 0
-    );
+    const randomTilemap = Array.from({ length: TILEMAP_SIZE }, () => {
+      return Math.random() < 0.5 ? 1 : 2; // 50% water, 50% grass
+    });
     setTilemap(randomTilemap);
   }, []);
 

@@ -1,11 +1,9 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import type { IRefPhaserGame } from '@/PhaserGame';
 import Game from '@/components/Game';
 import { api } from '@/trpc/react';
-import { FullscreenLoader } from '@/components/shared/FullscreenLoader';
 import { useMinaAppkit } from 'mina-appkit';
 import { useRouter } from 'next/navigation';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
@@ -18,26 +16,26 @@ import type {
 import { GamePhase } from '../../../../common/types/gameplay.types';
 import { Position } from '../../../../common/stater/structs';
 import { Int64 } from 'o1js';
-import { Game as GameScene } from '@/game/scenes/Game';
 import { EventBus } from '@/game/EventBus';
+import { Tilemap, EntityOverlay, gameEventEmitter } from '@/engine';
+import { useEngineStore } from '@/lib/store/engineStore';
 
-const PhaserGame = dynamic(
-  () => import('@/PhaserGame').then((mod) => mod.PhaserGame),
-  {
-    ssr: false,
-    loading: () => <FullscreenLoader />,
-  }
-);
+const MEGA_W = 8;
+const MEGA_H = 8;
 
 export default function GamePage() {
   //  References to the PhaserGame component (game and scene are exposed)
   const { stater, opponentState, gamePhaseManager, setActionSend, actionSend } =
     useUserInformationStore();
   const { pickedSpellId } = useInGameStore();
+  const { addEntity, getAllEntities, initMovementHandler, clearEntities } =
+    useEngineStore();
   const phaserRefAlly = useRef<IRefPhaserGame | null>(null);
   const phaserRefEnemy = useRef<IRefPhaserGame | null>(null);
+  const isInitialized = useRef<boolean>(false);
   const router = useRouter();
   const { address } = useMinaAppkit();
+  const entities = getAllEntities();
 
   const [canPlayerAct, setCanPlayerAct] = useState<boolean>(false);
 
@@ -175,6 +173,35 @@ export default function GamePage() {
     }
   }, [address]);
 
+  // Initialize movement system and create red square (only once)
+  useEffect(() => {
+    if (!isInitialized.current) {
+      // Initialize movement handler
+      initMovementHandler();
+
+      // Create red square entity
+      const redSquare = {
+        id: 'user',
+        tilemapPosition: { x: 3, y: 3 },
+      };
+
+      const blueSquare = {
+        id: 'enemy',
+        tilemapPosition: { x: 4, y: 4 },
+      };
+
+      addEntity(redSquare);
+      addEntity(blueSquare);
+      isInitialized.current = true;
+    }
+
+    // Cleanup function to clear entities when component unmounts
+    return () => {
+      clearEntities();
+      isInitialized.current = false;
+    };
+  }, [initMovementHandler, addEntity, clearEntities]);
+
   // Emit move ally | enemy event to the scene
   const emitMovePlayerEvent = (
     xTile: number,
@@ -298,36 +325,73 @@ export default function GamePage() {
     };
   }, []);
 
+  // Function to convert tile index to x,y coordinates
+  const indexToCoordinates = (index: number) => {
+    const x = index % MEGA_W;
+    const y = Math.floor(index / MEGA_W);
+    return { x, y };
+  };
+
+  // Handler for left tilemap click to move red square
+  const handleTilemapClick = (index: number) => {
+    const { x, y } = indexToCoordinates(index);
+    console.log(
+      `🟥 LEFT tilemap clicked: index=${index}, x=${x}, y=${y} - moving red square`
+    );
+    gameEventEmitter.move('user', x, y);
+  };
+
+  // Handler for right tilemap click to move blue square
+  const handleTilemapClickEnemy = (index: number) => {
+    const { x, y } = indexToCoordinates(index);
+    console.log(
+      `🟦 RIGHT tilemap clicked: index=${index}, x=${x}, y=${y} - moving blue square`
+    );
+    gameEventEmitter.move('enemy', x, y);
+  };
+
   return (
     <Game>
-      <div className="relative">
-        {actionSend && (
-          <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 transform text-center text-lg font-bold text-white">
-            Waiting for opponent turn
-          </div>
-        )}
-        <PhaserGame
-          ref={phaserRefAlly}
-          currentActiveScene={currentScene}
-          container="game-container-ally"
-          isEnemy={false}
-          tilemapData={allyTilemapData}
-          onMapClick={handleAllyMapClickMemo}
-        />
+      {/* Left half */}
+      <div className="space-y-2">
+        <div className="relative">
+          <Tilemap
+            width={MEGA_W}
+            height={MEGA_H}
+            tileSize={60}
+            tilemap={tilemapData ?? []}
+            onTileClick={handleTilemapClick}
+            className="h-full w-full cursor-pointer"
+          />
+          {/* Overlay with entities */}
+          <EntityOverlay
+            entities={entities}
+            gridWidth={MEGA_W}
+            gridHeight={MEGA_H}
+          />
+        </div>
       </div>
+
+      {/* Right half*/}
       <div className="relative">
         {actionSend && (
           <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 transform text-center text-lg font-bold text-white">
             Waiting for opponent turn
           </div>
         )}
-        <PhaserGame
-          ref={phaserRefEnemy}
-          currentActiveScene={currentScene}
-          container="game-container-enemy"
-          isEnemy={true}
-          tilemapData={enemyTilemapData}
-          onMapClick={handleEnemyMapClickMemo}
+        <Tilemap
+          width={MEGA_W}
+          height={MEGA_H}
+          tileSize={60}
+          tilemap={tilemapData ?? []}
+          onTileClick={handleTilemapClickEnemy}
+          className="cursor-pointer"
+        />
+        {/* Overlay with entities */}
+        <EntityOverlay
+          entities={entities}
+          gridWidth={MEGA_W}
+          gridHeight={MEGA_H}
         />
       </div>
     </Game>

@@ -1,0 +1,49 @@
+import { EventEmitter } from 'events';
+
+// Types of events for movement on the tilemap
+export interface MoveEntityEvent {
+  entityId: string;
+  x: number; // tilemap coordinate (0-7)
+  y: number; // tilemap coordinate (0-7)
+}
+
+class GameEventEmitter extends EventEmitter {
+  private static instance: GameEventEmitter;
+
+  private constructor() {
+    super();
+  }
+
+  static getInstance(): GameEventEmitter {
+    if (!GameEventEmitter.instance) {
+      GameEventEmitter.instance = new GameEventEmitter();
+    }
+    return GameEventEmitter.instance;
+  }
+
+  // Simple API for movement on the tilemap
+  move(entityId: string, x: number, y: number) {
+    // Checking the boundaries of the tilemap (0-7)
+    if (x < 0 || x >= 8 || y < 0 || y >= 8) {
+      console.warn(`Invalid tilemap coordinates: x=${x}, y=${y}. Must be 0-7.`);
+      return;
+    }
+
+    const event: MoveEntityEvent = {
+      entityId,
+      x,
+      y,
+    };
+    this.emit('move', event);
+  }
+
+  onMove(callback: (event: MoveEntityEvent) => void) {
+    this.on('move', callback);
+  }
+
+  offMove(callback: (event: MoveEntityEvent) => void) {
+    this.off('move', callback);
+  }
+}
+
+export const gameEventEmitter = GameEventEmitter.getInstance();
