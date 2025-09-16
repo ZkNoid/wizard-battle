@@ -37,6 +37,92 @@ export class GamePhaseSchedulerService {
   }
 
   /**
+   * @notice Enforce 5-minute timeout for SPELL_CASTING
+   * @dev If no one submits → draw. If some submit and others don't → non-submitters lose.
+   *
+   * */
+  @Cron(CronExpression.EVERY_5_SECONDS)
+  async enforceSpellCastingTimeouts() {
+    try {
+      const roomIds =
+        await this.gameStateService.redisClient.hKeys('game_states');
+      const now = Date.now();
+
+      for (const roomId of roomIds) {
+        const gameState = await this.gameStateService.getGameState(roomId);
+        if (!gameState || gameState.status !== 'active') continue;
+        if (gameState.currentPhase !== GamePhase.SPELL_CASTING) continue;
+
+        const timeSincePhaseStart = now - gameState.phaseStartTime;
+        if (timeSincePhaseStart < (gameState.phaseTimeout || 300000)) continue;
+
+        const alivePlayers = gameState.players.filter((p) => p.isAlive);
+        const submitters = alivePlayers.filter((p) => !!p.currentActions);
+        const nonSubmitters = alivePlayers.filter((p) => !p.currentActions);
+
+        console.log(
+          `⏰ SPELL_CASTING timeout in room ${roomId} after ${timeSincePhaseStart}ms`
+        );
+
+        if (submitters.length === 0) {
+          console.log(`🤝 No actions submitted in room ${roomId} → draw`);
+          await this.gameStateService.updateGameState(roomId, {
+            status: 'finished',
+          });
+          const gameEnd = { winnerId: 'draw' };
+          this.gameSessionGateway.server.to(roomId).emit('gameEnd', gameEnd);
+          await this.gameStateService.publishToRoom(roomId, 'gameEnd', gameEnd);
+          await this.gameStateService.markRoomForCleanup(
+            roomId,
+            'spell_casting_timeout_draw'
+          );
+          continue;
+        }
+
+        if (nonSubmitters.length >= 1) {
+          console.log(
+            `🏁 SPELL_CASTING timeout: eliminating non-submitters in room ${roomId}: ${nonSubmitters
+              .map((p) => p.id)
+              .join(', ')}`
+          );
+
+          let winnerId: string | null = null;
+          for (const p of nonSubmitters) {
+            const res = await this.gameStateService.markPlayerDead(
+              roomId,
+              p.id
+            );
+            if (res) winnerId = res;
+          }
+
+          if (winnerId) {
+            const gameEnd = { winnerId };
+            console.log(
+              `📢 Broadcasting game end for room ${roomId}, winner: ${winnerId}`
+            );
+            this.gameSessionGateway.server.to(roomId).emit('gameEnd', gameEnd);
+            await this.gameStateService.publishToRoom(
+              roomId,
+              'gameEnd',
+              gameEnd
+            );
+            await this.gameStateService.markRoomForCleanup(
+              roomId,
+              'spell_casting_timeout_winner_decided'
+            );
+          } else {
+            console.log(
+              `🎮 Room ${roomId} continues after removing non-submitters (multiple submitters alive)`
+            );
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error enforcing SPELL_CASTING timeouts:', error);
+    }
+  }
+
+  /**
    * @notice Clean up inactive rooms every 5 minutes
    * @dev Removes rooms with no activity for extended periods
    */
@@ -118,11 +204,10 @@ export class GamePhaseSchedulerService {
     const now = Date.now();
 
     // Get all active rooms
-    const roomKeys =
-      await this.gameStateService.redisClient.keys('game_state:*');
+    const roomIds =
+      await this.gameStateService.redisClient.hKeys('game_states');
 
-    for (const key of roomKeys) {
-      const roomId = key.replace('game_state:', '');
+    for (const roomId of roomIds) {
       const gameState = await this.gameStateService.getGameState(roomId);
 
       if (!gameState || gameState.status !== 'active') continue;

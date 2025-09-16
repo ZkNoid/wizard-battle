@@ -393,6 +393,26 @@ export class MatchmakingService {
       // Even if notification fails, the match is still valid
     }
 
+    // Start the first turn after a short delay to allow both players to join the room
+    setTimeout(async () => {
+      try {
+        await this.gameStateService.updateGameState(roomId, {
+          status: 'active',
+        });
+
+        // Emit the first turn to start gameplay
+        if (this.server) {
+          this.server.to(roomId).emit('newTurn', { phase: 'spell_casting' });
+          await this.gameStateService.publishToRoom(roomId, 'newTurn', {
+            phase: 'spell_casting',
+          });
+          console.log(`🎮 Started first turn for match in room ${roomId}`);
+        }
+      } catch (error) {
+        console.error('Failed to start first turn for match:', error);
+      }
+    }, 2000); // 2 second delay
+
     // ONLY AFTER everything is successful, remove players from queue
     // This ensures we don't lose players if match creation fails
     const waitingPlayers = await this.redisClient.lRange(
