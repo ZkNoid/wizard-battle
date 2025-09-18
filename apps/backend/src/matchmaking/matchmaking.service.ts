@@ -906,9 +906,17 @@ export class MatchmakingService {
 
           // Emit the first turn to start gameplay
           if (this.server) {
-            this.server.to(roomId).emit('newTurn', { phase: 'spell_casting' });
+            const state = await this.gameStateService.getGameState(roomId);
+            const phaseTimeout =
+              state?.phaseTimeout ??
+              Number(process.env.SPELL_CAST_TIMEOUT ?? 120000);
+
+            this.server
+              .to(roomId)
+              .emit('newTurn', { phase: 'spell_casting', phaseTimeout });
             await this.gameStateService.publishToRoom(roomId, 'newTurn', {
               phase: 'spell_casting',
+              phaseTimeout,
             });
             console.log(
               `🎮 Started first turn for bot match in room ${roomId}`

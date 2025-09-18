@@ -96,11 +96,21 @@ export class GamePhaseManager {
       this.handleStateUpdate(data.states);
     });
 
-    this.socket.on('newTurn', (data: { phase: GamePhase }) => {
-      console.log('Received newTurn');
-      this.updateCurrentPhase(data.phase);
-      this.onNewTurn();
-    });
+    this.socket.on(
+      'newTurn',
+      (data: { phase: GamePhase; phaseTimeout?: number }) => {
+        console.log('Received newTurn');
+        this.updateCurrentPhase(data.phase);
+        this.onNewTurn();
+        // Emit countdown start for SPELL_CASTING using provided timeout
+        if (
+          data.phase === GamePhase.SPELL_CASTING &&
+          typeof data.phaseTimeout === 'number'
+        ) {
+          EventBus.emit('phase-timer-start', data.phaseTimeout);
+        }
+      }
+    );
 
     this.socket.on(
       'actionSubmitResult',
