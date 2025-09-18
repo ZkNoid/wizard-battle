@@ -29,6 +29,8 @@ export function Clock({ className }: { className?: string }) {
 
     const handler = (ms: number) => start(ms);
     EventBus.on('phase-timer-start', handler);
+    // Ask for current timer if emitted before this component mounted
+    EventBus.emit('request-phase-timer');
     return () => {
       EventBus.off('phase-timer-start', handler);
       if (intervalRef.current) clearInterval(intervalRef.current);

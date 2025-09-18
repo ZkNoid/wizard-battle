@@ -44,6 +44,7 @@ export class GamePhaseManager {
   private hasSubmittedActions = false; // Track if actions were submitted this turn
   private hasSubmittedTrustedState = false; // Track if trusted state was submitted this turn
   private trustedStatePollingInterval: NodeJS.Timeout | null = null;
+  private phaseTimerDeadlineMs: number | null = null;
 
   constructor(
     socket: any,
@@ -100,6 +101,8 @@ export class GamePhaseManager {
       'newTurn',
       (data: { phase: GamePhase; phaseTimeout?: number }) => {
         console.log('Received newTurn');
+        console.log('Received phase: ', data.phase);
+        console.log('Received phaseTimeout: ', data.phaseTimeout);
         this.updateCurrentPhase(data.phase);
         this.onNewTurn();
         // Emit countdown start for SPELL_CASTING using provided timeout
@@ -107,10 +110,25 @@ export class GamePhaseManager {
           data.phase === GamePhase.SPELL_CASTING &&
           typeof data.phaseTimeout === 'number'
         ) {
+          console.log('Emitting phase-timer-start', data.phaseTimeout);
+          this.phaseTimerDeadlineMs = Date.now() + Number(data.phaseTimeout);
           EventBus.emit('phase-timer-start', data.phaseTimeout);
         }
       }
     );
+
+    // Allow late listeners (like Clock) to request current remaining time
+    EventBus.on('request-phase-timer', () => {
+      if (
+        this.currentPhase === GamePhase.SPELL_CASTING &&
+        typeof this.phaseTimerDeadlineMs === 'number'
+      ) {
+        const remaining = Math.max(0, this.phaseTimerDeadlineMs - Date.now());
+        if (remaining > 0) {
+          EventBus.emit('phase-timer-start', remaining);
+        }
+      }
+    });
 
     this.socket.on(
       'actionSubmitResult',
