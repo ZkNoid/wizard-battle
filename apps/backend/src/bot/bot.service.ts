@@ -15,6 +15,7 @@ import {
 } from '../../../common/stater/structs';
 import { allWizards, Wizard } from '../../../common/wizards';
 import { allSpells } from '../../../common/stater/spells';
+import { Stater } from '../../../common/stater/stater';
 
 // Import o1js components
 let Field: any, Int64: any, CircuitString: any;
@@ -202,8 +203,13 @@ export class BotService {
     );
     botState.wizardId = selectedWizard.id; // Use selected wizard's ID
     botState.playerStats.hp = Int64.from(selectedWizard.defaultHealth);
+
+    // DON'T override position for Mage wizard - let invisibility effect work
+    //if (selectedWizard.id.toString() !== WizardId.MAGE.toString()) {
     botState.playerStats.position.value.x = Int64.from(startPosition.x);
     botState.playerStats.position.value.y = Int64.from(startPosition.y);
+    //}
+
     botState.randomSeed = Field(Math.floor(Math.random() * 1000000));
 
     // Set the selected spells in the state
@@ -212,11 +218,16 @@ export class BotService {
     // Set the random map in the state
     botState.map = randomMap;
 
+    // After setting up botState, create a Stater and generate public state
+    const stater = new Stater({ state: botState });
+    const publicState = stater.generatePublicState(); // This applies invisibility effect
+
     // Convert to fields using State.toFields() - same approach as frontend
     const botSetup: IPublicState = {
       socketId,
       playerId: botId,
-      fields: JSON.stringify(State.toJSON(botState)), // Use proper State.toFields() conversion
+      //fields: JSON.stringify(State.toJSON(botState)), // Use proper State.toFields() conversion
+      fields: JSON.stringify(State.toJSON(publicState)), // Use the public state with effects applied
     };
 
     return botSetup;
@@ -313,13 +324,24 @@ export class BotService {
     let spellCastInfo: any = {};
     let targetMap = '';
 
+    // Get pre-generated spell IDs from allSpells array
+    const fireballSpell = allSpells.find((s) => s.name === 'Fire_Ball');
+    const lightningSpell = allSpells.find((s) => s.name === 'Lightning');
+    const teleportSpell = allSpells.find((s) => s.name === 'Teleport');
+    const healSpell = allSpells.find((s) => s.name === 'Heal');
+
+    const FIREBALL_ID = fireballSpell?.id.toString();
+    const LIGHTNING_ID = lightningSpell?.id.toString();
+    const TELEPORT_ID = teleportSpell?.id.toString();
+    const HEAL_ID = healSpell?.id.toString();
+
     // Generate appropriate spell cast info based on spell type
     // The frontend expects spellCastInfo to be JSON that can be parsed by spell.modifyerData.fromJSON()
-    if (spellId === CircuitString.fromString('Teleport').hash().toString()) {
+    if (spellId === TELEPORT_ID) {
       // Teleport spell - needs position data in Field format
       // For teleport, bot should target its own map (self-teleport)
       const selfTargetPos = this.generateRandomPosition(targetPos);
-      targetMap = 'OWN MAP (self-teleport)';
+      targetMap = 'ally';
       spellCastInfo = JSON.stringify({
         position: {
           x: {
@@ -332,13 +354,13 @@ export class BotService {
           },
         },
       });
-    } else if (spellId === CircuitString.fromString('Heal').hash().toString()) {
+    } else if (spellId === HEAL_ID) {
       // Heal spell - no additional data needed (heals self)
-      targetMap = 'SELF (heal)';
+      targetMap = 'ally';
       spellCastInfo = JSON.stringify({});
     } else {
       // Attack spells (Lightning, FireBall, etc.) - target opponent's map
-      targetMap = 'OPPONENT MAP (attack)';
+      targetMap = 'enemy';
       spellCastInfo = JSON.stringify({
         position: {
           x: {
@@ -362,7 +384,8 @@ export class BotService {
       parseInt(botId.replace(/\D/g, '')) || Math.floor(Math.random() * 10000);
 
     return {
-      playerId: botId, // Use botId for game state lookup
+      playerId:
+        targetMap === 'ally' ? botId : (opponentState?.playerId ?? botId), // Use botId for game state lookup
       spellId,
       spellCastInfo,
     };
@@ -370,27 +393,135 @@ export class BotService {
 
   /**
    * @notice Generates bot's trusted state using fields approach
+   * @dev Simulates effects of all actions on bot's state and generates a trusted state commit
+   * @dev Handles damage calculation, position updates, and HP changes from spells
+   * @param botId The unique identifier of the bot
+   * @param currentState The bot's current public state
+   * @param allActions Map of all player actions for the current round
+   * @returns Trusted state with updated fields and signature
    */
   generateBotTrustedState(
     botId: string,
     currentState: IPublicState,
     allActions: { [playerId: string]: IUserActions }
   ): ITrustedState {
-    // For now, return the current state with minimal changes
-    // In a real implementation, you'd properly simulate spell effects
+    // Compute next public state by simulating effects of actions on bot's own state
     const stateCommit = `bot_commit_${botId}_${Date.now()}_${Math.random()}`;
     const signature = `bot_trusted_signature_${botId}_${Date.now()}`;
 
-    return {
-      playerId: botId, // Use botId directly to match game state player ID
-      stateCommit,
-      publicState: {
-        socketId: currentState.socketId,
-        playerId: botId, // Keep original string for display
-        fields: currentState.fields, // Keep the same fields for now
-      },
-      signature,
-    };
+    try {
+      const parsed = JSON.parse(currentState.fields);
+
+      // Read current bot HP and position
+      let botHP = parseInt(parsed?.playerStats?.hp?.magnitude ?? '100');
+      let botX = parseInt(
+        parsed?.playerStats?.position?.value?.x?.magnitude ?? '0'
+      );
+      let botY = parseInt(
+        parsed?.playerStats?.position?.value?.y?.magnitude ?? '0'
+      );
+
+      // Helpers
+      const manhattan = (
+        a: { x: number; y: number },
+        b: { x: number; y: number }
+      ) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+
+      // Get pre-generated spell IDs from allSpells array
+      const fireballSpell = allSpells.find((s) => s.name === 'Fire_Ball');
+      const lightningSpell = allSpells.find((s) => s.name === 'Lightning');
+      const teleportSpell = allSpells.find((s) => s.name === 'Teleport');
+      const healSpell = allSpells.find((s) => s.name === 'Heal');
+
+      const FIREBALL_ID = fireballSpell?.id.toString();
+      const LIGHTNING_ID = lightningSpell?.id.toString();
+      const TELEPORT_ID = teleportSpell?.id.toString();
+      const HEAL_ID = healSpell?.id.toString();
+
+      // Apply opponent actions damage to bot (use position BEFORE bot's own actions)
+      const preActionPos = { x: botX, y: botY };
+      for (const [playerId, ua] of Object.entries(allActions || {})) {
+        if (playerId === botId) continue;
+        const actions = ua?.actions ?? [];
+        for (const action of actions) {
+          if (!action) continue;
+          let targetX = 0;
+          let targetY = 0;
+          try {
+            const info = JSON.parse(action.spellCastInfo || '{}');
+            targetX = parseInt(info?.position?.x?.magnitude ?? '0');
+            targetY = parseInt(info?.position?.y?.magnitude ?? '0');
+          } catch {}
+
+          const distance = manhattan(preActionPos, { x: targetX, y: targetY });
+
+          if (action.spellId === FIREBALL_ID) {
+            if (distance === 0) botHP = Math.max(0, botHP - 60);
+            else if (distance === 1) botHP = Math.max(0, botHP - 40);
+            else if (distance === 2) botHP = Math.max(0, botHP - 20);
+          } else if (action.spellId === LIGHTNING_ID) {
+            if (distance === 0) botHP = Math.max(0, botHP - 100);
+            else if (distance === 1) botHP = Math.max(0, botHP - 50);
+          }
+        }
+      }
+
+      // Apply bot's own actions after taking potential damage
+      const botActions = allActions?.[botId]?.actions ?? [];
+      for (const action of botActions) {
+        if (!action || !action.spellId) continue;
+        if (action.spellId === TELEPORT_ID) {
+          try {
+            const info = JSON.parse(action.spellCastInfo || '{}');
+            const tx = parseInt(info?.position?.x?.magnitude ?? '0');
+            const ty = parseInt(info?.position?.y?.magnitude ?? '0');
+            if (Number.isFinite(tx) && Number.isFinite(ty)) {
+              botX = tx;
+              botY = ty;
+            }
+          } catch {}
+        } else if (action.spellId === HEAL_ID) {
+          botHP = Math.min(100, botHP + 100);
+        }
+      }
+
+      // Write back updated values into parsed state structure
+      if (parsed?.playerStats?.hp) {
+        parsed.playerStats.hp.magnitude = botHP.toString();
+        parsed.playerStats.hp.sgn = 'Positive';
+      }
+      if (parsed?.playerStats?.position?.value?.x) {
+        parsed.playerStats.position.value.x.magnitude = botX.toString();
+        parsed.playerStats.position.value.x.sgn = 'Positive';
+      }
+      if (parsed?.playerStats?.position?.value?.y) {
+        parsed.playerStats.position.value.y.magnitude = botY.toString();
+        parsed.playerStats.position.value.y.sgn = 'Positive';
+      }
+
+      return {
+        playerId: botId,
+        stateCommit,
+        publicState: {
+          socketId: currentState.socketId,
+          playerId: botId,
+          fields: JSON.stringify(parsed),
+        },
+        signature,
+      };
+    } catch (e) {
+      // Fallback to previous behavior if parsing fails
+      return {
+        playerId: botId,
+        stateCommit,
+        publicState: {
+          socketId: currentState.socketId,
+          playerId: botId,
+          fields: currentState.fields,
+        },
+        signature,
+      };
+    }
   }
 
   /**

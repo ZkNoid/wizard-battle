@@ -1,8 +1,8 @@
-import TerserPlugin from "terser-webpack-plugin";
-import path from "path";
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import CopyWebpackPlugin from "copy-webpack-plugin";
+import TerserPlugin from 'terser-webpack-plugin';
+import path from 'path';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,20 +21,36 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-        pathname: "/dw4kivbv0/image/upload/**",
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/dw4kivbv0/image/upload/**',
       },
       {
-        protocol: "https",
-        hostname: "gateway.pinata.cloud",
-        pathname: "/ipfs/**",
+        protocol: 'https',
+        hostname: 'gateway.pinata.cloud',
+        pathname: '/ipfs/**',
       },
       {
-        protocol: "https",
-        hostname: "picsum.photos",
+        protocol: 'https',
+        hostname: 'picsum.photos',
       },
     ],
+  },
+
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: 'dev-api-wizard.zknoid.io',
+          },
+        ],
+      },
+    ];
   },
 
   // ————————————————————————————————
@@ -44,9 +60,9 @@ const nextConfig = {
   // ————————————————————————————————
   experimental: {
     optimizePackageImports: [
-      "@zknoid/sdk",
-      "@zknoid/games",
-      "zknoid-chain-dev",
+      '@zknoid/sdk',
+      '@zknoid/games',
+      'zknoid-chain-dev',
     ],
   },
 
@@ -58,23 +74,23 @@ const nextConfig = {
       // 1️⃣ alias o1js to its browser bundle
       config.resolve.alias = {
         ...config.resolve.alias,
-        o1js: path.resolve(__dirname, "node_modules/o1js/dist/web/index.js"),
+        o1js: path.resolve(__dirname, 'node_modules/o1js/dist/web/index.js'),
       };
 
       // 2️⃣ make sure .wasm is resolvable without an explicit extension
       config.resolve.extensions = [
         ...(config.resolve.extensions || []),
-        ".wasm",
+        '.wasm',
       ];
 
       // 3️⃣ tell webpack to copy o1js’s .wasm out as a static resource
       config.module.rules.push({
         test: /\.wasm$/i,
-        include: path.resolve(__dirname, "node_modules/o1js/dist/web"),
-        type: "asset/resource",
+        include: path.resolve(__dirname, 'node_modules/o1js/dist/web'),
+        type: 'asset/resource',
         generator: {
           // match o1js’s runtime fetch: /_next/static/wasm/o1.wasm
-          filename: "static/wasm/[name][ext]",
+          filename: 'static/wasm/[name][ext]',
         },
       });
 
@@ -86,12 +102,12 @@ const nextConfig = {
             {
               from: path.resolve(
                 __dirname,
-                "node_modules/o1js/dist/web/web_bindings/*.wasm",
+                'node_modules/o1js/dist/web/web_bindings/*.wasm'
               ),
-              to: "static/wasm/[name][ext]",
+              to: 'static/wasm/[name][ext]',
             },
           ],
-        }),
+        })
       );
     }
 
@@ -123,10 +139,10 @@ const nextConfig = {
   },
 
   eslint: {
-    dirs: ["app", "components", "constants", "containers", "games", "lib"],
+    dirs: ['app', 'components', 'constants', 'containers', 'games', 'lib'],
   },
   productionBrowserSourceMaps: false,
-  transpilePackages: ["@zknoid/sdk", "@zknoid/games", "zknoid-chain-dev"],
+  transpilePackages: ['@zknoid/sdk', '@zknoid/games', 'zknoid-chain-dev'],
 };
 
 export default nextConfig;

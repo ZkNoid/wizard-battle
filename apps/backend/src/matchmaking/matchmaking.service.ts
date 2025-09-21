@@ -393,6 +393,34 @@ export class MatchmakingService {
       // Even if notification fails, the match is still valid
     }
 
+    // Start the first turn after a short delay to allow both players to join the room
+    setTimeout(async () => {
+      try {
+        await this.gameStateService.updateGameState(roomId, {
+          status: 'active',
+        });
+
+        // Emit the first turn to start gameplay
+        if (this.server) {
+          const state = await this.gameStateService.getGameState(roomId);
+          const phaseTimeout =
+            state?.phaseTimeout ??
+            Number(process.env.SPELL_CAST_TIMEOUT ?? 120000);
+
+          this.server
+            .to(roomId)
+            .emit('newTurn', { phase: 'spell_casting', phaseTimeout });
+          await this.gameStateService.publishToRoom(roomId, 'newTurn', {
+            phase: 'spell_casting',
+            phaseTimeout,
+          });
+          console.log(`🎮 Started first turn for match in room ${roomId}`);
+        }
+      } catch (error) {
+        console.error('Failed to start first turn for match:', error);
+      }
+    }, 2000); // 2 second delay
+
     // ONLY AFTER everything is successful, remove players from queue
     // This ensures we don't lose players if match creation fails
     const waitingPlayers = await this.redisClient.lRange(
@@ -515,7 +543,7 @@ export class MatchmakingService {
       // Notify player1 about player2 - only pass the required 3 parameters
       const opponentSetup1: IPublicState = new TransformedPlayerSetup(
         player2.socketId!,
-        `Player ${player2.playerId!}`,
+        player2.playerId!,
         player2.fields // Keep the original fields array
       );
       matchFound1 = new TransformedFoundMatch(roomId, player2.playerId!, [
@@ -529,7 +557,7 @@ export class MatchmakingService {
       // Notify player2 about player1 - only pass the required 3 parameters
       const opponentSetup2: IPublicState = new TransformedPlayerSetup(
         player1.socketId!,
-        `Player ${player1.playerId!}`,
+        player1.playerId!,
         player1.fields // Keep the original fields array
       );
       matchFound2 = new TransformedFoundMatch(roomId, player1.playerId!, [
@@ -835,8 +863,8 @@ export class MatchmakingService {
       await this.gameStateService.registerSocket(socket);
 
       // Generate bot ID to mirror human numeric IDs with an extra leading 0
-      // Example: human "8948" → bot "0XXXX" where XXXX is a 4-digit number
-      const botId = `0${Math.floor(Math.random() * 10000)
+      // Example: human "8948" → bot "0XXXX" where XXXX is a 6-digit number
+      const botId = `100${Math.floor(Math.random() * 10000)
         .toString()
         .padStart(4, '0')}`;
 
@@ -886,9 +914,17 @@ export class MatchmakingService {
 
           // Emit the first turn to start gameplay
           if (this.server) {
-            this.server.to(roomId).emit('newTurn', { phase: 'spell_casting' });
+            const state = await this.gameStateService.getGameState(roomId);
+            const phaseTimeout =
+              state?.phaseTimeout ??
+              Number(process.env.SPELL_CAST_TIMEOUT ?? 120000);
+
+            this.server
+              .to(roomId)
+              .emit('newTurn', { phase: 'spell_casting', phaseTimeout });
             await this.gameStateService.publishToRoom(roomId, 'newTurn', {
               phase: 'spell_casting',
+              phaseTimeout,
             });
             console.log(
               `🎮 Started first turn for bot match in room ${roomId}`

@@ -98,6 +98,10 @@ export class BotClient {
   private opponentState: IPublicState | null = null;
   private currentRoomId: string | null = null;
   private gamePhase: GamePhase = GamePhase.SPELL_CASTING;
+  private lastAllActions: { [playerId: string]: IUserActions } | null = null;
+  private hasSubmittedActions: boolean = false;
+  private hasSubmittedTrustedState: boolean = false;
+  private endOfRoundPollingInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly botId: string,
@@ -143,6 +147,9 @@ export class BotClient {
    * @notice Disconnects the bot from the WebSocket server
    */
   async disconnect(): Promise<void> {
+    // Stop any polling
+    this.stopPollingForEndOfRound();
+
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
@@ -198,6 +205,13 @@ export class BotClient {
       console.log(`🤖 Bot ${this.botId} new turn:`, data);
       this.gamePhase = data.phase;
 
+      // Stop any existing polling
+      this.stopPollingForEndOfRound();
+
+      // Reset submission flags for new turn
+      this.hasSubmittedActions = false;
+      this.hasSubmittedTrustedState = false;
+
       // If it's spell casting phase, submit actions after a short delay
       if (data.phase === GamePhase.SPELL_CASTING) {
         setTimeout(
@@ -212,24 +226,24 @@ export class BotClient {
     this.socket.on('allPlayerActions', (allActions) => {
       console.log(`🤖 Bot ${this.botId} received all actions:`, allActions);
       this.gamePhase = GamePhase.SPELL_PROPAGATION;
+      // Store actions for use when generating trusted state
+      this.lastAllActions = allActions as { [playerId: string]: IUserActions };
     });
 
     this.socket.on('applySpellEffects', () => {
       console.log(`🤖 Bot ${this.botId} applying spell effects...`);
       this.gamePhase = GamePhase.SPELL_EFFECTS;
 
-      // Simulate processing time, then submit trusted state (wait for END_OF_ROUND phase)
-      setTimeout(
-        () => {
-          this.submitTrustedState();
-        },
-        Math.random() * 1000 + 2500
-      ); // Random delay 2.5-3.5 seconds to wait for phase advancement
+      // Begin polling for END_OF_ROUND before submitting trusted state
+      this.startPollingForEndOfRound();
     });
 
     this.socket.on('updateUserStates', (data) => {
       console.log(`🤖 Bot ${this.botId} received state updates:`, data);
       this.gamePhase = GamePhase.STATE_UPDATE;
+
+      // Stop polling since we're now in STATE_UPDATE phase
+      this.stopPollingForEndOfRound();
 
       // Update opponent state if available
       if (data.states) {
@@ -263,11 +277,22 @@ export class BotClient {
     });
 
     this.socket.on('trustedStateResult', (result) => {
-      if (!result.success) {
-        console.error(
-          `🤖 Bot ${this.botId} trusted state submission failed:`,
-          result.error
-        );
+      // Treat both plain success and "already submitted" as completion
+      if (result?.success) {
+        this.hasSubmittedTrustedState = true;
+        return;
+      }
+
+      const errorMessage: string = result?.error || '';
+      console.error(
+        `🤖 Bot ${this.botId} trusted state submission failed:`,
+        errorMessage
+      );
+
+      // If server rejected due to phase mismatch, resume polling and allow retry
+      if (errorMessage.includes('Invalid phase for trusted state submission')) {
+        this.hasSubmittedTrustedState = false;
+        this.startPollingForEndOfRound();
       }
     });
   }
@@ -279,7 +304,8 @@ export class BotClient {
     if (
       !this.socket ||
       !this.currentRoomId ||
-      this.gamePhase !== GamePhase.SPELL_CASTING
+      this.gamePhase !== GamePhase.SPELL_CASTING ||
+      this.hasSubmittedActions
     ) {
       return;
     }
@@ -295,13 +321,47 @@ export class BotClient {
       roomId: this.currentRoomId,
       actions,
     });
+
+    // Mark as submitted to prevent duplicate submissions
+    this.hasSubmittedActions = true;
+  }
+
+  /**
+   * @notice Starts polling for END_OF_ROUND phase after spell effects
+   */
+  private startPollingForEndOfRound(): void {
+    // Clear any existing polling interval
+    if (this.endOfRoundPollingInterval) {
+      clearInterval(this.endOfRoundPollingInterval);
+    }
+
+    // Poll every 500ms to attempt trusted state submission until acknowledged
+    this.endOfRoundPollingInterval = setInterval(() => {
+      if (this.hasSubmittedTrustedState) {
+        this.stopPollingForEndOfRound();
+        return;
+      }
+
+      // Attempt to submit; server will accept only when phase is END_OF_ROUND
+      this.submitTrustedState();
+    }, 500);
+  }
+
+  /**
+   * @notice Stops polling for END_OF_ROUND phase
+   */
+  private stopPollingForEndOfRound(): void {
+    if (this.endOfRoundPollingInterval) {
+      clearInterval(this.endOfRoundPollingInterval);
+      this.endOfRoundPollingInterval = null;
+    }
   }
 
   /**
    * @notice Submits bot trusted state during end of round phase
    */
   private submitTrustedState(): void {
-    if (!this.socket || !this.currentRoomId) {
+    if (!this.socket || !this.currentRoomId || this.hasSubmittedTrustedState) {
       return;
     }
 
@@ -310,7 +370,7 @@ export class BotClient {
     const trustedState = this.botService.generateBotTrustedState(
       this.botId,
       this.currentState,
-      {} // Would contain all player actions in real implementation
+      this.lastAllActions || {}
     );
 
     // Update current state
@@ -321,5 +381,34 @@ export class BotClient {
       roomId: this.currentRoomId,
       trustedState,
     });
+
+    // Do not mark submitted until server acknowledges success
+
+    // If bot is dead (HP <= 0), report death after submitting trusted state
+    try {
+      const fields = trustedState.publicState.fields as any;
+      let hp = Number.POSITIVE_INFINITY;
+      if (typeof fields === 'string') {
+        const parsed = JSON.parse(fields);
+        hp = parseInt(parsed?.playerStats?.hp?.magnitude ?? '100');
+      } else if (Array.isArray(fields) && fields.length > 0) {
+        hp = parseInt((fields[0] as any)?.value ?? fields[0]);
+      }
+
+      if (Number.isFinite(hp) && hp <= 0) {
+        console.log(`💀 Bot ${this.botId} died (hp=${hp}). Reporting death...`);
+        this.socket.emit('reportDead', {
+          roomId: this.currentRoomId,
+          dead: {
+            playerId: this.botId,
+          },
+        });
+      }
+    } catch (e) {
+      console.warn(
+        `⚠️ Failed to parse bot HP for death report:`,
+        (e as Error).message
+      );
+    }
   }
 }

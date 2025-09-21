@@ -882,10 +882,10 @@ export class GameSessionGateway {
     await this.gameStateService.publishToRoom(roomId, 'applySpellEffects', {});
 
     // Auto-advance to END_OF_ROUND phase after players have time to process effects
-    //   setTimeout(async () => {
-    await this.gameStateService.advanceGamePhase(roomId);
-    console.log(`🔄 Advanced room ${roomId} to END_OF_ROUND phase`);
-    //   }, 2000); // 2 second delay for effect processing
+    setTimeout(async () => {
+      await this.gameStateService.advanceGamePhase(roomId);
+      console.log(`🔄 Advanced room ${roomId} to END_OF_ROUND phase`);
+    }, 2000); // 2 second delay for effect processing
   }
 
   /**
@@ -980,10 +980,17 @@ export class GameSessionGateway {
     // Advance to new turn (increments turn counter and sets phase to SPELL_CASTING)
     await this.gameStateService.advanceGamePhase(roomId);
 
-    // Notify players of new turn
-    this.server.to(roomId).emit('newTurn', { phase: GamePhase.SPELL_CASTING });
+    // Notify players of new turn and include phaseTimeout from state/env
+    const state = await this.gameStateService.getGameState(roomId);
+    const phaseTimeout =
+      state?.phaseTimeout ?? Number(process.env.SPELL_CAST_TIMEOUT ?? 120000);
+
+    this.server
+      .to(roomId)
+      .emit('newTurn', { phase: GamePhase.SPELL_CASTING, phaseTimeout });
     await this.gameStateService.publishToRoom(roomId, 'newTurn', {
       phase: GamePhase.SPELL_CASTING,
+      phaseTimeout,
     });
 
     console.log(`✅ New turn started for room ${roomId}`);
