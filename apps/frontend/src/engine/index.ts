@@ -2,10 +2,11 @@ export { Tilemap } from './components/Tilemap';
 
 export { useEngine } from './hooks/useEngine';
 export { useTilemap } from './hooks/useTilemap';
-export { useAnimatedEntity } from './hooks/useAnimatedEntity';
+export { useEntityAnimations } from './hooks/useEntityAnimations';
 
 export { EntityOverlay } from './components/EntityOverlay';
 export { AnimatedCanvas } from './components/AnimatedCanvas';
+export { EffectOverlay } from './components/EffectOverlay';
 export { RedSquare } from './entities/RedSquare';
 export { BlueSquare } from './entities/BlueSquare';
 export { AnimatedWizard } from './entities/AnimatedWizard';
@@ -38,12 +39,15 @@ export {
   type MoveEntityEvent,
   type PlayAnimationEvent,
   type StopAnimationEvent,
+  type AnimationCompleteEvent,
+  type ThrowEffectEvent,
 } from './gameEventEmitter';
 
 export type {
   Animation,
   SpriteFrame,
   SpritesheetData,
+  AnimationConfig,
 } from './types/animation';
 export {
   loadAnimation,

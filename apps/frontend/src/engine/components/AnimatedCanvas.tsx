@@ -1,10 +1,11 @@
-import React, { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import type { Animation } from '../types/animation';
 import {
   setupHighQualityCanvas,
   calculateAspectRatioFit,
   getDevicePixelRatio,
 } from '../utils/canvasUtils';
+import { gameEventEmitter } from '../gameEventEmitter';
 
 interface AnimatedCanvasProps {
   animation: Animation;
@@ -14,6 +15,8 @@ interface AnimatedCanvasProps {
   playing?: boolean;
   onAnimationComplete?: () => void;
   className?: string;
+  scale?: number;
+  entityId?: string; // For emitting animation complete events
 }
 
 export function AnimatedCanvas({
@@ -24,6 +27,8 @@ export function AnimatedCanvas({
   playing = true,
   onAnimationComplete,
   className = '',
+  scale,
+  entityId,
 }: AnimatedCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,6 +39,10 @@ export function AnimatedCanvas({
     width: width || 64,
     height: height || 64,
   });
+  const [pendingCompleteEvent, setPendingCompleteEvent] = useState<{
+    entityId: string;
+    animationName: string;
+  } | null>(null);
   const lastTimeRef = useRef<number>(0);
   const devicePixelRatio = useRef<number>(getDevicePixelRatio());
 
@@ -84,6 +93,17 @@ export function AnimatedCanvas({
     };
   }, [width, height]);
 
+  // Effect to handle pending animation complete events
+  useEffect(() => {
+    if (pendingCompleteEvent) {
+      gameEventEmitter.animationComplete(
+        pendingCompleteEvent.entityId,
+        pendingCompleteEvent.animationName
+      );
+      setPendingCompleteEvent(null);
+    }
+  }, [pendingCompleteEvent]);
+
   useEffect(() => {
     if (!playing) {
       if (animationRef.current) {
@@ -108,10 +128,24 @@ export function AnimatedCanvas({
           const nextFrameIndex =
             (currentFrameIndex + 1) % animation.frames.length;
 
-          // If animation is finished and should not loop
-          if (nextFrameIndex === 0 && !animation.loop) {
+          // If animation is finished and should not loop (including one-shot animations)
+          if (nextFrameIndex === 0 && (!animation.loop || animation.oneTime)) {
             if (onAnimationComplete) {
               onAnimationComplete();
+            }
+
+            // Schedule animation complete event for entity system (async to avoid render conflicts)
+            if (entityId && animation.name) {
+              setPendingCompleteEvent({
+                entityId,
+                animationName: animation.name,
+              });
+            }
+
+            // For one-shot animations, stop playing after completion
+            if (animation.oneTime) {
+              setCurrentFrameIndex(animation.frames.length - 1); // Stay on last frame
+              return prev;
             }
             return prev;
           }
@@ -143,32 +177,47 @@ export function AnimatedCanvas({
     if (!ctx) return;
 
     const dpr = devicePixelRatio.current;
-    const displayWidth = canvasSize.width;
-    const displayHeight = canvasSize.height;
-
-    // Set up canvas for high quality rendering
-    setupHighQualityCanvas(canvas, ctx, displayWidth, displayHeight, dpr);
-
-    // Clear canvas
-    ctx.clearRect(0, 0, displayWidth, displayHeight);
-
     const frame = animation.frames[currentFrameIndex];
     if (!frame) return;
 
     // Calculate optimal scaling to maintain aspect ratio
     const sourceWidth = frame.frame.w;
     const sourceHeight = frame.frame.h;
-    const {
-      width: drawWidth,
-      height: drawHeight,
-      offsetX,
-      offsetY,
-    } = calculateAspectRatioFit(
-      sourceWidth,
-      sourceHeight,
-      displayWidth,
-      displayHeight
+
+    // Apply custom scale from animation or prop
+    const animationScale = scale ?? animation.scale ?? 1;
+
+    const { width: baseDrawWidth, height: baseDrawHeight } =
+      calculateAspectRatioFit(
+        sourceWidth,
+        sourceHeight,
+        canvasSize.width,
+        canvasSize.height
+      );
+
+    // Apply the custom scale
+    const drawWidth = baseDrawWidth * animationScale;
+    const drawHeight = baseDrawHeight * animationScale;
+
+    // Calculate the required canvas size to accommodate the scaled animation
+    const requiredCanvasWidth = Math.max(canvasSize.width, drawWidth);
+    const requiredCanvasHeight = Math.max(canvasSize.height, drawHeight);
+
+    // Set up canvas for high quality rendering with adjusted size
+    setupHighQualityCanvas(
+      canvas,
+      ctx,
+      requiredCanvasWidth,
+      requiredCanvasHeight,
+      dpr
     );
+
+    // Clear canvas
+    ctx.clearRect(0, 0, requiredCanvasWidth, requiredCanvasHeight);
+
+    // Recalculate offset to center the scaled sprite in the potentially larger canvas
+    const offsetX = (requiredCanvasWidth - drawWidth) / 2;
+    const offsetY = (requiredCanvasHeight - drawHeight) / 2;
 
     // Draw current frame with proper scaling
     ctx.drawImage(
@@ -182,7 +231,7 @@ export function AnimatedCanvas({
       drawWidth, // destination width (scaled)
       drawHeight // destination height (scaled)
     );
-  }, [image, animation, currentFrameIndex, canvasSize]);
+  }, [image, animation, currentFrameIndex, canvasSize, scale]);
 
   // Reset animation when animation changes
   useEffect(() => {
@@ -192,14 +241,21 @@ export function AnimatedCanvas({
   }, [animation]);
 
   return (
-    <div ref={containerRef} className={`h-full w-full ${className}`}>
+    <div
+      ref={containerRef}
+      className={`h-full w-full overflow-visible ${className}`}
+    >
       <canvas
         ref={canvasRef}
-        className="h-full w-full"
+        className="max-h-none max-w-none"
         style={
           {
             imageRendering: 'pixelated' as any,
             willChange: 'transform',
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
           } as React.CSSProperties & {
             imageRendering?: string;
           }

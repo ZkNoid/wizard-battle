@@ -1,0 +1,188 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { AnimatedCanvas } from './AnimatedCanvas';
+import { gameEventEmitter, type ThrowEffectEvent } from '../gameEventEmitter';
+import { loadAnimation } from '../utils/animationLoader';
+import type { Animation } from '../types/animation';
+
+interface EffectInstance {
+  id: string;
+  x: number;
+  y: number;
+  animation: Animation;
+  image: HTMLImageElement;
+  scale?: number;
+  startTime: number;
+}
+
+const AVAILABLE_EFFECTS: Record<string, { json: string; image: string }> = {
+  fireball: {
+    json: '/assets/spritesheets/FireBall_Reaction.json',
+    image: '/assets/spritesheets/FireBall_Reaction_Spritelist.png',
+  },
+  lightning: {
+    json: '/assets/spritesheets/Sourcer_Lightning_Reaction.json',
+    image: '/assets/spritesheets/Sourcer_Lightning_Reaction.png',
+  },
+  teleport: {
+    json: '/assets/spritesheets/Sourcer_Teleport_Finish.json',
+    image: '/assets/spritesheets/Sourcer_Teleport_Finish_Spritelist.png',
+  },
+};
+
+export function EffectOverlay({
+  overlayId,
+  gridWidth,
+  gridHeight,
+  className = '',
+}: {
+  overlayId: string;
+  gridWidth: number;
+  gridHeight: number;
+  className?: string;
+}) {
+  const [activeEffects, setActiveEffects] = useState<EffectInstance[]>([]);
+  const [completedEffects, setCompletedEffects] = useState<string[]>([]);
+  const effectCounterRef = useRef(0);
+
+  // Handle completed effects
+  useEffect(() => {
+    if (completedEffects.length > 0) {
+      setActiveEffects((prev) =>
+        prev.filter((effect) => !completedEffects.includes(effect.id))
+      );
+      setCompletedEffects([]);
+    }
+  }, [completedEffects]);
+
+  useEffect(() => {
+    const handleThrowEffect = async (event: ThrowEffectEvent) => {
+      const {
+        overlayId: eventOverlayId,
+        animationName,
+        x,
+        y,
+        scale,
+        duration,
+      } = event;
+
+      // Filter by overlayId if specified
+      if (eventOverlayId && overlayId && eventOverlayId !== overlayId) {
+        return; // Skip this event, it's not for this overlay
+      }
+
+      // If no overlayId specified in event and this overlay has an ID, skip
+      if (!eventOverlayId && overlayId) {
+        return;
+      }
+
+      // Check if the effect is available
+      const effectConfig = AVAILABLE_EFFECTS[animationName];
+      if (!effectConfig) {
+        console.warn(
+          `Effect '${animationName}' not found in available effects`
+        );
+        return;
+      }
+
+      try {
+        // Load animation
+        const { animation, image } = await loadAnimation(
+          effectConfig.json,
+          effectConfig.image,
+          animationName,
+          false // Effects usually don't loop
+        );
+
+        // Create effect instance
+        const effectInstance: EffectInstance = {
+          id: `effect_${++effectCounterRef.current}`,
+          x,
+          y,
+          animation: {
+            ...animation,
+            oneTime: true, // Effects are always one-time
+            loop: false,
+            scale: scale || 1,
+          },
+          image,
+          scale: scale || 1,
+          startTime: Date.now(),
+        };
+
+        // Add effect to active list
+        setActiveEffects((prev) => [...prev, effectInstance]);
+
+        // If duration is specified, remove effect after this time
+        if (duration) {
+          setTimeout(() => {
+            setCompletedEffects((prev) => [...prev, effectInstance.id]);
+          }, duration);
+        }
+      } catch (error) {
+        console.error(`Failed to load effect ${animationName}:`, error);
+      }
+    };
+
+    gameEventEmitter.onThrowEffect(handleThrowEffect);
+
+    return () => {
+      gameEventEmitter.offThrowEffect(handleThrowEffect);
+    };
+  }, [overlayId]);
+
+  // Handler for animation completion
+  const handleEffectComplete = useCallback((effectId: string) => {
+    // Use setTimeout to avoid setState during render
+    setTimeout(() => {
+      setCompletedEffects((prev) => [...prev, effectId]);
+    }, 0);
+  }, []);
+
+  // Calculate effect position as percentage (same as EntityOverlay)
+  const getEffectPosition = (x: number, y: number) => {
+    const leftPosition = (x / gridWidth) * 100;
+    const topPosition = (y / gridHeight) * 100;
+    const effectWidth = (1 / gridWidth) * 100; // each effect occupies 1/8 = 12.5% width
+    const effectHeight = (1 / gridHeight) * 100; // each effect occupies 1/8 = 12.5% height
+
+    return {
+      left: `${leftPosition}%`,
+      top: `${topPosition}%`,
+      width: `${effectWidth}%`,
+      height: `${effectHeight}%`,
+    };
+  };
+
+  return (
+    <div
+      className={`pointer-events-none absolute inset-0 size-full ${className}`}
+    >
+      {activeEffects.map((effect) => {
+        const position = getEffectPosition(effect.x, effect.y);
+
+        return (
+          <div
+            key={effect.id}
+            className="absolute z-50"
+            style={{
+              left: position.left,
+              top: position.top,
+              width: position.width,
+              height: position.height,
+            }}
+          >
+            <AnimatedCanvas
+              animation={effect.animation}
+              image={effect.image}
+              playing={true}
+              scale={effect.scale}
+              entityId={effect.id}
+              onAnimationComplete={() => handleEffectComplete(effect.id)}
+              className="absolute inset-0"
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}

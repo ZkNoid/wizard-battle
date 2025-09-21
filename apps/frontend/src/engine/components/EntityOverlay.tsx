@@ -45,12 +45,13 @@ export function EntityOverlay({
         return (
           <div
             key={entity.id}
-            className="absolute transition-all duration-200 ease-in-out"
+            className="absolute transition-[left,top] duration-200 ease-in-out"
             style={{
               left: `${leftPosition}%`,
               top: `${topPosition}%`,
               width: `${entityWidth}%`,
               height: `${entityHeight}%`,
+              willChange: 'left, top',
             }}
           >
             {entity.type === EntityType.RED_SQUARE && (

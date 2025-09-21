@@ -34,6 +34,8 @@ export interface Animation {
   frames: SpriteFrame[];
   loop: boolean;
   totalDuration: number;
+  oneTime?: boolean;
+  scale?: number;
 }
 
 export interface AnimationPlayEvent {
@@ -44,4 +46,22 @@ export interface AnimationPlayEvent {
 
 export interface AnimationStopEvent {
   entityId: string;
+}
+
+// Animation configuration for entities
+export interface AnimationConfig {
+  name: string;
+  spritesheetJson: string;
+  spritesheetImage: string;
+  loop?: boolean;
+  scale?: number;
+}
+
+// Throw effect event for playing animations at specific tile coordinates
+export interface ThrowEffectEvent {
+  x: number; // tilemap coordinate (0-7)
+  y: number; // tilemap coordinate (0-7)
+  animationName: string;
+  scale?: number;
+  duration?: number; // Optional duration override
 }

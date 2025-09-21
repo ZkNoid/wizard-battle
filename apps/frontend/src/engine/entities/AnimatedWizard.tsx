@@ -1,27 +1,64 @@
-import React from 'react';
+import { memo } from 'react';
 import type { IEntity } from '../types/IEntity';
+import type { AnimationConfig } from '../types/animation';
 import { AnimatedCanvas } from '../components/AnimatedCanvas';
-import { useAnimatedEntity } from '../hooks/useAnimatedEntity';
+import { useEntityAnimations } from '../hooks/useEntityAnimations';
 
-interface AnimatedWizardProps {
-  entity: IEntity;
-}
-
-export function AnimatedWizard({ entity }: AnimatedWizardProps) {
-  const {
-    animation,
-    image,
-    isPlaying,
-    currentAnimationName,
-    isLoading,
-    error,
-  } = useAnimatedEntity({
-    entityId: entity.id,
+const animations: Record<string, AnimationConfig> = {
+  idle: {
+    name: 'idle',
     spritesheetJson: '/assets/spritesheets/Sourcer_Idle.json',
     spritesheetImage: '/assets/spritesheets/Sourcer_Idle.png',
-    defaultAnimation: 'idle',
-    defaultLoop: true,
-  });
+    loop: true,
+    scale: 1,
+  },
+  fireball: {
+    name: 'fireball',
+    spritesheetJson: '/assets/spritesheets/Sourcer_FireBall.json',
+    spritesheetImage: '/assets/spritesheets/Sourcer_FireBall_Spritelist.png',
+    loop: false,
+    scale: 1,
+  },
+  lightning: {
+    name: 'lightning',
+    spritesheetJson: '/assets/spritesheets/Sourcer_Lightning.json',
+    spritesheetImage: '/assets/spritesheets/Sourcer_Lightning_Spritelist.png',
+    loop: false,
+    scale: 1,
+  },
+  teleportStart: {
+    name: 'teleportStart',
+    spritesheetJson: '/assets/spritesheets/Sourcer_Teleport_Start.json',
+    spritesheetImage:
+      '/assets/spritesheets/Sourcer_Teleport_Start_Spritelist.png',
+    loop: false,
+    scale: 1,
+  },
+  teleportFinish: {
+    name: 'teleportFinish',
+    spritesheetJson: '/assets/spritesheets/Sourcer_Teleport_Finish.json',
+    spritesheetImage:
+      '/assets/spritesheets/Sourcer_Teleport_Finish_Spritelist.png',
+    loop: false,
+    scale: 1,
+  },
+  dead: {
+    name: 'dead',
+    spritesheetJson: '/assets/spritesheets/Sourcer_Dead.json',
+    spritesheetImage: '/assets/spritesheets/Sourcer_Dead_Spritelist.png',
+    loop: false,
+    scale: 1,
+  },
+};
+
+export const AnimatedWizard = memo(({ entity }: { entity: IEntity }) => {
+  const { animation, image, isPlaying, isLoading, error, scale } =
+    useEntityAnimations({
+      entityId: entity.id,
+      animations: animations,
+      defaultAnimation: 'idle',
+      defaultScale: 1,
+    });
 
   if (isLoading) {
     return (
@@ -44,11 +81,10 @@ export function AnimatedWizard({ entity }: AnimatedWizardProps) {
       animation={animation}
       image={image}
       playing={isPlaying}
-      onAnimationComplete={() => {
-        console.log(
-          `Animation ${currentAnimationName} completed for entity ${entity.id}`
-        );
-      }}
+      scale={scale}
+      entityId={entity.id}
     />
   );
-}
+});
+
+AnimatedWizard.displayName = 'AnimatedWizard';

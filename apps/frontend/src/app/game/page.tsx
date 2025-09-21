@@ -17,7 +17,13 @@ import { GamePhase } from '../../../../common/types/gameplay.types';
 import { Position } from '../../../../common/stater/structs';
 import { Int64 } from 'o1js';
 import { EventBus } from '@/game/EventBus';
-import { Tilemap, EntityOverlay, gameEventEmitter, EntityType } from '@/engine';
+import {
+  Tilemap,
+  EntityOverlay,
+  EffectOverlay,
+  gameEventEmitter,
+  EntityType,
+} from '@/engine';
 import { useEngineStore } from '@/lib/store/engineStore';
 
 const MEGA_W = 8;
@@ -177,7 +183,7 @@ export default function GamePage() {
   useEffect(() => {
     if (!isInitialized.current) {
       // Initialize movement handler
-      initMovementHandler();
+      const cleanupMovement = initMovementHandler();
 
       // Create red square entity
       const user = {
@@ -186,22 +192,16 @@ export default function GamePage() {
         tilemapPosition: { x: 3, y: 3 },
       };
 
-      const enemy = {
-        id: 'enemy',
-        type: EntityType.BLUE_SQUARE,
-        tilemapPosition: { x: 4, y: 4 },
-      };
-
       addEntity(user);
-      addEntity(enemy);
       isInitialized.current = true;
-    }
 
-    // Cleanup function to clear entities when component unmounts
-    return () => {
-      clearEntities();
-      isInitialized.current = false;
-    };
+      // Return combined cleanup function
+      return () => {
+        cleanupMovement(); // Clean up movement handler
+        clearEntities(); // Clear entities
+        isInitialized.current = false;
+      };
+    }
   }, [initMovementHandler, addEntity, clearEntities]);
 
   // Emit move ally | enemy event to the scene
@@ -337,20 +337,19 @@ export default function GamePage() {
   // Handler for left tilemap click to move red square
   const handleTilemapClick = (index: number) => {
     const { x, y } = indexToCoordinates(index);
-    console.log(
-      `🟥 LEFT tilemap clicked: index=${index}, x=${x}, y=${y} - moving red square`
-    );
-    gameEventEmitter.move('user', x, y);
-    // gameEventEmitter.playAnimation('user', 'idle', true);
+
+    gameEventEmitter.playAnimationOneTime('user', 'teleportStart', 1.2);
+    gameEventEmitter.throwEffect('user', 'teleport', x, y, 1.2);
+    setTimeout(() => {
+      gameEventEmitter.move('user', x, y);
+    }, 1000);
   };
 
   // Handler for right tilemap click to move blue square
   const handleTilemapClickEnemy = (index: number) => {
     const { x, y } = indexToCoordinates(index);
-    console.log(
-      `🟦 RIGHT tilemap clicked: index=${index}, x=${x}, y=${y} - moving blue square`
-    );
-    gameEventEmitter.move('enemy', x, y);
+
+    gameEventEmitter.throwEffect('enemy', 'fireball', x, y, 1.5);
   };
 
   return (
@@ -368,7 +367,13 @@ export default function GamePage() {
           />
           {/* Overlay with entities */}
           <EntityOverlay
-            entities={entities}
+            entities={entities.filter((entity) => entity.id !== 'enemy')}
+            gridWidth={MEGA_W}
+            gridHeight={MEGA_H}
+          />
+          {/* Overlay with effects */}
+          <EffectOverlay
+            overlayId="user"
             gridWidth={MEGA_W}
             gridHeight={MEGA_H}
           />
@@ -392,7 +397,13 @@ export default function GamePage() {
         />
         {/* Overlay with entities */}
         <EntityOverlay
-          entities={entities}
+          entities={entities.filter((entity) => entity.id !== 'user')}
+          gridWidth={MEGA_W}
+          gridHeight={MEGA_H}
+        />
+        {/* Overlay with effects */}
+        <EffectOverlay
+          overlayId="enemy"
           gridWidth={MEGA_W}
           gridHeight={MEGA_H}
         />
