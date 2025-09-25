@@ -125,9 +125,11 @@ export default function GamePage() {
     };
 
     gamePhaseManager?.submitPlayerActions(userActions);
-    EventBus.emit(
-      `start-spell-casting-ally`,
-      `${spell.name.toLowerCase()}_cast`
+
+    gameEventEmitter.playAnimationOneTime(
+      'user',
+      `${spell.name.toLowerCase()}Start`,
+      1.2
     );
 
     setActionSend(true);
