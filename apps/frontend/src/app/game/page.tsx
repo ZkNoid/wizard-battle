@@ -128,8 +128,8 @@ export default function GamePage() {
 
     gameEventEmitter.playAnimationOneTime(
       'user',
-      `${spell.name.toLowerCase()}Start`,
-      1.2
+      `${spell.name.toLowerCase()}`,
+      3.6
     );
 
     setActionSend(true);
@@ -334,7 +334,6 @@ export default function GamePage() {
   // // Handler for left tilemap click to move red square
   const handleTilemapClick = (index: number) => {
     const { x, y } = indexToCoordinates(index);
-    handleMapClick;
     handleMapClick(x, y, false);
 
     //   gameEventEmitter.playAnimationOneTime('user', 'teleportStart', 1.2);

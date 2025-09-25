@@ -251,7 +251,7 @@ export const mageSpells: ISpell<any>[] = [
     id: CircuitString.fromString('FireBall').hash(),
     wizardId: WizardId.MAGE,
     cooldown: Field(1),
-    name: 'Fire_Ball',
+    name: 'FireBall',
     description: 'A ball of fire. Deals damage to a single target',
     image: '/wizards/skills/2.svg',
     modifyerData: FireBallData,

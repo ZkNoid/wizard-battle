@@ -17,7 +17,7 @@ const animations: Record<string, AnimationConfig> = {
     spritesheetJson: '/assets/spritesheets/Sourcer_FireBall.json',
     spritesheetImage: '/assets/spritesheets/Sourcer_FireBall_Spritelist.png',
     loop: false,
-    scale: 1,
+    scale: 3,
   },
   lightning: {
     name: 'lightning',
