@@ -35,7 +35,7 @@ export interface ThrowEffectEvent {
   duration?: number; // Optional duration override
 }
 
-class GameEventEmitter extends EventEmitter {
+export class GameEventEmitter extends EventEmitter {
   private static instance: GameEventEmitter;
 
   private constructor() {

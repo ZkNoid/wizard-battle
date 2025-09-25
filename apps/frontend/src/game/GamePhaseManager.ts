@@ -9,6 +9,7 @@ import {
 import type { IPublicState } from '../../../common/types/matchmaking.types';
 import { EventBus } from './EventBus';
 import { allSpells } from '../../../common/stater/spells';
+import { gameEventEmitter } from '../engine/gameEventEmitter';
 
 /**
  * @title Frontend Game Phase Manager
@@ -487,7 +488,7 @@ export class GamePhaseManager {
       const actions = allActions[playerId];
 
       actions?.actions.forEach((action) => {
-        const type = action.playerId === this.getPlayerId() ? 'ally' : 'enemy';
+        const type = action.playerId === this.getPlayerId() ? 'user' : 'enemy';
 
         let spell = allSpells.find(
           (spell) => spell.id.toString() === action.spellId.toString()
@@ -504,13 +505,11 @@ export class GamePhaseManager {
           };
         }
 
-        console.log('Emitting event', `cast-spell-${type}`);
-
-        EventBus.emit(
-          `cast-spell-${type}`,
+        spell?.sceneEffect?.(
           +coordinates.x,
           +coordinates.y,
-          spell
+          gameEventEmitter,
+          type
         );
       });
     }

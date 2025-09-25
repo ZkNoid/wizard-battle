@@ -11,6 +11,7 @@ import { Position, PositionOption, type SpellCast } from '../structs';
 import { WizardId } from '../../wizards';
 import { type ISpell } from './interface';
 import type { State } from '../state';
+import type { GameEventEmitter } from '../../../frontend/src/engine/gameEventEmitter.ts';
 
 export class LightningBoldData extends Struct({
   position: Position,
@@ -58,27 +59,22 @@ export const LightningBoldModifyer = (
   state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 };
 
-const LightningBoldSceneEffect = (x: number, y: number, scene: any) => {
+const LightningBoldSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: GameEventEmitter,
+  type: 'user' | 'enemy'
+) => {
   const positions = [
     { x: x, y: y },
     { x: x + 1, y: y },
     { x: x - 1, y: y },
     { x: x, y: y + 1 },
     { x: x, y: y - 1 },
-  ].map((pos) => {
-    return (scene as any).getSpriteCoordinates(pos.x, pos.y);
-  });
+  ];
 
   positions.forEach((position) => {
-    scene.add
-      .sprite(position.x, position.y, 'lightning')
-      .play('lightning')
-      .once(
-        'animationcomplete',
-        (anim: any, frame: any, sprite: any) => {
-          sprite.destroy();
-        }
-      );
+    gameEmitter.throwEffect(type, 'lightning', position.x, position.y, 1.2);
   });
 };
 
@@ -127,7 +123,12 @@ export const FireBallModifyer = (
   state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 };
 
-const FireBallSceneEffect = (x: number, y: number, scene: any) => {
+const FireBallSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: GameEventEmitter,
+  type: 'user' | 'enemy'
+) => {
   const positions = [
     { x: x, y: y },
     { x: x + 1, y: y },
@@ -142,20 +143,10 @@ const FireBallSceneEffect = (x: number, y: number, scene: any) => {
     { x: x - 2, y: y },
     { x: x, y: y + 2 },
     { x: x, y: y - 2 },
-  ].map((pos) => {
-    return (scene as any).getSpriteCoordinates(pos.x, pos.y);
-  });
+  ];
 
   positions.forEach((position) => {
-    scene.add
-      .sprite(position.x, position.y, 'fire_ball')
-      .play('fire_ball')
-      .once(
-        'animationcomplete',
-        (anim: any, frame: any, sprite: any) => {
-          sprite.destroy();
-        }
-      );
+    gameEmitter.throwEffect(type, 'fireball', position.x, position.y, 1.5);
   });
 };
 

@@ -243,7 +243,7 @@ export class Game extends Scene {
 
   public castSpell(x: number, y: number, spell: ISpell<any>) {
     console.log('castSpell scence Effect', x, y, spell);
-    spell.sceneEffect?.(x, y, this);
+    // spell.sceneEffect?.(x, y, this);
   }
 
   public startSpellCasting(animation: string) {
