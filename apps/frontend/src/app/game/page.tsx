@@ -268,19 +268,15 @@ export default function GamePage() {
       return;
     }
 
-    // Check if Phaser instances are ready before proceeding
-    if (!phaserRefAlly.current?.game || !phaserRefEnemy.current?.game) {
-      console.log('Phaser instances not ready, skipping move events');
-      return;
-    }
-
     setActionSend(false);
 
     console.log('staterRef.current.state');
     console.log(staterRef.current.state);
     const newXAlly = +staterRef.current.state.playerStats.position.value.x;
     const newYAlly = +staterRef.current.state.playerStats.position.value.y;
-    emitMovePlayerEvent(newXAlly, newYAlly, 'ally');
+    // emitMovePlayerEvent(newXAlly, newYAlly, 'ally');
+    console.log('Moving user to ', newXAlly, newYAlly);
+    gameEventEmitter.move('user', newXAlly, newYAlly);
 
     if (!opponentStateRef.current) {
       console.log('Opponent state not found');
@@ -290,9 +286,11 @@ export default function GamePage() {
     if (+opponentStateRef.current.playerStats.position.isSome) {
       const newXEnemy = +opponentStateRef.current.playerStats.position.value.x;
       const newYEnemy = +opponentStateRef.current.playerStats.position.value.y;
-      emitMovePlayerEvent(newXEnemy, newYEnemy, 'enemy');
+      // emitMovePlayerEvent(newXEnemy, newYEnemy, 'enemy');
+      gameEventEmitter.move('enemy', newXEnemy, newYEnemy);
     } else {
-      emitMovePlayerEvent(-1, -1, 'enemy');
+      // emitMovePlayerEvent(-1, -1, 'enemy');
+      gameEventEmitter.move('enemy', -1, -1);
     }
   };
 
@@ -334,22 +332,25 @@ export default function GamePage() {
     return { x, y };
   };
 
-  // Handler for left tilemap click to move red square
+  // // Handler for left tilemap click to move red square
   const handleTilemapClick = (index: number) => {
     const { x, y } = indexToCoordinates(index);
+    handleMapClick;
+    handleMapClick(x, y, false);
 
-    gameEventEmitter.playAnimationOneTime('user', 'teleportStart', 1.2);
-    gameEventEmitter.throwEffect('user', 'teleport', x, y, 1.2);
-    setTimeout(() => {
-      gameEventEmitter.move('user', x, y);
-    }, 1000);
+    //   gameEventEmitter.playAnimationOneTime('user', 'teleportStart', 1.2);
+    //   gameEventEmitter.throwEffect('user', 'teleport', x, y, 1.2);
+    //   setTimeout(() => {
+    //     gameEventEmitter.move('user', x, y);
+    //   }, 1000);
   };
 
-  // Handler for right tilemap click to move blue square
+  // // Handler for right tilemap click to move blue square
   const handleTilemapClickEnemy = (index: number) => {
     const { x, y } = indexToCoordinates(index);
+    handleMapClick(x, y, true);
 
-    gameEventEmitter.throwEffect('enemy', 'fireball', x, y, 1.5);
+    //   gameEventEmitter.throwEffect('enemy', 'fireball', x, y, 1.5);
   };
 
   return (
