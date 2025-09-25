@@ -317,13 +317,10 @@ export default function GamePage() {
     );
 
     // Fallback timeout to ensure the hook is called eventually
-    const fallbackTimeout = setTimeout(() => {
-      onNewTurnHook();
-    }, 5000);
+    onNewTurnHook();
 
     return () => {
       EventBus.removeListener('current-scene-ready');
-      clearTimeout(fallbackTimeout);
     };
   }, []);
 
