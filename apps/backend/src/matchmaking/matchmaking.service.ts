@@ -97,7 +97,10 @@ export class MatchmakingService {
   ) {
     console.log('MatchmakingService constructor called');
   }
-
+  /**
+   * Get the Redis client
+   * @returns The Redis client
+   */
   get redisClient(): RedisClientType {
     return this.redisService.getClient();
   }
@@ -192,6 +195,7 @@ export class MatchmakingService {
       const activeMatches = await this.redisClient.hGetAll('matches');
       const activePlayerIds = new Set<string>();
 
+      // Check if there are any active matchess
       if (activeMatches && Object.keys(activeMatches).length > 0) {
         for (const [_, matchData] of Object.entries(activeMatches)) {
           try {
@@ -247,8 +251,24 @@ export class MatchmakingService {
         `Actual Redis queue length: ${await this.redisClient.lLen('waiting:queue')}`
       );
 
-      // Match players in pairs, prioritizing those who waited longer
+      // Match players in pairs:
+      // Comment the filteredQueuedPlayers.sort in order to use the FIFO approach
+      filteredQueuedPlayers.sort((a, b) => {
+        const fieldsA =
+          typeof a.player.fields === 'string'
+            ? JSON.parse(a.player.fields || '{}')
+            : (a.player.fields ?? {});
+        const fieldsB =
+          typeof b.player.fields === 'string'
+            ? JSON.parse(b.player.fields || '{}')
+            : (b.player.fields ?? {});
+        const levelA = fieldsA?.level ?? 0;
+        const levelB = fieldsB?.level ?? 0;
+        return levelB - levelA; // Descending order
+      });
+
       while (filteredQueuedPlayers.length >= 2) {
+        // This is a FIFO approach, so the first players in the queue will be matched firsts
         const player1 = filteredQueuedPlayers.shift()!;
         const player2 = filteredQueuedPlayers.shift()!;
 
@@ -263,6 +283,11 @@ export class MatchmakingService {
       console.error('Error in matchmaking loop:', error);
     }
   }
+
+  private async matchPlayersInPairsByParam(
+    filteredQueuedPlayers: QueuedPlayer[],
+    param: string
+  ) {}
 
   /**
    * Create a match between two players
@@ -724,7 +749,7 @@ export class MatchmakingService {
    *
    * @dev Wait Time Estimation:
    * - Formula: Math.max(0, waitingCount - 1) * 30 seconds
-   * - Optimistic estimate based on 3-second matchmaking cycles
+   * - Optimistic estimate based on 30-second matchmaking cycles
    * - Accounts for current player in next cycle
    * - Helps set player expectations and reduce anxiety
    *
