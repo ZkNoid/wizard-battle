@@ -253,19 +253,19 @@ export class MatchmakingService {
 
       // Match players in pairs:
       // Comment the filteredQueuedPlayers.sort in order to use the FIFO approach
-      filteredQueuedPlayers.sort((a, b) => {
-        const fieldsA =
-          typeof a.player.fields === 'string'
-            ? JSON.parse(a.player.fields || '{}')
-            : (a.player.fields ?? {});
-        const fieldsB =
-          typeof b.player.fields === 'string'
-            ? JSON.parse(b.player.fields || '{}')
-            : (b.player.fields ?? {});
-        const levelA = fieldsA?.level ?? 0;
-        const levelB = fieldsB?.level ?? 0;
-        return levelB - levelA; // Descending order
-      });
+      // filteredQueuedPlayers.sort((a, b) => {
+      //   const fieldsA =
+      //     typeof a.player.fields === 'string'
+      //       ? JSON.parse(a.player.fields || '{}')
+      //       : (a.player.fields ?? {});
+      //   const fieldsB =
+      //     typeof b.player.fields === 'string'
+      //       ? JSON.parse(b.player.fields || '{}')
+      //       : (b.player.fields ?? {});
+      //   const levelA = fieldsA?.level ?? 0;
+      //   const levelB = fieldsB?.level ?? 0;
+      //   return levelB - levelA; // Descending order
+      // });
 
       while (filteredQueuedPlayers.length >= 2) {
         // This is a FIFO approach, so the first players in the queue will be matched firsts
