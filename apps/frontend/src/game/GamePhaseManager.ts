@@ -153,7 +153,7 @@ export class GamePhaseManager {
         ) {
           // Server rejected due to phase mismatch, retry
           this.hasSubmittedTrustedState = false;
-          this.startTrustedStatePolling();
+          // this.startTrustedStatePolling();
         }
       }
     );
@@ -523,6 +523,7 @@ export class GamePhaseManager {
     if (this.trustedStatePollingInterval) {
       clearInterval(this.trustedStatePollingInterval);
     }
+    const trustedState = this.generateTrustedState();
 
     // Poll every 500ms to attempt trusted state submission until acknowledged
     this.trustedStatePollingInterval = setInterval(() => {
@@ -532,7 +533,7 @@ export class GamePhaseManager {
       }
 
       // Attempt to submit; server will accept only when phase is END_OF_ROUND
-      this.submitTrustedStateNow();
+      this.submitTrustedStateNow(trustedState);
     }, 500);
   }
 
@@ -549,12 +550,10 @@ export class GamePhaseManager {
   /**
    * @notice Actually submits the trusted state to the server
    */
-  private submitTrustedStateNow(): void {
+  private submitTrustedStateNow(trustedState: ITrustedState): void {
     if (this.hasSubmittedTrustedState) {
       return;
     }
-
-    const trustedState = this.generateTrustedState();
 
     console.log('Submitting trusted state:', trustedState);
 
