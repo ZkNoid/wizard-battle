@@ -2,7 +2,6 @@ import { Field } from 'o1js';
 import { WizardId } from '../../wizards';
 import { type SpellCast, SpellStats } from '../structs';
 import type { State } from '../state';
-import { GameEventEmitter } from '../../../frontend/src/engine/gameEventEmitter';
 
 export interface ISpell<T> {
   id: Field;
@@ -18,7 +17,7 @@ export interface ISpell<T> {
   sceneEffect?: (
     x: number,
     y: number,
-    gameEmitter: GameEventEmitter,
+    gameEmitter: any,
     type: 'user' | 'enemy'
   ) => void;
   defaultValue: SpellStats;

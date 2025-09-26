@@ -11,7 +11,6 @@ import { Position, PositionOption, type SpellCast } from '../structs';
 import { WizardId } from '../../wizards';
 import { type ISpell } from './interface';
 import type { State } from '../state';
-import type { GameEventEmitter } from '../../../frontend/src/engine/gameEventEmitter.ts';
 
 export class LightningBoldData extends Struct({
   position: Position,
@@ -62,7 +61,7 @@ export const LightningBoldModifyer = (
 const LightningBoldSceneEffect = (
   x: number,
   y: number,
-  gameEmitter: GameEventEmitter,
+  gameEmitter: any,
   type: 'user' | 'enemy'
 ) => {
   const positions = [
@@ -126,7 +125,7 @@ export const FireBallModifyer = (
 const FireBallSceneEffect = (
   x: number,
   y: number,
-  gameEmitter: GameEventEmitter,
+  gameEmitter: any,
   type: 'user' | 'enemy'
 ) => {
   const positions = [
