@@ -57,17 +57,6 @@ export default function GamePage() {
   // Derived state
   const entities = getAllEntities();
 
-  // API queries
-  const { data: tilemapData } = api.tilemap.getTilemap.useQuery(
-    {
-      userAddress: address ?? '',
-      slot: '1',
-    },
-    {
-      enabled: !!address,
-    }
-  );
-
   // Utility functions
   const indexToCoordinates = useCallback((index: number) => {
     const x = index % GRID_WIDTH;
@@ -290,7 +279,11 @@ export default function GamePage() {
       width={GRID_WIDTH}
       height={GRID_HEIGHT}
       tileSize={TILE_SIZE}
-      tilemap={tilemapData ?? []}
+      tilemap={
+        mapType === 'ally'
+          ? stater?.state?.map.map((tile) => +tile)
+          : opponentState?.map.map((tile) => +tile)
+      }
       onTileClick={onClick}
       className={
         mapType === 'ally' ? 'h-full w-full cursor-pointer' : 'cursor-pointer'
