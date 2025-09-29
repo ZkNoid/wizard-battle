@@ -740,6 +740,16 @@ export class GameSessionGateway {
           );
           if (target) {
             target.emit('matchFound', data.data.payload);
+            // Ensure the targeted socket joins the room on this instance
+            // GameJoining mitigation - issue fix //29-09-2025
+            try {
+              await target.join(data.roomId);
+            } catch (err) {
+              console.error(
+                'Failed to join room on matchFound (cross-instance):',
+                err
+              );
+            }
           }
         } else {
           this.server
