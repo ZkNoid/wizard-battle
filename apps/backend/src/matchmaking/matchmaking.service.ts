@@ -252,25 +252,38 @@ export class MatchmakingService {
       );
 
       // Match players in pairs:
-      // Comment the filteredQueuedPlayers.sort in order to use the FIFO approach
-      // filteredQueuedPlayers.sort((a, b) => {
-      //   const fieldsA =
-      //     typeof a.player.fields === 'string'
-      //       ? JSON.parse(a.player.fields || '{}')
-      //       : (a.player.fields ?? {});
-      //   const fieldsB =
-      //     typeof b.player.fields === 'string'
-      //       ? JSON.parse(b.player.fields || '{}')
-      //       : (b.player.fields ?? {});
-      //   const levelA = fieldsA?.level ?? 0;
-      //   const levelB = fieldsB?.level ?? 0;
-      //   return levelB - levelA; // Descending order
-      // });
+      // Sort by PlayerStats.fields.level in descending order (higher level first)
+      filteredQueuedPlayers.sort((a, b) => {
+        const fieldsA =
+          typeof a.player.fields === 'string'
+            ? JSON.parse(a.player.fields || '{}')
+            : (a.player.fields ?? {});
+        const fieldsB =
+          typeof b.player.fields === 'string'
+            ? JSON.parse(b.player.fields || '{}')
+            : (b.player.fields ?? {});
+        const levelA = Number(fieldsA?.level ?? 0);
+        const levelB = Number(fieldsB?.level ?? 0);
+        return levelB - levelA; // Descending order
+      });
 
       while (filteredQueuedPlayers.length >= 2) {
         // This is a FIFO approach, so the first players in the queue will be matched firsts
         const player1 = filteredQueuedPlayers.shift()!;
         const player2 = filteredQueuedPlayers.shift()!;
+
+        // DEBUG, fields data
+        // const p1Fields = JSON.parse(player1.player.fields || '{}');
+        // const p2Fields = JSON.parse(player2.player.fields || '{}');
+
+        // const p1Level = Number(p1Fields?.level ?? 0);
+        // const p2Level = Number(p2Fields?.level ?? 0);
+
+        // console.log(`>>>>>>DEBUG>>>>>>>>> Matching player1 fields`, p1Fields);
+
+        // console.log(
+        //   `>>>>>>>>>>>>>>> Matching player1 fields levels ${p1Level} and player2 fields levels ${p2Level}`
+        // );
 
         await this.createMatch(player1.player, player2.player);
       }
