@@ -114,6 +114,56 @@ export const AimingShotModifyer = (
   state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 };
 
+export class HailOfArrowsData extends Struct({
+  position: Position,
+}) {}
+
+export const HailOfArrowsCast = (
+  state: State,
+  target: Field,
+  position: Position
+): SpellCast<HailOfArrowsData> => {
+  return {
+    spellId: CircuitString.fromString('HailOfArrows').hash(),
+    target,
+    additionalData: {
+      position,
+    },
+  };
+};
+
+export const HailOfArrowsModifyer = (
+  state: State,
+  spellCast: SpellCast<HailOfArrowsData>
+) => {
+  const selfPosition = state.playerStats.position.value;
+  const targetPosition = spellCast.additionalData.position;
+  const distance = selfPosition.manhattanDistance(targetPosition);
+  const damageToApply = Provable.if(
+    distance.lessThanOrEqual(UInt64.from(3)),
+    Int64.from(50),
+    Int64.from(0)
+  );
+
+  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+
+  // #TODO make provable
+  // Slowing effect
+
+  const chance = Poseidon.hash([state.randomSeed]).toBigInt() % 10n;
+  const isSlowing = chance <= 2n;
+
+  if (isSlowing) {
+    state.pushEffect(
+      new Effect({
+        effectId: CircuitString.fromString('Slowing').hash(),
+        duration: Field.from(2),
+      }),
+      'endOfRound'
+    );
+  }
+};
+
 export const archerSpells: ISpell<any>[] = [
   {
     id: CircuitString.fromString('Arrow').hash(),
@@ -145,6 +195,23 @@ export const archerSpells: ISpell<any>[] = [
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('AimingShot').hash(),
+      cooldown: Int64.from(1),
+      currentColldown: Int64.from(0),
+    },
+  },
+  {
+    id: CircuitString.fromString('HailOfArrows').hash(),
+    wizardId: WizardId.ARCHER,
+    cooldown: Field(1),
+    name: 'HailOfArrows',
+    description: 'A hail of arrows',
+    image: '/wizards/skills/hailOfArrows.webp',
+    modifyerData: HailOfArrowsData,
+    modifyer: HailOfArrowsModifyer,
+    cast: HailOfArrowsCast,
+    target: 'enemy',
+    defaultValue: {
+      spellId: CircuitString.fromString('HailOfArrows').hash(),
       cooldown: Int64.from(1),
       currentColldown: Int64.from(0),
     },
