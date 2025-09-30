@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { ArrowLeft } from "./assets/arrow-left";
-import { AvatarBg } from "./assets/avatar-bg";
-import Image from "next/image";
-import { allWizards, type Wizard } from "../../../../common/wizards";
+import { ArrowLeft } from './assets/arrow-left';
+import { AvatarBg } from './assets/avatar-bg';
+import Image from 'next/image';
+import { allWizards, type Wizard } from '../../../../common/wizards';
 
 export function Carousel({
   currentWizard,
@@ -18,7 +18,7 @@ export function Carousel({
       <button
         onClick={() => {
           const currentIndex = allWizards.findIndex(
-            (w) => w.id === currentWizard.id,
+            (w) => w.id === currentWizard.id
           );
           const previousWizard = allWizards[currentIndex - 1];
           if (previousWizard) setCurrentWizard(previousWizard);
@@ -32,7 +32,7 @@ export function Carousel({
         {currentWizard.imageURL && (
           <Image
             src={currentWizard.imageURL}
-            alt={"baseWizard"}
+            alt={'baseWizard'}
             fill
             className="h-full w-full p-6"
           />
@@ -42,11 +42,18 @@ export function Carousel({
       {/* Next button */}
       <button
         onClick={() => {
+          console.log('next');
           const currentIndex = allWizards.findIndex(
-            (w) => w.id === currentWizard.id,
+            (w) => w.id === currentWizard.id
           );
+          console.log(`currentIndex: ${currentIndex}`);
           const nextWizard = allWizards[currentIndex + 1];
-          if (nextWizard) setCurrentWizard(nextWizard);
+          console.log(`nextWizard: ${nextWizard}`);
+          if (nextWizard) {
+            setCurrentWizard(nextWizard);
+          } else {
+            setCurrentWizard(allWizards[0]!);
+          }
         }}
         className="cursor-pointer transition-transform duration-300 hover:scale-110"
       >

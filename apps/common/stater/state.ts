@@ -28,6 +28,7 @@ export class State extends Struct({
   wizardId: Field,
   playerStats: PlayerStats,
   spellStats: Provable.Array(SpellStats, spellStatsAmount),
+  endOfRoundEffects: Provable.Array(Effect, maxSpellEffects),
   publicStateEffects: Provable.Array(Effect, maxSpellEffects),
   map: Provable.Array(Field, 64),
   turnId: Int64,
@@ -49,6 +50,12 @@ export class State extends Struct({
           spellId: Field(0),
           cooldown: Int64.from(0),
           currentColldown: Int64.from(0),
+        })
+      ),
+      endOfRoundEffects: Array(maxSpellEffects).fill(
+        new Effect({
+          effectId: Field(0),
+          duration: Field(0),
         })
       ),
       publicStateEffects: Array(maxSpellEffects).fill(
@@ -104,30 +111,36 @@ export class State extends Struct({
     }
   }
 
-  getEffectLength() {
-    for (let i = 0; i < this.publicStateEffects.length; i++) {
-      if (this.publicStateEffects[i]!.effectId.equals(Field(0)).toBoolean()) {
+  getEffectLength(type: 'public' | 'endOfRound') {
+    const effects =
+      type === 'public' ? this.publicStateEffects : this.endOfRoundEffects;
+    for (let i = 0; i < effects.length; i++) {
+      if (effects[i]!.effectId.equals(Field(0)).toBoolean()) {
         return i;
       }
     }
     return this.publicStateEffects.length;
   }
 
-  pushEffect(effect: Effect) {
-    let effectLength = this.getEffectLength();
+  pushEffect(effect: Effect, type: 'public' | 'endOfRound') {
+    let effectLength = this.getEffectLength(type);
     if (effectLength >= maxSpellEffects) {
       throw new Error('Effect array is full');
     }
-    this.publicStateEffects[effectLength] = effect;
+    const effects =
+      type === 'public' ? this.publicStateEffects : this.endOfRoundEffects;
+    effects[effectLength] = effect;
   }
 
-  removeEffect(effectId: Field) {
-    let effectLength = this.getEffectLength();
+  removeEffect(effectId: Field, type: 'public' | 'endOfRound') {
+    let effectLength = this.getEffectLength(type);
+    const effects =
+      type === 'public' ? this.publicStateEffects : this.endOfRoundEffects;
     for (let i = 0; i < effectLength; i++) {
-      if (this.publicStateEffects[i]!.effectId.equals(effectId).toBoolean()) {
-        this.publicStateEffects[i] = this.publicStateEffects[effectLength - 1]!;
+      if (effects[i]!.effectId.equals(effectId).toBoolean()) {
+        effects[i] = effects[effectLength - 1]!;
       }
-      this.publicStateEffects[effectLength - 1] = new Effect({
+      effects[effectLength - 1] = new Effect({
         effectId: Field(0),
         duration: Field(0),
       });

@@ -41,7 +41,7 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
       const currentState = state.stater.state;
       if (!currentState) return state;
 
-      currentState.playerId = wizardId;
+      currentState.wizardId = wizardId;
 
       return { stater: state.stater };
     }),

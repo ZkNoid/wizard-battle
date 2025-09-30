@@ -15,8 +15,7 @@ export interface Wizard {
 
 export const WizardId = {
   MAGE: CircuitString.fromString('Mage').hash(),
-  WARRIOR: CircuitString.fromString('Warrior').hash(),
-  ROGUE: CircuitString.fromString('Rogue').hash(),
+  ARCHER: CircuitString.fromString('Archer').hash(),
   COMMON: CircuitString.fromString('Common').hash(),
 };
 
@@ -28,8 +27,16 @@ const mageDefaultState = () => {
     new Effect({
       effectId: EffectsId.Invisible!,
       duration: Field(-1),
-    })
+    }),
+    'public'
   );
+
+  return state;
+};
+
+const archerDefaultState = () => {
+  let state = State.default();
+  state.wizardId = WizardId.ARCHER;
 
   return state;
 };
@@ -42,6 +49,14 @@ export const allWizards: Wizard[] = [
     publicFields: ['map', 'health'],
     imageURL: '/wizards/base-wizard.svg',
     defaultState: mageDefaultState,
+  },
+  {
+    id: WizardId.ARCHER,
+    name: 'Archer',
+    defaultHealth: 100,
+    publicFields: ['map', 'health'],
+    imageURL: '/wizards/skills/1.svg',
+    defaultState: archerDefaultState,
   },
   // {
   //   id: WizardId.WARRIOR,
