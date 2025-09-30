@@ -55,7 +55,7 @@ export const allWizards: Wizard[] = [
     name: 'Archer',
     defaultHealth: 100,
     publicFields: ['map', 'health'],
-    imageURL: '/wizards/skills/1.svg',
+    imageURL: '/wizards/archer.jpg',
     defaultState: archerDefaultState,
   },
   // {
