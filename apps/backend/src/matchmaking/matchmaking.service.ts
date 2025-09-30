@@ -46,6 +46,7 @@ import {
 interface QueuedPlayer {
   player: IPublicState;
   timestamp: number; // When they joined the queue
+  level: number; // not is use for now, but we keep it for future reference
 }
 
 /**
@@ -186,11 +187,20 @@ export class MatchmakingService {
         `Processing matchmaking for ${waitingPlayers.length} players`
       );
 
+      // Players Sorting
+      //  By time in queue
+
       // Parse and sort players by wait time (oldest first)
+      // const queuedPlayers: QueuedPlayer[] = waitingPlayers
+      //   .map((p) => JSON.parse(p))
+      //   .sort((a, b) => a.timestamp - b.timestamp);
+
+      // By level
       const queuedPlayers: QueuedPlayer[] = waitingPlayers
         .map((p) => JSON.parse(p))
-        .sort((a, b) => a.timestamp - b.timestamp);
+        .sort((a, b) => a.level - b.level);
 
+      // DEBUG, queued players datas
       // Filter out players who are already in active matches
       const activeMatches = await this.redisClient.hGetAll('matches');
       const activePlayerIds = new Set<string>();
@@ -251,39 +261,10 @@ export class MatchmakingService {
         `Actual Redis queue length: ${await this.redisClient.lLen('waiting:queue')}`
       );
 
-      // Match players in pairs:
-      // Sort by PlayerStats.fields.level in descending order (higher level first)
-      filteredQueuedPlayers.sort((a, b) => {
-        const fieldsA =
-          typeof a.player.fields === 'string'
-            ? JSON.parse(a.player.fields || '{}')
-            : (a.player.fields ?? {});
-        const fieldsB =
-          typeof b.player.fields === 'string'
-            ? JSON.parse(b.player.fields || '{}')
-            : (b.player.fields ?? {});
-        const levelA = Number(fieldsA?.level ?? 0);
-        const levelB = Number(fieldsB?.level ?? 0);
-        return levelB - levelA; // Descending order
-      });
-
       while (filteredQueuedPlayers.length >= 2) {
         // This is a FIFO approach, so the first players in the queue will be matched firsts
         const player1 = filteredQueuedPlayers.shift()!;
         const player2 = filteredQueuedPlayers.shift()!;
-
-        // DEBUG, fields data
-        // const p1Fields = JSON.parse(player1.player.fields || '{}');
-        // const p2Fields = JSON.parse(player2.player.fields || '{}');
-
-        // const p1Level = Number(p1Fields?.level ?? 0);
-        // const p2Level = Number(p2Fields?.level ?? 0);
-
-        // console.log(`>>>>>>DEBUG>>>>>>>>> Matching player1 fields`, p1Fields);
-
-        // console.log(
-        //   `>>>>>>>>>>>>>>> Matching player1 fields levels ${p1Level} and player2 fields levels ${p2Level}`
-        // );
 
         await this.createMatch(player1.player, player2.player);
       }
@@ -807,9 +788,12 @@ export class MatchmakingService {
     await this.gameStateService.registerSocket(socket);
 
     // Add player to Redis waiting list with timestamp
+    // random level between 1 and 60, not is use for now, but we keep it for future reference
+    // TODO: add query do database to read player level
     const queuedPlayer: QueuedPlayer = {
       player: player,
       timestamp: Date.now(),
+      level: Math.floor(Math.random() * 60) + 1,
     };
     await this.redisClient.lPush('waiting:queue', JSON.stringify(queuedPlayer));
 
