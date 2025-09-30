@@ -1,4 +1,4 @@
-import { Field, Int64 } from 'o1js';
+import { CircuitString, Field, Int64 } from 'o1js';
 import { State } from '../state';
 import { Position, PositionOption } from '../structs';
 
@@ -24,7 +24,16 @@ const invisibleEffect: IEffectInfo = {
   },
 };
 
-export const allEffectsInfo: IEffectInfo[] = [invisibleEffect];
+const bleedingEffect: IEffectInfo = {
+  id: CircuitString.fromString('Bleeding').hash(),
+  name: 'Bleeding',
+  apply: (state: State, publicState: State) => {
+    console.log('Applying bleeding effect');
+    state.playerStats.hp = state.playerStats.hp.sub(Int64.from(20));
+  },
+};
+
+export const allEffectsInfo: IEffectInfo[] = [invisibleEffect, bleedingEffect];
 
 const EffectsId: Record<string, Field> = {};
 

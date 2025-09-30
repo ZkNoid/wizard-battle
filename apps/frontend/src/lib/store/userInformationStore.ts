@@ -9,6 +9,7 @@ import {
 import { Field, Int64 } from 'o1js';
 import { SpellStats } from '../../../../common/stater/structs';
 import type { GamePhaseManager } from '@/game/GamePhaseManager';
+import { allWizards } from '../../../../common/wizards';
 interface UserInformationStore {
   socket: Socket | null;
   stater: Stater | null;
@@ -38,10 +39,13 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
   setCurrentWizard: (wizardId: Field) =>
     set((state) => {
       if (!state.stater) return state;
-      const currentState = state.stater.state;
-      if (!currentState) return state;
 
-      currentState.wizardId = wizardId;
+      const wizard = allWizards.find(
+        (w) => w.id.toString() === wizardId.toString()
+      );
+      if (!wizard) return state;
+
+      state.stater.state = wizard.defaultState();
 
       return { stater: state.stater };
     }),

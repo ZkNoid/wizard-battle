@@ -38,18 +38,11 @@ export const ArrowModifyer = (
   const targetPosition = spellCast.additionalData.position;
   const distance = selfPosition.manhattanDistance(targetPosition);
   const directHit = distance.equals(UInt64.from(0));
-  const nearbyHit = distance.equals(UInt64.from(1));
-  const distantHit = directHit.not().and(nearbyHit.not());
 
   // Damage
-  const damage = Int64.from(100);
-  const damage2 = Int64.from(50);
+  const damage = Int64.from(30);
 
-  const damageToApply = Provable.switch(
-    [directHit, nearbyHit, distantHit],
-    Int64,
-    [damage, damage2, Int64.from(0)]
-  );
+  const damageToApply = Provable.if(directHit, damage, Int64.from(0));
 
   state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 
@@ -59,15 +52,15 @@ export const ArrowModifyer = (
   const chance = Poseidon.hash([state.randomSeed]).toBigInt() % 2n;
   const isBleeding = chance === 1n;
 
-  if (isBleeding) {
-    state.pushEffect(
-      new Effect({
-        effectId: CircuitString.fromString('Bleeding').hash(),
-        duration: Field.from(3),
-      }),
-      'endOfRound'
-    );
-  }
+  // if (isBleeding) {
+  state.pushEffect(
+    new Effect({
+      effectId: CircuitString.fromString('Bleeding').hash(),
+      duration: Field.from(3),
+    }),
+    'endOfRound'
+  );
+  // }
 };
 
 export class AimingShotData extends Struct({

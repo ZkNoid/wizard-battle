@@ -50,7 +50,7 @@ export class Stater extends Struct({
   generatePublicState() {
     let state = this.state.copy();
 
-    this.applyEffects(state);
+    this.applyPublicStateEffects(state);
 
     return state;
   }
@@ -64,7 +64,9 @@ export class Stater extends Struct({
       return;
     }
 
-    const effectInfo = allEffectsInfo.find((e) => e.id === effect.effectId);
+    const effectInfo = allEffectsInfo.find(
+      (e) => e.id.toString() === effect.effectId.toString()
+    );
 
     if (!effectInfo) {
       throw new Error('No such effectInfo');
@@ -73,11 +75,23 @@ export class Stater extends Struct({
     console.log('applyEffect', effectInfo.name);
 
     effectInfo.apply(this.state, publicState);
+    effect.duration = effect.duration.sub(Field.from(1));
+    effect.effectId = Provable.if(
+      effect.duration.equals(Field.from(0)),
+      Field(0),
+      effect.effectId
+    );
   }
 
-  applyEffects(publicState: State) {
+  applyPublicStateEffects(publicState: State) {
     for (const effect of this.state.publicStateEffects) {
       this.applyEffect(publicState, effect);
+    }
+  }
+
+  applyEndOfRoundEffects() {
+    for (const effect of this.state.endOfRoundEffects) {
+      this.applyEffect(this.state, effect);
     }
   }
 
@@ -89,6 +103,7 @@ export class Stater extends Struct({
     // Derive random seed form all [spellCast, turnId, randomSeed]
     // ToDo: Include actual spellCast data
     const randomSeed = Poseidon.hash([this.state.randomSeed]);
+    this.state.randomSeed = randomSeed;
 
     // Apply spells
     for (const spell of spellCasts) {
@@ -96,9 +111,12 @@ export class Stater extends Struct({
       this.applySpellCast(spell);
     }
 
+    // Apply end of round effects
+    this.applyEndOfRoundEffects();
+
     const publicState = this.generatePublicState();
 
-    this.applyEffects(publicState);
+    this.applyPublicStateEffects(publicState);
 
     const stateCommit = this.generateStateCommit();
 
