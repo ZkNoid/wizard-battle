@@ -40,6 +40,7 @@ export class State extends Struct({
       wizardId: CircuitString.fromString('Mage').hash(),
       playerStats: new PlayerStats({
         hp: Int64.from(100),
+        maxHp: Int64.from(100),
         position: new PositionOption({
           value: new Position({ x: Int64.from(0), y: Int64.from(0) }),
           isSome: Field(1),

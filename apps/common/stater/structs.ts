@@ -16,6 +16,7 @@ export class PositionOption extends Struct({
 
 export class PlayerStats extends Struct({
   hp: Int64,
+  maxHp: Int64,
   position: PositionOption,
 }) {}
 

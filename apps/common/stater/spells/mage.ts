@@ -225,6 +225,12 @@ export const HealCast = (state: State, target: Field): SpellCast<HealData> => {
 
 export const HealModifyer = (state: State, spellCast: SpellCast<HealData>) => {
   state.playerStats.hp = state.playerStats.hp.add(Int64.from(100));
+  // If the player has more health than the max health, set the health to the max health
+  state.playerStats.hp = Provable.if(
+    state.playerStats.hp.sub(state.playerStats.maxHp).isPositive(),
+    state.playerStats.maxHp,
+    state.playerStats.hp
+  );
 };
 
 export const mageSpells: ISpell<any>[] = [
