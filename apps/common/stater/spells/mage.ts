@@ -281,6 +281,7 @@ export const mageSpells: ISpell<any>[] = [
     modifyer: TeleportModifyer,
     cast: TeleportCast,
     target: 'ally',
+    priority: 1,
     defaultValue: {
       spellId: CircuitString.fromString('Teleport').hash(),
       cooldown: Int64.from(1),
@@ -298,6 +299,7 @@ export const mageSpells: ISpell<any>[] = [
     modifyer: HealModifyer,
     cast: HealCast,
     target: 'ally',
+    priority: 1,
     defaultValue: {
       spellId: CircuitString.fromString('Heal').hash(),
       cooldown: Int64.from(1),

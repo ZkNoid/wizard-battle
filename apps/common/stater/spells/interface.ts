@@ -20,5 +20,6 @@ export interface ISpell<T> {
     gameEmitter: any,
     type: 'user' | 'enemy'
   ) => void;
+  priority?: number;
   defaultValue: SpellStats;
 }

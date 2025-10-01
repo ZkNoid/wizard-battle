@@ -154,6 +154,9 @@ export class Stater extends Struct({
         target: Field(action.playerId), // or however you want to map this
         additionalData: action.spellCastInfo,
       }))
+      .sort((a, b) => {
+        return (a.spell?.priority ?? 0) - (b.spell?.priority ?? 0);
+      })
       .map((action) => {
         return {
           spellId: action.spellId,
