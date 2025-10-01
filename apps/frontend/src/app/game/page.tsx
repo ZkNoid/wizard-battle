@@ -41,11 +41,19 @@ export default function GamePage() {
   const router = useRouter();
   const { address } = useMinaAppkit();
   const [canPlayerAct, setCanPlayerAct] = useState<boolean>(false);
+  const [actionInfo, setActionInfo] = useState<{
+    movementDone: boolean;
+    spellCastDone: boolean;
+  }>({
+    movementDone: false,
+    spellCastDone: false,
+  });
+  const [preparedActions, setPreparedActions] = useState<IUserAction[]>([]);
 
   // Store hooks
   const { stater, opponentState, gamePhaseManager, setActionSend, actionSend } =
     useUserInformationStore();
-  const { pickedSpellId } = useInGameStore();
+  const { pickedSpellId, setPickedSpellId } = useInGameStore();
   const { addEntity, getAllEntities, initMovementHandler, clearEntities } =
     useEngineStore();
 
@@ -105,16 +113,27 @@ export default function GamePage() {
   );
 
   const submitSpellAction = useCallback(
-    (userAction: IUserAction) => {
+    (
+      userAction: IUserAction,
+      updatedActionInfo: { movementDone: boolean; spellCastDone: boolean }
+    ) => {
+      if (!updatedActionInfo.movementDone || !updatedActionInfo.spellCastDone) {
+        console.log('Adding to prepared actions');
+        setPreparedActions([...preparedActions, userAction]);
+        return;
+      }
+
+      console.log('Submitting actions');
+
       const userActions: IUserActions = {
-        actions: [userAction],
+        actions: [...preparedActions, userAction],
         signature: '',
       };
 
       gamePhaseManager?.submitPlayerActions(userActions);
       setActionSend(true);
     },
-    [gamePhaseManager, setActionSend]
+    [gamePhaseManager, setActionSend, preparedActions]
   );
 
   // Map click handlers
@@ -123,10 +142,30 @@ export default function GamePage() {
       console.log(`${isEnemy ? 'Enemy' : 'Ally'} map clicked:`, x, y);
 
       let spellId = pickedSpellId;
+      let updatedActionInfo = { ...actionInfo };
 
       // Default to move spell if no spell is picked and clicking on ally map
       if (!pickedSpellId && !isEnemy) {
         spellId = SpellId['Move'] ?? null;
+        if (actionInfo.movementDone) {
+          console.log('Movement already done');
+          return;
+        }
+        updatedActionInfo = {
+          ...actionInfo,
+          movementDone: true,
+        };
+        setActionInfo(updatedActionInfo);
+      } else {
+        if (actionInfo.spellCastDone) {
+          console.log('Spell cast already done');
+          return;
+        }
+        updatedActionInfo = {
+          ...actionInfo,
+          spellCastDone: true,
+        };
+        setActionInfo(updatedActionInfo);
       }
 
       if (!spellId) {
@@ -138,7 +177,7 @@ export default function GamePage() {
       if (!userAction) return;
 
       console.log('userAction:', userAction);
-      submitSpellAction(userAction);
+      submitSpellAction(userAction, updatedActionInfo);
 
       // Play animation
       const spell = allSpells.find(
@@ -151,8 +190,17 @@ export default function GamePage() {
           3.6
         );
       }
+
+      // Reset picked spell
+      setPickedSpellId(null);
     },
-    [pickedSpellId, createUserAction, submitSpellAction]
+    [
+      pickedSpellId,
+      createUserAction,
+      submitSpellAction,
+      actionInfo,
+      setPickedSpellId,
+    ]
   );
 
   const handleTilemapClick = useCallback(
@@ -179,6 +227,8 @@ export default function GamePage() {
     }
 
     setActionSend(false);
+    setActionInfo({ movementDone: false, spellCastDone: false });
+    setPreparedActions([]);
 
     const { state } = staterRef.current;
     console.log('staterRef.current.state:', state);
@@ -308,7 +358,7 @@ export default function GamePage() {
   );
 
   return (
-    <Game>
+    <Game actionInfo={actionInfo}>
       {/* Left half - Ally map */}
       <div className="space-y-2">
         <div className="relative">

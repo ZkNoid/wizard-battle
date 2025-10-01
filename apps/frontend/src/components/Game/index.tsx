@@ -15,8 +15,10 @@ import type { GamePhase } from '../../../../common/types/gameplay.types';
 
 export default function Game({
   children,
+  actionInfo,
 }: {
   children: [ReactNode, ReactNode];
+  actionInfo?: { movementDone: boolean; spellCastDone: boolean };
 }) {
   const router = useRouter();
   const { stater, gamePhaseManager } = useUserInformationStore();
@@ -46,6 +48,20 @@ export default function Game({
             <span className="text-center text-2xl font-bold">
               CURRENT PHASE: {currentPhase?.toString() ?? 'No phase'}
             </span>
+            {actionInfo && (
+              <span className="text-center text-lg font-semibold text-yellow-300">
+                {actionInfo.movementDone
+                  ? 'Movement done'
+                  : 'Waiting for movement'}
+              </span>
+            )}
+            {actionInfo && (
+              <span className="text-center text-lg font-semibold text-yellow-300">
+                {actionInfo.spellCastDone
+                  ? 'Spell cast done'
+                  : 'Waiting for spell cast'}
+              </span>
+            )}
           </div>
 
           <div className="col-span-3">{children[1]}</div>
