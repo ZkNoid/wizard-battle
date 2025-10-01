@@ -96,7 +96,7 @@ export class BotService {
    * @returns Randomly selected wizard
    */
   private selectRandomWizard(): Wizard {
-    const randomIndex = Math.floor(Math.random() * allWizards.length);
+    const randomIndex = 0; // Math.floor(Math.random() * allWizards.length);
     const selectedWizard = allWizards[randomIndex];
     if (!selectedWizard) {
       throw new Error('No wizards available');
