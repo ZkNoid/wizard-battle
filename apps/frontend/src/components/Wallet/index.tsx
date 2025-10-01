@@ -138,8 +138,11 @@ export default function Wallet() {
     }
   };
 
-  const displayName =
-    user?.name ?? (address ? formatAddress(address) : 'Unknown');
+  const displayName = user?.name
+    ? `@${user.name}`
+    : address
+      ? formatAddress(address)
+      : 'Unknown';
 
   return (
     <motion.div
@@ -151,7 +154,7 @@ export default function Wallet() {
       {isConnected && address ? (
         <Button
           variant="blue"
-          text={`@${displayName}`}
+          text={`${displayName}`}
           onClick={disconnect}
           className="w-70 h-15 text-base font-bold"
         />
