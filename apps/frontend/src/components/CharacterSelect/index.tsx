@@ -50,41 +50,57 @@ export default function CharacterSelect({
         {/* Skills */}
         <div className="mt-5 grid grid-cols-4 gap-5">
           {currentWizardSpells.map((spell) => (
-            <Image
+            <div
               key={spell.id.toString()}
-              className={cn(
-                'w-22.5 h-22.5 cursor-pointer transition-transform duration-300 hover:scale-110',
-                selectedSkills.some(
-                  (s) => s.spellId.toString() === spell.id.toString()
-                ) && 'scale-110',
-                !selectedSkills.some(
-                  (s) => s.spellId.toString() === spell.id.toString()
-                ) &&
-                  selectedSkillsLength >= MAX_SELECTED_SKILLS &&
-                  'hover:scale-none cursor-not-allowed opacity-50'
-              )}
-              src={spell.image ?? ''}
-              alt={'skill'}
-              width={22.5}
-              height={22.5}
-              onClick={() => {
-                if (
-                  selectedSkills.some(
-                    (s) => s.spellId.toString() === spell.id.toString()
-                  )
-                ) {
-                  setSelectedSkills(
-                    selectedSkills.filter(
-                      (s) => s.spellId.toString() !== spell.id.toString()
-                    )
-                  );
-                } else {
-                  if (selectedSkillsLength < MAX_SELECTED_SKILLS) {
-                    setSelectedSkills([...selectedSkills, spell.defaultValue]);
-                  }
-                }
-              }}
-            />
+              className="size-22.5 relative flex cursor-pointer items-center justify-center transition-transform duration-300 hover:scale-110"
+            >
+              <Image
+                className="absolute inset-0 z-0 size-full"
+                src={'/wizards/skills/empty.svg'}
+                alt={'empty skill'}
+                width={90}
+                height={90}
+              />
+              <div className="relative z-10 size-full p-1">
+                <Image
+                  className={cn(
+                    'size-full',
+                    selectedSkills.some(
+                      (s) => s.spellId.toString() === spell.id.toString()
+                    ) && 'scale-110',
+                    !selectedSkills.some(
+                      (s) => s.spellId.toString() === spell.id.toString()
+                    ) &&
+                      selectedSkillsLength >= MAX_SELECTED_SKILLS &&
+                      'hover:scale-none cursor-not-allowed opacity-50'
+                  )}
+                  src={spell.image ?? ''}
+                  alt={'skill'}
+                  width={22.5}
+                  height={22.5}
+                  onClick={() => {
+                    if (
+                      selectedSkills.some(
+                        (s) => s.spellId.toString() === spell.id.toString()
+                      )
+                    ) {
+                      setSelectedSkills(
+                        selectedSkills.filter(
+                          (s) => s.spellId.toString() !== spell.id.toString()
+                        )
+                      );
+                    } else {
+                      if (selectedSkillsLength < MAX_SELECTED_SKILLS) {
+                        setSelectedSkills([
+                          ...selectedSkills,
+                          spell.defaultValue,
+                        ]);
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </div>
           ))}
           {/* Empty skills */}
           {Array.from({ length: 4 - (currentWizardSpells.length % 4) }).map(
