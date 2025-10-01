@@ -46,6 +46,12 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
       if (!wizard) return state;
 
       state.stater.state = wizard.defaultState();
+      state.stater.state.playerStats.position.value.x = Int64.from(
+        Math.floor(Math.random() * 8)
+      );
+      state.stater.state.playerStats.position.value.y = Int64.from(
+        Math.floor(Math.random() * 8)
+      );
 
       return { stater: state.stater };
     }),
