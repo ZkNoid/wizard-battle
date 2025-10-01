@@ -4,7 +4,7 @@ import { State } from '../state';
 import {
   PlayerStats,
   Position,
-  SpellCast,
+  type SpellCast,
   SpellStats,
   Effect,
   PositionOption,
@@ -32,6 +32,7 @@ describe('Mage Spells', () => {
     // Create initial state with a player at position (5, 5) with 100 HP
     const playerStats = new PlayerStats({
       hp: Int64.from(100),
+      maxHp: Int64.from(100),
       position: new PositionOption({
         value: new Position({
           x: Int64.from(5),
@@ -63,12 +64,23 @@ describe('Mage Spells', () => {
           })
       );
 
+    const endOfRoundEffects = Array(10)
+      .fill(null)
+      .map(
+        () =>
+          new Effect({
+            effectId: Field(0),
+            duration: Field(0),
+          })
+      );
+
     initialState = new State({
       playerId: Field(42),
       wizardId: WizardId.MAGE,
       playerStats,
       spellStats,
       publicStateEffects: effects,
+      endOfRoundEffects,
       map: [...Array(64).fill(Field(0))],
       turnId: Int64.from(1),
       randomSeed: Field(123),

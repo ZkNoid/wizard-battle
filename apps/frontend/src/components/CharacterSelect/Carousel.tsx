@@ -42,13 +42,10 @@ export function Carousel({
       {/* Next button */}
       <button
         onClick={() => {
-          console.log('next');
           const currentIndex = allWizards.findIndex(
             (w) => w.id === currentWizard.id
           );
-          console.log(`currentIndex: ${currentIndex}`);
           const nextWizard = allWizards[currentIndex + 1];
-          console.log(`nextWizard: ${nextWizard}`);
           if (nextWizard) {
             setCurrentWizard(nextWizard);
           } else {

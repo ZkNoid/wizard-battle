@@ -20,6 +20,7 @@ describe('Stater', () => {
     // Create initial state
     const playerStats = new PlayerStats({
       hp: Int64.from(100),
+      maxHp: Int64.from(100),
       position: new PositionOption({
         value: new Position({
           x: Int64.from(0),
@@ -51,12 +52,23 @@ describe('Stater', () => {
           })
       );
 
+    const endOfRoundEffects = Array(10)
+      .fill(null)
+      .map(
+        () =>
+          new Effect({
+            effectId: Field(0),
+            duration: Field(0),
+          })
+      );
+
     initialState = new State({
       playerId: Field(42),
       wizardId: WizardId.MAGE,
       playerStats,
       spellStats,
       publicStateEffects,
+      endOfRoundEffects,
       map: [...Array(64).fill(Field(0))],
       turnId: Int64.from(1),
       randomSeed: Field(123),
@@ -189,7 +201,7 @@ describe('Stater', () => {
 
       const publicState = stater.generatePublicState();
 
-      expect(() => stater.applyEffects(publicState)).toThrow(
+      expect(() => stater.applyPublicStateEffects(publicState)).toThrow(
         'No such effectInfo'
       );
     });
@@ -264,6 +276,7 @@ describe('Stater', () => {
       const position = new Position({ x: Int64.from(5), y: Int64.from(10) });
       const playerStats = new PlayerStats({
         hp: Int64.from(150),
+        maxHp: Int64.from(150),
         position: new PositionOption({ value: position, isSome: Field(1) }),
       });
 

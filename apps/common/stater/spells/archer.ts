@@ -1,5 +1,5 @@
 import { State } from '../state';
-import { Effect, Position, SpellCast } from '../structs';
+import { Effect, Position, type SpellCast } from '../structs';
 import {
   CircuitString,
   Field,
@@ -9,7 +9,7 @@ import {
   Struct,
   UInt64,
 } from 'o1js';
-import { ISpell } from './interface';
+import { type ISpell } from './interface';
 import { WizardId } from '../../wizards';
 
 export class ArrowData extends Struct({
