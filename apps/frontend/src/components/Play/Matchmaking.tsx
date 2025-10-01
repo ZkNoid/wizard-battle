@@ -148,27 +148,6 @@ export default function Matchmaking({
         >
           Cancel
         </Button>
-        {/* DEBUG Buttons */}
-        <div className="flex gap-5">
-          <Button
-            variant="gray"
-            className="h-15 w-60"
-            onClick={() => {
-              setPlayStep(PlaySteps.LOSE);
-            }}
-          >
-            Lose
-          </Button>
-          <Button
-            variant="gray"
-            className="h-15 w-60"
-            onClick={() => {
-              setPlayStep(PlaySteps.WIN);
-            }}
-          >
-            Win
-          </Button>
-        </div>
       </div>
       <ModeBg className="absolute left-0 top-0 -z-[1] h-full w-full" />
     </div>

@@ -9,10 +9,12 @@ import { cn } from '@/lib/utils';
 export function Navigation({
   playStep,
   setPlayStep,
+  haveNextButton,
   className,
 }: {
   playStep: PlaySteps;
   setPlayStep: (playStep: PlaySteps) => void;
+  haveNextButton?: boolean;
   className?: string;
 }) {
   const router = useRouter();
@@ -31,7 +33,7 @@ export function Navigation({
       {currentIndex >= 0 && (
         <Button
           variant="blue"
-          className="h-15 mr-auto w-80"
+          className="w-70 h-15 -ml-8 mr-auto"
           onClick={() => {
             if (currentIndex === 0) router.push('/');
 
@@ -45,10 +47,11 @@ export function Navigation({
         </Button>
       )}
       {currentIndex < PlayStepOrder.length - 1 &&
-        playStep !== PlaySteps.SELECT_MODE && (
+        playStep !== PlaySteps.SELECT_MODE &&
+        playStep !== PlaySteps.SELECT_CHARACTER && (
           <Button
             variant="blue"
-            className="h-15 ml-auto w-80"
+            className="w-70 h-15 -mr-8 ml-auto"
             onClick={() => {
               if (currentIndex < PlayStepOrder.length - 1) {
                 const nextStep = PlayStepOrder[currentIndex + 1];

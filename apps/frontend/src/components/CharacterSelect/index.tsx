@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { Carousel } from "./Carousel";
-import type { IWizard, ISkill } from "@/lib/types/IWizard";
-import { SkillsBg } from "./assets/skills-bg";
-import { Button } from "../shared/Button";
-import { PlaySteps } from "@/lib/enums/PlaySteps";
-import Image from "next/image";
-import { cn } from "@/lib/utils";
-import { MAX_SELECTED_SKILLS } from "@/lib/constants/wizards";
-import { type Wizard } from "../../../../common/wizards";
-import { allSpells } from "../../../../common/stater/spells";
-import type { SpellStats } from "../../../../common/stater/structs";
+import { Carousel } from './Carousel';
+import type { IWizard, ISkill } from '@/lib/types/IWizard';
+import { SkillsBg } from './assets/skills-bg';
+import { Button } from '../shared/Button';
+import { PlaySteps } from '@/lib/enums/PlaySteps';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
+import { MAX_SELECTED_SKILLS } from '@/lib/constants/wizards';
+import { type Wizard } from '../../../../common/wizards';
+import { allSpells } from '../../../../common/stater/spells';
+import type { SpellStats } from '../../../../common/stater/structs';
 
 export default function CharacterSelect({
   setPlayStep,
@@ -26,11 +26,11 @@ export default function CharacterSelect({
   setSelectedSkills: (skills: SpellStats[]) => void;
 }) {
   const currentWizardSpells = allSpells.filter(
-    (spell) => spell.wizardId === currentWizard.id,
+    (spell) => spell.wizardId === currentWizard.id
   );
 
   const selectedSkillsLength = selectedSkills.filter(
-    (s) => s.spellId.toString() !== "0",
+    (s) => s.spellId.toString() !== '0'
   ).length;
 
   return (
@@ -53,30 +53,30 @@ export default function CharacterSelect({
             <Image
               key={spell.id.toString()}
               className={cn(
-                "w-22.5 h-22.5 cursor-pointer transition-transform duration-300 hover:scale-110",
+                'w-22.5 h-22.5 cursor-pointer transition-transform duration-300 hover:scale-110',
                 selectedSkills.some(
-                  (s) => s.spellId.toString() === spell.id.toString(),
-                ) && "scale-110",
+                  (s) => s.spellId.toString() === spell.id.toString()
+                ) && 'scale-110',
                 !selectedSkills.some(
-                  (s) => s.spellId.toString() === spell.id.toString(),
+                  (s) => s.spellId.toString() === spell.id.toString()
                 ) &&
                   selectedSkillsLength >= MAX_SELECTED_SKILLS &&
-                  "hover:scale-none cursor-not-allowed opacity-50",
+                  'hover:scale-none cursor-not-allowed opacity-50'
               )}
-              src={spell.image ?? ""}
-              alt={"skill"}
+              src={spell.image ?? ''}
+              alt={'skill'}
               width={22.5}
               height={22.5}
               onClick={() => {
                 if (
                   selectedSkills.some(
-                    (s) => s.spellId.toString() === spell.id.toString(),
+                    (s) => s.spellId.toString() === spell.id.toString()
                   )
                 ) {
                   setSelectedSkills(
                     selectedSkills.filter(
-                      (s) => s.spellId.toString() !== spell.id.toString(),
-                    ),
+                      (s) => s.spellId.toString() !== spell.id.toString()
+                    )
                   );
                 } else {
                   if (selectedSkillsLength < MAX_SELECTED_SKILLS) {
@@ -92,18 +92,19 @@ export default function CharacterSelect({
               <Image
                 key={index}
                 className="w-22.5 h-22.5"
-                src={"/wizards/skills/empty.svg"}
-                alt={"empty skill"}
+                src={'/wizards/skills/empty.svg'}
+                alt={'empty skill'}
                 width={90}
                 height={90}
               />
-            ),
+            )
           )}
         </div>
         <div className="mt-auto flex w-full items-center justify-center">
           <Button
             variant="gray"
             className="w-106 h-15"
+            disabled={selectedSkillsLength != 4}
             onClick={() => {
               setPlayStep(PlaySteps.SELECT_MAP);
             }}

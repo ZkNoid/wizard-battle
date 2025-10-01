@@ -141,7 +141,7 @@ export default function GameResult({
             Yes
           </Button>
           <Button
-            variant="red"
+            variant="gray"
             onClick={() => {
               router.push('/');
             }}

@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
-import { AudioIcon } from "./assets/audio-icon";
-import { VolumeBar } from "./assets/volume-bar";
-import { VolumeHandle } from "./assets/volume-handle";
-import { useState } from "react";
+import BoxButton from '../shared/BoxButton';
+import { AudioIcon } from './assets/audio-icon';
+import { VolumeBar } from './assets/volume-bar';
+import { VolumeHandle } from './assets/volume-handle';
+import { useState } from 'react';
 
 export default function AudioSelector() {
   const [isActive, setIsActive] = useState<boolean>(true);
@@ -12,14 +13,15 @@ export default function AudioSelector() {
   return (
     <div className="flex items-center gap-4">
       {/* Audio On/Off button */}
-      <button
+      <BoxButton
         onClick={() => setIsActive(!isActive)}
-        className="cursor-pointer transition-transform duration-300 hover:scale-105"
+        color="blue"
+        className="size-16"
       >
-        <AudioIcon className="h-20 w-20" isActive={isActive} />
-      </button>
+        <AudioIcon className="size-8" isActive={isActive} />
+      </BoxButton>
       {/* Volume Slider */}
-      <div className="relative h-5 w-64">
+      <div className="w-50 relative h-7">
         <VolumeBar className="pointer-events-none h-full w-full" />
         <input
           type="range"
@@ -36,7 +38,7 @@ export default function AudioSelector() {
             left: `${volume - 8}%`,
           }}
         >
-          <VolumeHandle className="h-10 w-10" />
+          <VolumeHandle className="h-8 w-8" />
         </div>
       </div>
     </div>

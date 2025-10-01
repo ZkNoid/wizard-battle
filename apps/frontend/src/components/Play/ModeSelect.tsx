@@ -1,9 +1,9 @@
-import { Button } from "../shared/Button";
-import { ModeBg } from "./assets/mode-bg";
-import { PveIcon } from "./assets/pve-icon";
-import { PvpIcon } from "./assets/pvp-icon";
-import { PlaySteps } from "@/lib/enums/PlaySteps";
-import { PlayMode } from "@/lib/enums/PlayMode";
+import { Button } from '../shared/Button';
+import { ModeBg } from './assets/mode-bg';
+import { PveIcon } from './assets/pve-icon';
+import { PvpIcon } from './assets/pvp-icon';
+import { PlaySteps } from '@/lib/enums/PlaySteps';
+import { PlayMode } from '@/lib/enums/PlayMode';
 
 export function ModeSelect({
   setPlayStep,

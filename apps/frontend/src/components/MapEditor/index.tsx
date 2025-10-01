@@ -229,7 +229,7 @@ export default function MapEditor() {
                 text="Save"
                 variant="gray"
                 onClick={handleSave}
-                className="mr-auto h-full w-[70%]"
+                className="h-12.5 -ml-10 mr-auto w-60"
               />
               <RandomBtn
                 className="size-12 cursor-pointer transition-transform duration-300 hover:scale-110"

@@ -1,24 +1,107 @@
-"use client";
+'use client';
 
-import { MainMenu } from "./MainMenu";
-import { ZknoidLink } from "./ZknoidLink";
-import { SocialLinks } from "./SocialLinks";
-import { useState } from "react";
-import { Tab } from "@/lib/enums/Tab";
-import BaseLayout from "../BaseLayout";
-import HowToPlay from "../HowToPlay";
-import Support from "../Support";
+import { MainMenu } from './MainMenu';
+import { ZknoidLink } from './ZknoidLink';
+import { SocialLinks } from './SocialLinks';
+import { useEffect, useState } from 'react';
+import { Tab } from '@/lib/enums/Tab';
+import HowToPlay from '../HowToPlay';
+import Support from '../Support';
+import { TopBarIcon } from '../BaseLayout/assets/top-bar-icon';
+import Image from 'next/image';
+import background from '../../../public/menu/background.svg';
+import hoverCraft from '../../../public/menu/hover-craft.svg';
+import hoverExpeditions from '../../../public/menu/hover-expeditions.svg';
+import hoverPVP from '../../../public/menu/hover-pvp.svg';
+import hoverMarket from '../../../public/menu/hover-market.svg';
+import hoverMarketSmall from '../../../public/menu/hover-market-small.svg';
+import hoverCharacters from '../../../public/menu/hover-characters.svg';
+import { SettingsBar } from '../BaseLayout/SettingsBar';
+import Wallet from '../Wallet';
+import { Button } from '../shared/Button';
+import { DiamondIcon } from './assets/diamond-icon';
+import { GoldCoinIcon } from './assets/gold-coin-icon';
+import BoxButton from '../shared/BoxButton';
+import { MarketIcon } from './assets/market-icon';
+import { InventoryIcon } from './assets/inventory-icon';
+import { MailIcon } from './assets/mail-icon';
+import { TournamentsIcon } from './assets/tournaments-icon';
+import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
+
+enum TabHover {
+  CRAFT,
+  EXPEDITIONS,
+  PVP,
+  MARKET,
+  CHARACTERS,
+}
 
 export default function HomePage() {
   const [tab, setTab] = useState<Tab>(Tab.HOME);
+  const [tabHover, setTabHover] = useState<TabHover | undefined>(undefined);
+  const [isLargeScreen, setIsLargeScreen] = useState<boolean>(false);
+
+  const router = useRouter();
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLargeScreen(window.innerWidth >= 1800);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   return (
-    <BaseLayout>
+    <main className="relative flex h-screen w-screen">
+      <div className="z-1 absolute left-0 top-2.5 grid w-full grid-cols-3 items-center px-20">
+        <SettingsBar setTab={setTab} />
+        <div className="flex w-full items-center justify-center gap-5">
+          <BoxButton color="gray" onClick={() => {}} className="size-16">
+            <MarketIcon className="size-8" />
+          </BoxButton>
+          <BoxButton color="gray" onClick={() => {}} className="size-16">
+            <InventoryIcon className="size-8" />
+          </BoxButton>
+          <BoxButton color="gray" onClick={() => {}} className="size-16">
+            <MailIcon className="size-8" />
+          </BoxButton>
+          <BoxButton color="gray" onClick={() => {}} className="size-16">
+            <TournamentsIcon className="size-8" />
+          </BoxButton>
+        </div>
+        <div className="grid w-full grid-cols-3 items-center gap-10">
+          <Button
+            variant="gray"
+            className="w-70 h-15 flex items-center gap-2.5"
+          >
+            <GoldCoinIcon className="size-8" />
+            <span>100M</span>
+          </Button>
+          <Button
+            variant="gray"
+            className="w-70 h-15 flex items-center gap-2.5"
+          >
+            <DiamondIcon className="size-8" />
+            <span>1.25K</span>
+          </Button>
+          <Wallet />
+        </div>
+      </div>
+
       {/* Main section */}
       <section
-        className={"flex h-full w-full flex-col items-center justify-center"}
+        className={cn(
+          'absolute inset-0 flex h-full w-full flex-col items-center justify-center',
+          tab !== Tab.HOME && 'z-20'
+        )}
       >
-        {tab === Tab.HOME && <MainMenu setTab={(tab) => setTab(tab as Tab)} />}
+        {/* {tab === Tab.HOME && <MainMenu setTab={(tab) => setTab(tab as Tab)} />} */}
         {tab === Tab.HOW_TO_PLAY && (
           <HowToPlay setTab={(tab) => setTab(tab as Tab)} />
         )}
@@ -26,14 +109,93 @@ export default function HomePage() {
           <Support setTab={(tab) => setTab(tab as Tab)} />
         )}
       </section>
-      {/* Left bottom bar */}
-      <div className="bottom-12.5 absolute left-20 w-[20%]">
-        {tab === Tab.HOME && <ZknoidLink />}
-      </div>
-      {/* Left bottom bar */}
+
       <div className="bottom-12.5 absolute right-20 w-[20%]">
         {tab === Tab.HOME && <SocialLinks />}
       </div>
-    </BaseLayout>
+
+      {/* Top bar */}
+      <div className="-z-48 absolute inset-0 h-fit w-full">
+        <TopBarIcon className="pixel-art h-full w-full object-cover object-center" />
+      </div>
+
+      {/* Background */}
+      <div className="-z-49 top-19 absolute inset-0 max-h-screen w-full">
+        <Image
+          src={background}
+          width={1920}
+          height={1080}
+          alt="background"
+          className="pixel-art absolute inset-0 -z-50 size-full object-cover object-center"
+        />
+
+        {tabHover !== undefined && (
+          <Image
+            src={
+              tabHover === TabHover.EXPEDITIONS
+                ? hoverExpeditions
+                : tabHover === TabHover.PVP
+                  ? hoverPVP
+                  : tabHover === TabHover.MARKET
+                    ? isLargeScreen
+                      ? hoverMarket
+                      : hoverMarketSmall
+                    : tabHover === TabHover.CHARACTERS
+                      ? hoverCharacters
+                      : tabHover === TabHover.CRAFT
+                        ? hoverCraft
+                        : undefined
+            }
+            width={1920}
+            height={1080}
+            alt="hoverBuilding"
+            className="pixel-art -z-49 absolute inset-0 size-full object-cover object-center"
+          />
+        )}
+      </div>
+
+      <div className="absolute inset-0 top-20 grid max-h-screen w-full grid-cols-6 grid-rows-6 gap-0">
+        <button
+          className="col-span-2 row-span-2 row-start-2 row-end-4 size-full cursor-pointer"
+          onClick={() => {
+            alert('Coming soon...');
+          }}
+          onMouseEnter={() => setTabHover(TabHover.CRAFT)}
+          onMouseLeave={() => setTabHover(undefined)}
+        />
+        <button
+          className="col-span-2 col-start-3 row-span-4 size-full cursor-pointer"
+          onClick={() => {
+            router.push('/play');
+          }}
+          onMouseEnter={() => setTabHover(TabHover.PVP)}
+          onMouseLeave={() => setTabHover(undefined)}
+        />
+        <button
+          className="col-span-2 col-start-5 row-span-2 size-full cursor-pointer"
+          onClick={() => {
+            alert('Coming soon...');
+          }}
+          onMouseEnter={() => setTabHover(TabHover.MARKET)}
+          onMouseLeave={() => setTabHover(undefined)}
+        />
+        <button
+          className="col-span-2 col-start-5 row-span-3 row-start-4 size-full cursor-pointer"
+          onClick={() => {
+            alert('Coming soon...');
+          }}
+          onMouseEnter={() => setTabHover(TabHover.CHARACTERS)}
+          onMouseLeave={() => setTabHover(undefined)}
+        />
+        <button
+          className="col-span-2 row-span-2 row-start-5 size-full cursor-pointer"
+          onClick={() => {
+            alert('Coming soon...');
+          }}
+          onMouseEnter={() => setTabHover(TabHover.EXPEDITIONS)}
+          onMouseLeave={() => setTabHover(undefined)}
+        />
+      </div>
+    </main>
   );
 }
