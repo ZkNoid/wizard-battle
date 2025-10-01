@@ -55,7 +55,12 @@ export default function CharacterSelect({
               className="size-22.5 relative flex cursor-pointer items-center justify-center transition-transform duration-300 hover:scale-110"
             >
               <Image
-                className="absolute inset-0 z-0 size-full"
+                className={cn(
+                  'absolute inset-0 z-0 size-full',
+                  selectedSkills.some(
+                    (s) => s.spellId.toString() === spell.id.toString()
+                  ) && 'scale-110'
+                )}
                 src={'/wizards/skills/empty.svg'}
                 alt={'empty skill'}
                 width={90}
