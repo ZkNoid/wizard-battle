@@ -151,6 +151,15 @@ export default function GamePage() {
           console.log('Movement already done');
           return;
         }
+
+        const userX = +stater?.state?.playerStats.position.value.x!;
+        const userY = +stater?.state?.playerStats.position.value.y!;
+
+        if (Math.abs(userX - x) + Math.abs(userY - y) >= 2) {
+          console.log('Location is too far away');
+          return;
+        }
+
         updatedActionInfo = {
           ...actionInfo,
           movementDone: true,
