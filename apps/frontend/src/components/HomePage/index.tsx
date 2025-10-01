@@ -28,6 +28,7 @@ import { MailIcon } from './assets/mail-icon';
 import { TournamentsIcon } from './assets/tournaments-icon';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { useMinaAppkit } from 'mina-appkit';
 
 enum TabHover {
   CRAFT,
@@ -43,6 +44,7 @@ export default function HomePage() {
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(false);
 
   const router = useRouter();
+  const { address, triggerWallet } = useMinaAppkit();
 
   useEffect(() => {
     const handleResize = () => {
@@ -166,6 +168,10 @@ export default function HomePage() {
         <button
           className="col-span-2 col-start-3 row-span-4 size-full cursor-pointer"
           onClick={() => {
+            if (!address) {
+              triggerWallet();
+              return;
+            }
             router.push('/play');
           }}
           onMouseEnter={() => setTabHover(TabHover.PVP)}
