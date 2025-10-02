@@ -19,8 +19,9 @@ import {
 @Injectable()
 export class BotClientService {
   private activeBots: Map<string, BotClient> = new Map();
+  private botServices: Map<string, BotService> = new Map();
 
-  constructor(private readonly botService: BotService) {}
+  constructor() {}
 
   /**
    * @notice Creates a new bot client and connects it to the game server
@@ -40,7 +41,11 @@ export class BotClientService {
       process.env.WEBSOCKET_URL + ':' + process.env.APP_PORT
     );
 
-    const bot = new BotClient(botId, serverUrl, this.botService);
+    // Create a dedicated BotService instance for this bot to prevent collusion
+    const botServiceInstance = new BotService();
+    this.botServices.set(botId, botServiceInstance);
+
+    const bot = new BotClient(botId, serverUrl, botServiceInstance);
     await bot.connect();
     this.activeBots.set(botId, bot);
     return bot;
@@ -55,6 +60,7 @@ export class BotClientService {
     if (bot) {
       await bot.disconnect();
       this.activeBots.delete(botId);
+      this.botServices.delete(botId); // Clean up bot-specific service
     }
   }
 
@@ -84,6 +90,7 @@ export class BotClientService {
     );
     await Promise.all(disconnectPromises);
     this.activeBots.clear();
+    this.botServices.clear(); // Clean up all bot services
   }
 }
 
