@@ -12,6 +12,7 @@ import { useUserInformationStore } from '@/lib/store/userInformationStore';
 import { useInGameStore } from '@/lib/store/inGameStore';
 import { spellIdToSpell } from '@/lib/utils';
 import type { GamePhase } from '../../../../common/types/gameplay.types';
+import type { SpellStats } from '../../../../common/stater/structs';
 
 export default function Game({
   children,
@@ -82,7 +83,14 @@ export default function Game({
         <Spells
           skills={
             stater?.state.spellStats
-              .map((spell) => spellIdToSpell(spell.spellId))
+              .map((spell: SpellStats) => {
+                const spellData = spellIdToSpell(spell.spellId);
+                if (!spellData) return undefined;
+                return {
+                  ...spellData,
+                  currentCooldown: spell.currentCooldown,
+                };
+              })
               .filter((spell) => spell !== undefined) ?? []
           }
           className="col-span-5 col-start-4"

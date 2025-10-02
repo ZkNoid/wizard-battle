@@ -279,7 +279,7 @@ export const mageSpells: ISpell<any>[] = [
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('FireBall').hash(),
-      cooldown: Int64.from(1),
+      cooldown: Int64.from(2),
       currentCooldown: Int64.from(0),
     },
   },
@@ -297,7 +297,7 @@ export const mageSpells: ISpell<any>[] = [
     priority: 1,
     defaultValue: {
       spellId: CircuitString.fromString('Teleport').hash(),
-      cooldown: Int64.from(1),
+      cooldown: Int64.from(4),
       currentCooldown: Int64.from(0),
     },
   },
@@ -315,7 +315,7 @@ export const mageSpells: ISpell<any>[] = [
     priority: 1,
     defaultValue: {
       spellId: CircuitString.fromString('Heal').hash(),
-      cooldown: Int64.from(1),
+      cooldown: Int64.from(2),
       currentCooldown: Int64.from(0),
     },
   },
@@ -332,7 +332,7 @@ export const mageSpells: ISpell<any>[] = [
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('Laser').hash(),
-      cooldown: Int64.from(1),
+      cooldown: Int64.from(2),
       currentCooldown: Int64.from(0),
     },
   },
