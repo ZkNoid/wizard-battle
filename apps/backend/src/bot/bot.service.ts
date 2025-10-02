@@ -248,16 +248,20 @@ export class BotService {
     const actions: IUserAction[] = [];
 
     // Bot decision logic - simple AI that casts 1-2 spells per turn
-    const numActions = Math.random() < 0.7 ? 1 : 2; // 70% chance for 1 action, 30% for 2
+    const numActions = 2; //Math.random() < 0.7 ? 1 : 2; // 70% chance for 1 action, 30% for 2
+
+    let prevAction: IUserAction | null = null;
 
     for (let i = 0; i < numActions; i++) {
       const action = this.generateRandomAction(
         botId,
         currentState,
-        opponentState
+        opponentState,
+        prevAction
       );
       if (action) {
         actions.push(action);
+        prevAction = action;
       }
     }
 
@@ -287,7 +291,8 @@ export class BotService {
   private generateRandomAction(
     botId: string,
     currentState: IPublicState,
-    opponentState?: IPublicState
+    opponentState?: IPublicState,
+    prevAction?: IUserAction | null
   ): IUserAction | null {
     // Parse the bot's current state to get available spells
     const stateData = JSON.parse(currentState.fields);
@@ -305,9 +310,35 @@ export class BotService {
       return null; // No spells available
     }
 
+    // Get pre-generated spell IDs from allSpells array
+    const fireballSpell = allSpells.find((s) => s.name === 'FireBall');
+    const lightningSpell = allSpells.find((s) => s.name === 'Lightning');
+    const teleportSpell = allSpells.find((s) => s.name === 'Teleport');
+    const healSpell = allSpells.find((s) => s.name === 'Heal');
+
+    const FIREBALL_ID = fireballSpell?.id.toString();
+    const LIGHTNING_ID = lightningSpell?.id.toString();
+    const TELEPORT_ID = teleportSpell?.id.toString();
+    const HEAL_ID = healSpell?.id.toString();
+
+    const prevSpell = allSpells.find(
+      (s) => s.id.toString() === prevAction?.spellId
+    );
+
+    let filteredSpells = availableSpells;
+
+    // TODO: find better way to use type of spell oposit to prevAction spell type
+    // Example: if prevAction spell is Lightning, then pick Teleport or Heal
+    if (prevSpell && prevSpell.target === 'enemy') {
+      // Pick a random available spell Teleport or Heal
+      filteredSpells = availableSpells.filter(
+        (s) => s.spellId === TELEPORT_ID || s.spellId === HEAL_ID
+      );
+    }
+
     // Pick a random available spell
     const selectedSpell =
-      availableSpells[Math.floor(Math.random() * availableSpells.length)];
+      filteredSpells[Math.floor(Math.random() * filteredSpells.length)];
     const spellId = selectedSpell.spellId;
     const spellName = this.getSpellName(spellId);
 
@@ -323,17 +354,6 @@ export class BotService {
 
     let spellCastInfo: any = {};
     let targetMap = '';
-
-    // Get pre-generated spell IDs from allSpells array
-    const fireballSpell = allSpells.find((s) => s.name === 'Fire_Ball');
-    const lightningSpell = allSpells.find((s) => s.name === 'Lightning');
-    const teleportSpell = allSpells.find((s) => s.name === 'Teleport');
-    const healSpell = allSpells.find((s) => s.name === 'Heal');
-
-    const FIREBALL_ID = fireballSpell?.id.toString();
-    const LIGHTNING_ID = lightningSpell?.id.toString();
-    const TELEPORT_ID = teleportSpell?.id.toString();
-    const HEAL_ID = healSpell?.id.toString();
 
     // Generate appropriate spell cast info based on spell type
     // The frontend expects spellCastInfo to be JSON that can be parsed by spell.modifyerData.fromJSON()
@@ -428,7 +448,7 @@ export class BotService {
       ) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 
       // Get pre-generated spell IDs from allSpells array
-      const fireballSpell = allSpells.find((s) => s.name === 'Fire_Ball');
+      const fireballSpell = allSpells.find((s) => s.name === 'FireBall');
       const lightningSpell = allSpells.find((s) => s.name === 'Lightning');
       const teleportSpell = allSpells.find((s) => s.name === 'Teleport');
       const healSpell = allSpells.find((s) => s.name === 'Heal');
