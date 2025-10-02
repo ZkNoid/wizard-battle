@@ -127,6 +127,7 @@ jobs:
             --build-arg APP_PORT=${{ steps.calc-container.outputs.app_port }} \
             --build-arg REDIS_URL=${{ secrets.REDIS_URL }} \
             --build-arg WEBSOCKET_URL=${{ secrets.WEBSOCKET_URL }} \
+            --build-arg SPELL_CAST_TIMEOUT=${{ secrets.SPELL_CAST_TIMEOUT }} \
             -t ${{ steps.calc-container.outputs.container_name }} .
 
       - name: Save Docker image to tar

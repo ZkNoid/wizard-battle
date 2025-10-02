@@ -53,8 +53,11 @@ export class GamePhaseSchedulerService {
         if (!gameState || gameState.status !== 'active') continue;
         if (gameState.currentPhase !== GamePhase.SPELL_CASTING) continue;
 
+        const configuredTimeout =
+          gameState.phaseTimeout ||
+          Number(process.env.SPELL_CAST_TIMEOUT || 120000);
         const timeSincePhaseStart = now - gameState.phaseStartTime;
-        if (timeSincePhaseStart < (gameState.phaseTimeout || 300000)) continue;
+        if (timeSincePhaseStart < configuredTimeout) continue;
 
         const alivePlayers = gameState.players.filter((p) => p.isAlive);
         const submitters = alivePlayers.filter((p) => !!p.currentActions);
@@ -76,6 +79,19 @@ export class GamePhaseSchedulerService {
             roomId,
             'spell_casting_timeout_draw'
           );
+          // Remove match and game state to allow rematch
+          try {
+            await this.gameStateService.removeGameState(roomId);
+            await this.gameStateService.redisClient.hDel('matches', roomId);
+            console.log(
+              `🗑️ Cleared match and state for timed-out room ${roomId}`
+            );
+          } catch (cleanupErr) {
+            console.error(
+              `Failed to clear room ${roomId} after timeout:`,
+              cleanupErr
+            );
+          }
           continue;
         }
 
@@ -110,6 +126,19 @@ export class GamePhaseSchedulerService {
               roomId,
               'spell_casting_timeout_winner_decided'
             );
+            // Remove match and game state to allow rematch
+            try {
+              await this.gameStateService.removeGameState(roomId);
+              await this.gameStateService.redisClient.hDel('matches', roomId);
+              console.log(
+                `🗑️ Cleared match and state for finished room ${roomId}`
+              );
+            } catch (cleanupErr) {
+              console.error(
+                `Failed to clear room ${roomId} after finish:`,
+                cleanupErr
+              );
+            }
           } else {
             console.log(
               `🎮 Room ${roomId} continues after removing non-submitters (multiple submitters alive)`
@@ -193,6 +222,44 @@ export class GamePhaseSchedulerService {
       }
     } catch (error) {
       console.error('Error monitoring system health:', error);
+    }
+  }
+
+  /**
+   * @notice Purge stale matches every minute
+   * @dev Ensures Redis 'matches' entries are removed when rooms are finished or missing
+   */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async purgeStaleMatches() {
+    try {
+      const matches =
+        await this.gameStateService.redisClient.hGetAll('matches');
+      if (!matches || Object.keys(matches).length === 0) return;
+
+      for (const [roomId, _] of Object.entries(matches)) {
+        const state = await this.gameStateService.getGameState(roomId);
+        const timeoutMs = Number(process.env.SPELL_CAST_TIMEOUT || 120000);
+
+        if (!state) {
+          await this.gameStateService.redisClient.hDel('matches', roomId);
+          console.log(`🧽 Purged stale match with no state: ${roomId}`);
+          continue;
+        }
+
+        const isInactive = state.status !== 'active';
+        const isOld =
+          Date.now() - (state.updatedAt || state.createdAt || 0) > timeoutMs;
+        if (isInactive && isOld) {
+          await this.gameStateService.redisClient.hDel('matches', roomId);
+          // Best-effort cleanup for any lingering state
+          try {
+            await this.gameStateService.removeGameState(roomId);
+          } catch {}
+          console.log(`🧽 Purged stale match and state: ${roomId}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error purging stale matches:', error);
     }
   }
 

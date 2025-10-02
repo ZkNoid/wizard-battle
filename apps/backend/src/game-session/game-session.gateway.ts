@@ -993,7 +993,7 @@ export class GameSessionGateway {
     // Notify players of new turn and include phaseTimeout from state/env
     const state = await this.gameStateService.getGameState(roomId);
     const phaseTimeout =
-      state?.phaseTimeout ?? Number(process.env.SPELL_CAST_TIMEOUT ?? 120000);
+      state?.phaseTimeout ?? Number(process.env.SPELL_CAST_TIMEOUT || 120000);
 
     this.server
       .to(roomId)

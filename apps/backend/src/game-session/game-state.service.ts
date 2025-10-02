@@ -177,7 +177,7 @@ export class GameStateService {
       turn: 0,
       currentPhase: GamePhase.SPELL_CASTING,
       phaseStartTime: Date.now(),
-      phaseTimeout: 120000, // 5 minutes default
+      phaseTimeout: Number(process.env.SPELL_CAST_TIMEOUT || 120000),
       playersReady: [],
       status: 'waiting',
       createdAt: Date.now(),

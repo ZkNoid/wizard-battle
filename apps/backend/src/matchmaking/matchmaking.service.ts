@@ -424,7 +424,7 @@ export class MatchmakingService {
           const state = await this.gameStateService.getGameState(roomId);
           const phaseTimeout =
             state?.phaseTimeout ??
-            Number(process.env.SPELL_CAST_TIMEOUT ?? 120000);
+            Number(process.env.SPELL_CAST_TIMEOUT || 120000);
 
           this.server
             .to(roomId)
@@ -939,7 +939,11 @@ export class MatchmakingService {
             const state = await this.gameStateService.getGameState(roomId);
             const phaseTimeout =
               state?.phaseTimeout ??
-              Number(process.env.SPELL_CAST_TIMEOUT ?? 120000);
+              Number(
+                process.env.SPELL_CASTING_TIMEOUT_MS ||
+                  process.env.SPELL_CAST_TIMEOUT ||
+                  120000
+              );
 
             this.server
               .to(roomId)
