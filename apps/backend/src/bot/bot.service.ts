@@ -130,7 +130,7 @@ export class BotService {
         new SpellStats({
           spellId: Field(0),
           cooldown: Int64.from(0),
-          currentColldown: Int64.from(0),
+          currentCooldown: Int64.from(0),
         })
       );
     }
@@ -159,7 +159,7 @@ export class BotService {
         new SpellStats({
           spellId: Field(0),
           cooldown: Int64.from(0),
-          currentColldown: Int64.from(0),
+          currentCooldown: Int64.from(0),
         })
       );
     }
@@ -295,12 +295,13 @@ export class BotService {
     prevAction?: IUserAction | null
   ): IUserAction | null {
     // Parse the bot's current state to get available spells
-    const stateData = JSON.parse(currentState.fields);
+    const stateData = State.fromJSON(JSON.parse(currentState.fields));
     console.log('🤖 Bot spell stats:', stateData.spellStats);
 
     const availableSpells = stateData.spellStats.filter(
-      (spell: any) =>
-        spell.spellId !== '0' && spell.currentColldown.magnitude === '0'
+      (spell: SpellStats) =>
+        spell.spellId.toString() !== '0' &&
+        spell.currentCooldown.toString() === '0'
     );
 
     console.log('🤖 Available spells for bot:', availableSpells.length);
@@ -339,7 +340,7 @@ export class BotService {
     // Pick a random available spell
     const selectedSpell =
       filteredSpells[Math.floor(Math.random() * filteredSpells.length)];
-    const spellId = selectedSpell.spellId;
+    const spellId = selectedSpell?.spellId.toString() ?? '';
     const spellName = this.getSpellName(spellId);
 
     console.log(
@@ -404,6 +405,7 @@ export class BotService {
       parseInt(botId.replace(/\D/g, '')) || Math.floor(Math.random() * 10000);
 
     return {
+      caster: botId,
       playerId:
         targetMap === 'ally' ? botId : (opponentState?.playerId ?? botId), // Use botId for game state lookup
       spellId,

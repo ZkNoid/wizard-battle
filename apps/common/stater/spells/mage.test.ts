@@ -49,7 +49,7 @@ describe('Mage Spells', () => {
           new SpellStats({
             spellId: Field(i + 1),
             cooldown: Int64.from(3),
-            currentColldown: Int64.from(0),
+            currentCooldown: Int64.from(0),
           })
       );
 
@@ -144,6 +144,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<LightningBoldData> = {
         spellId: lightningBoldSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new LightningBoldData({
           position: new Position({ x: Int64.from(5), y: Int64.from(5) }), // Same position as player
@@ -161,6 +162,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<LightningBoldData> = {
         spellId: lightningBoldSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new LightningBoldData({
           position: new Position({ x: Int64.from(6), y: Int64.from(5) }), // Distance 1 from player
@@ -178,6 +180,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<LightningBoldData> = {
         spellId: lightningBoldSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new LightningBoldData({
           position: new Position({ x: Int64.from(8), y: Int64.from(5) }), // Distance 3 from player
@@ -212,6 +215,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<FireBallData> = {
         spellId: fireBallSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new FireBallData({
           position: new Position({ x: Int64.from(5), y: Int64.from(5) }), // Same position as player
@@ -229,6 +233,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<FireBallData> = {
         spellId: fireBallSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new FireBallData({
           position: new Position({ x: Int64.from(6), y: Int64.from(5) }), // Distance 1 from player
@@ -246,6 +251,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<FireBallData> = {
         spellId: fireBallSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new FireBallData({
           position: new Position({ x: Int64.from(7), y: Int64.from(5) }), // Distance 2 from player
@@ -263,6 +269,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<FireBallData> = {
         spellId: fireBallSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new FireBallData({
           position: new Position({ x: Int64.from(8), y: Int64.from(5) }), // Distance 3 from player
@@ -297,6 +304,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<LaserData> = {
         spellId: laserSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new LaserData({
           position: new Position({ x: Int64.from(5), y: Int64.from(10) }), // Same row (x=5), different column
@@ -314,6 +322,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<LaserData> = {
         spellId: laserSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new LaserData({
           position: new Position({ x: Int64.from(10), y: Int64.from(5) }), // Same column (y=5), different row
@@ -331,6 +340,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<LaserData> = {
         spellId: laserSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new LaserData({
           position: new Position({ x: Int64.from(7), y: Int64.from(8) }), // Different row and column
@@ -369,6 +379,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<TeleportData> = {
         spellId: teleportSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new TeleportData({
           position: targetPosition,
@@ -391,6 +402,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<TeleportData> = {
         spellId: teleportSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new TeleportData({
           position: new Position({ x: Int64.from(10), y: Int64.from(15) }),
@@ -423,6 +435,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<HealData> = {
         spellId: healSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new HealData({}),
       };
@@ -439,6 +452,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<HealData> = {
         spellId: healSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new HealData({}),
       };
@@ -459,6 +473,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<HealData> = {
         spellId: healSpell.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new HealData({}),
       };
@@ -480,6 +495,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<LightningBoldData> = {
         spellId: lightningSpell!.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new LightningBoldData({
           position: new Position({ x: Int64.from(5), y: Int64.from(5) }), // Direct hit
@@ -499,6 +515,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<HealData> = {
         spellId: healSpell!.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new HealData({}),
       };
@@ -517,6 +534,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<TeleportData> = {
         spellId: teleportSpell!.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new TeleportData({
           position: new Position({ x: Int64.from(20), y: Int64.from(25) }),
@@ -552,6 +570,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<LightningBoldData> = {
         spellId: lightningSpell!.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new LightningBoldData({
           position: new Position({ x: Int64.from(-5), y: Int64.from(-5) }), // Same position
@@ -573,6 +592,7 @@ describe('Mage Spells', () => {
 
       const spellCast: SpellCast<HealData> = {
         spellId: healSpell!.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new HealData({}),
       };
@@ -594,6 +614,7 @@ describe('Mage Spells', () => {
       // Apply lightning (damage)
       const damageSpell: SpellCast<LightningBoldData> = {
         spellId: lightningSpell!.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new LightningBoldData({
           position: new Position({ x: Int64.from(5), y: Int64.from(5) }),
@@ -607,6 +628,7 @@ describe('Mage Spells', () => {
       // Apply heal
       const healingSpell: SpellCast<HealData> = {
         spellId: healSpell!.id,
+        caster: Field(42),
         target: Field(1),
         additionalData: new HealData({}),
       };

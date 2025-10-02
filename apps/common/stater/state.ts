@@ -50,7 +50,7 @@ export class State extends Struct({
         new SpellStats({
           spellId: Field(0),
           cooldown: Int64.from(0),
-          currentColldown: Int64.from(0),
+          currentCooldown: Int64.from(0),
         })
       ),
       endOfRoundEffects: Array(maxSpellEffects).fill(
@@ -105,7 +105,7 @@ export class State extends Struct({
         this.spellStats[spellLength - 1] = new SpellStats({
           spellId: Field(0),
           cooldown: Int64.from(0),
-          currentColldown: Int64.from(0),
+          currentCooldown: Int64.from(0),
         });
         break;
       }

@@ -9,11 +9,13 @@ import type { IPublicState } from './matchmaking.types';
 /**
  * @notice Represents a single action a player wants to perform in a turn
  * @dev Generic type T allows for spell-specific additional data
- * @param playerId The unique identifier of the player performing the action
+ * @param caster The unique identifier of the player performing the action
+ * @param playerId The unique identifier of the target player
  * @param spellId The unique identifier of the spell being cast
  * @param spellCastInfo Additional data required for the spell (position, target, etc.)
  */
 export interface IUserAction {
+  caster: string;
   playerId: string;
   spellId: string;
   spellCastInfo: string; // Depends on skill. JSON.stringify(Type.toJSON(spellCastInfo))
@@ -108,11 +110,18 @@ export interface IGameTurn {
 //////////////////////////////////////////////////////////////*/
 
 export class TransformedUserAction implements IUserAction {
+  caster: string;
   playerId: string;
   spellId: string;
   spellCastInfo: string;
 
-  constructor(playerId: string, spellId: string, spellCastInfo: string) {
+  constructor(
+    caster: string,
+    playerId: string,
+    spellId: string,
+    spellCastInfo: string
+  ) {
+    this.caster = caster;
     this.playerId = playerId;
     this.spellId = spellId;
     this.spellCastInfo = spellCastInfo;

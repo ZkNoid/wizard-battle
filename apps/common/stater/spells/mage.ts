@@ -18,11 +18,13 @@ export class LightningBoldData extends Struct({
 
 export const LightningBoldCast = (
   state: State,
+  caster: Field,
   target: Field,
   position: Position
 ): SpellCast<LightningBoldData> => {
   return {
     spellId: CircuitString.fromString('LightningBold').hash(),
+    caster,
     target,
     additionalData: {
       position,
@@ -83,11 +85,13 @@ export class FireBallData extends Struct({
 
 export const FireBallCast = (
   state: State,
+  caster: Field,
   target: Field,
   position: Position
 ): SpellCast<FireBallData> => {
   return {
     spellId: CircuitString.fromString('FireBall').hash(),
+    caster,
     target,
     additionalData: {
       position,
@@ -155,11 +159,13 @@ export class LaserData extends Struct({
 
 export const LaserCast = (
   state: State,
+  caster: Field,
   target: Field,
   position: Position
 ): SpellCast<LaserData> => {
   return {
     spellId: CircuitString.fromString('Laser').hash(),
+    caster,
     target,
     additionalData: {
       position,
@@ -191,11 +197,13 @@ export class TeleportData extends Struct({
 
 export const TeleportCast = (
   state: State,
+  caster: Field,
   target: Field,
   position: Position
 ): SpellCast<TeleportData> => {
   return {
     spellId: CircuitString.fromString('Teleport').hash(),
+    caster,
     target,
     additionalData: {
       position,
@@ -215,9 +223,14 @@ export const TeleportModifyer = (
 
 export class HealData extends Struct({}) {}
 
-export const HealCast = (state: State, target: Field): SpellCast<HealData> => {
+export const HealCast = (
+  state: State,
+  caster: Field,
+  target: Field
+): SpellCast<HealData> => {
   return {
     spellId: CircuitString.fromString('Heal').hash(),
+    caster,
     target,
     additionalData: {},
   };
@@ -249,7 +262,7 @@ export const mageSpells: ISpell<any>[] = [
     defaultValue: {
       spellId: CircuitString.fromString('LightningBold').hash(),
       cooldown: Int64.from(1),
-      currentColldown: Int64.from(0),
+      currentCooldown: Int64.from(0),
     },
   },
   {
@@ -267,7 +280,7 @@ export const mageSpells: ISpell<any>[] = [
     defaultValue: {
       spellId: CircuitString.fromString('FireBall').hash(),
       cooldown: Int64.from(1),
-      currentColldown: Int64.from(0),
+      currentCooldown: Int64.from(0),
     },
   },
   {
@@ -285,7 +298,7 @@ export const mageSpells: ISpell<any>[] = [
     defaultValue: {
       spellId: CircuitString.fromString('Teleport').hash(),
       cooldown: Int64.from(1),
-      currentColldown: Int64.from(0),
+      currentCooldown: Int64.from(0),
     },
   },
   {
@@ -303,7 +316,7 @@ export const mageSpells: ISpell<any>[] = [
     defaultValue: {
       spellId: CircuitString.fromString('Heal').hash(),
       cooldown: Int64.from(1),
-      currentColldown: Int64.from(0),
+      currentCooldown: Int64.from(0),
     },
   },
   {
@@ -320,7 +333,7 @@ export const mageSpells: ISpell<any>[] = [
     defaultValue: {
       spellId: CircuitString.fromString('Laser').hash(),
       cooldown: Int64.from(1),
-      currentColldown: Int64.from(0),
+      currentCooldown: Int64.from(0),
     },
   },
 ];

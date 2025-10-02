@@ -37,7 +37,7 @@ describe('Stater', () => {
           new SpellStats({
             spellId: Field(i + 1),
             cooldown: Int64.from(3),
-            currentColldown: Int64.from(0),
+            currentCooldown: Int64.from(0),
           })
       );
 
@@ -138,6 +138,7 @@ describe('Stater', () => {
   describe('applySpellCast', () => {
     it('should throw error for unknown spell', () => {
       const spellCast: SpellCast<any> = {
+        caster: Field(42),
         spellId: Field(999),
         target: Field(1),
         additionalData: {},
@@ -150,6 +151,7 @@ describe('Stater', () => {
 
     it('should not crash with valid spell cast structure', () => {
       const spellCast: SpellCast<any> = {
+        caster: Field(42),
         spellId: Field(1),
         target: Field(1),
         additionalData: { test: 'data' },
@@ -229,6 +231,7 @@ describe('Stater', () => {
   describe('error handling', () => {
     it('should handle invalid spell ID types gracefully', () => {
       const spellCast: SpellCast<any> = {
+        caster: Field(42),
         spellId: Field(0),
         target: Field(1),
         additionalData: {},
@@ -289,12 +292,12 @@ describe('Stater', () => {
       const spellStats = new SpellStats({
         spellId: Field(42),
         cooldown: Int64.from(5),
-        currentColldown: Int64.from(2),
+        currentCooldown: Int64.from(2),
       });
 
       expect(spellStats.spellId.toString()).toBe('42');
       expect(spellStats.cooldown.toString()).toBe('5');
-      expect(spellStats.currentColldown.toString()).toBe('2');
+      expect(spellStats.currentCooldown.toString()).toBe('2');
     });
 
     it('should create Effect correctly', () => {
@@ -317,7 +320,7 @@ describe('Stater', () => {
         expect(spellStat).toBeDefined();
         expect(spellStat!.spellId.toString()).toBe((i + 1).toString());
         expect(spellStat!.cooldown.toString()).toBe('3');
-        expect(spellStat!.currentColldown.toString()).toBe('0');
+        expect(spellStat!.currentCooldown.toString()).toBe('0');
       }
     });
 

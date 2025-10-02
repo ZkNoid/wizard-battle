@@ -10,11 +10,13 @@ export class MoveData extends Struct({
 
 export const MoveCast = (
   state: State,
+  caster: Field,
   target: Field,
   position: Position
 ): SpellCast<MoveData> => {
   return {
     spellId: CircuitString.fromString('Move').hash(),
+    caster,
     target,
     additionalData: {
       position,
@@ -49,7 +51,7 @@ export const allCommonSpells: ISpell<any>[] = [
     defaultValue: {
       spellId: CircuitString.fromString('Move').hash(),
       cooldown: Int64.from(1),
-      currentColldown: Int64.from(0),
+      currentCooldown: Int64.from(0),
     },
   },
 ];

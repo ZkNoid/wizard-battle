@@ -18,11 +18,13 @@ export class ArrowData extends Struct({
 
 export const ArrowCast = (
   state: State,
+  caster: Field,
   target: Field,
   position: Position
 ): SpellCast<ArrowData> => {
   return {
     spellId: CircuitString.fromString('Arrow').hash(),
+    caster,
     target,
     additionalData: {
       position,
@@ -69,11 +71,13 @@ export class AimingShotData extends Struct({
 
 export const AimingShotCast = (
   state: State,
+  caster: Field,
   target: Field,
   position: Position
 ): SpellCast<AimingShotData> => {
   return {
     spellId: CircuitString.fromString('AimingShot').hash(),
+    caster,
     target,
     additionalData: {
       position,
@@ -113,11 +117,13 @@ export class HailOfArrowsData extends Struct({
 
 export const HailOfArrowsCast = (
   state: State,
+  caster: Field,
   target: Field,
   position: Position
 ): SpellCast<HailOfArrowsData> => {
   return {
     spellId: CircuitString.fromString('HailOfArrows').hash(),
+    caster,
     target,
     additionalData: {
       position,
@@ -172,7 +178,7 @@ export const archerSpells: ISpell<any>[] = [
     defaultValue: {
       spellId: CircuitString.fromString('Arrow').hash(),
       cooldown: Int64.from(1),
-      currentColldown: Int64.from(0),
+      currentCooldown: Int64.from(0),
     },
   },
   {
@@ -189,7 +195,7 @@ export const archerSpells: ISpell<any>[] = [
     defaultValue: {
       spellId: CircuitString.fromString('AimingShot').hash(),
       cooldown: Int64.from(1),
-      currentColldown: Int64.from(0),
+      currentCooldown: Int64.from(0),
     },
   },
   {
@@ -206,7 +212,7 @@ export const archerSpells: ISpell<any>[] = [
     defaultValue: {
       spellId: CircuitString.fromString('HailOfArrows').hash(),
       cooldown: Int64.from(1),
-      currentColldown: Int64.from(0),
+      currentCooldown: Int64.from(0),
     },
   },
 ];

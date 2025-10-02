@@ -69,7 +69,7 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
           new SpellStats({
             spellId: Field(0),
             cooldown: Int64.from(0),
-            currentColldown: Int64.from(0),
+            currentCooldown: Int64.from(0),
           })
         ),
       ];

@@ -23,10 +23,11 @@ export class PlayerStats extends Struct({
 export class SpellStats extends Struct({
   spellId: Field,
   cooldown: Int64,
-  currentColldown: Int64,
+  currentCooldown: Int64,
 }) {}
 
 export interface SpellCast<T> {
+  caster: Field;
   spellId: Field;
   target: Field;
   additionalData: T;

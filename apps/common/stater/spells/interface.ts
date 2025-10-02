@@ -13,7 +13,12 @@ export interface ISpell<T> {
   modifyerData: any;
   target: 'ally' | 'enemy';
   modifyer: (state: State, spellCast: SpellCast<T>) => void;
-  cast: (state: State, target: Field, additionalData: any) => SpellCast<T>;
+  cast: (
+    state: State,
+    caster: Field,
+    target: Field,
+    additionalData: any
+  ) => SpellCast<T>;
   sceneEffect?: (
     x: number,
     y: number,

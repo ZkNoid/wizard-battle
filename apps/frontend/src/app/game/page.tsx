@@ -88,6 +88,7 @@ export default function GamePage() {
 
       const cast = spell.cast(
         stater?.state!,
+        stater?.state?.playerId!,
         opponentState!.playerId,
         new Position({ x: Int64.from(x), y: Int64.from(y) })
       );
@@ -104,6 +105,7 @@ export default function GamePage() {
       return {
         playerId: targetPlayerId,
         spellId: spell.id.toString(),
+        caster: stater?.state?.playerId?.toString() ?? '',
         spellCastInfo: JSON.stringify(
           spell.modifyerData.toJSON(cast.additionalData)
         ),

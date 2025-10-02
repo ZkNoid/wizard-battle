@@ -31,6 +31,15 @@ export class Stater extends Struct({
   }
 
   applySpellCast(spell: SpellCast<any>) {
+    if (spell.caster.toString() === this.state.playerId.toString()) {
+      const spellStats = this.state.spellStats.find(
+        (s) => s.spellId.toString() === spell.spellId.toString()
+      );
+      if (spellStats) {
+        spellStats.currentCooldown = spellStats.cooldown;
+      }
+    }
+
     if (spell.target.toString() !== this.state.playerId.toString()) {
       return;
     }
@@ -117,6 +126,7 @@ export class Stater extends Struct({
     const publicState = this.generatePublicState();
 
     this.applyPublicStateEffects(publicState);
+    this.reduceSpellCooldowns();
 
     const stateCommit = this.generateStateCommit();
 
@@ -124,6 +134,17 @@ export class Stater extends Struct({
       stateCommit,
       publicState,
     };
+  }
+
+  reduceSpellCooldowns() {
+    for (const spell of this.state.spellStats) {
+      spell.currentCooldown = spell.currentCooldown.sub(Int64.from(1));
+      spell.currentCooldown = Provable.if(
+        spell.currentCooldown.isNegative(),
+        Int64.from(0),
+        spell.currentCooldown
+      );
+    }
   }
 
   /**
@@ -151,6 +172,7 @@ export class Stater extends Struct({
           (s) => s.id.toString() === action.spellId.toString()
         ),
         spellId: Field(action.spellId),
+        caster: Field(action.caster),
         target: Field(action.playerId), // or however you want to map this
         additionalData: action.spellCastInfo,
       }))
@@ -161,6 +183,7 @@ export class Stater extends Struct({
         return {
           spellId: action.spellId,
           target: action.target,
+          caster: action.caster,
           additionalData: action.spell!.modifyerData.fromJSON(
             JSON.parse(action.additionalData)
           ),
