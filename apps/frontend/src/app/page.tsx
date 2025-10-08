@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { FullscreenLoader } from "@/components/shared/FullscreenLoader";
-import dynamic from "next/dynamic";
+import { FullscreenLoader } from '@/components/shared/FullscreenLoader';
+import dynamicImport from 'next/dynamic';
 
-const Home = dynamic(() => import("./Home"), {
+const Home = dynamicImport(() => import('./Home'), {
   ssr: false,
   loading: () => <FullscreenLoader />,
 });

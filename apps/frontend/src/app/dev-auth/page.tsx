@@ -1,6 +1,8 @@
 import { DevAuthPage } from '@repo/dev-auth';
 import type { Metadata } from 'next';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Protected Page',
   description: 'You probably arrived here by accident',

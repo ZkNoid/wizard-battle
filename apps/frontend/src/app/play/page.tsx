@@ -1,12 +1,14 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { FullscreenLoader } from '@/components/shared/FullscreenLoader';
 import { useMinaAppkit } from 'mina-appkit';
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-const Play = dynamic(() => import('@/components/Play'), {
+const Play = dynamicImport(() => import('@/components/Play'), {
   ssr: false,
   loading: () => <FullscreenLoader />,
 });

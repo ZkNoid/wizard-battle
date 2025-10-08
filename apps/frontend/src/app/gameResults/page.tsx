@@ -1,13 +1,15 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { FullscreenLoader } from '@/components/shared/FullscreenLoader';
 import { useMinaAppkit } from 'mina-appkit';
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 import { PlaySteps } from '@/lib/enums/PlaySteps';
 
-const GameResult = dynamic(() => import('@/components/GameResult'), {
+const GameResult = dynamicImport(() => import('@/components/GameResult'), {
   ssr: false,
   loading: () => <FullscreenLoader />,
 });

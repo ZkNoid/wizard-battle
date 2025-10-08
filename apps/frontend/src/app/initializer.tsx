@@ -17,7 +17,6 @@ export default function Initializer() {
 
     const s: Socket = io(process.env.NEXT_PUBLIC_API_URL!);
     setSocket(s);
-    console.log(`Set socket ${s}`);
 
     const stater = Stater.default();
     const defaultWizard = allWizards[0]!;
