@@ -186,7 +186,7 @@ export const LaserModifyer = (
 
   const damage = Int64.from(50);
 
-  const damageToApply = Provable.switch([hit], Int64, [damage]);
+  const damageToApply = Provable.if(hit, damage, Int64.from(0));
 
   state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 };
