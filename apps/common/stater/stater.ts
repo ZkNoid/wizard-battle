@@ -177,7 +177,7 @@ export class Stater extends Struct({
         additionalData: action.spellCastInfo,
       }))
       .sort((a, b) => {
-        return (a.spell?.priority ?? 0) - (b.spell?.priority ?? 0);
+        return (b.spell?.priority ?? 0) - (a.spell?.priority ?? 0);
       })
       .map((action) => {
         return {
