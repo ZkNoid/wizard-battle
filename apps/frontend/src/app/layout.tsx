@@ -4,6 +4,7 @@ import { type Metadata } from 'next';
 import { dePixel } from '@/lib/fonts/dePixel';
 
 import { TRPCReactProvider } from '@/trpc/react';
+import Initializer from './initializer';
 
 export const metadata: Metadata = {
   title: 'Wizard Battle',
@@ -17,6 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dePixel.variable}`}>
       <body>
+        <Initializer />
         <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>
     </html>

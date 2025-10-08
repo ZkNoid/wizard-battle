@@ -25,6 +25,8 @@ interface UserInformationStore {
   setGamePhaseManager: (gamePhaseManager: GamePhaseManager) => void;
   setActionSend: (actionSend: boolean) => void;
   clearSocket: () => void;
+  isBootstrapped: boolean;
+  setBootstrapped: (bootstrapped: boolean) => void;
 }
 
 export const useUserInformationStore = create<UserInformationStore>((set) => ({
@@ -33,6 +35,9 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
   opponentState: null,
   gamePhaseManager: null,
   actionSend: false,
+  isBootstrapped: false,
+  setBootstrapped: (bootstrapped: boolean) =>
+    set({ isBootstrapped: bootstrapped }),
   setSocket: (socket: Socket) => set({ socket }),
   setStater: (stater: Stater) => set({ stater }),
   setOpponentState: (opponentState: State) => set({ opponentState }),
