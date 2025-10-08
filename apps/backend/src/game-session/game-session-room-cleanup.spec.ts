@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GameSessionGateway } from './game-session.gateway';
 import { MatchmakingService } from '../matchmaking/matchmaking.service';
 import { GameStateService } from './game-state.service';
+import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
 import { Server, Socket } from 'socket.io';
 import { createMock } from '@golevelup/ts-jest';
 import {
@@ -32,6 +33,7 @@ describe('GameSessionGateway - Room Cleanup Tests', () => {
   let gateway: GameSessionGateway;
   let mockMatchmakingService: any;
   let mockGameStateService: any;
+  let mockGamePhaseScheduler: any;
   let mockServer: any;
   let mockSocket1: Socket;
   let mockSocket2: Socket;
@@ -51,6 +53,7 @@ describe('GameSessionGateway - Room Cleanup Tests', () => {
     // Mock services
     mockMatchmakingService = createMock<MatchmakingService>();
     mockGameStateService = createMock<GameStateService>();
+    mockGamePhaseScheduler = createMock<GamePhaseSchedulerService>();
     mockServer = createMock<Server>();
     mockSocket1 = createMock<Socket>({
       id: 'socket1',
@@ -74,6 +77,10 @@ describe('GameSessionGateway - Room Cleanup Tests', () => {
         GameSessionGateway,
         { provide: MatchmakingService, useValue: mockMatchmakingService },
         { provide: GameStateService, useValue: mockGameStateService },
+        {
+          provide: GamePhaseSchedulerService,
+          useValue: mockGamePhaseScheduler,
+        },
       ],
     }).compile();
 

@@ -12,6 +12,7 @@ import { GamePhase } from '../../../common/types/gameplay.types';
 @Injectable()
 export class GamePhaseSchedulerService {
   private lastMetricsLog = 0;
+  private processedTimeouts = new Set<string>(); // Track processed timeout rooms
 
   constructor(
     private readonly gameStateService: GameStateService,
@@ -63,9 +64,13 @@ export class GamePhaseSchedulerService {
         const submitters = alivePlayers.filter((p) => !!p.currentActions);
         const nonSubmitters = alivePlayers.filter((p) => !p.currentActions);
 
-        console.log(
-          `⏰ SPELL_CASTING timeout in room ${roomId} after ${timeSincePhaseStart}ms`
-        );
+        // Only log timeout once per room to prevent spam
+        if (!this.processedTimeouts.has(roomId)) {
+          console.log(
+            `⏰ SPELL_CASTING timeout in room ${roomId} after ${timeSincePhaseStart}ms`
+          );
+          this.processedTimeouts.add(roomId);
+        }
 
         if (submitters.length === 0) {
           console.log(`🤝 No actions submitted in room ${roomId} → draw`);
@@ -92,6 +97,8 @@ export class GamePhaseSchedulerService {
               cleanupErr
             );
           }
+          // Clear timeout tracking for this room
+          this.processedTimeouts.delete(roomId);
           continue;
         }
 
@@ -139,6 +146,8 @@ export class GamePhaseSchedulerService {
                 cleanupErr
               );
             }
+            // Clear timeout tracking for this room
+            this.processedTimeouts.delete(roomId);
           } else {
             console.log(
               `🎮 Room ${roomId} continues after removing non-submitters (multiple submitters alive)`
@@ -470,6 +479,31 @@ export class GamePhaseSchedulerService {
       },
       issues,
     };
+  }
+
+  /**
+   * @notice Manually clear stuck rooms (for debugging/admin use)
+   * @param roomIds Array of room IDs to clear
+   */
+  async clearStuckRooms(roomIds: string[]): Promise<void> {
+    console.log(`🧹 Manually clearing ${roomIds.length} stuck rooms:`, roomIds);
+
+    for (const roomId of roomIds) {
+      try {
+        // Clear timeout tracking
+        this.processedTimeouts.delete(roomId);
+
+        // Remove from matches
+        await this.gameStateService.redisClient.hDel('matches', roomId);
+
+        // Remove game state
+        await this.gameStateService.removeGameState(roomId);
+
+        console.log(`✅ Cleared stuck room ${roomId}`);
+      } catch (error) {
+        console.error(`❌ Failed to clear room ${roomId}:`, error);
+      }
+    }
   }
 }
 

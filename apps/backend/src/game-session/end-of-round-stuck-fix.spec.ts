@@ -15,7 +15,7 @@ import { createMock } from '@golevelup/ts-jest';
 describe('END_OF_ROUND Stuck Issue Fix', () => {
   let gateway: GameSessionGateway;
   let gameStateService: GameStateService;
-  let phaseScheduler: GamePhaseSchedulerService;
+  let mockGamePhaseScheduler: any;
   let mockSocket: Partial<Socket>;
 
   const mockMatchmakingService = createMock<MatchmakingService>({
@@ -47,6 +47,12 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
   });
 
   beforeEach(async () => {
+    jest.useFakeTimers();
+
+    mockGamePhaseScheduler = createMock<GamePhaseSchedulerService>({
+      clearStuckRooms: jest.fn(),
+    });
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GameSessionGateway,
@@ -60,17 +66,13 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
         },
         {
           provide: GamePhaseSchedulerService,
-          useFactory: () =>
-            new GamePhaseSchedulerService(mockGameStateService, null as any),
+          useValue: mockGamePhaseScheduler,
         },
       ],
     }).compile();
 
     gateway = module.get<GameSessionGateway>(GameSessionGateway);
     gameStateService = module.get<GameStateService>(GameStateService);
-    phaseScheduler = module.get<GamePhaseSchedulerService>(
-      GamePhaseSchedulerService
-    );
 
     // Mock socket
     mockSocket = {

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GameSessionGateway } from './game-session.gateway';
 import { MatchmakingService } from '../matchmaking/matchmaking.service';
 import { GameStateService } from './game-state.service';
+import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
 import { Server, Socket } from 'socket.io';
 import { createMock } from '@golevelup/ts-jest';
 import {
@@ -20,6 +21,7 @@ describe('GameSessionGateway', () => {
   let gateway: GameSessionGateway;
   let mockMatchmakingService: jest.Mocked<MatchmakingService>;
   let mockGameStateService: jest.Mocked<GameStateService>;
+  let mockGamePhaseScheduler: jest.Mocked<GamePhaseSchedulerService>;
   let mockServer: jest.Mocked<Server>;
   let mockSocket: jest.Mocked<Socket>;
 
@@ -50,6 +52,10 @@ describe('GameSessionGateway', () => {
       getInstanceId: jest.fn().mockReturnValue('test-instance'),
     });
 
+    mockGamePhaseScheduler = createMock<GamePhaseSchedulerService>({
+      clearStuckRooms: jest.fn(),
+    });
+
     mockServer = createMock<Server>({
       to: jest.fn().mockReturnValue({
         emit: jest.fn(),
@@ -75,6 +81,10 @@ describe('GameSessionGateway', () => {
         {
           provide: GameStateService,
           useValue: mockGameStateService,
+        },
+        {
+          provide: GamePhaseSchedulerService,
+          useValue: mockGamePhaseScheduler,
         },
       ],
     }).compile();

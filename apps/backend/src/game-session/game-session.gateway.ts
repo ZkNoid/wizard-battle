@@ -8,6 +8,7 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient, RedisClientType } from 'redis';
 import { MatchmakingService } from '../matchmaking/matchmaking.service';
 import { GameStateService } from './game-state.service';
+import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
 import {
   IAddToQueue,
   IAddToQueueResponse,
@@ -54,7 +55,8 @@ export class GameSessionGateway {
 
   constructor(
     private readonly matchmakingService: MatchmakingService,
-    private readonly gameStateService: GameStateService
+    private readonly gameStateService: GameStateService,
+    private readonly gamePhaseScheduler: GamePhaseSchedulerService
   ) {}
 
   /**
@@ -272,6 +274,30 @@ export class GameSessionGateway {
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
+    }
+  }
+
+  @SubscribeMessage('clearStuckRooms')
+  /**
+   * @param socket - The socket instance
+   * @param data - The cleanup data containing room IDs
+   * @dev Handles stuck room cleanup requests for debugging purposes.
+   */
+  async handleClearStuckRooms(socket: Socket, data: { roomIds: string[] }) {
+    try {
+      console.log('🧹 Client requested stuck room cleanup');
+      await this.gamePhaseScheduler.clearStuckRooms(data.roomIds);
+      socket.emit('stuckRoomsCleared', {
+        success: true,
+        message: `Cleared ${data.roomIds.length} stuck rooms`,
+        clearedRooms: data.roomIds,
+      });
+    } catch (error) {
+      console.error('Failed to clear stuck rooms:', error);
+      socket.emit('stuckRoomsCleared', {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 
