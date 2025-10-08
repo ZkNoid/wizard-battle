@@ -378,6 +378,35 @@ export class MatchmakingService {
       console.warn(
         `Match already exists for room ${roomId}, skipping creation`
       );
+
+      // DEBUG: Rejoin logic: ensure both players are (re)joined to the existing room and notified
+      // Rejoin logic: ensure both players are (re)joined to the existing room and notified
+      try {
+        // Attempt to notify both players again and (re)join sockets to the room
+        await this.notifyPlayersOfMatch(firstPlayer, secondPlayer, roomId);
+
+        // Also publish a lightweight cross-instance hint that players joined
+        if (firstPlayer.socketId) {
+          await this.gameStateService.publishToRoom(roomId, 'playerJoined', {
+            playerId: firstPlayer.playerId,
+            socketId: firstPlayer.socketId,
+          });
+          console.log(
+            `Player ${firstPlayer.playerId}successfully re-joined room ${roomId}`
+          );
+        }
+        if (secondPlayer.socketId) {
+          await this.gameStateService.publishToRoom(roomId, 'playerJoined', {
+            playerId: secondPlayer.playerId,
+            socketId: secondPlayer.socketId,
+          });
+          console.log(
+            `Player ${firstPlayer.playerId}successfully re-joined room ${roomId}`
+          );
+        }
+      } catch (err) {
+        console.error('Failed to rejoin players to existing match:', err);
+      }
       return;
     }
 
