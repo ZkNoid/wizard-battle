@@ -1,7 +1,7 @@
 const { io } = require('socket.io-client');
 
 // Test 5-phase gameplay functionality
-const SERVER_URL = 'http://localhost:3001';
+const SERVER_URL = 'http://localhost:3030';
 const TEST_ROOM_ID = 'gameplay-test-room';
 
 /**
@@ -345,16 +345,23 @@ async function testGameplayPhases() {
 
       // Simulate spell effects processing and submit trusted state
       setTimeout(() => {
+        // Align with gateway: publicState.fields is an array of Field-like values
+        const simulatedHp = 100 - index * 10;
+        const simulatedX = index * 10;
+        const simulatedY = index * 5;
         player.socket.emit('submitTrustedState', {
           roomId: TEST_ROOM_ID,
           trustedState: {
             playerId: player.id,
             stateCommit: `commit-${player.id}-${Date.now()}`,
             publicState: {
+              socketId: player.socket.id,
               playerId: player.id,
-              hp: 100 - index * 10, // Simulate different HP values
-              position: { x: index * 10, y: index * 5 },
-              effects: [],
+              fields: [
+                { value: simulatedHp },
+                { value: simulatedX },
+                { value: simulatedY },
+              ],
             },
             signature: `signature-${player.id}`,
           },

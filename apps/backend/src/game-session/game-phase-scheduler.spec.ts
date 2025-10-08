@@ -22,6 +22,7 @@ describe('GamePhaseSchedulerService', () => {
     // Mock Redis client
     mockGameStateService.redisClient = {
       keys: jest.fn().mockResolvedValue([]),
+      hKeys: jest.fn().mockResolvedValue([]),
       get: jest.fn(),
       set: jest.fn(),
       del: jest.fn(),
@@ -54,9 +55,7 @@ describe('GamePhaseSchedulerService', () => {
         updatedAt: Date.now() - 1000,
       };
 
-      mockGameStateService.redisClient.keys.mockResolvedValue([
-        'game_state:test-room',
-      ]);
+      mockGameStateService.redisClient.hKeys.mockResolvedValue(['test-room']);
       mockGameStateService.getGameState.mockResolvedValue(mockGameState);
 
       // Call the cron method directly
@@ -232,9 +231,7 @@ CRON-BASED APPROACH:
         updatedAt: Date.now(),
       };
 
-      mockGameStateService.redisClient.keys.mockResolvedValue([
-        'game_state:error-room',
-      ]);
+      mockGameStateService.redisClient.hKeys.mockResolvedValue(['error-room']);
       mockGameStateService.getGameState.mockResolvedValue(mockGameState);
       mockGameSessionGateway.advanceToSpellEffects.mockRejectedValue(
         new Error('Room processing failed')

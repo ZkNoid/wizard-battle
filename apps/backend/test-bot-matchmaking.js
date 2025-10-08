@@ -31,12 +31,12 @@ const playerSocket = io(SERVER_URL, {
 
 playerSocket.on('connect', () => {
   console.log(`✅ Human player connected with socket ID: ${playerSocket.id}`);
-  
+
   // Create player setup - only use fields array (consistent with our updates)
   const playerSetup = {
     socketId: playerSocket.id,
     playerId: TEST_PLAYER_ID,
-    fields: [new Field(100), new Field(2), new Field(2)] // HP=100, x=2, y=2 as fields only
+    fields: [new Field(100), new Field(2), new Field(2)], // HP=100, x=2, y=2 as fields only
   };
 
   // Create matchmaking request
@@ -45,11 +45,11 @@ playerSocket.on('connect', () => {
     playerSetup: playerSetup,
     nonce: Date.now(),
     signature: `test_signature_${Date.now()}`,
-    setupProof: `test_proof_${Date.now()}`
+    setupProof: `test_proof_${Date.now()}`,
   };
 
   console.log('🤖 Requesting bot matchmaking...');
-  
+
   // Request bot matchmaking
   playerSocket.emit('joinBotMatchmaking', { addToQueue });
 });
@@ -61,7 +61,7 @@ playerSocket.on('connect_error', (error) => {
 
 playerSocket.on('addtoqueue', (response) => {
   console.log('📥 Add to queue response:', response);
-  
+
   if (response.success) {
     console.log('✅ Successfully joined bot matchmaking!');
   } else {
@@ -75,7 +75,7 @@ playerSocket.on('matchFound', (data) => {
   console.log('🎯 Match found!', matchData);
   console.log(`Room ID: ${matchData.roomId}`);
   console.log(`Opponent: ${matchData.opponentId}`);
-  
+
   if (matchData.opponentId.startsWith('bot_')) {
     console.log('🤖 Successfully matched with a bot!');
   } else {
@@ -85,28 +85,32 @@ playerSocket.on('matchFound', (data) => {
 
 playerSocket.on('newTurn', (data) => {
   console.log('🔄 New turn started:', data);
-  
+
   if (data.phase === 'spell_casting') {
     console.log('⚡ Spell casting phase - both players should submit actions');
-    
+
     // Submit test actions after a short delay
     setTimeout(() => {
       const testActions = {
-        actions: [{
-          playerId: TEST_PLAYER_ID,
-          spellId: 'fireball',
-          spellCastInfo: {
-            target: { x: 5, y: 5 },
-            targetPlayerId: null
-          }
-        }],
-        signature: `test_action_signature_${Date.now()}`
+        actions: [
+          {
+            playerId: TEST_PLAYER_ID,
+            spellId: 'FireBall',
+            spellCastInfo: JSON.stringify({
+              position: {
+                x: { magnitude: '5', sgn: 'Positive' },
+                y: { magnitude: '5', sgn: 'Positive' },
+              },
+            }),
+          },
+        ],
+        signature: `test_action_signature_${Date.now()}`,
       };
-      
+
       console.log('🎯 Submitting test actions...');
       playerSocket.emit('submitActions', {
         roomId: matchData.roomId,
-        actions: testActions
+        actions: testActions,
       });
     }, 1000);
   }
@@ -119,7 +123,7 @@ playerSocket.on('allPlayerActions', (allActions) => {
 
 playerSocket.on('applySpellEffects', () => {
   console.log('✨ Applying spell effects phase');
-  
+
   // Simulate trusted state submission
   setTimeout(() => {
     const trustedState = {
@@ -128,15 +132,15 @@ playerSocket.on('applySpellEffects', () => {
       publicState: {
         socketId: playerSocket.id,
         playerId: TEST_PLAYER_ID,
-        fields: [new Field(90), new Field(3), new Field(3)] // Simulated damage and movement as fields only
+        fields: [new Field(90), new Field(3), new Field(3)],
       },
-      signature: `test_trusted_signature_${Date.now()}`
+      signature: `test_trusted_signature_${Date.now()}`,
     };
-    
+
     console.log('📝 Submitting trusted state...');
     playerSocket.emit('submitTrustedState', {
       roomId: matchData.roomId,
-      trustedState
+      trustedState,
     });
   }, 1000);
 });
@@ -148,13 +152,13 @@ playerSocket.on('updateUserStates', (data) => {
 
 playerSocket.on('gameEnd', (data) => {
   console.log('🏁 Game ended:', data);
-  
+
   if (data.winnerId === TEST_PLAYER_ID) {
     console.log('🏆 Human player won!');
   } else if (data.winnerId.startsWith('bot_')) {
     console.log('🤖 Bot won!');
   }
-  
+
   console.log('✅ Bot matchmaking test completed successfully!');
   process.exit(0);
 });

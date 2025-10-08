@@ -24,6 +24,7 @@ describe('GameSessionGateway', () => {
   let mockSocket: jest.Mocked<Socket>;
 
   beforeEach(async () => {
+    jest.useFakeTimers();
     // Create mocks
     mockMatchmakingService = createMock<MatchmakingService>({
       setServer: jest.fn(),
@@ -80,6 +81,22 @@ describe('GameSessionGateway', () => {
 
     gateway = module.get<GameSessionGateway>(GameSessionGateway);
     (gateway as any).server = mockServer;
+  });
+
+  afterEach(async () => {
+    try {
+      if ((jest as any).advanceTimersByTimeAsync) {
+        await (jest as any).advanceTimersByTimeAsync(3000);
+      } else {
+        jest.advanceTimersByTime(3000);
+      }
+      if ((jest as any).runOnlyPendingTimersAsync) {
+        await (jest as any).runOnlyPendingTimersAsync();
+      } else {
+        jest.runOnlyPendingTimers();
+      }
+    } catch {}
+    jest.useRealTimers();
   });
 
   describe('handleSubmitActions', () => {

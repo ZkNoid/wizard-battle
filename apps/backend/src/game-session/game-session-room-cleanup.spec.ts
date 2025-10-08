@@ -42,6 +42,7 @@ describe('GameSessionGateway - Room Cleanup Tests', () => {
   let roomPlayers: Map<string, string[]>;
 
   beforeEach(async () => {
+    jest.useFakeTimers();
     // Initialize resource tracking
     activeRooms = new Set();
     roomTimers = new Map();
@@ -78,6 +79,22 @@ describe('GameSessionGateway - Room Cleanup Tests', () => {
 
     gateway = module.get<GameSessionGateway>(GameSessionGateway);
     gateway.server = mockServer;
+  });
+
+  afterEach(async () => {
+    try {
+      if ((jest as any).advanceTimersByTimeAsync) {
+        await (jest as any).advanceTimersByTimeAsync(3000);
+      } else {
+        jest.advanceTimersByTime(3000);
+      }
+      if ((jest as any).runOnlyPendingTimersAsync) {
+        await (jest as any).runOnlyPendingTimersAsync();
+      } else {
+        jest.runOnlyPendingTimers();
+      }
+    } catch {}
+    jest.useRealTimers();
   });
 
   describe('Player Disconnect Scenarios', () => {

@@ -16,7 +16,7 @@ class MockField {
 const Field = MockField;
 
 // Test configuration
-const SERVER_URL = 'http://localhost:3030';
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3030';
 const TEST_PLAYER_ID = `test_player_${Date.now()}`;
 let matchData = null;
 let currentPhase = null;

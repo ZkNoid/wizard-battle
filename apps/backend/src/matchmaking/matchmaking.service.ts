@@ -738,6 +738,56 @@ export class MatchmakingService {
   }
 
   /**
+   * Attempt to rejoin an existing match for a reconnecting player.
+   * @param socket The reconnecting player's socket
+   * @param playerId Stable player identifier (not socketId)
+   */
+  async rejoinIfInMatch(socket: Socket, playerId: string): Promise<void> {
+    try {
+      const matches = await this.redisClient.hGetAll('matches');
+      let found: { roomId: string; match: any } | null = null;
+      for (const [roomId, m] of Object.entries(matches)) {
+        try {
+          const match = JSON.parse(m);
+          if (
+            match?.player1?.playerId === playerId ||
+            match?.player2?.playerId === playerId
+          ) {
+            found = { roomId, match };
+            break;
+          }
+        } catch {}
+      }
+
+      if (!found) return; // Not in a match
+
+      const { roomId, match } = found;
+
+      // Update the reconnecting player's socketId in match object
+      if (match.player1?.playerId === playerId) {
+        match.player1.socketId = socket.id;
+      } else if (match.player2?.playerId === playerId) {
+        match.player2.socketId = socket.id;
+      }
+
+      // Persist updated socketId for subsequent emits
+      await this.redisClient.hSet('matches', roomId, JSON.stringify(match));
+
+      // Join room locally
+      await socket.join(roomId);
+
+      // Build payloads
+      const p1 = match.player1;
+      const p2 = match.player2;
+
+      // Reuse existing notify logic to emit matchFound and join locally/publish
+      await this.notifyPlayersOfMatch(p1, p2, roomId);
+    } catch (err) {
+      console.error('rejoinIfInMatch error:', err);
+    }
+  }
+
+  /**
    * Join matchmaking
    * @param socket - The socket
    * @param addToQueue - The add to queue data

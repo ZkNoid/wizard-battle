@@ -103,6 +103,15 @@ export class GameSessionGateway {
     this.gameStateService
       .registerSocket(socket)
       .catch((err) => console.error('Failed to register socket mapping:', err));
+
+    // Optional: try rejoin by playerId if provided via handshake auth/query
+    const playerId = (socket.handshake.auth?.playerId ||
+      socket.handshake.query?.playerId) as string | undefined;
+    if (playerId) {
+      this.matchmakingService
+        .rejoinIfInMatch(socket, playerId)
+        .catch((err) => console.error('rejoinIfInMatch failed:', err));
+    }
   }
 
   /**

@@ -52,6 +52,7 @@ describe('MatchmakingService', () => {
   let mockBotService: BotService;
 
   beforeEach(async () => {
+    jest.useFakeTimers();
     // Reset all mocks before each test
     jest.clearAllMocks();
 
@@ -173,6 +174,24 @@ describe('MatchmakingService', () => {
     service.setServer(mockServer);
   });
 
+  afterEach(async () => {
+    // Flush any pending timers from setTimeout callbacks in service code
+    try {
+      // Advance enough time to execute delayed callbacks
+      if ((jest as any).advanceTimersByTimeAsync) {
+        await (jest as any).advanceTimersByTimeAsync(3000);
+      } else {
+        jest.advanceTimersByTime(3000);
+      }
+      if ((jest as any).runOnlyPendingTimersAsync) {
+        await (jest as any).runOnlyPendingTimersAsync();
+      } else {
+        jest.runOnlyPendingTimers();
+      }
+    } catch {}
+    jest.useRealTimers();
+  });
+
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
@@ -259,6 +278,12 @@ describe('MatchmakingService', () => {
         service
       );
       await processMatchmaking();
+      // Allow delayed first turn start timer to run within the test
+      if ((jest as any).advanceTimersByTimeAsync) {
+        await (jest as any).advanceTimersByTimeAsync(2500);
+      } else {
+        jest.advanceTimersByTime(2500);
+      }
 
       // Verify that a match was created (hSet called)
       expect(mockRedisClient.hSet).toHaveBeenCalledWith(
@@ -337,6 +362,11 @@ describe('MatchmakingService', () => {
         service
       );
       await processMatchmaking();
+      if ((jest as any).advanceTimersByTimeAsync) {
+        await (jest as any).advanceTimersByTimeAsync(2500);
+      } else {
+        jest.advanceTimersByTime(2500);
+      }
 
       // Verify that a match was created (hSet called)
       expect(mockRedisClient.hSet).toHaveBeenCalledWith(
@@ -419,6 +449,11 @@ describe('MatchmakingService', () => {
         service
       );
       await processMatchmaking();
+      if ((jest as any).advanceTimersByTimeAsync) {
+        await (jest as any).advanceTimersByTimeAsync(2500);
+      } else {
+        jest.advanceTimersByTime(2500);
+      }
 
       // Verify that a match was created - the current behavior allows cross-level matching
       expect(mockRedisClient.hSet).toHaveBeenCalledWith(

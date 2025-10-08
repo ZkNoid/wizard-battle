@@ -11,7 +11,7 @@ class Field {
 }
 
 // Human vs Human Multi-Round Test
-const SERVER_URL = 'https://dev-api-wizard.zknoid.io'; //process.env.SERVER_URL || 'http://localhost:3001';
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3030';
 const TEST_ROOM_ID = `hvh_test_${Date.now()}`;
 
 /**
@@ -307,10 +307,8 @@ class HumanVsHumanTester {
   async runMultipleRounds() {
     console.log('🎮 Starting multi-round human vs human gameplay...\n');
 
-    // Start the first turn manually
-    this.players.forEach((player) => {
-      player.socket.emit('startTurn', { roomId: TEST_ROOM_ID });
-    });
+    // Wait for server-driven cron/flow to start turns automatically
+    // No manual startTurn emit needed with current architecture
 
     // Wait for game completion
     return new Promise((resolve) => {

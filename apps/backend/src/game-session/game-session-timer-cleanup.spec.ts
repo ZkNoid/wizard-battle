@@ -51,9 +51,9 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
         players: [{ id: 'player1', isAlive: true }],
       };
 
-      // Mock Redis keys and game state
+      // Mock Redis hash keys (list of roomIds) and game state
       mockGameStateService.redisClient = {
-        keys: jest.fn().mockResolvedValue([`game_state:${roomId}`]),
+        hKeys: jest.fn().mockResolvedValue([roomId]),
       };
       mockGameStateService.getGameState.mockResolvedValue(gameState);
       mockGameSessionGateway.advanceToSpellEffects.mockResolvedValue(undefined);
@@ -83,7 +83,7 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
       };
 
       mockGameStateService.redisClient = {
-        keys: jest.fn().mockResolvedValue([`game_state:${roomId}`]),
+        hKeys: jest.fn().mockResolvedValue([roomId]),
       };
       mockGameStateService.getGameState.mockResolvedValue(gameState);
 
@@ -111,7 +111,7 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
       };
 
       mockGameStateService.redisClient = {
-        keys: jest.fn().mockResolvedValue([`game_state:${roomId}`]),
+        hKeys: jest.fn().mockResolvedValue([roomId]),
       };
       mockGameStateService.getGameState.mockResolvedValue(gameState);
 
@@ -139,7 +139,7 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
       };
 
       mockGameStateService.redisClient = {
-        keys: jest.fn().mockResolvedValue([`game_state:${roomId}`]),
+        hKeys: jest.fn().mockResolvedValue([roomId]),
       };
       mockGameStateService.getGameState.mockResolvedValue(gameState);
 
@@ -161,7 +161,7 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
       };
 
       mockGameStateService.redisClient = {
-        keys: jest.fn().mockResolvedValue([`game_state:${roomId}`]),
+        hKeys: jest.fn().mockResolvedValue([roomId]),
       };
       mockGameStateService.getGameState.mockResolvedValue(gameState);
 
