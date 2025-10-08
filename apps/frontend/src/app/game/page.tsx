@@ -194,6 +194,22 @@ export default function GamePage() {
       const spell = allSpells.find(
         (s) => s.id.toString() === spellId.toString()
       );
+
+      if (!spell) {
+        console.log('Spell not found');
+        return;
+      }
+
+      // Check if target is correct
+      if (spell.target === 'enemy' && isEnemy) {
+        console.log('Target is correct');
+      } else if (spell.target === 'ally' && !isEnemy) {
+        console.log('Target is correct');
+      } else {
+        console.log('Target is incorrect');
+        return;
+      }
+
       if (spell) {
         gameEventEmitter.playAnimationOneTime(
           'user',
