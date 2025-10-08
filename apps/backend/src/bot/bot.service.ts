@@ -332,8 +332,11 @@ export class BotService {
     // Example: if prevAction spell is Lightning, then pick Teleport or Heal
     if (prevSpell && prevSpell.target === 'enemy') {
       // Pick a random available spell Teleport or Heal
-      filteredSpells = availableSpells.filter(
-        (s) => s.spellId === TELEPORT_ID || s.spellId === HEAL_ID
+      const allowed = new Set(
+        [TELEPORT_ID, HEAL_ID].filter((id): id is string => !!id)
+      );
+      filteredSpells = availableSpells.filter((s) =>
+        allowed.has(s.spellId.toString())
       );
     }
 

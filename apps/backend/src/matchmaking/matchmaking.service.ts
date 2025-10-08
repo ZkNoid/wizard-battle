@@ -580,52 +580,57 @@ export class MatchmakingService {
       return;
     }
 
-    // Get socket instances
-    const socket1 = this.server.sockets.sockets.get(player1.socketId!);
-    const socket2 = this.server.sockets.sockets.get(player2.socketId!);
+    // Build opponent setups and payloads regardless of local socket presence
+    const opponentSetupForP1: IPublicState = new TransformedPlayerSetup(
+      player2.socketId || '',
+      player2.playerId!,
+      player2.fields
+    );
+    const payloadForP1: IFoundMatch = new TransformedFoundMatch(
+      roomId,
+      player2.playerId!,
+      [opponentSetupForP1]
+    );
 
-    let matchFound1: IFoundMatch | undefined;
-    let matchFound2: IFoundMatch | undefined;
+    const opponentSetupForP2: IPublicState = new TransformedPlayerSetup(
+      player1.socketId || '',
+      player1.playerId!,
+      player1.fields
+    );
+    const payloadForP2: IFoundMatch = new TransformedFoundMatch(
+      roomId,
+      player1.playerId!,
+      [opponentSetupForP2]
+    );
 
+    // Get local socket instances if they exist on this node
+    const socket1 = player1.socketId
+      ? this.server.sockets.sockets.get(player1.socketId)
+      : undefined;
+    const socket2 = player2.socketId
+      ? this.server.sockets.sockets.get(player2.socketId)
+      : undefined;
+
+    // Emit locally and join room when sockets are on this instance
     if (socket1) {
-      // Notify player1 about player2 - only pass the required 3 parameters
-      const opponentSetup1: IPublicState = new TransformedPlayerSetup(
-        player2.socketId!,
-        player2.playerId!,
-        player2.fields // Keep the original fields array
-      );
-      matchFound1 = new TransformedFoundMatch(roomId, player2.playerId!, [
-        opponentSetup1,
-      ]);
-      socket1.emit('matchFound', matchFound1);
+      socket1.emit('matchFound', payloadForP1);
       socket1.join(roomId);
     }
-
     if (socket2) {
-      // Notify player2 about player1 - only pass the required 3 parameters
-      const opponentSetup2: IPublicState = new TransformedPlayerSetup(
-        player1.socketId!,
-        player1.playerId!,
-        player1.fields // Keep the original fields array
-      );
-      matchFound2 = new TransformedFoundMatch(roomId, player1.playerId!, [
-        opponentSetup2,
-      ]);
-      socket2.emit('matchFound', matchFound2);
+      socket2.emit('matchFound', payloadForP2);
       socket2.join(roomId);
     }
 
-    // Publish match found events for cross-instance communication
-    if (player1.socketId && matchFound1) {
+    // Always publish cross-instance targeted events so remote sockets get the message and join
+    if (player1.socketId) {
       await this.gameStateService.publishToRoom(roomId, 'matchFound', {
-        payload: matchFound1,
+        payload: payloadForP1,
         targetSocketId: player1.socketId,
       });
     }
-
-    if (player2.socketId && matchFound2) {
+    if (player2.socketId) {
       await this.gameStateService.publishToRoom(roomId, 'matchFound', {
-        payload: matchFound2,
+        payload: payloadForP2,
         targetSocketId: player2.socketId,
       });
     }
