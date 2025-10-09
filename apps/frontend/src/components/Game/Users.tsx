@@ -6,6 +6,7 @@ import { formatAddress, useMinaAppkit } from 'mina-appkit';
 import { api } from '@/trpc/react';
 import { useEffect, useState } from 'react';
 import { levelFromXp } from '@/lib/constants/levels';
+import { WizardId } from '../../../../common/wizards';
 
 export function Users() {
   const { stater, opponentState } = useUserInformationStore();
@@ -58,8 +59,12 @@ export function Users() {
         level={user && user.xp ? levelFromXp(user.xp) : 0}
         health={stater ? +stater!.state.playerStats.hp : 0}
         maxHealth={100}
-        // TODO: Add wizard type handling
-        wizardType="wizard"
+        // TODO: Add elve handling
+        wizardType={
+          stater?.state.wizardId.toString() === WizardId.MAGE.toString()
+            ? 'wizard'
+            : 'warrior'
+        }
         className="col-span-3 col-start-1"
       />
       {/* Right user bar */}
@@ -74,8 +79,11 @@ export function Users() {
         level={0}
         health={opponentState ? +opponentState!.playerStats.hp : 0}
         maxHealth={100}
-        // TODO: Add wizard type handling
-        wizardType="warrior"
+        wizardType={
+          stater?.state.wizardId.toString() === WizardId.MAGE.toString()
+            ? 'wizard'
+            : 'warrior'
+        }
         className="col-span-3 col-start-4"
       />
     </div>

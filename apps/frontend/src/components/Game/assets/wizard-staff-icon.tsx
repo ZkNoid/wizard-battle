@@ -1,4 +1,4 @@
-export const ElveStaffIcon = ({ className }: { className: string }) => {
+export const WizardStaffIcon = ({ className }: { className: string }) => {
   return (
     <svg
       width="32"

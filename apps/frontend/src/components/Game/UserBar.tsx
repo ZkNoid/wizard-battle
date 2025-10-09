@@ -5,20 +5,10 @@ import { WizardImage } from './assets/wizard-image';
 import { WarriorImage } from './assets/warrior-image';
 import { ElveImage } from './assets/elve-image';
 import { WizardTypeBackground } from './assets/wizard-type-background';
-import { ElveStaffIcon } from './assets/elve-staff-icon';
+import { WizardStaffIcon } from './assets/wizard-staff-icon';
 import { HpBackground } from './assets/hp-background';
 import { LvlBackground } from './assets/lvl-background';
 import { WarriorSwordIcon } from './assets/warrior-sword-icon';
-
-const getHealthGradient = (percentage: number) => {
-  if (percentage > 60) {
-    return 'from-[#00B521] to-[#00B521]'; // Green for high health
-  } else if (percentage > 30) {
-    return 'from-[#FFA500] to-[#FFA500]'; // Orange for medium health
-  } else {
-    return 'from-[#FF0000] to-[#FF0000]'; // Red for low health
-  }
-};
 
 export function UserBar({
   name,
@@ -36,7 +26,6 @@ export function UserBar({
   className?: string;
 }) {
   const healthPercentage = (health / maxHealth) * 100;
-  const gradientClass = getHealthGradient(healthPercentage);
 
   return (
     <div className={cn('flex flex-row items-center gap-0', className)}>
@@ -49,14 +38,16 @@ export function UserBar({
       <div className="flex flex-col gap-0">
         <div className="-mb-3 flex flex-row items-center gap-1">
           <div className="flex flex-row gap-1">
-            <div className="size-15 relative -mt-1 flex items-center justify-center">
-              {wizardType === 'elve' && <ElveStaffIcon className="size-8" />}
+            <div className="relative flex size-16 items-center justify-center">
+              {wizardType === 'wizard' && (
+                <WizardStaffIcon className="size-8" />
+              )}
               {wizardType === 'warrior' && (
                 <WarriorSwordIcon className="size-8" />
               )}
               <WizardTypeBackground className="-z-1 absolute inset-0 size-full" />
             </div>
-            <div className="relative -ml-5 flex h-12 w-60 items-center justify-center">
+            <div className="relative -ml-5 mt-1.5 flex h-12 w-60 items-center justify-center">
               <span className="font-pixel text-base text-[#070C19]">
                 {name}
               </span>
@@ -67,21 +58,18 @@ export function UserBar({
         <div className="w-95 relative h-10">
           <HpBackground className="-z-1 absolute inset-0 size-full" />
           <motion.div
-            className={cn(
-              '-z-2 absolute inset-0 mt-0.5 h-[90%] bg-gradient-to-r',
-              gradientClass
-            )}
+            className={'-z-2 absolute inset-0 mt-0.5 h-[90%] bg-[#FF3C3E]'}
             initial={{ width: '100%' }}
             animate={{
               width: `${healthPercentage == 100 ? 98 : healthPercentage}%`,
             }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
           />
-          {/* <div
+          <div
             className={
-              '-z-3 absolute inset-0 mt-0.5 h-[90%] w-[90%] bg-[#D5D8DD]'
+              '-z-3 absolute inset-0 mt-0.5 h-[90%] w-[98%] bg-[#D5D8DD]'
             }
-          /> */}
+          />
         </div>
         <div className="w-45 relative h-8">
           <span className="font-pixel absolute left-1 top-1 text-xs text-white">
