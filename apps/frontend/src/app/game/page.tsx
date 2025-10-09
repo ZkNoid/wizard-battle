@@ -349,47 +349,27 @@ export default function GamePage() {
     };
   }, [onNewTurnHook]);
 
-  // Render helpers
-  const renderTilemap = (
-    mapType: MapType,
-    onClick: (index: number) => void
-  ) => (
-    <Tilemap
-      width={GRID_WIDTH}
-      height={GRID_HEIGHT}
-      tileSize={TILE_SIZE}
-      tilemap={
-        mapType === 'ally'
-          ? stater?.state?.map.map((tile) => +tile)
-          : opponentState?.map.map((tile) => +tile)
-      }
-      onTileClick={onClick}
-    />
-  );
-
-  const renderEntityOverlay = (excludeEntityId: string) => (
-    <EntityOverlay
-      entities={entities.filter((entity) => entity.id !== excludeEntityId)}
-      gridWidth={GRID_WIDTH}
-      gridHeight={GRID_HEIGHT}
-    />
-  );
-
-  const renderEffectOverlay = (overlayId: string) => (
-    <EffectOverlay
-      overlayId={overlayId}
-      gridWidth={GRID_WIDTH}
-      gridHeight={GRID_HEIGHT}
-    />
-  );
-
   return (
     <Game actionInfo={actionInfo}>
       {/* Left half - Ally map */}
       <div className="relative">
-        {renderTilemap('ally', handleTilemapClick)}
-        {renderEntityOverlay('enemy')}
-        {renderEffectOverlay('user')}
+        <Tilemap
+          width={GRID_WIDTH}
+          height={GRID_HEIGHT}
+          tileSize={TILE_SIZE}
+          tilemap={stater?.state?.map.map((tile) => +tile)}
+          onTileClick={handleTilemapClick}
+        />
+        <EntityOverlay
+          entities={entities.filter((entity) => entity.id !== 'enemy')}
+          gridWidth={GRID_WIDTH}
+          gridHeight={GRID_HEIGHT}
+        />
+        <EffectOverlay
+          overlayId="user"
+          gridWidth={GRID_WIDTH}
+          gridHeight={GRID_HEIGHT}
+        />
       </div>
 
       {/* Right half - Enemy map */}
@@ -399,9 +379,23 @@ export default function GamePage() {
             Waiting for opponent turn
           </div>
         )}
-        {renderTilemap('enemy', handleTilemapClickEnemy)}
-        {renderEntityOverlay('user')}
-        {renderEffectOverlay('enemy')}
+        <Tilemap
+          width={GRID_WIDTH}
+          height={GRID_HEIGHT}
+          tileSize={TILE_SIZE}
+          tilemap={opponentState?.map.map((tile) => +tile)}
+          onTileClick={handleTilemapClickEnemy}
+        />
+        <EntityOverlay
+          entities={entities.filter((entity) => entity.id !== 'user')}
+          gridWidth={GRID_WIDTH}
+          gridHeight={GRID_HEIGHT}
+        />
+        <EffectOverlay
+          overlayId="enemy"
+          gridWidth={GRID_WIDTH}
+          gridHeight={GRID_HEIGHT}
+        />
       </div>
     </Game>
   );
