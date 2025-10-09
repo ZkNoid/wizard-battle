@@ -23,7 +23,7 @@ export function Spells({
         {skills.map((skill) => (
           <button
             key={skill.id.toString()}
-            disabled={+skill.currentCooldown === 0}
+            disabled={+skill.currentCooldown !== 0}
             className={
               'not-disabled:cursor-pointer not-disabled:transition-transform not-disabled:duration-300 not-disabled:hover:scale-110 group relative size-16 disabled:cursor-not-allowed'
             }
