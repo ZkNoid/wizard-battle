@@ -70,6 +70,9 @@ describe('MatchmakingService', () => {
       isRedisConnected: jest.fn().mockReturnValue(true),
     }) as any;
 
+    // Default Redis behaviors to prevent null/undefined issues
+    mockRedisClient.hGetAll.mockResolvedValue({});
+
     // Create mock BotService
     mockBotService = createMock<BotService>({
       generateBotSetup: jest.fn().mockReturnValue({
@@ -606,7 +609,7 @@ describe('MatchmakingService', () => {
       );
     });
 
-    it('should handle player leaving from match', async () => {
+    it('should handle player leaving from match (rejoin-friendly behavior)', async () => {
       const mockSocket = createMock<Socket>({ id: 'socket1' });
       const mockOtherSocket = createMock<Socket>({ id: 'socket2' });
 
@@ -619,8 +622,8 @@ describe('MatchmakingService', () => {
           roomId: 'Player1-Player2',
         }),
       });
-      mockRedisClient.hDel.mockResolvedValue(1);
-      mockRedisClient.hKeys.mockResolvedValue([]);
+      mockRedisClient.hSet.mockResolvedValue(1);
+      mockRedisClient.hKeys.mockResolvedValue(['Player1-Player2']);
 
       // Mock server.sockets.sockets.get
       mockServer.sockets.sockets.get = jest
@@ -629,15 +632,21 @@ describe('MatchmakingService', () => {
 
       await service.leaveMatchmaking(mockSocket);
 
+      // Opponent is notified
       expect(mockOtherSocket.emit).toHaveBeenCalledWith('opponentDisconnected');
-      expect(mockOtherSocket.leave).toHaveBeenCalledWith('Player1-Player2');
-      expect(mockRedisClient.hDel).toHaveBeenCalledWith(
+      // Match is NOT deleted; instead updated to allow rejoin
+      expect(mockRedisClient.hSet).toHaveBeenCalledWith(
+        'matches',
+        'Player1-Player2',
+        expect.any(String)
+      );
+      expect(mockRedisClient.hDel).not.toHaveBeenCalledWith(
         'matches',
         'Player1-Player2'
       );
     });
 
-    it('should handle player leaving from match when other socket not found', async () => {
+    it('should handle player leaving from match when other socket not found (keep match for rejoin)', async () => {
       const mockSocket = createMock<Socket>({ id: 'socket1' });
 
       // Mock Redis responses
@@ -649,15 +658,21 @@ describe('MatchmakingService', () => {
           roomId: 'Player1-Player2',
         }),
       });
-      mockRedisClient.hDel.mockResolvedValue(1);
-      mockRedisClient.hKeys.mockResolvedValue([]);
+      mockRedisClient.hSet.mockResolvedValue(1);
+      mockRedisClient.hKeys.mockResolvedValue(['Player1-Player2']);
 
       // Mock server.sockets.sockets.get to return null
       mockServer.sockets.sockets.get = jest.fn().mockReturnValue(null);
 
       await service.leaveMatchmaking(mockSocket);
 
-      expect(mockRedisClient.hDel).toHaveBeenCalledWith(
+      // Match should not be removed; updated instead
+      expect(mockRedisClient.hSet).toHaveBeenCalledWith(
+        'matches',
+        'Player1-Player2',
+        expect.any(String)
+      );
+      expect(mockRedisClient.hDel).not.toHaveBeenCalledWith(
         'matches',
         'Player1-Player2'
       );

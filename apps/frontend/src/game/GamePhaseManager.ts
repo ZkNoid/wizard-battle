@@ -118,6 +118,32 @@ export class GamePhaseManager {
       }
     );
 
+    // Rejoin support: server can push current phase/turn/timer
+    this.socket.on(
+      'syncGameState',
+      (payload: {
+        roomId: string;
+        currentPhase: GamePhase;
+        turn: number;
+        phaseTimeout: number;
+        playersReady: string[];
+        players: { id: string; socketId: string }[];
+      }) => {
+        if (payload.roomId !== this.roomId) return;
+        console.log('Received syncGameState', payload);
+        // Apply current phase and start timer if in SPELL_CASTING
+        this.updateCurrentPhase(payload.currentPhase);
+        if (payload.currentPhase === GamePhase.SPELL_CASTING) {
+          this.phaseTimerDeadlineMs = Date.now() + Number(payload.phaseTimeout);
+          EventBus.emit('phase-timer-start', payload.phaseTimeout);
+        }
+        // Reset per-turn tracking to avoid stale state after rejoin
+        this.hasSubmittedActions = false;
+        this.hasSubmittedTrustedState = false;
+        this.lastActions = undefined;
+      }
+    );
+
     // Allow late listeners (like Clock) to request current remaining time
     EventBus.on('request-phase-timer', () => {
       if (

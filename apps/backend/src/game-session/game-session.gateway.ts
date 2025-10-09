@@ -101,14 +101,16 @@ export class GameSessionGateway {
    */
   handleConnection(socket: Socket) {
     console.log(`Client connected: ${socket.id}, Process ID: ${process.pid}`);
-    // Register socket mapping
-    this.gameStateService
-      .registerSocket(socket)
-      .catch((err) => console.error('Failed to register socket mapping:', err));
-
-    // Optional: try rejoin by playerId if provided via handshake auth/query
+    // Extract stable playerId from handshake (auth preferred)
     const playerId = (socket.handshake.auth?.playerId ||
       socket.handshake.query?.playerId) as string | undefined;
+
+    // Register socket mapping with optional playerId for better targeting
+    this.gameStateService
+      .registerSocket(socket, playerId)
+      .catch((err) => console.error('Failed to register socket mapping:', err));
+
+    // Attempt rejoin if playerId is provided
     if (playerId) {
       this.matchmakingService
         .rejoinIfInMatch(socket, playerId)
@@ -124,11 +126,31 @@ export class GameSessionGateway {
   handleDisconnect(socket: Socket) {
     console.log(`Client disconnected: ${socket.id}`);
     // Clean up socket mapping and matchmaking
-    this.gameStateService
-      .unregisterSocket(socket.id)
-      .catch((err) =>
-        console.error('Failed to unregister socket mapping:', err)
-      );
+    this.gameStateService.getSocketMapping(socket.id).then(async (mapping) => {
+      try {
+        await this.gameStateService.unregisterSocket(socket.id);
+      } catch (err) {
+        console.error('Failed to unregister socket mapping:', err);
+      }
+
+      // If this was the last player in the room, perform cleanup
+      try {
+        if (mapping?.roomId) {
+          const remaining = await this.gameStateService.getSocketsInRoom(
+            mapping.roomId
+          );
+          if (!remaining || remaining.length === 0) {
+            console.log(
+              `🧹 No sockets remain in room ${mapping.roomId}, cleaning up`
+            );
+            await this.gameStateService.cleanupRoom(mapping.roomId);
+            await this.cleanupRoom(mapping.roomId, 'empty');
+          }
+        }
+      } catch (err) {
+        console.error('Failed to cleanup empty room on disconnect:', err);
+      }
+    });
     this.matchmakingService.leaveMatchmaking(socket);
   }
 

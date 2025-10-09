@@ -221,9 +221,26 @@ export class MatchmakingService {
       }
 
       // Remove players who are already in matches
-      const filteredQueuedPlayers = queuedPlayers.filter(
+      const filteredQueuedPlayersInitial = queuedPlayers.filter(
         (qp) => qp.player.playerId && !activePlayerIds.has(qp.player.playerId)
       );
+
+      // Dedupe by logical playerId to prevent self-matching
+      const seen = new Set<string>();
+      const filteredQueuedPlayers: QueuedPlayer[] = [];
+      for (const qp of filteredQueuedPlayersInitial) {
+        const pid = qp.player.playerId;
+        if (!pid) continue;
+        if (seen.has(pid)) {
+          // best-effort cleanup duplicate from Redis queue
+          try {
+            await this.redisClient.lRem('waiting:queue', 1, JSON.stringify(qp));
+          } catch {}
+          continue;
+        }
+        seen.add(pid);
+        filteredQueuedPlayers.push(qp);
+      }
 
       // Clean up stale queue entries (players who might be disconnected)
       // Remove entries older than 5 minutes to prevent queue buildup
@@ -262,11 +279,18 @@ export class MatchmakingService {
       );
 
       while (filteredQueuedPlayers.length >= 2) {
-        // This is a FIFO approach, so the first players in the queue will be matched firsts
-        const player1 = filteredQueuedPlayers.shift()!;
-        const player2 = filteredQueuedPlayers.shift()!;
-
-        await this.createMatch(player1.player, player2.player);
+        // FIFO: pick first, then find the next with different playerId
+        const first = filteredQueuedPlayers.shift()!;
+        const idx = filteredQueuedPlayers.findIndex(
+          (qp) => qp.player.playerId !== first.player.playerId
+        );
+        if (idx === -1) {
+          // No eligible opponent; reinsert first and break
+          filteredQueuedPlayers.unshift(first);
+          break;
+        }
+        const [second] = filteredQueuedPlayers.splice(idx, 1);
+        await this.createMatch(first.player, (second as QueuedPlayer).player);
       }
 
       // Update remaining players in queue
@@ -615,10 +639,44 @@ export class MatchmakingService {
     if (socket1) {
       socket1.emit('matchFound', payloadForP1);
       socket1.join(roomId);
+      try {
+        await this.gameStateService.registerSocket(
+          socket1,
+          player1.playerId,
+          roomId
+        );
+        await this.gameStateService.updatePlayerSocketId(
+          roomId,
+          player1.playerId!,
+          socket1.id
+        );
+      } catch (err) {
+        console.error(
+          'Failed to register socket mapping with room for player1:',
+          err
+        );
+      }
     }
     if (socket2) {
       socket2.emit('matchFound', payloadForP2);
       socket2.join(roomId);
+      try {
+        await this.gameStateService.registerSocket(
+          socket2,
+          player2.playerId,
+          roomId
+        );
+        await this.gameStateService.updatePlayerSocketId(
+          roomId,
+          player2.playerId!,
+          socket2.id
+        );
+      } catch (err) {
+        console.error(
+          'Failed to register socket mapping with room for player2:',
+          err
+        );
+      }
     }
 
     // Always publish cross-instance targeted events so remote sockets get the message and join
@@ -782,6 +840,29 @@ export class MatchmakingService {
 
       // Reuse existing notify logic to emit matchFound and join locally/publish
       await this.notifyPlayersOfMatch(p1, p2, roomId);
+
+      // Additionally, sync current game state and phase/timer to the rejoining socket
+      try {
+        const state = await this.gameStateService.getGameState(roomId);
+        if (state && this.server) {
+          const phaseTimeout =
+            state.phaseTimeout ??
+            Number(process.env.SPELL_CAST_TIMEOUT || 120000);
+          socket.emit('syncGameState', {
+            roomId,
+            currentPhase: state.currentPhase,
+            turn: state.turn,
+            phaseTimeout,
+            playersReady: state.playersReady ?? [],
+            players: state.players.map((pl) => ({
+              id: pl.id,
+              socketId: pl.socketId,
+            })),
+          });
+        }
+      } catch (syncErr) {
+        console.error('Failed to sync game state on rejoin:', syncErr);
+      }
     } catch (err) {
       console.error('rejoinIfInMatch error:', err);
     }
@@ -865,6 +946,80 @@ export class MatchmakingService {
 
     // Ensure socketId is set in the player object
     player.socketId = socket.id;
+
+    // Dedupe: remove any existing queue entries for the same logical playerId
+    try {
+      const queueEntries = await this.redisClient.lRange(
+        'waiting:queue',
+        0,
+        -1
+      );
+      for (const raw of queueEntries) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed?.player?.playerId === player.playerId) {
+            await this.redisClient.lRem('waiting:queue', 1, raw);
+          }
+        } catch {}
+      }
+    } catch (err) {
+      console.error('Failed to dedupe queue entries for player:', err);
+    }
+
+    // Fast-path: if this player already has an active match, rejoin instead of queuing
+    try {
+      const matches = await this.redisClient.hGetAll('matches');
+      for (const [roomId, m] of Object.entries(matches)) {
+        try {
+          const match = JSON.parse(m);
+          if (
+            match?.player1?.playerId === player.playerId ||
+            match?.player2?.playerId === player.playerId
+          ) {
+            // Update socketId for reconnecting player
+            if (match.player1?.playerId === player.playerId) {
+              match.player1.socketId = socket.id;
+            } else if (match.player2?.playerId === player.playerId) {
+              match.player2.socketId = socket.id;
+            }
+            await this.redisClient.hSet(
+              'matches',
+              roomId,
+              JSON.stringify(match)
+            );
+
+            // Join room locally and register mapping with roomId
+            await socket.join(roomId);
+            await this.gameStateService.registerSocket(
+              socket,
+              player.playerId,
+              roomId
+            );
+
+            // Also update the player's socketId inside the game state
+            await this.gameStateService.updatePlayerSocketId(
+              roomId,
+              player.playerId!,
+              socket.id
+            );
+
+            // Notify both players (will emit to targeted sockets and publish cross-instance)
+            await this.notifyPlayersOfMatch(
+              match.player1,
+              match.player2,
+              roomId
+            );
+
+            console.log(
+              `↩️ Rejoined existing match for player ${player.playerId} in room ${roomId}`
+            );
+            return roomId;
+          }
+        } catch {}
+      }
+    } catch (err) {
+      console.error('Failed to check existing matches on join:', err);
+    }
 
     console.log(`Player ${player.playerId} joining matchmaking queue`);
 
@@ -1196,33 +1351,36 @@ export class MatchmakingService {
     if (matchEntry) {
       const [roomId, m] = matchEntry;
       const match: Match = JSON.parse(m);
-      const otherPlayer =
-        match.player1.socketId === socket.id ? match.player2 : match.player1;
+      const isP1 = match.player1?.socketId === socket.id;
+      const selfPlayer = isP1 ? match.player1 : match.player2;
+      const otherPlayer = isP1 ? match.player2 : match.player1;
 
-      // Notify other player through Redis pub/sub
+      // Mark disconnected player's socket as empty to indicate offline state
+      if (selfPlayer) selfPlayer.socketId = '';
+      await this.redisClient.hSet('matches', roomId, JSON.stringify(match));
+
+      // Notify other player through Redis pub/sub and locally if connected
       await this.gameStateService.publishToRoom(
         roomId,
         'opponentDisconnected',
         {
           disconnectedPlayer: socket.id,
-          remainingPlayer: otherPlayer.socketId,
+          remainingPlayer: otherPlayer?.socketId || '',
         }
       );
 
-      // Remove game state
-      await this.gameStateService.removeGameState(roomId);
-
-      if (this.server) {
+      if (this.server && otherPlayer?.socketId) {
         const otherSocket = this.server.sockets.sockets.get(
-          otherPlayer.socketId!
+          otherPlayer.socketId
         );
         if (otherSocket) {
           otherSocket.emit('opponentDisconnected');
-          otherSocket.leave(roomId);
         }
-        console.log(`Player ${socket.id} left match ${roomId}`);
       }
-      await this.redisClient.hDel('matches', roomId);
+
+      console.log(`Player ${socket.id} left match ${roomId}`);
+
+      // Do NOT remove game state or delete match here; allow rejoin or cron cleanup
       const activeRooms = await this.redisClient.hKeys('matches');
       console.log(`Active rooms: ${activeRooms.join(', ')}`);
     }

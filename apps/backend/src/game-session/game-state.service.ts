@@ -275,6 +275,39 @@ export class GameStateService {
   }
 
   /**
+   * Update a specific player's socketId (used on reconnect/rejoin)
+   * @param roomId - The room identifier
+   * @param playerId - The logical player id
+   * @param socketId - The new Socket.IO id for this player
+   */
+  async updatePlayerSocketId(
+    roomId: string,
+    playerId: string,
+    socketId: string
+  ): Promise<void> {
+    const gameState = await this.getGameState(roomId);
+    if (!gameState) return;
+
+    const playerIndex =
+      gameState.players?.findIndex((p) => p.id === playerId) ?? -1;
+    if (playerIndex < 0) return;
+
+    if (gameState.players && gameState.players[playerIndex]) {
+      gameState.players[playerIndex].socketId = socketId;
+      gameState.updatedAt = Date.now();
+
+      await this.redisClient.hSet(
+        'game_states',
+        roomId,
+        JSON.stringify(gameState)
+      );
+      console.log(
+        `Updated player ${playerId} socketId in room ${roomId} to ${socketId}`
+      );
+    }
+  }
+
+  /**
    * Remove a game state
    * @param roomId - The room identifier
    * @dev Deletes the room entry from the `game_states` hash.
