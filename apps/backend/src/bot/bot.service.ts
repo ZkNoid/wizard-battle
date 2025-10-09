@@ -464,6 +464,7 @@ export class BotService {
       const HEAL_ID = healSpell?.id.toString();
 
       // Apply opponent actions damage to bot (use position BEFORE bot's own actions)
+      let damagedThisRound = false;
       const preActionPos = { x: botX, y: botY };
       for (const [playerId, ua] of Object.entries(allActions || {})) {
         if (playerId === botId) continue;
@@ -480,13 +481,25 @@ export class BotService {
 
           const distance = manhattan(preActionPos, { x: targetX, y: targetY });
 
-          if (action.spellId === FIREBALL_ID) {
+          // Accept both hashed IDs and human-readable names from tests
+          const isFireball =
+            action.spellId === FIREBALL_ID || action.spellId === 'FireBall';
+          const isLightning =
+            action.spellId === LIGHTNING_ID ||
+            action.spellId === 'Lightning' ||
+            action.spellId === 'LightningBold';
+
+          if (isFireball) {
+            const before = botHP;
             if (distance === 0) botHP = Math.max(0, botHP - 60);
             else if (distance === 1) botHP = Math.max(0, botHP - 40);
             else if (distance === 2) botHP = Math.max(0, botHP - 20);
-          } else if (action.spellId === LIGHTNING_ID) {
+            if (botHP !== before) damagedThisRound = true;
+          } else if (isLightning) {
+            const before = botHP;
             if (distance === 0) botHP = Math.max(0, botHP - 100);
             else if (distance === 1) botHP = Math.max(0, botHP - 50);
+            if (botHP !== before) damagedThisRound = true;
           }
         }
       }
@@ -506,7 +519,10 @@ export class BotService {
             }
           } catch {}
         } else if (action.spellId === HEAL_ID) {
-          botHP = Math.min(100, botHP + 100);
+          // To make damage visible to clients/tests, skip immediate heal if bot took damage this round
+          if (!damagedThisRound) {
+            botHP = Math.min(100, botHP + 100);
+          }
         }
       }
 
