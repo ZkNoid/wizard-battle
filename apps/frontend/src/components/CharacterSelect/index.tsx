@@ -52,12 +52,12 @@ export default function CharacterSelect({
           {currentWizardSpells.map((spell) => (
             <div
               key={spell.id.toString()}
-              className="size-22.5 relative flex cursor-pointer items-center justify-center border-4 border-black transition-transform duration-300 hover:scale-110"
+              className="size-22.5 relative flex cursor-pointer items-center justify-center transition-transform duration-300 hover:scale-110"
             >
               <div className="relative z-10 size-full">
                 <Image
                   className={cn(
-                    'size-full',
+                    'size-full border-4 border-black',
                     selectedSkills.some(
                       (s) => s.spellId.toString() === spell.id.toString()
                     ) && 'scale-110',
@@ -113,7 +113,7 @@ export default function CharacterSelect({
           <Button
             variant="gray"
             className="w-106 h-15"
-            disabled={selectedSkillsLength != 4}
+            // disabled={selectedSkillsLength != 4}
             onClick={() => {
               setPlayStep(PlaySteps.SELECT_MAP);
             }}

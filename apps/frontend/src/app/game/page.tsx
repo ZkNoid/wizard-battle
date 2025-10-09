@@ -316,6 +316,15 @@ export default function GamePage() {
       };
 
       addEntity(user);
+
+      const enemy = {
+        id: 'enemy',
+        type: EntityType.WIZARD,
+        tilemapPosition: DEFAULT_USER_POSITION,
+      };
+
+      addEntity(enemy);
+
       isInitialized.current = true;
 
       return () => {
@@ -387,7 +396,13 @@ export default function GamePage() {
           onTileClick={handleTilemapClickEnemy}
         />
         <EntityOverlay
-          entities={entities.filter((entity) => entity.id !== 'user')}
+          entities={
+            opponentState &&
+            opponentState.playerStats.position &&
+            +opponentState.playerStats.position.isSome
+              ? entities.filter((entity) => entity.id !== 'user')
+              : []
+          }
           gridWidth={GRID_WIDTH}
           gridHeight={GRID_HEIGHT}
         />
