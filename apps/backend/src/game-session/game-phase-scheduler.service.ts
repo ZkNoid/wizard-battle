@@ -250,6 +250,7 @@ export class GamePhaseSchedulerService {
         const timeoutMs = Number(process.env.SPELL_CAST_TIMEOUT || 120000);
 
         if (!state) {
+          // Only remove stale match entry; do not touch game state here
           await this.gameStateService.redisClient.hDel('matches', roomId);
           console.log(`🧽 Purged stale match with no state: ${roomId}`);
           continue;
@@ -259,12 +260,12 @@ export class GamePhaseSchedulerService {
         const isOld =
           Date.now() - (state.updatedAt || state.createdAt || 0) > timeoutMs;
         if (isInactive && isOld) {
+          // Only purge stale match entry; avoid deleting game state here to prevent mid-game loss.
+          // Room state cleanup should be handled by explicit cleanup flows (e.g., cleanupRoom, markRoomForCleanup, end-of-game paths).
           await this.gameStateService.redisClient.hDel('matches', roomId);
-          // Best-effort cleanup for any lingering state
-          try {
-            await this.gameStateService.removeGameState(roomId);
-          } catch {}
-          console.log(`🧽 Purged stale match and state: ${roomId}`);
+          console.log(
+            `🧽 Purged stale match entry (state retained) for room: ${roomId}`
+          );
         }
       }
     } catch (error) {
