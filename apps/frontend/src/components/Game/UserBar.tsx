@@ -1,8 +1,14 @@
 import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
+import { WizardNameBackground } from './assets/wizard-name-background';
 import { WizardImage } from './assets/wizard-image';
 import { WarriorImage } from './assets/warrior-image';
 import { ElveImage } from './assets/elve-image';
+import { WizardTypeBackground } from './assets/wizard-type-background';
+import { ElveStaffIcon } from './assets/elve-staff-icon';
+import { HpBackground } from './assets/hp-background';
+import { LvlBackground } from './assets/lvl-background';
+import { WarriorSwordIcon } from './assets/warrior-sword-icon';
 
 const getHealthGradient = (percentage: number) => {
   if (percentage > 60) {
@@ -33,36 +39,55 @@ export function UserBar({
   const gradientClass = getHealthGradient(healthPercentage);
 
   return (
-    <div className={cn('flex flex-row items-center gap-2.5', className)}>
+    <div className={cn('flex flex-row items-center gap-0', className)}>
       {/* Avatar */}
-      <div className="w-22.5 h-22.5 border-3 border-main-gray overflow-hidden bg-[#FBFAFA]">
+      <div className="w-35 h-35 border-3 border-main-gray overflow-hidden bg-[#FBFAFA]">
         {wizardType === 'wizard' && <WizardImage className="h-full w-full" />}
         {wizardType === 'warrior' && <WarriorImage className="h-full w-full" />}
         {wizardType === 'elve' && <ElveImage className="h-full w-full" />}
       </div>
-      <div className="flex flex-col gap-1.5">
-        {/* Name */}
-        <span className="font-pixel text-2xl text-[#FBFAFA]">{name}</span>
-        <div className="flex flex-col">
-          {/* Health bar */}
-          <div className="w-81 h-7.5 border-3 border-main-gray relative -z-[1] flex items-center justify-center overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-[#F1F2F4] to-[#F1F2F4]" />
-            <motion.div
-              className={cn('absolute inset-0 bg-gradient-to-r', gradientClass)}
-              initial={{ width: '100%' }}
-              animate={{ width: `${healthPercentage}%` }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-            />
-            <span className="text-main-gray font-pixel relative z-10 text-center text-xs">
-              {health}/{maxHealth}
-            </span>
+      <div className="flex flex-col gap-0">
+        <div className="-mb-3 flex flex-row items-center gap-1">
+          <div className="flex flex-row gap-1">
+            <div className="size-15 relative -mt-1 flex items-center justify-center">
+              {wizardType === 'elve' && <ElveStaffIcon className="size-8" />}
+              {wizardType === 'warrior' && (
+                <WarriorSwordIcon className="size-8" />
+              )}
+              <WizardTypeBackground className="-z-1 absolute inset-0 size-full" />
+            </div>
+            <div className="relative -ml-5 flex h-12 w-60 items-center justify-center">
+              <span className="font-pixel text-base text-[#070C19]">
+                {name}
+              </span>
+              <WizardNameBackground className="-z-1 absolute inset-0 size-full" />
+            </div>
           </div>
-          {/* Xp bar */}
-          <div className="border-3 border-main-gray -z-[1] flex h-6 w-20 items-center justify-center bg-[#F1F2F4]">
-            <span className="text-main-gray font-pixel mt-1 text-xs">
-              Lvl. {level}
-            </span>
-          </div>
+        </div>
+        <div className="w-95 relative h-10">
+          <HpBackground className="-z-1 absolute inset-0 size-full" />
+          <motion.div
+            className={cn(
+              '-z-2 absolute inset-0 mt-0.5 h-[90%] bg-gradient-to-r',
+              gradientClass
+            )}
+            initial={{ width: '100%' }}
+            animate={{
+              width: `${healthPercentage == 100 ? 98 : healthPercentage}%`,
+            }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          />
+          {/* <div
+            className={
+              '-z-3 absolute inset-0 mt-0.5 h-[90%] w-[90%] bg-[#D5D8DD]'
+            }
+          /> */}
+        </div>
+        <div className="w-45 relative h-8">
+          <span className="font-pixel absolute left-1 top-1 text-xs text-white">
+            Lvl. {level}
+          </span>
+          <LvlBackground className="-z-1 absolute inset-0 size-full" />
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ export { Tilemap } from './components/Tilemap';
 export { useEngine } from './hooks/useEngine';
 export { useTilemap } from './hooks/useTilemap';
 export { useEntityAnimations } from './hooks/useEntityAnimations';
+// export { useHitmark } from './hooks/useHitmark';
 
 export { EntityOverlay } from './components/EntityOverlay';
 export { AnimatedCanvas } from './components/AnimatedCanvas';

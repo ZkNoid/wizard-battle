@@ -1,17 +1,18 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Spells } from './Spells';
 import { Button } from '../shared/Button';
 import BoxButton from '../shared/BoxButton';
-import { HelpIcon } from './assets/help-icon';
 import { Clock } from './Clock';
 import { Users } from './Users';
 import { useRouter } from 'next/navigation';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
-import { useInGameStore } from '@/lib/store/inGameStore';
 import { spellIdToSpell } from '@/lib/utils';
-import type { GamePhase } from '../../../../common/types/gameplay.types';
+import { TilemapBg } from './assets/tilemap-bg';
+import { QuestionmarkIcon } from './assets/questionmark-icon';
+import { SkillsBg } from './assets/skills-bg';
+import { ActionsBg } from './assets/actions-bg';
 import type { SpellStats } from '../../../../common/stater/structs';
 
 export default function Game({
@@ -22,87 +23,61 @@ export default function Game({
   actionInfo?: { movementDone: boolean; spellCastDone: boolean };
 }) {
   const router = useRouter();
-  const { stater, gamePhaseManager } = useUserInformationStore();
-  const { currentPhase } = useInGameStore();
-
-  // gamePhaseManager?.onNewTurn();
-
-  // useEffect(() => {
-  //   if (gamePhaseManager) {
-  //     setCurrentPhase(gamePhaseManager.onNewTurn());
-  //   }
-  // }, [gamePhaseManager]);
+  const { stater } = useUserInformationStore();
 
   return (
-    <div className="flex h-full w-full flex-grow flex-col pt-40">
-      <div className="flex h-full w-full flex-col">
-        {/* Top bar */}
-        <div className="h-1/5">
-          <Users />
-        </div>
-
-        {/* Game area */}
-        <div className="px-57 grid h-full w-full grid-cols-8">
-          <div className="col-span-3">{children[0]}</div>
-          <div className="col-span-2 mb-auto flex flex-col justify-center gap-5">
-            <Clock />
-            <span className="text-center text-2xl font-bold">
-              CURRENT PHASE: {currentPhase?.toString() ?? 'No phase'}
-            </span>
-            {actionInfo && (
-              <span className="text-center text-lg font-semibold text-yellow-300">
-                {actionInfo.movementDone
-                  ? 'Movement done'
-                  : 'Waiting for movement'}
-              </span>
-            )}
-            {actionInfo && (
-              <span className="text-center text-lg font-semibold text-yellow-300">
-                {actionInfo.spellCastDone
-                  ? 'Spell cast done'
-                  : 'Waiting for spell cast'}
-              </span>
-            )}
-          </div>
-
-          <div className="col-span-3">{children[1]}</div>
-        </div>
+    <div className="px-57 grid size-full flex-grow grid-cols-6 grid-rows-6 gap-5 pt-20">
+      <Users />
+      <div className="size-150 relative col-span-3 col-start-1 row-span-4 p-5">
+        {children[0]}
+        <TilemapBg className="-z-1 absolute inset-0 size-full" />
+      </div>
+      <div className="size-150 relative col-span-3 col-start-4 row-span-4 p-5">
+        {children[1]}
+        <TilemapBg className="-z-1 absolute inset-0 size-full" />
       </div>
 
-      {/* Footer */}
-      <div className="z-[1] grid w-full grid-cols-11 items-end justify-center gap-5">
-        <Button
-          variant="blue"
-          text="Give up"
-          onClick={() => {
-            // TODO: Add give up logic
-            router.push('/');
-          }}
-          className="h-15 w-89 col-span-3 ml-auto"
-        />
-        <Spells
-          skills={
-            stater?.state.spellStats
-              .map((spell: SpellStats) => {
-                const spellData = spellIdToSpell(spell.spellId);
-                if (!spellData) return undefined;
-                return {
-                  ...spellData,
-                  currentCooldown: spell.currentCooldown,
-                };
-              })
-              .filter((spell) => spell !== undefined) ?? []
-          }
-          className="col-span-5 col-start-4"
-        />
-        <BoxButton
-          onClick={() => {
-            // TODO: Add help logic
-          }}
-          className="col-span-3 mr-auto h-20 w-20"
-        >
-          <HelpIcon className="h-12.5 w-7.5" />
-        </BoxButton>
+      <div className="col-span-6 row-span-1 row-start-6 flex flex-row items-center gap-5">
+        <div className="w-65 flex h-28 flex-row items-end gap-2.5">
+          <Button
+            variant="blue"
+            className="h-16 w-40"
+            onClick={() => {
+              router.push('/');
+            }}
+            text="Give up"
+          />
+          <BoxButton
+            color="gray"
+            className="size-14"
+            onClick={() => {
+              alert(
+                `movementDone: ${actionInfo?.movementDone}, spellCastDone: ${actionInfo?.spellCastDone}`
+              );
+            }}
+          >
+            <QuestionmarkIcon className="size-8" />
+          </BoxButton>
+        </div>
+        <div className="w-220 relative h-28">
+          <Spells
+            skills={
+              stater?.state.spellStats
+                .map((spell: SpellStats) => {
+                  const spellData = spellIdToSpell(spell.spellId);
+                  if (!spellData) return undefined;
+                  return {
+                    ...spellData,
+                    currentCooldown: spell.currentCooldown,
+                  };
+                })
+                .filter((spell) => spell !== undefined) ?? []
+            }
+          />
+          <ActionsBg className="absolute left-0 top-0 z-[1] -ml-10 size-28" />
+          <SkillsBg className="absolute inset-0 size-full" />
+        </div>
+        <Clock />
       </div>
     </div>
   );

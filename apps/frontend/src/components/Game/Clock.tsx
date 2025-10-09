@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ClockIcon } from './assets/clock-icon';
-import { TimeBg } from './assets/time-bg';
-import { cn } from '@/lib/utils';
 import { EventBus } from '../../game/EventBus';
+import { NewTimeBg } from './assets/new-time-bg';
 
 export function Clock({ className }: { className?: string }) {
   const [remainingMs, setRemainingMs] = useState(0);
@@ -48,16 +46,11 @@ export function Clock({ className }: { className?: string }) {
   };
 
   return (
-    <div className={cn('flex flex-col', className)}>
-      <div className="flex flex-col items-center justify-center gap-4">
-        <ClockIcon className="w-21 h-22.5" />
-        <div className="w-69 h-21 relative flex flex-col items-center justify-center">
-          <span className="text-main-gray font-pixel text-3xl font-bold">
-            {formatTime(remainingMs)}
-          </span>
-          <TimeBg className="w-69 h-21 absolute left-0 top-0 -z-[1]" />
-        </div>
-      </div>
+    <div className="w-61 relative flex h-28 flex-row items-center justify-center">
+      <span className="font-pixel text-main-gray z-[1] ml-8 mt-0.5 text-3xl">
+        {formatTime(remainingMs)}
+      </span>
+      <NewTimeBg className="absolute inset-0 size-full" />
     </div>
   );
 }

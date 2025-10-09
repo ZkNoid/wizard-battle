@@ -364,9 +364,6 @@ export default function GamePage() {
           : opponentState?.map.map((tile) => +tile)
       }
       onTileClick={onClick}
-      className={
-        mapType === 'ally' ? 'h-full w-full cursor-pointer' : 'cursor-pointer'
-      }
     />
   );
 
@@ -389,12 +386,10 @@ export default function GamePage() {
   return (
     <Game actionInfo={actionInfo}>
       {/* Left half - Ally map */}
-      <div className="space-y-2">
-        <div className="relative">
-          {renderTilemap('ally', handleTilemapClick)}
-          {renderEntityOverlay('enemy')}
-          {renderEffectOverlay('user')}
-        </div>
+      <div className="relative">
+        {renderTilemap('ally', handleTilemapClick)}
+        {renderEntityOverlay('enemy')}
+        {renderEffectOverlay('user')}
       </div>
 
       {/* Right half - Enemy map */}

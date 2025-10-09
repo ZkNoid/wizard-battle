@@ -47,7 +47,7 @@ export function Users() {
   // }, [opponentAccount, opponentAddress]);
 
   return (
-    <div className="px-57 grid grid-cols-8 items-center">
+    <div className="col-span-6 row-span-1 grid grid-cols-6 items-center gap-x-5">
       {/* Left user bar */}
       <UserBar
         name={
@@ -60,9 +60,8 @@ export function Users() {
         maxHealth={100}
         // TODO: Add wizard type handling
         wizardType="wizard"
-        className="col-span-3"
+        className="col-span-3 col-start-1"
       />
-      <div className="col-span-2" />
       {/* Right user bar */}
       <UserBar
         name={
@@ -77,7 +76,7 @@ export function Users() {
         maxHealth={100}
         // TODO: Add wizard type handling
         wizardType="warrior"
-        className="col-span-3"
+        className="col-span-3 col-start-4"
       />
     </div>
   );
