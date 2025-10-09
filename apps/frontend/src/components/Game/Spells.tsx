@@ -27,6 +27,15 @@ export function Spells({
             className={
               'not-disabled:cursor-pointer not-disabled:transition-transform not-disabled:duration-300 not-disabled:hover:scale-110 group relative size-16 disabled:cursor-not-allowed'
             }
+            onClick={() => {
+              console.log('Picked spell', skill.id.toString());
+
+              if (pickedSpellId?.toString() === skill.id.toString()) {
+                setPickedSpellId(null);
+              } else {
+                setPickedSpellId(skill.id);
+              }
+            }}
           >
             <Image
               className={cn(
@@ -38,20 +47,9 @@ export function Spells({
               alt={'skill'}
               width={64}
               height={64}
-              onClick={() => {
-                console.log('Picked spell', skill.id.toString());
-
-                if (pickedSpellId?.toString() === skill.id.toString()) {
-                  EventBus.emit('pick-spell', null);
-                  setPickedSpellId(null);
-                } else {
-                  EventBus.emit('pick-spell', skill);
-                  setPickedSpellId(skill.id);
-                }
-              }}
             />
             <div className="invisible absolute inset-0 z-0 flex size-full items-center justify-center border-4 border-black backdrop-blur-[2px] group-disabled:visible">
-              <span className="font-pixel text-main-gray text-lg">
+              <span className="font-pixel text-lg text-white">
                 {skill.currentCooldown.toString()}
               </span>
             </div>

@@ -52,21 +52,9 @@ export default function CharacterSelect({
           {currentWizardSpells.map((spell) => (
             <div
               key={spell.id.toString()}
-              className="size-22.5 relative flex cursor-pointer items-center justify-center transition-transform duration-300 hover:scale-110"
+              className="size-22.5 relative flex cursor-pointer items-center justify-center border-4 border-black transition-transform duration-300 hover:scale-110"
             >
-              <Image
-                className={cn(
-                  'absolute inset-0 z-0 size-full',
-                  selectedSkills.some(
-                    (s) => s.spellId.toString() === spell.id.toString()
-                  ) && 'scale-110'
-                )}
-                src={'/wizards/skills/empty.svg'}
-                alt={'empty skill'}
-                width={90}
-                height={90}
-              />
-              <div className="relative z-10 size-full p-1">
+              <div className="relative z-10 size-full">
                 <Image
                   className={cn(
                     'size-full',
@@ -112,8 +100,8 @@ export default function CharacterSelect({
             (_, index) => (
               <Image
                 key={index}
-                className="w-22.5 h-22.5"
-                src={'/wizards/skills/empty.svg'}
+                className="w-22.5 h-22.5 border-4 border-black"
+                src={'/wizards/skills/empty.png'}
                 alt={'empty skill'}
                 width={90}
                 height={90}
