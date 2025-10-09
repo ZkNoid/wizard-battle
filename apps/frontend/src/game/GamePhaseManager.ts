@@ -68,6 +68,20 @@ export class GamePhaseManager {
   }
 
   /**
+   * @notice Surrender the match: declare this player dead so opponent wins
+   * @param playerId The logical player id (stable id stored client-side)
+   */
+  public surrender(playerId: string) {
+    try {
+      if (!playerId) return;
+      this.socket.emit('reportDead', {
+        roomId: this.roomId,
+        dead: { playerId },
+      });
+    } catch {}
+  }
+
+  /**
    * @notice Initializes WebSocket event listeners for all 5 gameplay phases
    * @dev Sets up bidirectional communication with GameSessionGateway
    *

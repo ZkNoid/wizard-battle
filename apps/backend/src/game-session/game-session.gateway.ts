@@ -700,12 +700,25 @@ export class GameSessionGateway {
           'gameEnd',
           gameEnd
         );
-
-        // ✅ FIXED: Mark room for cleanup (cron job will handle it)
-        await this.gameStateService.markRoomForCleanup(
-          data.roomId,
-          'game_ended'
-        );
+        // Immediately destroy room resources when game ends
+        try {
+          await this.gameStateService.removeGameState(data.roomId);
+          await this.matchmakingService.redisClient.hDel(
+            'matches',
+            data.roomId
+          );
+          await this.cleanupRoom(data.roomId, 'game_ended');
+          console.log(`🗑️ Destroyed room ${data.roomId} after game end`);
+        } catch (cleanupErr) {
+          console.error(
+            'Failed immediate cleanup after game end, marking for cleanup:',
+            cleanupErr
+          );
+          await this.gameStateService.markRoomForCleanup(
+            data.roomId,
+            'game_ended_fallback_mark'
+          );
+        }
       } else {
         console.log(`🎮 Game continues in room ${data.roomId} - no winner yet`);
       }

@@ -24,6 +24,7 @@ export default function Game({
 }) {
   const router = useRouter();
   const { stater } = useUserInformationStore();
+  const { gamePhaseManager } = useUserInformationStore();
 
   return (
     <div className="px-57 grid size-full flex-grow grid-cols-6 grid-rows-6 gap-5 pt-20">
@@ -43,6 +44,11 @@ export default function Game({
             variant="blue"
             className="h-16 w-40"
             onClick={() => {
+              const playerId =
+                typeof window !== 'undefined'
+                  ? window.localStorage.getItem('playerId') || ''
+                  : '';
+              gamePhaseManager?.surrender(playerId);
               router.push('/');
             }}
             text="Give up"

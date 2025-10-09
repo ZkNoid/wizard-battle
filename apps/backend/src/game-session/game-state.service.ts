@@ -1113,15 +1113,18 @@ export class GameStateService {
     const now = Date.now();
     const inactiveRooms: string[] = [];
 
-    const keys = await this.redisClient.keys('game_state:*');
-
-    for (const key of keys) {
-      const roomId = key.replace('game_state:', '');
-      const gameState = await this.getGameState(roomId);
-
-      if (gameState && now - gameState.updatedAt > maxAge) {
-        inactiveRooms.push(roomId);
-      }
+    // Iterate over hash 'game_states' entries
+    const allStates = await this.redisClient.hGetAll('game_states');
+    for (const [roomId, raw] of Object.entries(allStates)) {
+      try {
+        const gameState = JSON.parse(raw as string) as any;
+        if (
+          gameState?.updatedAt &&
+          now - Number(gameState.updatedAt) > maxAge
+        ) {
+          inactiveRooms.push(roomId);
+        }
+      } catch {}
     }
 
     return inactiveRooms;
@@ -1134,16 +1137,25 @@ export class GameStateService {
     console.log(`🧹 Cleaning up room state for ${roomId}`);
 
     try {
-      // Remove all room-related keys
+      // Remove room game state stored in hash and any per-room keys
+      await this.redisClient.hDel('game_states', roomId);
+      await this.redisClient.hDel('matches', roomId);
       const keysToDelete = [
-        `game_state:${roomId}`,
         `player_actions:${roomId}`,
         `trusted_states:${roomId}`,
         `room_cleanup:${roomId}`,
       ];
+      for (const key of keysToDelete) await this.redisClient.del(key);
 
-      for (const key of keysToDelete) {
-        await this.redisClient.del(key);
+      // Remove socket mappings tied to this room
+      const allMappings = await this.redisClient.hGetAll('socket_mappings');
+      for (const [socketId, raw] of Object.entries(allMappings)) {
+        try {
+          const parsed = JSON.parse(raw as string);
+          if (parsed?.roomId === roomId) {
+            await this.redisClient.hDel('socket_mappings', socketId);
+          }
+        } catch {}
       }
 
       // Notify other instances
