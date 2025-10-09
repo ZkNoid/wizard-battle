@@ -61,6 +61,16 @@ export default function Game({
         </div>
         <div className="w-220 relative h-28">
           <Spells
+            // DEBUG FOR TESTING
+            // skills={Array.from({ length: 5 }).map((_, idx) => ({
+            //   id: idx + 1,
+            //   name: `Skill ${idx + 1}`,
+            //   description: `Random skill description ${idx + 1}`,
+            //   image: `/wizards/skills/heal.svg`,
+            //   manaCost: Math.floor(Math.random() * 10) + 1,
+            //   cooldown: Math.floor(Math.random() * 5) + 1,
+            //   currentCooldown: BigInt(Math.floor(Math.random() * 5)),
+            // }))}
             skills={
               stater?.state.spellStats
                 .map((spell: SpellStats) => {
