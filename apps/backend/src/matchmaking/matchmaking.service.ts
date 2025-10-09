@@ -1380,9 +1380,45 @@ export class MatchmakingService {
 
       console.log(`Player ${socket.id} left match ${roomId}`);
 
-      // Do NOT remove game state or delete match here; allow rejoin or cron cleanup
-      const activeRooms = await this.redisClient.hKeys('matches');
-      console.log(`Active rooms: ${activeRooms.join(', ')}`);
+      // If this was a bot match, immediately clean up match/state and terminate the bot client.
+      // Bot IDs are generated with a '100' prefix in joinBotMatchmaking.
+      const isBotMatch =
+        (match.player1?.playerId &&
+          String(match.player1.playerId).startsWith('100')) ||
+        (match.player2?.playerId &&
+          String(match.player2.playerId).startsWith('100'));
+
+      if (isBotMatch) {
+        try {
+          const botId = String(
+            String(match.player1?.playerId).startsWith('100')
+              ? match.player1.playerId
+              : match.player2?.playerId
+          );
+
+          // Best-effort: disconnect bot client so it can't rejoin lingering sessions
+          try {
+            await this.botClientService?.disconnectBot(botId);
+          } catch (e) {
+            console.warn('Failed to disconnect bot on leave:', e);
+          }
+
+          // Remove game state and match so future joins don't reattach to the bot session
+          try {
+            await this.gameStateService.removeGameState(roomId);
+          } catch {}
+          await this.redisClient.hDel('matches', roomId);
+          console.log(
+            `🗑️ Cleaned up bot match ${roomId} (botId=${botId}) after player left`
+          );
+        } catch (e) {
+          console.error('Failed to cleanup bot match on leave:', e);
+        }
+      } else {
+        // For human vs human, keep match/state to allow rejoin; periodic cleanup handles stale rooms
+        const activeRooms = await this.redisClient.hKeys('matches');
+        console.log(`Active rooms: ${activeRooms.join(', ')}`);
+      }
     }
   }
 
