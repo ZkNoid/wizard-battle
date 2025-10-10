@@ -339,6 +339,13 @@ export default function GamePage() {
     gamePhaseManager?.setOnNewTurnHook(onNewTurnHook);
   }, [gamePhaseManager, onNewTurnHook]);
 
+  // Cleanup game phase manager on unmount
+  useEffect(() => {
+    return () => {
+      gamePhaseManager?.cleanup();
+    };
+  }, [gamePhaseManager]);
+
   useEffect(() => {
     const handleSceneReady = (
       scene_instance: Phaser.Scene,

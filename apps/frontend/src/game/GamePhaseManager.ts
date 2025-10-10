@@ -194,12 +194,19 @@ export class GamePhaseManager {
           // Server rejected due to phase mismatch, retry
           this.hasSubmittedTrustedState = false;
           // this.startTrustedStatePolling();
+        } else if (data.error?.includes('Game state not found')) {
+          // Game has ended or room was destroyed, stop polling
+          console.log('Game state not found - stopping trusted state polling');
+          this.hasSubmittedTrustedState = true;
+          this.stopTrustedStatePolling();
         }
       }
     );
 
     this.socket.on('gameEnd', (data: { winnerId: string }) => {
       console.log('Received game end. Winner is: ', data.winnerId);
+      // Stop all polling and state submissions when game ends
+      this.cleanup();
       this.onGameEnd?.(data.winnerId === this.getPlayerId());
     });
   }
@@ -585,6 +592,16 @@ export class GamePhaseManager {
       clearInterval(this.trustedStatePollingInterval);
       this.trustedStatePollingInterval = null;
     }
+  }
+
+  /**
+   * @notice Cleanup method to stop all polling and prevent further submissions
+   * @dev Should be called when game ends or component unmounts
+   */
+  public cleanup(): void {
+    this.stopTrustedStatePolling();
+    this.hasSubmittedTrustedState = true;
+    this.hasSubmittedActions = true;
   }
 
   /**

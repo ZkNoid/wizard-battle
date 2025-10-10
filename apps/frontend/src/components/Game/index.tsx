@@ -49,7 +49,7 @@ export default function Game({
                   ? window.localStorage.getItem('playerId') || ''
                   : '';
               gamePhaseManager?.surrender(playerId);
-              router.push('/');
+              // router.push('/');
             }}
             text="Give up"
           />
