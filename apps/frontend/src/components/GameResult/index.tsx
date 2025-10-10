@@ -18,6 +18,7 @@ import {
 } from '@/lib/constants/levels';
 import { useMinaAppkit } from 'mina-appkit';
 import { api } from '@/trpc/react';
+import { useInGameStore, useUserInformationStore } from '@/lib/store';
 
 export default function GameResult({
   type,
@@ -30,6 +31,7 @@ export default function GameResult({
   const { setBackground } = useBackgroundImageStore();
   const text = type === 'win' ? 'You Win' : 'You Lose';
   const phraseDelay = 0.5 + text.length * 0.1 + 0.2;
+  const { setDefaultState } = useUserInformationStore();
   const { address } = useMinaAppkit();
   const { mutate: gainXp } = api.users.gainXp.useMutation();
   const { data: user } = api.users.get.useQuery(
@@ -46,6 +48,11 @@ export default function GameResult({
     return () => {
       setBackground('base');
     };
+  }, []);
+
+  // Update state to default one
+  useEffect(() => {
+    setDefaultState();
   }, []);
 
   // Gain XP process, need to improve when changed xp logic

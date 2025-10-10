@@ -7,7 +7,11 @@ import {
   type State,
 } from '../../../../common/stater/state';
 import { Field, Int64 } from 'o1js';
-import { SpellStats } from '../../../../common/stater/structs';
+import {
+  Position,
+  PositionOption,
+  SpellStats,
+} from '../../../../common/stater/structs';
 import type { GamePhaseManager } from '@/game/GamePhaseManager';
 import { allWizards } from '../../../../common/wizards';
 interface UserInformationStore {
@@ -24,6 +28,7 @@ interface UserInformationStore {
   setSelectedSkills: (skills: SpellStats[]) => void;
   setGamePhaseManager: (gamePhaseManager: GamePhaseManager) => void;
   setActionSend: (actionSend: boolean) => void;
+  setDefaultState: () => void;
   clearSocket: () => void;
   isBootstrapped: boolean;
   setBootstrapped: (bootstrapped: boolean) => void;
@@ -91,6 +96,34 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
   setGamePhaseManager: (gamePhaseManager: GamePhaseManager) =>
     set({ gamePhaseManager }),
   setActionSend: (actionSend: boolean) => set({ actionSend }),
+  setDefaultState: () => {
+    set((state) => {
+      if (!state.stater) {
+        return state;
+      }
+
+      let wizard = allWizards.find(
+        (wizard) =>
+          wizard.id.toString() === state.stater?.state.wizardId.toString()
+      );
+
+      if (!wizard) {
+        console.log('setDefaultState: wizard not found');
+        return state;
+      }
+
+      state.stater.state = wizard.defaultState();
+      state.stater.state.playerStats.position = new PositionOption({
+        value: new Position({
+          x: Int64.from(Math.floor(Math.random() * 8)),
+          y: Int64.from(Math.floor(Math.random() * 8)),
+        }),
+        isSome: Field(1),
+      });
+
+      return state;
+    });
+  },
   clearSocket: () => {
     set((state) => {
       if (state.socket) {

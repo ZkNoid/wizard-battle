@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { MAX_SELECTED_SKILLS } from '@/lib/constants/wizards';
 import { type Wizard } from '../../../../common/wizards';
 import { allSpells } from '../../../../common/stater/spells';
-import type { SpellStats } from '../../../../common/stater/structs';
+import { SpellStats } from '../../../../common/stater/structs';
 
 export default function CharacterSelect({
   setPlayStep,
@@ -86,7 +86,10 @@ export default function CharacterSelect({
                       if (selectedSkillsLength < MAX_SELECTED_SKILLS) {
                         setSelectedSkills([
                           ...selectedSkills,
-                          spell.defaultValue,
+                          // Copy spell stats
+                          SpellStats.fromJSON(
+                            SpellStats.toJSON(spell.defaultValue)
+                          ),
                         ]);
                       }
                     }
