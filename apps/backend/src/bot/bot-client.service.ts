@@ -109,6 +109,7 @@ export class BotClient {
   private hasSubmittedActions: boolean = false;
   private hasSubmittedTrustedState: boolean = false;
   private endOfRoundPollingInterval: NodeJS.Timeout | null = null;
+  private matchStartTimeout: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly botId: string,
@@ -201,6 +202,15 @@ export class BotClient {
       console.log(`🤖 Bot ${this.botId} found match:`, data);
       this.currentRoomId = data.roomId;
       this.opponentState = data.opponentSetup?.[0] || null;
+
+      // Start a guard timer: if no newTurn arrives soon, assume room is invalid
+      if (this.matchStartTimeout) clearTimeout(this.matchStartTimeout);
+      this.matchStartTimeout = setTimeout(() => {
+        console.warn(
+          `🤖 Bot ${this.botId} did not receive newTurn after matchFound; abandoning room ${this.currentRoomId}`
+        );
+        this.abandonRoomAndDisconnect();
+      }, 15000);
     });
 
     this.socket.on('queueUpdate', (data) => {
@@ -211,6 +221,12 @@ export class BotClient {
     this.socket.on('newTurn', (data) => {
       console.log(`🤖 Bot ${this.botId} new turn:`, data);
       this.gamePhase = data.phase;
+
+      // Clear match start guard timer on first turn
+      if (this.matchStartTimeout) {
+        clearTimeout(this.matchStartTimeout);
+        this.matchStartTimeout = null;
+      }
 
       // Stop any existing polling
       this.stopPollingForEndOfRound();
@@ -271,6 +287,8 @@ export class BotClient {
       } else {
         console.log(`💀 Bot ${this.botId} lost the game.`);
       }
+      // Cleanly disconnect after game ends
+      this.abandonRoomAndDisconnect();
     });
 
     // Error handling
@@ -300,8 +318,35 @@ export class BotClient {
       if (errorMessage.includes('Invalid phase for trusted state submission')) {
         this.hasSubmittedTrustedState = false;
         this.startPollingForEndOfRound();
+      } else if (errorMessage.includes('Game state not found')) {
+        // Room/game no longer exists; stop any further submissions for this turn
+        this.hasSubmittedTrustedState = true;
+        this.stopPollingForEndOfRound();
+        this.abandonRoomAndDisconnect();
       }
     });
+  }
+
+  /**
+   * @notice Abandon current room context and disconnect the bot's socket.
+   * @dev Prevents further submissions when room/game state is missing.
+   */
+  private abandonRoomAndDisconnect(): void {
+    this.stopPollingForEndOfRound();
+    if (this.matchStartTimeout) {
+      clearTimeout(this.matchStartTimeout);
+      this.matchStartTimeout = null;
+    }
+    this.hasSubmittedActions = true;
+    this.hasSubmittedTrustedState = true;
+    this.currentRoomId = null;
+
+    if (this.socket) {
+      try {
+        this.socket.disconnect();
+      } catch {}
+      this.socket = null;
+    }
   }
 
   /**
