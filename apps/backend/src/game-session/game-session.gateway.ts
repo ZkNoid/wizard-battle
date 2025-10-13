@@ -91,6 +91,22 @@ export class GameSessionGateway {
     this.gameStateService.subscribeToRoomEvents(async (data) => {
       await this.handleCrossInstanceEvent(data);
     });
+
+    // Perform startup cleanup once Redis is ready
+    if (this.gameStateService.isRedisReady()) {
+      this.gameStateService
+        .startupCleanup()
+        .catch((e) => console.error('startupCleanup error:', e));
+    } else {
+      // Retry cleanup shortly after to allow Redis to connect
+      setTimeout(() => {
+        if (this.gameStateService.isRedisReady()) {
+          this.gameStateService
+            .startupCleanup()
+            .catch((e) => console.error('startupCleanup error:', e));
+        }
+      }, 2000);
+    }
   }
 
   /**
@@ -167,6 +183,10 @@ export class GameSessionGateway {
     socket: Socket,
     data: { addToQueue: IAddToQueue }
   ) {
+    if (!this.gameStateService.isRedisReady()) {
+      console.warn('joinMatchmaking rejected: Redis not ready');
+      return null;
+    }
     return await this.matchmakingService.joinMatchmaking(
       socket,
       data.addToQueue
@@ -186,6 +206,10 @@ export class GameSessionGateway {
     socket: Socket,
     data: { addToQueue: IAddToQueue }
   ) {
+    if (!this.gameStateService.isRedisReady()) {
+      console.warn('joinBotMatchmaking rejected: Redis not ready');
+      return null;
+    }
     return await this.matchmakingService.joinBotMatchmaking(
       socket,
       data.addToQueue

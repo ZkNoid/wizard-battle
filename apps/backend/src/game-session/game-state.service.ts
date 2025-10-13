@@ -70,6 +70,94 @@ export class GameStateService {
   }
 
   /**
+   * Indicates whether Redis is connected and ready.
+   */
+  isRedisReady(): boolean {
+    return this.redisService.isRedisConnected();
+  }
+
+  /**
+   * Performs a best-effort cleanup of stale queues, matches, and game states on startup.
+   * - Clears the waiting queue (safe to repopulate)
+   * - Removes matches whose player socketIds are no longer mapped
+   * - Removes game states for rooms with no mapped sockets or very old creation time
+   */
+  async startupCleanup(maxAgeMs: number = 60 * 60 * 1000): Promise<void> {
+    try {
+      // Clear waiting queue to avoid dangling entries from prior runs
+      try {
+        await this.redisClient.del('waiting:queue');
+      } catch {}
+
+      // Load current socket mappings as a quick online presence signal
+      let socketMappings: Record<string, string> = {};
+      try {
+        socketMappings = await this.redisClient.hGetAll('socket_mappings');
+      } catch {}
+
+      const isSocketKnown = (socketId?: string): boolean => {
+        if (!socketId) return false;
+        return Object.prototype.hasOwnProperty.call(socketMappings, socketId);
+      };
+
+      // Prune matches with offline players
+      try {
+        const matches = await this.redisClient.hGetAll('matches');
+        for (const [roomId, raw] of Object.entries(matches)) {
+          try {
+            const match = JSON.parse(raw as string);
+            const p1Online = isSocketKnown(match?.player1?.socketId);
+            const p2Online = isSocketKnown(match?.player2?.socketId);
+            if (!p1Online && !p2Online) {
+              await this.redisClient.hDel('matches', roomId);
+              await this.redisClient.hDel('game_states', roomId);
+              await this.redisClient.del(`player_actions:${roomId}`);
+              await this.redisClient.del(`trusted_states:${roomId}`);
+              await this.redisClient.del(`room_cleanup:${roomId}`);
+              // Also scrub any socket_mappings tied to this room
+              const allMappings =
+                await this.redisClient.hGetAll('socket_mappings');
+              for (const [sid, rawMap] of Object.entries(allMappings)) {
+                try {
+                  const map = JSON.parse(rawMap);
+                  if (map?.roomId === roomId) {
+                    await this.redisClient.hDel('socket_mappings', sid);
+                  }
+                } catch {}
+              }
+            }
+          } catch {}
+        }
+      } catch {}
+
+      // Prune very old or socket-less game states
+      try {
+        const gameStates = await this.redisClient.hGetAll('game_states');
+        const now = Date.now();
+        for (const [roomId, raw] of Object.entries(gameStates)) {
+          try {
+            const state = JSON.parse(raw as string);
+            const createdAt = Number(state?.createdAt || 0);
+            const players = Array.isArray(state?.players) ? state.players : [];
+            const anyMapped = players.some((p: any) =>
+              isSocketKnown(p?.socketId)
+            );
+            const tooOld = createdAt > 0 && now - createdAt > maxAgeMs;
+            if (!anyMapped || tooOld) {
+              await this.redisClient.hDel('game_states', roomId);
+              await this.redisClient.del(`player_actions:${roomId}`);
+              await this.redisClient.del(`trusted_states:${roomId}`);
+              await this.redisClient.del(`room_cleanup:${roomId}`);
+            }
+          } catch {}
+        }
+      } catch {}
+    } catch (e) {
+      console.error('startupCleanup failed:', (e as Error).message);
+    }
+  }
+
+  /**
    * Get the current instance ID
    * @returns The unique identifier for this instance
    */
