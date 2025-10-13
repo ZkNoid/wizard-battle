@@ -311,16 +311,25 @@ export class BotService {
       return null; // No spells available
     }
 
-    // Get pre-generated spell IDs from allSpells array
+    // Get spell IDs directly from the bot's available spells instead of looking up by name
+    const botSpellIds = availableSpells.map((s) => s.spellId.toString());
+
+    // Find spell types by looking up the spell names from allSpells
     const fireballSpell = allSpells.find((s) => s.name === 'FireBall');
     const lightningSpell = allSpells.find((s) => s.name === 'Lightning');
     const teleportSpell = allSpells.find((s) => s.name === 'Teleport');
     const healSpell = allSpells.find((s) => s.name === 'Heal');
 
+    // Check which spell IDs the bot actually has
     const FIREBALL_ID = fireballSpell?.id.toString();
     const LIGHTNING_ID = lightningSpell?.id.toString();
     const TELEPORT_ID = teleportSpell?.id.toString();
     const HEAL_ID = healSpell?.id.toString();
+
+    const hasFireball = botSpellIds.includes(FIREBALL_ID || '');
+    const hasLightning = botSpellIds.includes(LIGHTNING_ID || '');
+    const hasTeleport = botSpellIds.includes(TELEPORT_ID || '');
+    const hasHeal = botSpellIds.includes(HEAL_ID || '');
 
     const prevSpell = allSpells.find(
       (s) => s.id.toString() === prevAction?.spellId
@@ -332,12 +341,15 @@ export class BotService {
     // Example: if prevAction spell is Lightning, then pick Teleport or Heal
     if (prevSpell && prevSpell.target === 'enemy') {
       // Pick a random available spell Teleport or Heal
-      const allowed = new Set(
-        [TELEPORT_ID, HEAL_ID].filter((id): id is string => !!id)
-      );
-      filteredSpells = availableSpells.filter((s) =>
-        allowed.has(s.spellId.toString())
-      );
+      const allowedIds: string[] = [];
+      if (hasTeleport && TELEPORT_ID) allowedIds.push(TELEPORT_ID);
+      if (hasHeal && HEAL_ID) allowedIds.push(HEAL_ID);
+
+      if (allowedIds.length > 0) {
+        filteredSpells = availableSpells.filter((s) =>
+          allowedIds.includes(s.spellId.toString())
+        );
+      }
     }
 
     // Pick a random available spell
@@ -361,7 +373,7 @@ export class BotService {
 
     // Generate appropriate spell cast info based on spell type
     // The frontend expects spellCastInfo to be JSON that can be parsed by spell.modifyerData.fromJSON()
-    if (spellId === TELEPORT_ID) {
+    if (hasTeleport && spellId === TELEPORT_ID) {
       // Teleport spell - needs position data in Field format
       // For teleport, bot should target its own map (self-teleport)
       const selfTargetPos = this.generateRandomPosition(targetPos);
@@ -378,7 +390,7 @@ export class BotService {
           },
         },
       });
-    } else if (spellId === HEAL_ID) {
+    } else if (hasHeal && spellId === HEAL_ID) {
       // Heal spell - no additional data needed (heals self)
       targetMap = 'ally';
       spellCastInfo = JSON.stringify({});
@@ -452,7 +464,10 @@ export class BotService {
         b: { x: number; y: number }
       ) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 
-      // Get pre-generated spell IDs from allSpells array
+      // Get spell IDs directly from the bot's available spells
+      const botSpellIds = parsed.spellStats.map((s: any) => s.spellId);
+
+      // Find spell types by looking up the spell names from allSpells
       const fireballSpell = allSpells.find((s) => s.name === 'FireBall');
       const lightningSpell = allSpells.find((s) => s.name === 'Lightning');
       const teleportSpell = allSpells.find((s) => s.name === 'Teleport');
@@ -462,6 +477,11 @@ export class BotService {
       const LIGHTNING_ID = lightningSpell?.id.toString();
       const TELEPORT_ID = teleportSpell?.id.toString();
       const HEAL_ID = healSpell?.id.toString();
+
+      const hasFireball = botSpellIds.includes(FIREBALL_ID || '');
+      const hasLightning = botSpellIds.includes(LIGHTNING_ID || '');
+      const hasTeleport = botSpellIds.includes(TELEPORT_ID || '');
+      const hasHeal = botSpellIds.includes(HEAL_ID || '');
 
       // Apply opponent actions damage to bot (use position BEFORE bot's own actions)
       let damagedThisRound = false;

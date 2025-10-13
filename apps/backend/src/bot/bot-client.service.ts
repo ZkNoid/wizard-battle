@@ -237,9 +237,16 @@ export class BotClient {
 
       // If it's spell casting phase, submit actions after a short delay
       if (data.phase === GamePhase.SPELL_CASTING) {
+        console.log(`🤖 Bot ${this.botId} starting spell casting phase`);
         setTimeout(
           () => {
-            this.submitActions();
+            // Double-check phase hasn't changed during delay
+            if (
+              this.gamePhase === GamePhase.SPELL_CASTING &&
+              !this.hasSubmittedActions
+            ) {
+              this.submitActions();
+            }
           },
           Math.random() * 2000 + 1000
         ); // Random delay 1-3 seconds
@@ -249,6 +256,7 @@ export class BotClient {
     this.socket.on('allPlayerActions', (allActions) => {
       console.log(`🤖 Bot ${this.botId} received all actions:`, allActions);
       this.gamePhase = GamePhase.SPELL_PROPAGATION;
+      console.log(`🤖 Bot ${this.botId} phase changed to SPELL_PROPAGATION`);
       // Store actions for use when generating trusted state
       this.lastAllActions = allActions as { [playerId: string]: IUserActions };
     });
@@ -256,6 +264,7 @@ export class BotClient {
     this.socket.on('applySpellEffects', () => {
       console.log(`🤖 Bot ${this.botId} applying spell effects...`);
       this.gamePhase = GamePhase.SPELL_EFFECTS;
+      console.log(`🤖 Bot ${this.botId} phase changed to SPELL_EFFECTS`);
 
       // Begin polling for END_OF_ROUND before submitting trusted state
       this.startPollingForEndOfRound();
@@ -264,6 +273,7 @@ export class BotClient {
     this.socket.on('updateUserStates', (data) => {
       console.log(`🤖 Bot ${this.botId} received state updates:`, data);
       this.gamePhase = GamePhase.STATE_UPDATE;
+      console.log(`🤖 Bot ${this.botId} phase changed to STATE_UPDATE`);
 
       // Stop polling since we're now in STATE_UPDATE phase
       this.stopPollingForEndOfRound();
@@ -359,6 +369,9 @@ export class BotClient {
       this.gamePhase !== GamePhase.SPELL_CASTING ||
       this.hasSubmittedActions
     ) {
+      console.log(
+        `🤖 Bot ${this.botId} skipping action submission: phase=${this.gamePhase}, hasSubmitted=${this.hasSubmittedActions}`
+      );
       return;
     }
 
