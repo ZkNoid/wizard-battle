@@ -67,6 +67,23 @@ export default function GamePage() {
   // Derived state
   const entities = getAllEntities();
 
+  const syncState = () => {
+    // Sync player state
+
+    if (staterRef.current) {
+      const newXAlly = +staterRef.current.state.playerStats.position.value.x;
+      const newYAlly = +staterRef.current.state.playerStats.position.value.y;
+      gameEventEmitter.move('user', newXAlly, newYAlly);
+    }
+
+    // Sync opponent state
+    if (opponentStateRef.current) {
+      const newXEnemy = +opponentStateRef.current.playerStats.position.value.x;
+      const newYEnemy = +opponentStateRef.current.playerStats.position.value.y;
+      gameEventEmitter.move('enemy', newXEnemy, newYEnemy);
+    }
+  };
+
   // Utility functions
   const indexToCoordinates = useCallback((index: number) => {
     const x = index % GRID_WIDTH;
@@ -118,19 +135,26 @@ export default function GamePage() {
 
   const submitSpellAction = useCallback(
     (
-      userAction: IUserAction,
+      userAction: IUserAction | null,
       updatedActionInfo: { movementDone: boolean; spellCastDone: boolean }
     ) => {
+      let actions = preparedActions;
+      if (userAction) {
+        actions = [...actions, userAction];
+      }
+
       if (!updatedActionInfo.movementDone || !updatedActionInfo.spellCastDone) {
         console.log('Adding to prepared actions');
-        setPreparedActions([...preparedActions, userAction]);
+        if (userAction) {
+          setPreparedActions(actions);
+        }
         return;
       }
 
       console.log('Submitting actions');
 
       const userActions: IUserActions = {
-        actions: [...preparedActions, userAction],
+        actions,
         signature: '',
       };
 
@@ -184,11 +208,25 @@ export default function GamePage() {
         return;
       }
 
-      const userAction = createUserAction(spellId.toString(), x, y, isEnemy);
+      let userAction = createUserAction(spellId.toString(), x, y, isEnemy);
       if (!userAction) return;
 
-      console.log('userAction:', userAction);
       setActionInfo(updatedActionInfo);
+
+      console.log(
+        'userAction.playerId:',
+        userAction.playerId,
+        stater?.state?.playerId?.toString()
+      );
+      if (userAction.playerId === stater?.state?.playerId?.toString()) {
+        console.log('Apply actions locally');
+        stater.applyActions({ actions: [userAction], signature: '' });
+        syncState();
+        userAction = null;
+      }
+
+      console.log('userAction:', userAction);
+
       submitSpellAction(userAction, updatedActionInfo);
 
       // Play animation
@@ -261,24 +299,7 @@ export default function GamePage() {
     const { state } = staterRef.current;
     console.log('staterRef.current.state:', state);
 
-    const newXAlly = +state.playerStats.position.value.x;
-    const newYAlly = +state.playerStats.position.value.y;
-    console.log('Moving user to:', newXAlly, newYAlly);
-    gameEventEmitter.move('user', newXAlly, newYAlly);
-
-    if (!opponentStateRef.current) {
-      console.log('Opponent state not found');
-      return;
-    }
-
-    const opponentState = opponentStateRef.current;
-    if (+opponentState.playerStats.position.isSome) {
-      const newXEnemy = +opponentState.playerStats.position.value.x;
-      const newYEnemy = +opponentState.playerStats.position.value.y;
-      gameEventEmitter.move('enemy', newXEnemy, newYEnemy);
-    } else {
-      gameEventEmitter.move('enemy', -1, -1);
-    }
+    syncState();
   }, [setActionSend]);
 
   // Effects
