@@ -47,6 +47,8 @@ export function Spells({
               alt={'skill'}
               width={64}
               height={64}
+              quality={100}
+              unoptimized={true}
             />
             <div className="invisible absolute inset-0 z-0 flex size-full items-center justify-center border-4 border-black backdrop-blur-[2px] group-disabled:visible">
               <span className="font-pixel text-lg text-white">

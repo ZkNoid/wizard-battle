@@ -14,6 +14,8 @@ export function Users() {
 
   const [playerName, setPlayerName] = useState<string>('You');
   const [opponentName, setOpponentName] = useState<string>('Opponent');
+  const [isPlayerHovered, setIsPlayerHovered] = useState<boolean>(false);
+  const [isOpponentHovered, setIsOpponentHovered] = useState<boolean>(false);
 
   const { data: user } = api.users.get.useQuery(
     {
@@ -51,11 +53,8 @@ export function Users() {
     <div className="col-span-6 row-span-1 grid grid-cols-6 items-center gap-x-5">
       {/* Left user bar */}
       <UserBar
-        name={
-          stater
-            ? `${playerName} (${stater?.state.playerId.toString()})`
-            : playerName
-        }
+        name={playerName}
+        playerId={stater?.state.playerId.toString()}
         level={user && user.xp ? levelFromXp(user.xp) : 0}
         health={stater ? +stater!.state.playerStats.hp : 0}
         maxHealth={100}
@@ -66,14 +65,14 @@ export function Users() {
             : 'warrior'
         }
         className="col-span-3 col-start-1"
+        onMouseEnter={() => setIsPlayerHovered(true)}
+        onMouseLeave={() => setIsPlayerHovered(false)}
+        showId={isPlayerHovered}
       />
       {/* Right user bar */}
       <UserBar
-        name={
-          opponentState
-            ? `${opponentName} (${opponentState?.playerId.toString()})`
-            : opponentName
-        }
+        name={opponentName}
+        playerId={opponentState?.playerId.toString()}
         // TODO: Uncomment this when we have a way to get the opponent's account
         // level={opponentAccount && opponentAccount.xp ? levelFromXp(opponentAccount.xp) : 0}
         level={0}
@@ -85,6 +84,9 @@ export function Users() {
             : 'warrior'
         }
         className="col-span-3 col-start-4"
+        onMouseEnter={() => setIsOpponentHovered(true)}
+        onMouseLeave={() => setIsOpponentHovered(false)}
+        showId={isOpponentHovered}
       />
     </div>
   );

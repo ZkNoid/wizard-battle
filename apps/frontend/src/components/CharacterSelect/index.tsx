@@ -69,8 +69,9 @@ export default function CharacterSelect({
                   )}
                   src={spell.image ?? ''}
                   alt={'skill'}
-                  width={22.5}
-                  height={22.5}
+                  fill
+                  quality={100}
+                  unoptimized={true}
                   onClick={() => {
                     if (
                       selectedSkills.some(

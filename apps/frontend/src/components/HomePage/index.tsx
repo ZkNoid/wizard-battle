@@ -1,7 +1,5 @@
 'use client';
 
-import { MainMenu } from './MainMenu';
-import { ZknoidLink } from './ZknoidLink';
 import { SocialLinks } from './SocialLinks';
 import { useEffect, useState } from 'react';
 import { Tab } from '@/lib/enums/Tab';
@@ -10,22 +8,16 @@ import Support from '../Support';
 import { TopBarIcon } from '../BaseLayout/assets/top-bar-icon';
 import Image from 'next/image';
 import background from '../../../public/menu/background.svg';
-import hoverCraft from '../../../public/menu/hover-craft.svg';
-import hoverExpeditions from '../../../public/menu/hover-expeditions.svg';
-import hoverPVP from '../../../public/menu/hover-pvp.svg';
-import hoverMarket from '../../../public/menu/hover-market.svg';
+import hoverCraft from '../../../public/menu/hover-craft.png';
+import hoverExpeditions from '../../../public/menu/hover-expeditions.png';
+import hoverPVP from '../../../public/menu/hover-pvp.png';
+import hoverMarket from '../../../public/menu/hover-market.png';
 import hoverMarketSmall from '../../../public/menu/hover-market-small.svg';
-import hoverCharacters from '../../../public/menu/hover-characters.svg';
+import hoverCharacters from '../../../public/menu/hover-characters.png';
 import { SettingsBar } from '../BaseLayout/SettingsBar';
 import Wallet from '../Wallet';
 import { Button } from '../shared/Button';
-import { DiamondIcon } from './assets/diamond-icon';
-import { GoldCoinIcon } from './assets/gold-coin-icon';
 import BoxButton from '../shared/BoxButton';
-import { MarketIcon } from './assets/market-icon';
-import { InventoryIcon } from './assets/inventory-icon';
-import { MailIcon } from './assets/mail-icon';
-import { TournamentsIcon } from './assets/tournaments-icon';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useMinaAppkit } from 'mina-appkit';
@@ -65,16 +57,48 @@ export default function HomePage() {
         <SettingsBar setTab={setTab} />
         <div className="flex w-full items-center justify-center gap-5">
           <BoxButton color="gray" onClick={() => {}} className="size-16">
-            <MarketIcon className="size-8" />
+            <Image
+              src={'/icons/market.png'}
+              width={32}
+              height={32}
+              quality={100}
+              unoptimized={true}
+              alt="market"
+              className="h-8 w-8"
+            />
           </BoxButton>
           <BoxButton color="gray" onClick={() => {}} className="size-16">
-            <InventoryIcon className="size-8" />
+            <Image
+              src={'/icons/inventory.png'}
+              width={28}
+              height={32}
+              quality={100}
+              unoptimized={true}
+              alt="inventory"
+              className="h-8 w-7"
+            />
           </BoxButton>
           <BoxButton color="gray" onClick={() => {}} className="size-16">
-            <MailIcon className="size-8" />
+            <Image
+              src={'/icons/mail.png'}
+              width={32}
+              height={23}
+              quality={100}
+              unoptimized={true}
+              alt="mail"
+              className="h-6 w-8"
+            />
           </BoxButton>
           <BoxButton color="gray" onClick={() => {}} className="size-16">
-            <TournamentsIcon className="size-8" />
+            <Image
+              src={'/icons/tournaments.png'}
+              width={36}
+              height={32}
+              quality={100}
+              unoptimized={true}
+              alt="tournaments"
+              className="h-8 w-9"
+            />
           </BoxButton>
         </div>
         <div className="grid w-full grid-cols-3 items-center gap-10">
@@ -82,14 +106,30 @@ export default function HomePage() {
             variant="gray"
             className="w-70 h-15 flex items-center gap-2.5"
           >
-            <GoldCoinIcon className="size-8" />
+            <Image
+              src={'/icons/gold-coin.png'}
+              width={32}
+              height={32}
+              unoptimized={true}
+              alt="gold-coin"
+              quality={100}
+              className="h-8 w-8"
+            />
             <span>100M</span>
           </Button>
           <Button
             variant="gray"
             className="w-70 h-15 flex items-center gap-2.5"
           >
-            <DiamondIcon className="size-8" />
+            <Image
+              src={'/icons/diamond.png'}
+              width={32}
+              height={28}
+              unoptimized={true}
+              quality={100}
+              alt="diamond"
+              className="h-7 w-8"
+            />
             <span>1.25K</span>
           </Button>
           <Wallet />

@@ -1,29 +1,35 @@
 import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
 import { WizardNameBackground } from './assets/wizard-name-background';
-import { WizardImage } from './assets/wizard-image';
-import { WarriorImage } from './assets/warrior-image';
-import { ElveImage } from './assets/elve-image';
 import { WizardTypeBackground } from './assets/wizard-type-background';
 import { WizardStaffIcon } from './assets/wizard-staff-icon';
 import { HpBackground } from './assets/hp-background';
 import { LvlBackground } from './assets/lvl-background';
 import { WarriorSwordIcon } from './assets/warrior-sword-icon';
+import Image from 'next/image';
 
 export function UserBar({
   name,
+  playerId,
   level,
   health,
   maxHealth,
   wizardType,
   className,
+  onMouseEnter,
+  onMouseLeave,
+  showId,
 }: {
   name: string;
+  playerId?: string;
   level: number;
   health: number;
   maxHealth: number;
   wizardType: 'wizard' | 'warrior' | 'elve';
   className?: string;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
+  showId?: boolean;
 }) {
   const healthPercentage = (health / maxHealth) * 100;
 
@@ -31,9 +37,39 @@ export function UserBar({
     <div className={cn('flex flex-row items-center gap-0', className)}>
       {/* Avatar */}
       <div className="w-35 h-35 border-3 border-main-gray overflow-hidden bg-[#FBFAFA]">
-        {wizardType === 'wizard' && <WizardImage className="h-full w-full" />}
-        {wizardType === 'warrior' && <WarriorImage className="h-full w-full" />}
-        {wizardType === 'elve' && <ElveImage className="h-full w-full" />}
+        {wizardType === 'wizard' && (
+          <Image
+            src={'/wizards/avatars/wizard.png'}
+            width={140}
+            height={140}
+            quality={100}
+            unoptimized={true}
+            alt="wizard"
+            className="h-full w-full"
+          />
+        )}
+        {wizardType === 'warrior' && (
+          <Image
+            src={'/wizards/avatars/warrior.png'}
+            width={140}
+            height={140}
+            quality={100}
+            unoptimized={true}
+            alt="warrior"
+            className="h-full w-full"
+          />
+        )}
+        {wizardType === 'elve' && (
+          <Image
+            src={'/wizards/avatars/elve.png'}
+            width={140}
+            height={140}
+            quality={100}
+            unoptimized={true}
+            alt="elve"
+            className="h-full w-full"
+          />
+        )}
       </div>
       <div className="flex flex-col gap-0">
         <div className="-mb-3 flex flex-row items-center gap-1">
@@ -47,9 +83,13 @@ export function UserBar({
               )}
               <WizardTypeBackground className="-z-1 absolute inset-0 size-full" />
             </div>
-            <div className="relative -ml-5 mt-1.5 flex h-12 w-60 items-center justify-center">
+            <div
+              className="relative -ml-5 mt-1.5 flex h-12 w-60 cursor-pointer items-center justify-center"
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={onMouseLeave}
+            >
               <span className="font-pixel text-base text-[#070C19]">
-                {name}
+                {showId && playerId ? `ID: ${playerId}` : name}
               </span>
               <WizardNameBackground className="-z-1 absolute inset-0 size-full" />
             </div>

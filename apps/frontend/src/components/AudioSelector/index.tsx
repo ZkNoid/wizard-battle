@@ -1,10 +1,10 @@
 'use client';
 
 import BoxButton from '../shared/BoxButton';
-import { AudioIcon } from './assets/audio-icon';
 import { VolumeBar } from './assets/volume-bar';
 import { VolumeHandle } from './assets/volume-handle';
 import { useState } from 'react';
+import Image from 'next/image';
 
 export default function AudioSelector() {
   const [isActive, setIsActive] = useState<boolean>(true);
@@ -18,7 +18,27 @@ export default function AudioSelector() {
         color="blue"
         className="size-16"
       >
-        <AudioIcon className="size-8" isActive={isActive} />
+        {isActive ? (
+          <Image
+            src={'/icons/sound-on.png'}
+            width={30}
+            height={24}
+            alt="audio-on"
+            quality={100}
+            unoptimized={true}
+            className="w-7.5 h-6"
+          />
+        ) : (
+          <Image
+            src={'/icons/sound-off.png'}
+            width={30}
+            height={24}
+            alt="audio-off"
+            quality={100}
+            unoptimized={true}
+            className="w-7.5 h-6"
+          />
+        )}
       </BoxButton>
       {/* Volume Slider */}
       <div className="w-50 relative h-7">

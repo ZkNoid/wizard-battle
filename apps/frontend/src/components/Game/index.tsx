@@ -14,6 +14,7 @@ import { QuestionmarkIcon } from './assets/questionmark-icon';
 import { SkillsBg } from './assets/skills-bg';
 import { ActionsBg } from './assets/actions-bg';
 import type { SpellStats } from '../../../../common/stater/structs';
+import Image from 'next/image';
 
 export default function Game({
   children,
@@ -62,7 +63,15 @@ export default function Game({
               );
             }}
           >
-            <QuestionmarkIcon className="size-8" />
+            <Image
+              src={'/icons/question.png'}
+              width={18}
+              height={27}
+              quality={100}
+              unoptimized={true}
+              alt="questionmark"
+              className="w-4.5 h-7"
+            />
           </BoxButton>
         </div>
         <div className="w-220 relative h-28">
