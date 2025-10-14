@@ -168,7 +168,6 @@ export default function GamePage() {
           ...actionInfo,
           movementDone: true,
         };
-        setActionInfo(updatedActionInfo);
       } else {
         if (actionInfo.spellCastDone) {
           console.log('Spell cast already done');
@@ -178,7 +177,6 @@ export default function GamePage() {
           ...actionInfo,
           spellCastDone: true,
         };
-        setActionInfo(updatedActionInfo);
       }
 
       if (!spellId) {
@@ -190,6 +188,7 @@ export default function GamePage() {
       if (!userAction) return;
 
       console.log('userAction:', userAction);
+      setActionInfo(updatedActionInfo);
       submitSpellAction(userAction, updatedActionInfo);
 
       // Play animation
