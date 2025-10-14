@@ -44,8 +44,8 @@ export const LightningBoldModifyer = (
 
   const distance = selfPosition.manhattanDistance(targetPosition);
 
-  const damage = Int64.from(100);
-  const damage2 = Int64.from(50);
+  const damage = Int64.from(80);
+  const damage2 = Int64.from(40);
 
   const directHit = distance.equals(UInt64.from(0));
   const nearbyHit = distance.equals(UInt64.from(1));
@@ -108,9 +108,9 @@ export const FireBallModifyer = (
 
   const distance = selfPosition.manhattanDistance(targetPosition);
 
-  const damage = Int64.from(60);
-  const damage2 = Int64.from(40);
-  const damage3 = Int64.from(20);
+  const damage = Int64.from(50);
+  const damage2 = Int64.from(25);
+  const damage3 = Int64.from(15);
 
   const directHit = distance.equals(UInt64.from(0));
   const nearbyHit = distance.equals(UInt64.from(1));
@@ -237,7 +237,7 @@ export const HealCast = (
 };
 
 export const HealModifyer = (state: State, spellCast: SpellCast<HealData>) => {
-  state.playerStats.hp = state.playerStats.hp.add(Int64.from(100));
+  state.playerStats.hp = state.playerStats.hp.add(Int64.from(50));
   // If the player has more health than the max health, set the health to the max health
   state.playerStats.hp = Provable.if(
     state.playerStats.hp.sub(state.playerStats.maxHp).isPositive(),
