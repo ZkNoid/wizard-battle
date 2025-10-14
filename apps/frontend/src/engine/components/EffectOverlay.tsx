@@ -27,6 +27,18 @@ const AVAILABLE_EFFECTS: Record<string, { json: string; image: string }> = {
     json: '/assets/spritesheets/Sourcer_Teleport_Finish.json',
     image: '/assets/spritesheets/Sourcer_Teleport_Finish_Spritelist.png',
   },
+  laser_center: {
+    json: '/assets/spritesheets/Laser_Reaction_Center.json',
+    image: '/assets/spritesheets/Laser_Reaction_Center.png',
+  },
+  laser_horisontal: {
+    json: '/assets/spritesheets/Laser_Reaction_Left.json',
+    image: '/assets/spritesheets/Laser_Reaction_Left.png',
+  },
+  laser_vertical: {
+    json: '/assets/spritesheets/Laser_Reaction_Bottom.json',
+    image: '/assets/spritesheets/Laser_Reaction_Bottom.png',
+  },
 };
 
 export function EffectOverlay({

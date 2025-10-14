@@ -191,6 +191,24 @@ export const LaserModifyer = (
   state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 };
 
+const LaserSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: any,
+  type: 'user' | 'enemy'
+) => {
+  for (let i = 0; i < 8; i++) {
+    if (i === y) continue;
+    gameEmitter.throwEffect(type, 'laser_vertical', x, i, 1.5);
+  }
+  for (let i = 0; i < 8; i++) {
+    if (i === x) continue;
+    gameEmitter.throwEffect(type, 'laser_horisontal', i, y, 1.5);
+  }
+
+  gameEmitter.throwEffect(type, 'laser_center', x, y, 1.5);
+};
+
 export class TeleportData extends Struct({
   position: Position,
 }) {}
@@ -330,6 +348,7 @@ export const mageSpells: ISpell<any>[] = [
     modifyer: LaserModifyer,
     cast: LaserCast,
     target: 'enemy',
+    sceneEffect: LaserSceneEffect,
     defaultValue: {
       spellId: CircuitString.fromString('Laser').hash(),
       cooldown: Int64.from(2),

@@ -42,6 +42,13 @@ const animations: Record<string, AnimationConfig> = {
     loop: false,
     scale: 1,
   },
+  laser: {
+    name: 'laser',
+    spritesheetJson: '/assets/spritesheets/Sourcer_Laser.json',
+    spritesheetImage: '/assets/spritesheets/Sourcer_Laser_Spritelist.png',
+    loop: false,
+    scale: 1,
+  },
   dead: {
     name: 'dead',
     spritesheetJson: '/assets/spritesheets/Sourcer_Dead.json',
