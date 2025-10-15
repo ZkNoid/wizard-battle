@@ -27,6 +27,7 @@ import {
   gameEventEmitter,
   EntityType,
 } from '@/engine';
+import { WizardId } from '../../../../common/wizards';
 
 // Constants
 const GRID_WIDTH = 8;
@@ -253,7 +254,9 @@ export default function GamePage() {
         gameEventEmitter.playAnimationOneTime(
           'user',
           spell.name.toLowerCase(),
-          3.6
+          stater?.state.wizardId.toString() === WizardId.ARCHER.toString()
+            ? 4.6
+            : 3.6
         );
       }
 
@@ -331,7 +334,12 @@ export default function GamePage() {
 
       const user = {
         id: 'user',
-        type: EntityType.WIZARD,
+        type:
+          stater?.state.wizardId.toString() === WizardId.MAGE.toString()
+            ? EntityType.WIZARD
+            : stater?.state.wizardId.toString() === WizardId.ARCHER.toString()
+              ? EntityType.ARCHER
+              : EntityType.WIZARD,
         tilemapPosition: DEFAULT_USER_POSITION,
       };
 
@@ -339,7 +347,12 @@ export default function GamePage() {
 
       const enemy = {
         id: 'enemy',
-        type: EntityType.WIZARD,
+        type:
+          opponentState?.wizardId.toString() === WizardId.MAGE.toString()
+            ? EntityType.WIZARD
+            : opponentState?.wizardId.toString() === WizardId.ARCHER.toString()
+              ? EntityType.ARCHER
+              : EntityType.WIZARD,
         tilemapPosition: DEFAULT_USER_POSITION,
       };
 
@@ -353,7 +366,7 @@ export default function GamePage() {
         isInitialized.current = false;
       };
     }
-  }, [initMovementHandler, addEntity, clearEntities]);
+  }, [initMovementHandler, addEntity, clearEntities, stater, opponentState]);
 
   useEffect(() => {
     gamePhaseManager?.setOnNewTurnHook(onNewTurnHook);

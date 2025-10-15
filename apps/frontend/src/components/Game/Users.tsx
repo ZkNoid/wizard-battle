@@ -58,11 +58,12 @@ export function Users() {
         level={user && user.xp ? levelFromXp(user.xp) : 0}
         health={stater ? +stater!.state.playerStats.hp : 0}
         maxHealth={100}
-        // TODO: Add elve handling
         wizardType={
           stater?.state.wizardId.toString() === WizardId.MAGE.toString()
             ? 'wizard'
-            : 'warrior'
+            : stater?.state.wizardId.toString() === WizardId.ARCHER.toString()
+              ? 'archer'
+              : 'warrior'
         }
         className="col-span-3 col-start-1"
         onMouseEnter={() => setIsPlayerHovered(true)}
@@ -79,9 +80,11 @@ export function Users() {
         health={opponentState ? +opponentState!.playerStats.hp : 0}
         maxHealth={100}
         wizardType={
-          stater?.state.wizardId.toString() === WizardId.MAGE.toString()
+          opponentState?.wizardId.toString() === WizardId.MAGE.toString()
             ? 'wizard'
-            : 'warrior'
+            : opponentState?.wizardId.toString() === WizardId.ARCHER.toString()
+              ? 'archer'
+              : 'warrior'
         }
         className="col-span-3 col-start-4"
         onMouseEnter={() => setIsOpponentHovered(true)}

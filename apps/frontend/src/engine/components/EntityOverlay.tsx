@@ -3,6 +3,7 @@ import type { IEntity } from '../types/IEntity';
 import { RedSquare } from '../entities/RedSquare';
 import { BlueSquare } from '../entities/BlueSquare';
 import { AnimatedWizard } from '../entities/AnimatedWizard';
+import { AnimatedArcher } from '../entities/AnimatedArcher';
 import { EntityType } from '../types/IEntity';
 
 interface EntityOverlayProps {
@@ -62,6 +63,9 @@ export function EntityOverlay({
             )}
             {entity.type === EntityType.WIZARD && (
               <AnimatedWizard entity={entity} />
+            )}
+            {entity.type === EntityType.ARCHER && (
+              <AnimatedArcher entity={entity} />
             )}
           </div>
         );

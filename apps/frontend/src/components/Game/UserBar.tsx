@@ -25,7 +25,7 @@ export function UserBar({
   level: number;
   health: number;
   maxHealth: number;
-  wizardType: 'wizard' | 'warrior' | 'elve';
+  wizardType: 'wizard' | 'warrior' | 'archer';
   className?: string;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
@@ -59,14 +59,14 @@ export function UserBar({
             className="h-full w-full"
           />
         )}
-        {wizardType === 'elve' && (
+        {wizardType === 'archer' && (
           <Image
-            src={'/wizards/avatars/elve.png'}
+            src={'/wizards/avatars/archer.png'}
             width={140}
             height={140}
             quality={100}
             unoptimized={true}
-            alt="elve"
+            alt="archer"
             className="h-full w-full"
           />
         )}
