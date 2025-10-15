@@ -83,7 +83,7 @@ export class Stater extends Struct({
 
     console.log('applyEffect', effectInfo.name);
 
-    effectInfo.apply(this.state, publicState);
+    effectInfo.apply(this.state, publicState, effect.param);
     effect.duration = effect.duration.sub(Field.from(1));
     effect.effectId = Provable.if(
       effect.duration.equals(Field.from(0)),

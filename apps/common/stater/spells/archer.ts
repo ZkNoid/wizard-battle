@@ -59,6 +59,7 @@ export const ArrowModifyer = (
     new Effect({
       effectId: CircuitString.fromString('Bleeding').hash(),
       duration: Field.from(3),
+      param: Field(0),
     }),
     'endOfRound'
   );
@@ -157,6 +158,7 @@ export const HailOfArrowsModifyer = (
       new Effect({
         effectId: CircuitString.fromString('Slowing').hash(),
         duration: Field.from(2),
+        param: Field(0),
       }),
       'endOfRound'
     );

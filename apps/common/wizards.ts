@@ -27,6 +27,7 @@ const mageDefaultState = () => {
     new Effect({
       effectId: EffectsId.Invisible!,
       duration: Field(-1),
+      param: Field(0),
     }),
     'public'
   );

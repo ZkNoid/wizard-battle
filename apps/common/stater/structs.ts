@@ -36,4 +36,5 @@ export interface SpellCast<T> {
 export class Effect extends Struct({
   effectId: Field,
   duration: Field,
+  param: Field,
 }) {}

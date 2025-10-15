@@ -61,6 +61,7 @@ describe('Mage Spells', () => {
           new Effect({
             effectId: Field(0),
             duration: Field(0),
+            param: Field(0),
           })
       );
 
@@ -71,6 +72,7 @@ describe('Mage Spells', () => {
           new Effect({
             effectId: Field(0),
             duration: Field(0),
+            param: Field(0),
           })
       );
 

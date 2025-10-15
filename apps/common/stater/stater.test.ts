@@ -49,6 +49,7 @@ describe('Stater', () => {
           new Effect({
             effectId: Field(0),
             duration: Field(0),
+            param: Field(0),
           })
       );
 
@@ -59,6 +60,7 @@ describe('Stater', () => {
           new Effect({
             effectId: Field(0),
             duration: Field(0),
+            param: Field(0),
           })
       );
 
@@ -169,6 +171,7 @@ describe('Stater', () => {
       const effect = new Effect({
         effectId: Field(999),
         duration: Field(3),
+        param: Field(0),
       });
 
       const publicState = stater.generatePublicState();
@@ -182,6 +185,7 @@ describe('Stater', () => {
       const effect = new Effect({
         effectId: Field(1),
         duration: Field(3),
+        param: Field(0),
       });
 
       const publicState = stater.generatePublicState();
@@ -199,6 +203,7 @@ describe('Stater', () => {
       stater.state.publicStateEffects[0] = new Effect({
         effectId: Field(10),
         duration: Field(3),
+        param: Field(0),
       });
 
       const publicState = stater.generatePublicState();
@@ -246,6 +251,7 @@ describe('Stater', () => {
       const effect = new Effect({
         effectId: Field(-1),
         duration: Field(0),
+        param: Field(0),
       });
 
       const publicState = stater.generatePublicState();
@@ -304,6 +310,7 @@ describe('Stater', () => {
       const effect = new Effect({
         effectId: Field(123),
         duration: Field(10),
+        param: Field(0),
       });
 
       expect(effect.effectId.toString()).toBe('123');

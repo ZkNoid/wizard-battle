@@ -57,12 +57,14 @@ export class State extends Struct({
         new Effect({
           effectId: Field(0),
           duration: Field(0),
+          param: Field(0),
         })
       ),
       publicStateEffects: Array(maxSpellEffects).fill(
         new Effect({
           effectId: Field(0),
           duration: Field(0),
+          param: Field(0),
         })
       ),
       map: Array(64).fill(Field(0)),
@@ -144,6 +146,7 @@ export class State extends Struct({
       effects[effectLength - 1] = new Effect({
         effectId: Field(0),
         duration: Field(0),
+        param: Field(0),
       });
       break;
     }
