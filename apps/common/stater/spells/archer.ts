@@ -165,6 +165,72 @@ export const HailOfArrowsModifyer = (
   }
 };
 
+export class DecoyData extends Struct({}) {}
+
+export const DecoyCast = (
+  state: State,
+  caster: Field,
+  target: Field
+): SpellCast<DecoyData> => {
+  return {
+    spellId: CircuitString.fromString('Decoy').hash(),
+    caster,
+    target,
+    additionalData: {},
+  };
+};
+
+export const DecoyModifyer = (
+  state: State,
+  spellCast: SpellCast<DecoyData>
+) => {
+  state.pushEffect(
+    new Effect({
+      effectId: CircuitString.fromString('Decoy').hash(),
+      duration: Field.from(2),
+      param: Field(0),
+    }),
+    'endOfRound'
+  );
+};
+
+export class CloudData extends Struct({
+  position: Position,
+}) {}
+
+export const CloudCast = (
+  state: State,
+  caster: Field,
+  target: Field,
+  position: Position
+): SpellCast<CloudData> => {
+  return {
+    spellId: CircuitString.fromString('Cloud').hash(),
+    caster,
+    target,
+    additionalData: {
+      position,
+    },
+  };
+};
+
+export const CloudModifyer = (
+  state: State,
+  spellCast: SpellCast<CloudData>
+) => {
+  state.pushEffect(
+    new Effect({
+      effectId: CircuitString.fromString('Cloud').hash(),
+      duration: Field.from(3),
+      param: Field(
+        spellCast.additionalData.position.x.toBigint() * 8n +
+          spellCast.additionalData.position.y.toBigint()
+      ),
+    }),
+    'endOfRound'
+  );
+};
+
 export const archerSpells: ISpell<any>[] = [
   {
     id: CircuitString.fromString('Arrow').hash(),
@@ -213,6 +279,40 @@ export const archerSpells: ISpell<any>[] = [
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('HailOfArrows').hash(),
+      cooldown: Int64.from(1),
+      currentCooldown: Int64.from(0),
+    },
+  },
+  {
+    id: CircuitString.fromString('Decoy').hash(),
+    wizardId: WizardId.ARCHER,
+    cooldown: Field(1),
+    name: 'Decoy',
+    description: 'Create a decoy',
+    image: '/wizards/skills/decoy.svg',
+    modifyerData: DecoyData,
+    modifyer: DecoyModifyer,
+    cast: DecoyCast,
+    target: 'ally',
+    defaultValue: {
+      spellId: CircuitString.fromString('Decoy').hash(),
+      cooldown: Int64.from(1),
+      currentCooldown: Int64.from(0),
+    },
+  },
+  {
+    id: CircuitString.fromString('Cloud').hash(),
+    wizardId: WizardId.ARCHER,
+    cooldown: Field(1),
+    name: 'Cloud',
+    description: 'Create a cloud',
+    image: '/wizards/skills/cloud.svg',
+    modifyerData: CloudData,
+    modifyer: CloudModifyer,
+    cast: CloudCast,
+    target: 'ally',
+    defaultValue: {
+      spellId: CircuitString.fromString('Cloud').hash(),
       cooldown: Int64.from(1),
       currentCooldown: Int64.from(0),
     },
