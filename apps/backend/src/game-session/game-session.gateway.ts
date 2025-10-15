@@ -989,6 +989,11 @@ export class GameSessionGateway {
     setTimeout(async () => {
       await this.gameStateService.advanceGamePhase(roomId);
       console.log(`🔄 Advanced room ${roomId} to END_OF_ROUND phase`);
+
+      // Emit explicit endOfRound to signal clients to submit trusted state exactly once (no polling)
+      const payload = { phase: GamePhase.END_OF_ROUND };
+      this.server.to(roomId).emit('endOfRound', payload);
+      await this.gameStateService.publishToRoom(roomId, 'endOfRound', payload);
     }, 2000); // 2 second delay for effect processing
   }
 

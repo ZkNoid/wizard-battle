@@ -46,6 +46,7 @@ export class GamePhaseManager {
   private hasSubmittedTrustedState = false; // Track if trusted state was submitted this turn
   private trustedStatePollingInterval: NodeJS.Timeout | null = null;
   private phaseTimerDeadlineMs: number | null = null;
+  private cachedTrustedStateForTurn?: ITrustedState; // Cached once per round
 
   constructor(
     socket: any,
@@ -105,6 +106,22 @@ export class GamePhaseManager {
     this.socket.on('applySpellEffects', () => {
       console.log('Received applySpellEffects');
       this.handleSpellEffects();
+    });
+
+    // New push-based trigger: server signals END_OF_ROUND explicitly
+    this.socket.on('endOfRound', () => {
+      console.log('Received endOfRound');
+      // Ensure local phase reflects END_OF_ROUND before single submission
+      this.updateCurrentPhase(GamePhase.END_OF_ROUND);
+
+      // If we already submitted, do nothing
+      if (this.hasSubmittedTrustedState) return;
+
+      // Submit cached/generated trusted state exactly once
+      if (!this.cachedTrustedStateForTurn) {
+        this.cachedTrustedStateForTurn = this.generateTrustedState();
+      }
+      this.submitTrustedStateNow(this.cachedTrustedStateForTurn);
     });
 
     this.socket.on('updateUserStates', (data: { states: ITrustedState[] }) => {
@@ -353,11 +370,8 @@ export class GamePhaseManager {
     // This would typically involve calling stater.applyActions()
     // and generating the trusted state
 
-    // Move to end of round phase
-    this.updateCurrentPhase(GamePhase.END_OF_ROUND);
-
-    // Start polling to submit trusted state when server is ready
-    this.startTrustedStatePolling();
+    // Generate and cache trusted state for this round, but do not submit yet
+    this.cachedTrustedStateForTurn = this.generateTrustedState();
   }
 
   // Phase 4: End of Round (handled by submitting trusted state above)
@@ -502,6 +516,7 @@ export class GamePhaseManager {
     this.hasSubmittedActions = false;
     this.hasSubmittedTrustedState = false;
     this.lastActions = undefined;
+    this.cachedTrustedStateForTurn = undefined;
 
     // Stop any polling from previous turn
     this.stopTrustedStatePolling();
@@ -565,24 +580,8 @@ export class GamePhaseManager {
   /**
    * @notice Starts polling to submit trusted state when server reaches END_OF_ROUND
    */
-  private startTrustedStatePolling(): void {
-    // Clear any existing polling interval
-    if (this.trustedStatePollingInterval) {
-      clearInterval(this.trustedStatePollingInterval);
-    }
-    const trustedState = this.generateTrustedState();
-
-    // Poll every 500ms to attempt trusted state submission until acknowledged
-    this.trustedStatePollingInterval = setInterval(() => {
-      if (this.hasSubmittedTrustedState) {
-        this.stopTrustedStatePolling();
-        return;
-      }
-
-      // Attempt to submit; server will accept only when phase is END_OF_ROUND
-      this.submitTrustedStateNow(trustedState);
-    }, 500);
-  }
+  // Deprecated: polling removed to prevent DoS. Kept as no-op for safety.
+  private startTrustedStatePolling(): void {}
 
   /**
    * @notice Stops polling for trusted state submission
