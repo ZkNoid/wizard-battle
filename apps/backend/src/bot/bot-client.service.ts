@@ -400,10 +400,15 @@ export class BotClient {
       clearInterval(this.endOfRoundPollingInterval);
     }
 
-    // Poll every 500ms to attempt trusted state submission until acknowledged
+    // Poll every 500ms; only attempt submission once phase is END_OF_ROUND
     this.endOfRoundPollingInterval = setInterval(() => {
       if (this.hasSubmittedTrustedState) {
         this.stopPollingForEndOfRound();
+        return;
+      }
+
+      // Wait until the game is actually in END_OF_ROUND before submitting
+      if (this.gamePhase !== GamePhase.END_OF_ROUND) {
         return;
       }
 
@@ -426,7 +431,12 @@ export class BotClient {
    * @notice Submits bot trusted state during end of round phase
    */
   private submitTrustedState(): void {
-    if (!this.socket || !this.currentRoomId || this.hasSubmittedTrustedState) {
+    if (
+      !this.socket ||
+      !this.currentRoomId ||
+      this.hasSubmittedTrustedState ||
+      this.gamePhase !== GamePhase.END_OF_ROUND
+    ) {
       return;
     }
 
