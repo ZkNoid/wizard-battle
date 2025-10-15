@@ -2,6 +2,7 @@ export enum TileType {
   Air = '',
   Water = 'water',
   Grass = 'grass',
+  Forest = 'forest',
 }
 
 export interface ITile {

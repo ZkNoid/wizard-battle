@@ -27,6 +27,8 @@ export function Tile({
               alt={title}
               width={48}
               height={48}
+              quality={100}
+              unoptimized={true}
               className="size-18 absolute inset-1"
             />
             <TileBorder className="absolute inset-0 -z-[1] h-full w-full" />

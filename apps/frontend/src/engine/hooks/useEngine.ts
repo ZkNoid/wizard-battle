@@ -10,6 +10,8 @@ export function useEngine() {
         return 1;
       case TileType.Grass:
         return 2;
+      case TileType.Forest:
+        return 3;
       default:
         return 0;
     }
@@ -23,6 +25,8 @@ export function useEngine() {
         return TileType.Water;
       case 2:
         return TileType.Grass;
+      case 3:
+        return TileType.Forest;
       default:
         return TileType.Air;
     }

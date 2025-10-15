@@ -10,4 +10,9 @@ export const ALL_TILES = [
     name: 'Marsh',
     description: 'A passable map feature that slows movement for 1 turn.',
   },
+  {
+    id: 'forest',
+    name: 'Forest',
+    description: 'Home for the monsters at night...',
+  },
 ];

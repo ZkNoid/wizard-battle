@@ -12,6 +12,7 @@ enum Tiles {
   Air = '',
   Water = 'water',
   Grass = 'grass',
+  Forest = 'forest',
 }
 
 interface ITile {
@@ -44,6 +45,8 @@ const numberToTile = (num: number): Tiles => {
       return Tiles.Water;
     case 2:
       return Tiles.Grass;
+    case 3:
+      return Tiles.Forest;
     default:
       return Tiles.Air;
   }
@@ -94,7 +97,9 @@ const getNewTile = (
     for (let j = -1; j <= 1; j++) {
       const neighbor = getTile(tilemap, x + i, y + j);
       if (neighbor && neighbor.type !== Tiles.Air && neighbor.type !== type) {
-        collisionType = neighbor.type;
+        // If neighbor is forest, treat it as grass for collision purposes
+        collisionType =
+          neighbor.type === Tiles.Forest ? Tiles.Grass : neighbor.type;
       }
     }
   }
@@ -107,21 +112,53 @@ const getNewTile = (
     };
   }
 
+  if (type === Tiles.Forest) {
+    return {
+      type,
+      collisionType: Tiles.Air,
+      position: '',
+    };
+  }
+
   // Find collision position
-  const topCollision = getTile(tilemap, x, y - 1).type === collisionType;
-  const bottomCollision = getTile(tilemap, x, y + 1).type === collisionType;
-  const leftCollision = getTile(tilemap, x - 1, y).type === collisionType;
-  const rightCollision = getTile(tilemap, x + 1, y).type === collisionType;
+  const topCollision =
+    getTile(tilemap, x, y - 1).type === collisionType ||
+    (getTile(tilemap, x, y - 1).type === Tiles.Forest &&
+      collisionType === Tiles.Grass);
+  const bottomCollision =
+    getTile(tilemap, x, y + 1).type === collisionType ||
+    (getTile(tilemap, x, y + 1).type === Tiles.Forest &&
+      collisionType === Tiles.Grass);
+  const leftCollision =
+    getTile(tilemap, x - 1, y).type === collisionType ||
+    (getTile(tilemap, x - 1, y).type === Tiles.Forest &&
+      collisionType === Tiles.Grass);
+  const rightCollision =
+    getTile(tilemap, x + 1, y).type === collisionType ||
+    (getTile(tilemap, x + 1, y).type === Tiles.Forest &&
+      collisionType === Tiles.Grass);
   const hasCollision =
     topCollision || bottomCollision || leftCollision || rightCollision;
   const tlCornerCollision =
-    !hasCollision && getTile(tilemap, x - 1, y - 1).type === collisionType;
+    !hasCollision &&
+    (getTile(tilemap, x - 1, y - 1).type === collisionType ||
+      (getTile(tilemap, x - 1, y - 1).type === Tiles.Forest &&
+        collisionType === Tiles.Grass));
   const trCornerCollision =
-    !hasCollision && getTile(tilemap, x + 1, y - 1).type === collisionType;
+    !hasCollision &&
+    (getTile(tilemap, x + 1, y - 1).type === collisionType ||
+      (getTile(tilemap, x + 1, y - 1).type === Tiles.Forest &&
+        collisionType === Tiles.Grass));
   const blCornerCollision =
-    !hasCollision && getTile(tilemap, x - 1, y + 1).type === collisionType;
+    !hasCollision &&
+    (getTile(tilemap, x - 1, y + 1).type === collisionType ||
+      (getTile(tilemap, x - 1, y + 1).type === Tiles.Forest &&
+        collisionType === Tiles.Grass));
   const brCornerCollision =
-    !hasCollision && getTile(tilemap, x + 1, y + 1).type === collisionType;
+    !hasCollision &&
+    (getTile(tilemap, x + 1, y + 1).type === collisionType ||
+      (getTile(tilemap, x + 1, y + 1).type === Tiles.Forest &&
+        collisionType === Tiles.Grass));
 
   let position = '';
   if (topCollision) position += 't';
@@ -163,7 +200,7 @@ const updateTilemap2 = (tilemap: Megatile[]): Megatile[] => {
     nextTiles[i] = getNewTile(tiles, tiles[i]!.type, i % W, Math.floor(i / W));
   }
 
-  // 3) Rebuild 8×8 megatiles from 24×24 tiles
+  // 4) Rebuild 8×8 megatiles from 24×24 tiles
   const newTilemap: Megatile[] = [];
   for (let I = 0; I < MEGA_H; I++) {
     for (let J = 0; J < MEGA_W; J++) {
@@ -264,6 +301,27 @@ export function Tilemap({
 
           {megatile.getMainTile().type === Tiles.Air ? (
             <div className="size-full bg-gray-100" />
+          ) : megatile.getMainTile().type === Tiles.Forest ? (
+            // For forest, display as a single whole tile
+            <Image
+              src={getTileImage(megatile.getMainTile())}
+              alt={'Forest Tile'}
+              width={tileSize * 3}
+              height={tileSize * 3}
+              quality={100}
+              unoptimized={true}
+              draggable={false}
+              className="size-full"
+              style={{
+                imageRendering: 'pixelated',
+                pointerEvents: 'none',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                MozUserSelect: 'none',
+                msUserSelect: 'none',
+              }}
+              onDragStart={(e: React.DragEvent) => e.preventDefault()}
+            />
           ) : (
             <div className="grid size-full grid-cols-3 grid-rows-3 gap-0">
               {megatile.tiles.map((tile, tileIndex) => (
@@ -273,6 +331,8 @@ export function Tilemap({
                   alt={'Tile'}
                   width={tileSize}
                   height={tileSize}
+                  quality={100}
+                  unoptimized={true}
                   draggable={false}
                   className="h-full w-full"
                   style={{
