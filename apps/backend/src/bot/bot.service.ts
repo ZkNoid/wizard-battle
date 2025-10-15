@@ -16,6 +16,7 @@ import {
 import { allWizards, Wizard } from '../../../common/wizards';
 import { allSpells } from '../../../common/stater/spells';
 import { Stater } from '../../../common/stater/stater';
+import { MAP_SIZE } from '../../../common/constants';
 
 // Import o1js components
 let Field: any, Int64: any, CircuitString: any;
@@ -68,7 +69,7 @@ export class BotService {
     'lightning',
     'shield',
   ];
-  private readonly mapSize = 10; // Assuming 10x10 map
+  private readonly mapSize = MAP_SIZE; // Keep in sync with frontend grid size
   private readonly tilemapSize = 64; // MapEditor tilemap size
   private readonly megaW = 8;
   private readonly megaH = 8;

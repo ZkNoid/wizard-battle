@@ -235,21 +235,15 @@ export class BotClient {
       this.hasSubmittedActions = false;
       this.hasSubmittedTrustedState = false;
 
-      // If it's spell casting phase, submit actions after a short delay
+      // If it's spell casting phase, submit actions immediately for responsiveness
       if (data.phase === GamePhase.SPELL_CASTING) {
         console.log(`🤖 Bot ${this.botId} starting spell casting phase`);
-        setTimeout(
-          () => {
-            // Double-check phase hasn't changed during delay
-            if (
-              this.gamePhase === GamePhase.SPELL_CASTING &&
-              !this.hasSubmittedActions
-            ) {
-              this.submitActions();
-            }
-          },
-          Math.random() * 2000 + 1000
-        ); // Random delay 1-3 seconds
+        if (
+          this.gamePhase === GamePhase.SPELL_CASTING &&
+          !this.hasSubmittedActions
+        ) {
+          this.submitActions();
+        }
       }
     });
 
@@ -268,6 +262,18 @@ export class BotClient {
 
       // Begin polling for END_OF_ROUND before submitting trusted state
       this.startPollingForEndOfRound();
+
+      // Server auto-advances to END_OF_ROUND ~2s after applySpellEffects.
+      // Mirror that timing client-side so we don't wait indefinitely for a non-existent event.
+      setTimeout(() => {
+        if (
+          this.gamePhase === GamePhase.SPELL_EFFECTS &&
+          !this.hasSubmittedTrustedState
+        ) {
+          this.gamePhase = GamePhase.END_OF_ROUND;
+          this.submitTrustedState();
+        }
+      }, 2100);
     });
 
     this.socket.on('updateUserStates', (data) => {
@@ -400,7 +406,7 @@ export class BotClient {
       clearInterval(this.endOfRoundPollingInterval);
     }
 
-    // Poll every 500ms; only attempt submission once phase is END_OF_ROUND
+    // Poll every 100ms; only attempt submission once phase is END_OF_ROUND
     this.endOfRoundPollingInterval = setInterval(() => {
       if (this.hasSubmittedTrustedState) {
         this.stopPollingForEndOfRound();
@@ -414,7 +420,7 @@ export class BotClient {
 
       // Attempt to submit; server will accept only when phase is END_OF_ROUND
       this.submitTrustedState();
-    }, 500);
+    }, 100);
   }
 
   /**
