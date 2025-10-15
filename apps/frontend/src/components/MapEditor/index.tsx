@@ -21,10 +21,93 @@ import {
 } from '@/engine';
 
 // Utility functions (using from engine)
-const createRandomTilemap = (): number[] =>
-  Array.from({ length: TILEMAP_SIZE }, () => {
-    return Math.random() < 0.5 ? 1 : 2; // 50% water, 50% grass
-  });
+const createRandomTilemap = (): number[] => {
+  const tilemap = Array(TILEMAP_SIZE).fill(2); // Start with all grass
+
+  // Generate water clusters
+  const waterTiles = Math.floor(TILEMAP_SIZE * 0.2); // 20% water
+  const waterClusters = Math.floor(waterTiles / 3); // ~3 tiles per cluster
+
+  for (let i = 0; i < waterClusters; i++) {
+    // Random starting position
+    const startX = Math.floor(Math.random() * MEGA_WIDTH);
+    const startY = Math.floor(Math.random() * MEGA_HEIGHT);
+    const startIndex = startY * MEGA_WIDTH + startX;
+
+    // Create cluster around starting position
+    const clusterSize = Math.min(
+      3 + Math.floor(Math.random() * 3),
+      waterTiles - i * 3
+    );
+    const visited = new Set<number>();
+    const queue = [startIndex];
+    let placed = 0;
+
+    while (queue.length > 0 && placed < clusterSize) {
+      const currentIndex = queue.shift()!;
+      if (visited.has(currentIndex) || tilemap[currentIndex] !== 2) continue;
+
+      visited.add(currentIndex);
+      tilemap[currentIndex] = 1; // Water
+      placed++;
+
+      // Add adjacent tiles to queue
+      const x = currentIndex % MEGA_WIDTH;
+      const y = Math.floor(currentIndex / MEGA_WIDTH);
+
+      // Check all 8 directions
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          if (dx === 0 && dy === 0) continue;
+          const newX = x + dx;
+          const newY = y + dy;
+          if (
+            newX >= 0 &&
+            newX < MEGA_WIDTH &&
+            newY >= 0 &&
+            newY < MEGA_HEIGHT
+          ) {
+            const newIndex = newY * MEGA_WIDTH + newX;
+            if (!visited.has(newIndex) && tilemap[newIndex] === 2) {
+              queue.push(newIndex);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Fill remaining with forest (30%)
+  const forestTiles = Math.floor(TILEMAP_SIZE * 0.3);
+  let forestPlaced = 0;
+
+  // Create array of grass tile indices and shuffle it
+  const grassIndices = [];
+  for (let i = 0; i < TILEMAP_SIZE; i++) {
+    if (tilemap[i] === 2) {
+      grassIndices.push(i);
+    }
+  }
+
+  // Shuffle the grass indices randomly
+  for (let i = grassIndices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp: number = grassIndices[i]!;
+    grassIndices[i] = grassIndices[j]!;
+    grassIndices[j] = temp;
+  }
+
+  // Place forest on random grass tiles
+  for (let i = 0; i < Math.min(forestTiles, grassIndices.length); i++) {
+    const grassIndex = grassIndices[i];
+    if (grassIndex !== undefined) {
+      tilemap[grassIndex] = 3; // Forest
+      forestPlaced++;
+    }
+  }
+
+  return tilemap;
+};
 
 export default function MapEditor() {
   const { setMap } = useUserInformationStore();
