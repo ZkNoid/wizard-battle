@@ -1,6 +1,7 @@
 import '@/styles/globals.css';
 
 import { type Metadata } from 'next';
+import { Analytics } from '@vercel/analytics/next';
 import { dePixel } from '@/lib/fonts/dePixel';
 
 import { TRPCReactProvider } from '@/trpc/react';
@@ -20,6 +21,8 @@ export default function RootLayout({
       <body>
         <ClientInitializer />
         <TRPCReactProvider>{children}</TRPCReactProvider>
+
+        <Analytics />
       </body>
     </html>
   );
