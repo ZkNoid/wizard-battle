@@ -47,7 +47,7 @@ export default function Game({
             onClick={() => {
               const playerId =
                 typeof window !== 'undefined'
-                  ? window.localStorage.getItem('playerId') || ''
+                  ? window.sessionStorage.getItem('playerId') || ''
                   : '';
               gamePhaseManager?.surrender(playerId);
               // router.push('/');

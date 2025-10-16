@@ -403,6 +403,21 @@ export class GamePhaseSchedulerService {
     const { roomId, currentPhase, nextPhase } = transition;
 
     try {
+      // Per-room distributed lock to avoid duplicate transitions across instances
+      const owner = `${this.gameStateService.getInstanceId()}-${process.pid}-${Date.now()}`;
+      const { ok, lockKey } = await this.gameStateService.acquireRoomLock(
+        roomId,
+        4000,
+        owner,
+        'lock:phase'
+      );
+      if (!ok) {
+        console.log(
+          `⏭️ Skipping transition for ${roomId} ${currentPhase}→${nextPhase} (lock held)`
+        );
+        return;
+      }
+
       console.log(
         `🔄 Phase transition: ${roomId} ${currentPhase} → ${nextPhase}`
       );
@@ -435,13 +450,14 @@ export class GamePhaseSchedulerService {
         default:
           await this.gameStateService.advanceGamePhase(roomId);
       }
+      // Best-effort lock release
+      await this.gameStateService.releaseRoomLock(lockKey, owner);
     } catch (error) {
       console.error(`Failed to execute phase transition for ${roomId}:`, error);
       // Clean up room on persistent errors
       await this.gameStateService.cleanupRoom(roomId);
     }
   }
-
   private async getSystemHealth() {
     const roomKeys =
       await this.gameStateService.redisClient.keys('game_state:*');

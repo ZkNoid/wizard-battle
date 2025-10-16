@@ -43,16 +43,16 @@ export default function Matchmaking({
     if (!stater) return;
     if (sendRequest.current) return;
     sendRequest.current = true;
-    // Reuse stable playerId from localStorage (fallback to random if missing)
+    // Reuse stable playerId from sessionStorage (fallback to random if missing)
     const stored =
       typeof window !== 'undefined'
-        ? window.localStorage.getItem('playerId')
+        ? window.sessionStorage.getItem('playerId')
         : null;
     const playerId = stored
       ? Number(stored)
       : Math.floor(Math.random() * 10000);
     if (typeof window !== 'undefined' && !stored) {
-      window.localStorage.setItem('playerId', String(playerId));
+      window.sessionStorage.setItem('playerId', String(playerId));
     }
     stater.state.playerId = Field.from(playerId);
 

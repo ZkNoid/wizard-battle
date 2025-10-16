@@ -165,6 +165,62 @@ export class GameStateService {
     return this.instanceId;
   }
 
+  // ==================== REDIS LOCKING HELPERS ====================
+  /**
+   * Build a namespaced Redis lock key
+   */
+  private buildLockKey(namespace: string, roomId: string): string {
+    return `${namespace}:${roomId}`;
+  }
+
+  /**
+   * Acquire a best-effort lock using SET NX PX
+   * Returns { ok, lockKey, owner } where ok=false means not acquired
+   */
+  async acquireRoomLock(
+    roomId: string,
+    ttlMs: number = 5000,
+    owner: string = `${this.instanceId}-${Date.now()}`,
+    namespace: string = 'lock:phase'
+  ): Promise<{ ok: boolean; lockKey: string; owner: string }> {
+    const lockKey = this.buildLockKey(namespace, roomId);
+    try {
+      const result = await this.redisClient.set(lockKey, owner, {
+        PX: ttlMs,
+        NX: true,
+      });
+      const ok = result === 'OK';
+      if (ok) {
+        console.log(`🔒 Acquired lock ${lockKey} by ${owner} (ttl ${ttlMs}ms)`);
+      }
+      return { ok, lockKey, owner };
+    } catch (error) {
+      console.error(`❌ Error acquiring lock ${lockKey}:`, error);
+      return { ok: false, lockKey, owner };
+    }
+  }
+
+  /**
+   * Release a lock if owned by the provided owner
+   */
+  async releaseRoomLock(lockKey: string, owner: string): Promise<boolean> {
+    try {
+      const current = await this.redisClient.get(lockKey);
+      if (current === owner) {
+        await this.redisClient.del(lockKey);
+        console.log(`🔓 Released lock ${lockKey} by ${owner}`);
+        return true;
+      }
+      console.log(
+        `⚠️ Skip releasing lock ${lockKey}: owner mismatch (have=${current}, want=${owner})`
+      );
+      return false;
+    } catch (error) {
+      console.error(`❌ Error releasing lock ${lockKey}:`, error);
+      return false;
+    }
+  }
+
   // Socket-to-Instance Mapping
   /**
    * Register a socket mapping

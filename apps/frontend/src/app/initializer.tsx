@@ -18,12 +18,12 @@ export default function Initializer() {
     // Determine a stable playerId and persist it locally
     const existingId =
       typeof window !== 'undefined'
-        ? window.localStorage.getItem('playerId')
+        ? window.sessionStorage.getItem('playerId')
         : null;
     const stablePlayerId =
       existingId ?? String(Math.floor(Math.random() * 10000));
     if (typeof window !== 'undefined' && !existingId) {
-      window.localStorage.setItem('playerId', stablePlayerId);
+      window.sessionStorage.setItem('playerId', stablePlayerId);
     }
 
     // Create socket with auth so backend can rejoin by stable playerId
