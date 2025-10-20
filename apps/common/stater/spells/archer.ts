@@ -190,7 +190,7 @@ export const DecoyModifyer = (
       duration: Field.from(2),
       param: Field(0),
     }),
-    'endOfRound'
+    'public'
   );
 };
 
@@ -227,7 +227,7 @@ export const CloudModifyer = (
           spellCast.additionalData.position.y.toBigint()
       ),
     }),
-    'endOfRound'
+    'public'
   );
 };
 

@@ -37,10 +37,12 @@ const decoyEffect: IEffectInfo = {
   id: CircuitString.fromString('Decoy').hash(),
   name: 'Decoy',
   apply: (state: State, publicState: State, param: Field) => {
+    console.log('Applying decoy effect');
     // Change to provable
     let number = +param;
     let x = number % 8;
     let y = Math.floor(number / 8);
+    console.log('Decoy position', x, y);
     publicState.playerStats.position = new PositionOption({
       value: new Position({
         x: Int64.from(x),
