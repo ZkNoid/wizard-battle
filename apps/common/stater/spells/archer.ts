@@ -218,13 +218,14 @@ export const CloudModifyer = (
   state: State,
   spellCast: SpellCast<CloudData>
 ) => {
+  console.log('Cloud modifyer');
   state.pushEffect(
     new Effect({
       effectId: CircuitString.fromString('Cloud').hash(),
       duration: Field.from(3),
       param: Field(
-        spellCast.additionalData.position.x.toBigint() * 8n +
-          spellCast.additionalData.position.y.toBigint()
+        spellCast.additionalData.position.x.toBigint() +
+          spellCast.additionalData.position.y.toBigint() * 8n
       ),
     }),
     'public'
