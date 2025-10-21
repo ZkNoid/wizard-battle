@@ -329,9 +329,8 @@ export default function GamePage() {
   }, [opponentState]);
 
   useEffect(() => {
+    const cleanupMovement = initMovementHandler();
     if (!isInitialized.current) {
-      const cleanupMovement = initMovementHandler();
-
       const user = {
         id: 'user',
         type:
@@ -359,14 +358,14 @@ export default function GamePage() {
       addEntity(enemy);
 
       isInitialized.current = true;
-
-      return () => {
-        cleanupMovement();
-        clearEntities();
-        isInitialized.current = false;
-      };
     }
-  }, [initMovementHandler, addEntity, clearEntities, stater, opponentState]);
+
+    return () => {
+      cleanupMovement();
+      clearEntities();
+      isInitialized.current = false;
+    };
+  }, [initMovementHandler, addEntity, clearEntities]);
 
   useEffect(() => {
     gamePhaseManager?.setOnNewTurnHook(onNewTurnHook);
