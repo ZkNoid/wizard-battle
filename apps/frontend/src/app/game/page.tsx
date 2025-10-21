@@ -221,7 +221,7 @@ export default function GamePage() {
       );
       if (userAction.playerId === stater?.state?.playerId?.toString()) {
         console.log('Apply actions locally');
-        stater.applyActions({ actions: [userAction], signature: '' });
+        stater.applyActionsLocally({ actions: [userAction], signature: '' });
         syncState();
         userAction = null;
       }

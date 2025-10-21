@@ -104,6 +104,12 @@ export class Stater extends Struct({
     }
   }
 
+  applySpellCastsLocally(spellCasts: SpellCast<any>[]) {
+    for (const spell of spellCasts) {
+      this.applySpellCast(spell);
+    }
+  }
+
   apply(spellCasts: SpellCast<any>[]): {
     stateCommit: Field;
     publicState: State;
@@ -125,7 +131,7 @@ export class Stater extends Struct({
 
     const publicState = this.generatePublicState();
 
-    this.applyPublicStateEffects(publicState);
+    // Public state effects are already applied inside generatePublicState()
     this.reduceSpellCooldowns();
 
     const stateCommit = this.generateStateCommit();
@@ -192,6 +198,35 @@ export class Stater extends Struct({
 
     const result = this.apply(spellCasts);
     return result.publicState;
+  }
+
+  applyActionsLocally(userActions: IUserActions) {
+    // Convert IUserActions to internal format
+    const spellCasts: SpellCast<any>[] = userActions.actions
+      .map((action: IUserAction) => ({
+        spell: allSpells.find(
+          (s) => s.id.toString() === action.spellId.toString()
+        ),
+        spellId: Field(action.spellId),
+        caster: Field(action.caster),
+        target: Field(action.playerId), // or however you want to map this
+        additionalData: action.spellCastInfo,
+      }))
+      .sort((a, b) => {
+        return (b.spell?.priority ?? 0) - (a.spell?.priority ?? 0);
+      })
+      .map((action) => {
+        return {
+          spellId: action.spellId,
+          target: action.target,
+          caster: action.caster,
+          additionalData: action.spell!.modifyerData.fromJSON(
+            JSON.parse(action.additionalData)
+          ),
+        };
+      });
+
+    this.applySpellCastsLocally(spellCasts);
   }
 
   /**
