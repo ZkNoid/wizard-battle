@@ -726,11 +726,16 @@ export class GameSessionGateway {
         );
         // Immediately destroy room resources when game ends
         try {
-          await this.gameStateService.removeGameState(data.roomId);
-          await this.matchmakingService.redisClient.hDel(
-            'matches',
-            data.roomId
+          // Use Redis transaction to ensure atomic cleanup
+          const multi = this.matchmakingService.redisClient.multi();
+          multi.hDel('matches', data.roomId);
+          multi.hDel('game_states', data.roomId);
+
+          const results = await multi.exec();
+          console.log(
+            `🗑️ Atomically removed match and game state for ${data.roomId}`
           );
+
           await this.cleanupRoom(data.roomId, 'game_ended');
           console.log(`🗑️ Destroyed room ${data.roomId} after game end`);
         } catch (cleanupErr) {
@@ -758,6 +763,74 @@ export class GameSessionGateway {
           'error_in_death_handling'
         );
       }
+    }
+  }
+
+  /**
+   * Handle player confirmation that they have joined the match
+   * @param socket - The socket instance
+   * @param data - The data object containing roomId and playerId
+   * @dev This handler processes player confirmations and checks if all players
+   * have confirmed before starting the game. It's called when a player
+   * successfully joins a match and confirms they're ready to play.
+   */
+  @SubscribeMessage('confirmJoined')
+  async handleConfirmJoined(
+    socket: Socket,
+    data: { roomId: string; playerId: string }
+  ) {
+    try {
+      // Validate input data
+      if (!data || !data.roomId || !data.playerId) {
+        console.log(`⚠️ handleConfirmJoined: Invalid data received`, data);
+        return;
+      }
+
+      console.log(
+        `✅ Player ${data.playerId} confirmed joined in room ${data.roomId}`
+      );
+
+      // Confirm player joined and check if all players have confirmed
+      const allPlayersConfirmed =
+        await this.gameStateService.confirmPlayerJoined(
+          data.roomId,
+          data.playerId
+        );
+
+      if (allPlayersConfirmed) {
+        console.log(
+          `🎮 All players confirmed in room ${data.roomId}, starting game...`
+        );
+
+        // Start the game after all players have confirmed
+        await this.gameStateService.updateGameState(data.roomId, {
+          status: 'active',
+        });
+
+        // Emit the first turn to start gameplay
+        const state = await this.gameStateService.getGameState(data.roomId);
+        const phaseTimeout =
+          state?.phaseTimeout ??
+          Number(process.env.SPELL_CAST_TIMEOUT || 120000);
+
+        this.server
+          .to(data.roomId)
+          .emit('newTurn', { phase: 'spell_casting', phaseTimeout });
+        await this.gameStateService.publishToRoom(data.roomId, 'newTurn', {
+          phase: 'spell_casting',
+          phaseTimeout,
+        });
+        console.log(`🎮 Started first turn for match in room ${data.roomId}`);
+      } else {
+        console.log(
+          `⏳ Waiting for other players to confirm in room ${data.roomId}`
+        );
+      }
+    } catch (error) {
+      console.error(
+        `❌ Failed to handle player confirmation in room ${data?.roomId}:`,
+        error
+      );
     }
   }
 

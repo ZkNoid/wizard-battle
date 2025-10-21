@@ -82,7 +82,9 @@ export default function Matchmaking({
       });
     }
     socket.once('matchFound', (response: IFoundMatch) => {
-      console.log('Match found');
+      console.log(
+        '🎮 Match found! Creating GamePhaseManager and confirming joined...'
+      );
 
       let opponentState = State.fromJSON(
         JSON.parse(response.opponentSetup[0]!.fields)

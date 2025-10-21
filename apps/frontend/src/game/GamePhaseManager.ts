@@ -47,6 +47,7 @@ export class GamePhaseManager {
   private trustedStatePollingInterval: NodeJS.Timeout | null = null;
   private phaseTimerDeadlineMs: number | null = null;
   private cachedTrustedStateForTurn?: ITrustedState; // Cached once per round
+  private processedEvents = new Set<string>(); // Track processed events to prevent duplicates
 
   constructor(
     socket: any,
@@ -66,6 +67,33 @@ export class GamePhaseManager {
     // Initialize the store with the current phase
     this.setCurrentPhaseCallback?.(this.currentPhase);
     this.onGameEnd = onGameEnd;
+
+    // Send confirmation that player has joined the match
+    this.confirmJoined();
+  }
+
+  /**
+   * @notice Check if an event has already been processed to prevent duplicates
+   * @param eventName The event name
+   * @param data The event data
+   * @returns True if event should be processed, false if it's a duplicate
+   */
+  private shouldProcessEvent(eventName: string, data: any): boolean {
+    const eventKey = `${eventName}:${JSON.stringify(data)}`;
+
+    if (this.processedEvents.has(eventKey)) {
+      console.log(`🚫 Skipping duplicate client event: ${eventKey}`);
+      return false;
+    }
+
+    this.processedEvents.add(eventKey);
+
+    // Clean up old processed events to prevent memory leaks
+    if (this.processedEvents.size > 100) {
+      this.processedEvents.clear();
+    }
+
+    return true;
   }
 
   /**
@@ -83,6 +111,30 @@ export class GamePhaseManager {
   }
 
   /**
+   * @notice Confirm that the player has joined the match
+   * @dev Sends confirmation to server that player is ready to start the game
+   */
+  private confirmJoined() {
+    try {
+      const playerId = this.stater.state.playerId?.toString();
+      if (!playerId) {
+        console.error('Cannot confirm joined: playerId is not available');
+        return;
+      }
+
+      console.log(
+        `✅ Confirming player ${playerId} joined match in room ${this.roomId}`
+      );
+      this.socket.emit('confirmJoined', {
+        roomId: this.roomId,
+        playerId: playerId,
+      });
+    } catch (error) {
+      console.error('Failed to confirm joined:', error);
+    }
+  }
+
+  /**
    * @notice Initializes WebSocket event listeners for all 5 gameplay phases
    * @dev Sets up bidirectional communication with GameSessionGateway
    *
@@ -97,6 +149,7 @@ export class GamePhaseManager {
     this.socket.on(
       'allPlayerActions',
       (allActions: Record<string, IUserActions>) => {
+        if (!this.shouldProcessEvent('allPlayerActions', allActions)) return;
         console.log('Received all player actions:', allActions);
         this.handleSpellPropagation(allActions);
         this.handleSpellCastEffects(allActions);
@@ -104,12 +157,14 @@ export class GamePhaseManager {
     );
 
     this.socket.on('applySpellEffects', () => {
+      if (!this.shouldProcessEvent('applySpellEffects', {})) return;
       console.log('Received applySpellEffects');
       this.handleSpellEffects();
     });
 
     // New push-based trigger: server signals END_OF_ROUND explicitly
     this.socket.on('endOfRound', () => {
+      if (!this.shouldProcessEvent('endOfRound', {})) return;
       console.log('Received endOfRound');
       // Ensure local phase reflects END_OF_ROUND before single submission
       this.updateCurrentPhase(GamePhase.END_OF_ROUND);
@@ -125,6 +180,7 @@ export class GamePhaseManager {
     });
 
     this.socket.on('updateUserStates', (data: { states: ITrustedState[] }) => {
+      if (!this.shouldProcessEvent('updateUserStates', data)) return;
       console.log('Received updateUserStates');
       this.handleStateUpdate(data.states);
     });
@@ -132,6 +188,7 @@ export class GamePhaseManager {
     this.socket.on(
       'newTurn',
       (data: { phase: GamePhase; phaseTimeout?: number }) => {
+        if (!this.shouldProcessEvent('newTurn', data)) return;
         console.log('Received newTurn');
         console.log('Received phase: ', data.phase);
         console.log('Received phaseTimeout: ', data.phaseTimeout);
@@ -221,6 +278,7 @@ export class GamePhaseManager {
     );
 
     this.socket.on('gameEnd', (data: { winnerId: string }) => {
+      if (!this.shouldProcessEvent('gameEnd', data)) return;
       console.log('Received game end. Winner is: ', data.winnerId);
       // Stop all polling and state submissions when game ends
       this.cleanup();

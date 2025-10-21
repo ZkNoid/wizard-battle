@@ -40,6 +40,7 @@ interface GameState {
     isAlive: boolean; // Whether player is still in the game
     currentActions?: IUserActions; // Phase 1: Actions submitted by player
     trustedState?: ITrustedState; // Phase 4: Computed state after spell effects
+    confirmedJoined?: boolean; // Whether player confirmed they joined the match
   }[];
   gameData: any; // Additional game-specific data
   turn: number; // Current turn number (increments after each cycle)
@@ -50,6 +51,7 @@ interface GameState {
   status: 'waiting' | 'active' | 'finished'; // Overall game status
   createdAt: number; // Game creation timestamp
   updatedAt: number; // Last modification timestamp
+  playersConfirmedJoined: string[]; // Players who confirmed they joined the match
 }
 
 interface SocketMapping {
@@ -62,6 +64,7 @@ interface SocketMapping {
 @Injectable()
 export class GameStateService {
   private instanceId = `${process.pid}-${Date.now()}`;
+  private eventCache = new Map<string, number>();
 
   constructor(private readonly redisService: RedisService) {}
 
@@ -316,6 +319,7 @@ export class GameStateService {
         isAlive: true,
         currentActions: undefined,
         trustedState: undefined,
+        confirmedJoined: false,
       })),
       gameData: {},
       turn: 0,
@@ -326,6 +330,7 @@ export class GameStateService {
       status: 'waiting',
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      playersConfirmedJoined: [],
     };
 
     await this.redisClient.hSet(
@@ -452,6 +457,57 @@ export class GameStateService {
   }
 
   /**
+   * Confirm that a player has joined the match
+   * @param roomId - The room identifier
+   * @param playerId - The player identifier
+   * @returns true if all players have confirmed, false otherwise
+   */
+  async confirmPlayerJoined(
+    roomId: string,
+    playerId: string
+  ): Promise<boolean> {
+    const gameState = await this.getGameState(roomId);
+    if (!gameState) {
+      throw new Error(`Game state not found for room ${roomId}`);
+    }
+
+    const playerIndex = gameState.players.findIndex((p) => p.id === playerId);
+    if (playerIndex === -1) {
+      throw new Error(`Player ${playerId} not found in room ${roomId}`);
+    }
+
+    // Mark player as confirmed joined
+    if (gameState.players[playerIndex]) {
+      gameState.players[playerIndex].confirmedJoined = true;
+    }
+
+    // Add to confirmed players list if not already there
+    if (!gameState.playersConfirmedJoined.includes(playerId)) {
+      gameState.playersConfirmedJoined.push(playerId);
+    }
+
+    gameState.updatedAt = Date.now();
+
+    await this.redisClient.hSet(
+      'game_states',
+      roomId,
+      JSON.stringify(gameState)
+    );
+
+    console.log(`Player ${playerId} confirmed joined in room ${roomId}`);
+
+    // Check if all players have confirmed
+    const allPlayersConfirmed = gameState.players.every(
+      (p) => p.confirmedJoined
+    );
+    console.log(
+      `All players confirmed: ${allPlayersConfirmed} (${gameState.playersConfirmedJoined.length}/${gameState.players.length})`
+    );
+
+    return allPlayersConfirmed;
+  }
+
+  /**
    * Remove a game state
    * @param roomId - The room identifier
    * @dev Deletes the room entry from the `game_states` hash.
@@ -463,15 +519,40 @@ export class GameStateService {
 
   // Cross-instance communication
   /**
-   * Publish an event to a room topic
+   * Publish an event to a room topic with deduplication
    * @param roomId - The logical room id
    * @param event - Event name
    * @param data - Serializable payload
    * @dev Publishes a JSON message on the `room_events` Redis channel. Other
    * instances subscribing to this channel will receive and route the event to
-   * relevant sockets.
+   * relevant sockets. Includes deduplication to prevent duplicate events from
+   * multiple instances within 1 second.
    */
   async publishToRoom(roomId: string, event: string, data: any): Promise<void> {
+    const eventKey = `${roomId}:${event}:${JSON.stringify(data)}`;
+    const now = Date.now();
+
+    // Prevent duplicate events within 1 second
+    if (this.eventCache.has(eventKey)) {
+      const lastSent = this.eventCache.get(eventKey);
+      if (lastSent && now - lastSent < 1000) {
+        console.log(`🚫 Skipping duplicate event: ${eventKey}`);
+        return;
+      }
+    }
+
+    this.eventCache.set(eventKey, now);
+
+    // Clean up old cache entries to prevent memory leaks
+    if (this.eventCache.size > 1000) {
+      const cutoff = now - 10000; // 10 seconds
+      for (const [key, timestamp] of this.eventCache.entries()) {
+        if (timestamp < cutoff) {
+          this.eventCache.delete(key);
+        }
+      }
+    }
+
     await this.redisClient.publish(
       'room_events',
       JSON.stringify({
@@ -479,7 +560,7 @@ export class GameStateService {
         event,
         data,
         originInstanceId: this.instanceId,
-        timestamp: Date.now(),
+        timestamp: now,
       })
     );
     console.log(`Published ${event} to room ${roomId}`);

@@ -302,11 +302,6 @@ export class MatchmakingService {
     }
   }
 
-  private async matchPlayersInPairsByParam(
-    filteredQueuedPlayers: QueuedPlayer[],
-    param: string
-  ) {}
-
   /**
    * Create a match between two players
    *
@@ -459,39 +454,48 @@ export class MatchmakingService {
 
     // Try to notify both players of the match
     try {
+      console.log('Notify both players of the match');
       await this.notifyPlayersOfMatch(firstPlayer, secondPlayer, roomId);
     } catch (error) {
       console.error('Failed to notify players of match:', error);
       // Even if notification fails, the match is still valid
     }
 
-    // Start the first turn after a short delay to allow both players to join the room
+    // Set up confirmation timeout - if players don't confirm within 30 seconds, start anyway
     setTimeout(async () => {
       try {
-        await this.gameStateService.updateGameState(roomId, {
-          status: 'active',
-        });
+        const state = await this.gameStateService.getGameState(roomId);
+        if (state && state.status === 'waiting') {
+          console.log(
+            `⏰ Confirmation timeout reached for room ${roomId}, starting game anyway`
+          );
 
-        // Emit the first turn to start gameplay
-        if (this.server) {
-          const state = await this.gameStateService.getGameState(roomId);
-          const phaseTimeout =
-            state?.phaseTimeout ??
-            Number(process.env.SPELL_CAST_TIMEOUT || 120000);
-
-          this.server
-            .to(roomId)
-            .emit('newTurn', { phase: 'spell_casting', phaseTimeout });
-          await this.gameStateService.publishToRoom(roomId, 'newTurn', {
-            phase: 'spell_casting',
-            phaseTimeout,
+          await this.gameStateService.updateGameState(roomId, {
+            status: 'active',
           });
-          console.log(`🎮 Started first turn for match in room ${roomId}`);
+
+          // Emit the first turn to start gameplay
+          if (this.server) {
+            const phaseTimeout =
+              state?.phaseTimeout ??
+              Number(process.env.SPELL_CAST_TIMEOUT || 120000);
+
+            this.server
+              .to(roomId)
+              .emit('newTurn', { phase: 'spell_casting', phaseTimeout });
+            await this.gameStateService.publishToRoom(roomId, 'newTurn', {
+              phase: 'spell_casting',
+              phaseTimeout,
+            });
+            console.log(
+              `🎮 Started first turn for match in room ${roomId} (timeout)`
+            );
+          }
         }
       } catch (error) {
-        console.error('Failed to start first turn for match:', error);
+        console.error('Failed to start first turn for match (timeout):', error);
       }
-    }, 2000); // 2 second delay
+    }, 30000); // 30 second timeout for confirmations
 
     // ONLY AFTER everything is successful, remove players from queue
     // This ensures we don't lose players if match creation fails
