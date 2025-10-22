@@ -10,6 +10,7 @@ import type { IPublicState } from '../../../common/types/matchmaking.types';
 import { EventBus } from './EventBus';
 import { allSpells } from '../../../common/stater/spells';
 import { gameEventEmitter } from '../engine/gameEventEmitter';
+import { Mutex } from 'async-mutex';
 
 /**
  * @title Frontend Game Phase Manager
@@ -47,6 +48,7 @@ export class GamePhaseManager {
   private trustedStatePollingInterval: NodeJS.Timeout | null = null;
   private phaseTimerDeadlineMs: number | null = null;
   private cachedTrustedStateForTurn?: ITrustedState; // Cached once per round
+  private stageProcessMutex: Mutex;
 
   constructor(
     socket: any,
@@ -56,6 +58,7 @@ export class GamePhaseManager {
     setCurrentPhaseCallback?: (phase: GamePhase) => void,
     onGameEnd?: (winner: boolean) => void
   ) {
+    console.log('Initializing GamePhaseManager');
     this.socket = socket;
     this.roomId = roomId;
     this.stater = stater;
@@ -71,6 +74,7 @@ export class GamePhaseManager {
     this.confirmJoined();
 
     console.log('GamePhaseManager::initialization');
+    this.stageProcessMutex = new Mutex();
   }
 
   /**
@@ -127,55 +131,83 @@ export class GamePhaseManager {
 
     this.socket.on(
       'allPlayerActions',
-      (allActions: Record<string, IUserActions>) => {
-        console.log('Received all player actions:', allActions);
-        this.handleSpellPropagation(allActions);
-        this.handleSpellCastEffects(allActions);
+      async (allActions: Record<string, IUserActions>) => {
+        await this.stageProcessMutex.acquire();
+        try {
+          console.log('Received all player actions:', allActions);
+          this.handleSpellPropagation(allActions);
+          this.handleSpellCastEffects(allActions);
+        } finally {
+          this.stageProcessMutex.release();
+        }
       }
     );
 
-    this.socket.on('applySpellEffects', () => {
-      console.log('Received applySpellEffects');
-      this.handleSpellEffects();
+    this.socket.on('applySpellEffects', async () => {
+      await this.stageProcessMutex.acquire();
+      try {
+        console.log('Received applySpellEffects');
+        this.handleSpellEffects();
+      } finally {
+        this.stageProcessMutex.release();
+      }
     });
 
     // New push-based trigger: server signals END_OF_ROUND explicitly
-    this.socket.on('endOfRound', () => {
-      console.log('Received endOfRound');
-      // Ensure local phase reflects END_OF_ROUND before single submission
-      this.updateCurrentPhase(GamePhase.END_OF_ROUND);
+    this.socket.on('endOfRound', async () => {
+      await this.stageProcessMutex.acquire();
+      try {
+        console.log('Received endOfRound');
+        // Ensure local phase reflects END_OF_ROUND before single submission
+        this.updateCurrentPhase(GamePhase.END_OF_ROUND);
 
-      // If we already submitted, do nothing
-      if (this.hasSubmittedTrustedState) return;
+        // If we already submitted, do nothing
+        if (this.hasSubmittedTrustedState) return;
 
-      // Submit cached/generated trusted state exactly once
-      if (!this.cachedTrustedStateForTurn) {
-        this.cachedTrustedStateForTurn = this.generateTrustedState();
+        // Submit cached/generated trusted state exactly once
+        if (!this.cachedTrustedStateForTurn) {
+          this.cachedTrustedStateForTurn = this.generateTrustedState();
+        }
+        this.submitTrustedStateNow(this.cachedTrustedStateForTurn);
+      } finally {
+        this.stageProcessMutex.release();
       }
-      this.submitTrustedStateNow(this.cachedTrustedStateForTurn);
-    });
-
-    this.socket.on('updateUserStates', (data: { states: ITrustedState[] }) => {
-      console.log('Received updateUserStates');
-      this.handleStateUpdate(data.states);
     });
 
     this.socket.on(
+      'updateUserStates',
+      async (data: { states: ITrustedState[] }) => {
+        await this.stageProcessMutex.acquire();
+        try {
+          console.log('Received updateUserStates');
+          this.handleStateUpdate(data.states);
+        } finally {
+          this.stageProcessMutex.release();
+        }
+      }
+    );
+
+    this.socket.on(
       'newTurn',
-      (data: { phase: GamePhase; phaseTimeout?: number }) => {
-        console.log('Received newTurn');
-        console.log('Received phase: ', data.phase);
-        console.log('Received phaseTimeout: ', data.phaseTimeout);
-        this.updateCurrentPhase(data.phase);
-        this.onNewTurn();
-        // Emit countdown start for SPELL_CASTING using provided timeout
-        if (
-          data.phase === GamePhase.SPELL_CASTING &&
-          typeof data.phaseTimeout === 'number'
-        ) {
-          console.log('Emitting phase-timer-start', data.phaseTimeout);
-          this.phaseTimerDeadlineMs = Date.now() + Number(data.phaseTimeout);
-          EventBus.emit('phase-timer-start', data.phaseTimeout);
+      async (data: { phase: GamePhase; phaseTimeout?: number }) => {
+        await this.stageProcessMutex.acquire();
+        try {
+          console.log('Received newTurn');
+          console.log('Received phase: ', data.phase);
+          console.log('Received phaseTimeout: ', data.phaseTimeout);
+          this.updateCurrentPhase(data.phase);
+          this.onNewTurn();
+          // Emit countdown start for SPELL_CASTING using provided timeout
+          if (
+            data.phase === GamePhase.SPELL_CASTING &&
+            typeof data.phaseTimeout === 'number'
+          ) {
+            console.log('Emitting phase-timer-start', data.phaseTimeout);
+            this.phaseTimerDeadlineMs = Date.now() + Number(data.phaseTimeout);
+            EventBus.emit('phase-timer-start', data.phaseTimeout);
+          }
+        } finally {
+          this.stageProcessMutex.release();
         }
       }
     );
@@ -183,7 +215,7 @@ export class GamePhaseManager {
     // Rejoin support: server can push current phase/turn/timer
     this.socket.on(
       'syncGameState',
-      (payload: {
+      async (payload: {
         roomId: string;
         currentPhase: GamePhase;
         turn: number;
@@ -191,18 +223,24 @@ export class GamePhaseManager {
         playersReady: string[];
         players: { id: string; socketId: string }[];
       }) => {
-        if (payload.roomId !== this.roomId) return;
-        console.log('Received syncGameState', payload);
-        // Apply current phase and start timer if in SPELL_CASTING
-        this.updateCurrentPhase(payload.currentPhase);
-        if (payload.currentPhase === GamePhase.SPELL_CASTING) {
-          this.phaseTimerDeadlineMs = Date.now() + Number(payload.phaseTimeout);
-          EventBus.emit('phase-timer-start', payload.phaseTimeout);
+        await this.stageProcessMutex.acquire();
+        try {
+          if (payload.roomId !== this.roomId) return;
+          console.log('Received syncGameState', payload);
+          // Apply current phase and start timer if in SPELL_CASTING
+          this.updateCurrentPhase(payload.currentPhase);
+          if (payload.currentPhase === GamePhase.SPELL_CASTING) {
+            this.phaseTimerDeadlineMs =
+              Date.now() + Number(payload.phaseTimeout);
+            EventBus.emit('phase-timer-start', payload.phaseTimeout);
+          }
+          // Reset per-turn tracking to avoid stale state after rejoin
+          this.hasSubmittedActions = false;
+          this.hasSubmittedTrustedState = false;
+          this.lastActions = undefined;
+        } finally {
+          this.stageProcessMutex.release();
         }
-        // Reset per-turn tracking to avoid stale state after rejoin
-        this.hasSubmittedActions = false;
-        this.hasSubmittedTrustedState = false;
-        this.lastActions = undefined;
       }
     );
 
@@ -221,41 +259,58 @@ export class GamePhaseManager {
 
     this.socket.on(
       'actionSubmitResult',
-      (data: { success: boolean; error: string }) => {
-        console.log('Received actionSubmitResult');
-        console.log(data);
+      async (data: { success: boolean; error: string }) => {
+        await this.stageProcessMutex.acquire();
+        try {
+          console.log('Received actionSubmitResult');
+          console.log(data);
+        } finally {
+          this.stageProcessMutex.release();
+        }
       }
     );
 
     this.socket.on(
       'trustedStateResult',
-      (data: { success: boolean; error?: string }) => {
-        console.log('Received trustedStateResult');
-        console.log(data);
+      async (data: { success: boolean; error?: string }) => {
+        await this.stageProcessMutex.acquire();
+        try {
+          console.log('Received trustedStateResult');
+          console.log(data);
 
-        if (data.success) {
-          this.hasSubmittedTrustedState = true;
-          this.stopTrustedStatePolling();
-        } else if (
-          data.error?.includes('Invalid phase for trusted state submission')
-        ) {
-          // Server rejected due to phase mismatch, retry
-          this.hasSubmittedTrustedState = false;
-          // this.startTrustedStatePolling();
-        } else if (data.error?.includes('Game state not found')) {
-          // Game has ended or room was destroyed, stop polling
-          console.log('Game state not found - stopping trusted state polling');
-          this.hasSubmittedTrustedState = true;
-          this.stopTrustedStatePolling();
+          if (data.success) {
+            this.hasSubmittedTrustedState = true;
+            this.stopTrustedStatePolling();
+          } else if (
+            data.error?.includes('Invalid phase for trusted state submission')
+          ) {
+            // Server rejected due to phase mismatch, retry
+            this.hasSubmittedTrustedState = false;
+            // this.startTrustedStatePolling();
+          } else if (data.error?.includes('Game state not found')) {
+            // Game has ended or room was destroyed, stop polling
+            console.log(
+              'Game state not found - stopping trusted state polling'
+            );
+            this.hasSubmittedTrustedState = true;
+            this.stopTrustedStatePolling();
+          }
+        } finally {
+          this.stageProcessMutex.release();
         }
       }
     );
 
-    this.socket.on('gameEnd', (data: { winnerId: string }) => {
-      console.log('Received game end. Winner is: ', data.winnerId);
-      // Stop all polling and state submissions when game ends
-      this.cleanup();
-      this.onGameEnd?.(data.winnerId === this.getPlayerId());
+    this.socket.on('gameEnd', async (data: { winnerId: string }) => {
+      await this.stageProcessMutex.acquire();
+      try {
+        console.log('Received game end. Winner is: ', data.winnerId);
+        // Stop all polling and state submissions when game ends
+        this.cleanup();
+        this.onGameEnd?.(data.winnerId === this.getPlayerId());
+      } finally {
+        this.stageProcessMutex.release();
+      }
     });
   }
 
