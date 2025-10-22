@@ -47,7 +47,6 @@ export class GamePhaseManager {
   private trustedStatePollingInterval: NodeJS.Timeout | null = null;
   private phaseTimerDeadlineMs: number | null = null;
   private cachedTrustedStateForTurn?: ITrustedState; // Cached once per round
-  private processedEvents = new Set<string>(); // Track processed events to prevent duplicates
 
   constructor(
     socket: any,
@@ -70,30 +69,8 @@ export class GamePhaseManager {
 
     // Send confirmation that player has joined the match
     this.confirmJoined();
-  }
 
-  /**
-   * @notice Check if an event has already been processed to prevent duplicates
-   * @param eventName The event name
-   * @param data The event data
-   * @returns True if event should be processed, false if it's a duplicate
-   */
-  private shouldProcessEvent(eventName: string, data: any): boolean {
-    const eventKey = `${eventName}:${JSON.stringify(data)}`;
-
-    if (this.processedEvents.has(eventKey)) {
-      console.log(`🚫 Skipping duplicate client event: ${eventKey}`);
-      return false;
-    }
-
-    this.processedEvents.add(eventKey);
-
-    // Clean up old processed events to prevent memory leaks
-    if (this.processedEvents.size > 100) {
-      this.processedEvents.clear();
-    }
-
-    return true;
+    console.log('GamePhaseManager::initialization');
   }
 
   /**
@@ -146,10 +123,11 @@ export class GamePhaseManager {
    * - gameEnd: Game termination with winner announcement
    */
   private setupSocketListeners() {
+    console.log('GamePhaseManager::setupSocketListeners');
+
     this.socket.on(
       'allPlayerActions',
       (allActions: Record<string, IUserActions>) => {
-        if (!this.shouldProcessEvent('allPlayerActions', allActions)) return;
         console.log('Received all player actions:', allActions);
         this.handleSpellPropagation(allActions);
         this.handleSpellCastEffects(allActions);
@@ -157,14 +135,12 @@ export class GamePhaseManager {
     );
 
     this.socket.on('applySpellEffects', () => {
-      if (!this.shouldProcessEvent('applySpellEffects', {})) return;
       console.log('Received applySpellEffects');
       this.handleSpellEffects();
     });
 
     // New push-based trigger: server signals END_OF_ROUND explicitly
     this.socket.on('endOfRound', () => {
-      if (!this.shouldProcessEvent('endOfRound', {})) return;
       console.log('Received endOfRound');
       // Ensure local phase reflects END_OF_ROUND before single submission
       this.updateCurrentPhase(GamePhase.END_OF_ROUND);
@@ -180,7 +156,6 @@ export class GamePhaseManager {
     });
 
     this.socket.on('updateUserStates', (data: { states: ITrustedState[] }) => {
-      if (!this.shouldProcessEvent('updateUserStates', data)) return;
       console.log('Received updateUserStates');
       this.handleStateUpdate(data.states);
     });
@@ -188,7 +163,6 @@ export class GamePhaseManager {
     this.socket.on(
       'newTurn',
       (data: { phase: GamePhase; phaseTimeout?: number }) => {
-        if (!this.shouldProcessEvent('newTurn', data)) return;
         console.log('Received newTurn');
         console.log('Received phase: ', data.phase);
         console.log('Received phaseTimeout: ', data.phaseTimeout);
@@ -278,7 +252,6 @@ export class GamePhaseManager {
     );
 
     this.socket.on('gameEnd', (data: { winnerId: string }) => {
-      if (!this.shouldProcessEvent('gameEnd', data)) return;
       console.log('Received game end. Winner is: ', data.winnerId);
       // Stop all polling and state submissions when game ends
       this.cleanup();
