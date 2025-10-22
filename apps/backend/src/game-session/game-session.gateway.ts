@@ -88,9 +88,9 @@ export class GameSessionGateway {
       .catch((err) => console.error('Redis Connection Error', err));
 
     // Subscribe to cross-instance room events
-    this.gameStateService.subscribeToRoomEvents(async (data) => {
-      await this.handleCrossInstanceEvent(data);
-    });
+    // this.gameStateService.subscribeToRoomEvents(async (data) => {
+    //   await this.handleCrossInstanceEvent(data);
+    // });
 
     // Perform startup cleanup once Redis is ready
     if (this.gameStateService.isRedisReady()) {
@@ -877,8 +877,15 @@ export class GameSessionGateway {
 
     // Skip events that originated from this instance to prevent double messages
     if (data.originInstanceId === this.gameStateService.getInstanceId()) {
+      console.log(
+        `🚫 [CROSS_INSTANCE] Skipping event ${data.event} from own instance ${data.originInstanceId} in room ${data.roomId}`
+      );
       return;
     }
+
+    console.log(
+      `📨 [CROSS_INSTANCE] Processing event ${data.event} from instance ${data.originInstanceId} in room ${data.roomId}`
+    );
 
     switch (data.event) {
       case 'gameMessage':
@@ -906,6 +913,9 @@ export class GameSessionGateway {
             data.data.targetSocketId
           );
           if (target) {
+            console.log(
+              `🎯 [MATCH_FOUND] Cross-instance emit to targeted socket ${data.data.targetSocketId} in room ${data.roomId}`
+            );
             target.emit('matchFound', data.data.payload);
             // Ensure the targeted socket joins the room on this instance
             // GameJoining mitigation - issue fix //29-09-2025
@@ -917,8 +927,15 @@ export class GameSessionGateway {
                 err
               );
             }
+          } else {
+            console.log(
+              `⚠️ [MATCH_FOUND] Target socket ${data.data.targetSocketId} not found on this instance for room ${data.roomId}`
+            );
           }
         } else {
+          console.log(
+            `🎯 [MATCH_FOUND] Cross-instance emit to room ${data.roomId} (no specific target)`
+          );
           this.server
             .to(data.roomId)
             .emit('matchFound', data.data?.payload ?? data.data);

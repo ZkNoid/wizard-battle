@@ -391,147 +391,169 @@ export class MatchmakingService {
         : [player2, player1];
     const roomId = `${firstPlayer.playerId}-${secondPlayer.playerId}`;
 
-    // Check if match already exists to prevent duplicates
-    const existingMatch = await this.redisClient.hGet('matches', roomId);
-    if (existingMatch) {
-      console.warn(
-        `Match already exists for room ${roomId}, skipping creation`
+    // Acquire lock to prevent race conditions in match creation
+    const lockKey = `match_lock_${roomId}`;
+    const lockAcquired = await this.redisClient?.set(lockKey, 'locked', {
+      EX: 10, // 10 second expiry
+      NX: true, // Only set if not exists
+    });
+
+    if (!lockAcquired) {
+      console.log(
+        `🚫 Match creation already in progress for room ${roomId}, skipping`
       );
-
-      // DEBUG: Rejoin logic: ensure both players are (re)joined to the existing room and notified
-      // Rejoin logic: ensure both players are (re)joined to the existing room and notified
-      try {
-        // Attempt to notify both players again and (re)join sockets to the room
-        await this.notifyPlayersOfMatch(firstPlayer, secondPlayer, roomId);
-
-        // Also publish a lightweight cross-instance hint that players joined
-        if (firstPlayer.socketId) {
-          await this.gameStateService.publishToRoom(roomId, 'playerJoined', {
-            playerId: firstPlayer.playerId,
-            socketId: firstPlayer.socketId,
-          });
-          console.log(
-            `Player ${firstPlayer.playerId}successfully re-joined room ${roomId}`
-          );
-        }
-        if (secondPlayer.socketId) {
-          await this.gameStateService.publishToRoom(roomId, 'playerJoined', {
-            playerId: secondPlayer.playerId,
-            socketId: secondPlayer.socketId,
-          });
-          console.log(
-            `Player ${firstPlayer.playerId}successfully re-joined room ${roomId}`
-          );
-        }
-      } catch (err) {
-        console.error('Failed to rejoin players to existing match:', err);
-      }
       return;
     }
 
-    // Create match
-    const match: Match = {
-      player1: firstPlayer,
-      player2: secondPlayer,
-      roomId,
-    };
-
-    // Store match in Redis FIRST
-    await this.redisClient.hSet('matches', roomId, JSON.stringify(match));
-
-    // Create game state
-    if (!firstPlayer.socketId || !secondPlayer.socketId) {
-      console.error('Cannot create game state: missing socket IDs');
-      // Clean up the match we just created
-      await this.redisClient.hDel('matches', roomId);
-      return;
-    }
-
-    await this.gameStateService.createGameState(roomId, [
-      { id: firstPlayer.playerId!, socketId: firstPlayer.socketId! },
-      { id: secondPlayer.playerId!, socketId: secondPlayer.socketId! },
-    ]);
-
-    // Try to notify both players of the match
     try {
-      console.log('Notify both players of the match');
-      await this.notifyPlayersOfMatch(firstPlayer, secondPlayer, roomId);
-    } catch (error) {
-      console.error('Failed to notify players of match:', error);
-      // Even if notification fails, the match is still valid
-    }
+      // Check if match already exists to prevent duplicates
+      const existingMatch = await this.redisClient.hGet('matches', roomId);
+      if (existingMatch) {
+        console.warn(
+          `Match already exists for room ${roomId}, skipping creation`
+        );
 
-    // Set up confirmation timeout - if players don't confirm within 30 seconds, start anyway
-    setTimeout(async () => {
-      try {
-        const state = await this.gameStateService.getGameState(roomId);
-        if (state && state.status === 'waiting') {
-          console.log(
-            `⏰ Confirmation timeout reached for room ${roomId}, starting game anyway`
-          );
+        // DEBUG: Rejoin logic: ensure both players are (re)joined to the existing room and notified
+        // Rejoin logic: ensure both players are (re)joined to the existing room and notified
+        try {
+          // Attempt to notify both players again and (re)join sockets to the room
+          await this.notifyPlayersOfMatch(firstPlayer, secondPlayer, roomId);
 
-          await this.gameStateService.updateGameState(roomId, {
-            status: 'active',
-          });
-
-          // Emit the first turn to start gameplay
-          if (this.server) {
-            const phaseTimeout =
-              state?.phaseTimeout ??
-              Number(process.env.SPELL_CAST_TIMEOUT || 120000);
-
-            this.server
-              .to(roomId)
-              .emit('newTurn', { phase: 'spell_casting', phaseTimeout });
-            await this.gameStateService.publishToRoom(roomId, 'newTurn', {
-              phase: 'spell_casting',
-              phaseTimeout,
+          // Also publish a lightweight cross-instance hint that players joined
+          if (firstPlayer.socketId) {
+            await this.gameStateService.publishToRoom(roomId, 'playerJoined', {
+              playerId: firstPlayer.playerId,
+              socketId: firstPlayer.socketId,
             });
             console.log(
-              `🎮 Started first turn for match in room ${roomId} (timeout)`
+              `Player ${firstPlayer.playerId}successfully re-joined room ${roomId}`
             );
           }
+          if (secondPlayer.socketId) {
+            await this.gameStateService.publishToRoom(roomId, 'playerJoined', {
+              playerId: secondPlayer.playerId,
+              socketId: secondPlayer.socketId,
+            });
+            console.log(
+              `Player ${firstPlayer.playerId}successfully re-joined room ${roomId}`
+            );
+          }
+        } catch (err) {
+          console.error('Failed to rejoin players to existing match:', err);
         }
-      } catch (error) {
-        console.error('Failed to start first turn for match (timeout):', error);
+        return;
       }
-    }, 30000); // 30 second timeout for confirmations
 
-    // ONLY AFTER everything is successful, remove players from queue
-    // This ensures we don't lose players if match creation fails
-    const waitingPlayers = await this.redisClient.lRange(
-      'waiting:queue',
-      0,
-      -1
-    );
+      // Create match
+      const match: Match = {
+        player1: firstPlayer,
+        player2: secondPlayer,
+        roomId,
+      };
 
-    // Remove entries for both players
-    let removedCount = 0;
-    for (const entry of waitingPlayers) {
+      // Store match in Redis FIRST
+      await this.redisClient.hSet('matches', roomId, JSON.stringify(match));
+
+      // Create game state
+      if (!firstPlayer.socketId || !secondPlayer.socketId) {
+        console.error('Cannot create game state: missing socket IDs');
+        // Clean up the match we just created
+        await this.redisClient.hDel('matches', roomId);
+        return;
+      }
+
+      await this.gameStateService.createGameState(roomId, [
+        { id: firstPlayer.playerId!, socketId: firstPlayer.socketId! },
+        { id: secondPlayer.playerId!, socketId: secondPlayer.socketId! },
+      ]);
+
+      // Try to notify both players of the match
       try {
-        const queuedPlayer = JSON.parse(entry);
-        if (
-          queuedPlayer.player.playerId === firstPlayer.playerId ||
-          queuedPlayer.player.playerId === secondPlayer.playerId
-        ) {
-          await this.redisClient.lRem('waiting:queue', 1, entry);
-          removedCount++;
-          if (removedCount === 2) break; // We've removed both players
-        }
+        console.log('Notify both players of the match');
+        await this.notifyPlayersOfMatch(firstPlayer, secondPlayer, roomId);
       } catch (error) {
-        console.error('Error parsing queue entry:', error);
+        console.error('Failed to notify players of match:', error);
+        // Even if notification fails, the match is still valid
       }
-    }
 
-    if (removedCount !== 2) {
-      console.warn(
-        `Expected to remove 2 players, but only removed ${removedCount}`
+      // Set up confirmation timeout - if players don't confirm within 30 seconds, start anyway
+      setTimeout(async () => {
+        try {
+          const state = await this.gameStateService.getGameState(roomId);
+          if (state && state.status === 'waiting') {
+            console.log(
+              `⏰ Confirmation timeout reached for room ${roomId}, starting game anyway`
+            );
+
+            await this.gameStateService.updateGameState(roomId, {
+              status: 'active',
+            });
+
+            // Emit the first turn to start gameplay
+            if (this.server) {
+              const phaseTimeout =
+                state?.phaseTimeout ??
+                Number(process.env.SPELL_CAST_TIMEOUT || 120000);
+
+              this.server
+                .to(roomId)
+                .emit('newTurn', { phase: 'spell_casting', phaseTimeout });
+              await this.gameStateService.publishToRoom(roomId, 'newTurn', {
+                phase: 'spell_casting',
+                phaseTimeout,
+              });
+              console.log(
+                `🎮 Started first turn for match in room ${roomId} (timeout)`
+              );
+            }
+          }
+        } catch (error) {
+          console.error(
+            'Failed to start first turn for match (timeout):',
+            error
+          );
+        }
+      }, 30000); // 30 second timeout for confirmations
+
+      // ONLY AFTER everything is successful, remove players from queue
+      // This ensures we don't lose players if match creation fails
+      const waitingPlayers = await this.redisClient.lRange(
+        'waiting:queue',
+        0,
+        -1
       );
-    }
 
-    console.log(
-      `Successfully created match between ${firstPlayer.playerId} and ${secondPlayer.playerId} in room ${roomId}`
-    );
+      // Remove entries for both players
+      let removedCount = 0;
+      for (const entry of waitingPlayers) {
+        try {
+          const queuedPlayer = JSON.parse(entry);
+          if (
+            queuedPlayer.player.playerId === firstPlayer.playerId ||
+            queuedPlayer.player.playerId === secondPlayer.playerId
+          ) {
+            await this.redisClient.lRem('waiting:queue', 1, entry);
+            removedCount++;
+            if (removedCount === 2) break; // We've removed both players
+          }
+        } catch (error) {
+          console.error('Error parsing queue entry:', error);
+        }
+      }
+
+      if (removedCount !== 2) {
+        console.warn(
+          `Expected to remove 2 players, but only removed ${removedCount}`
+        );
+      }
+
+      console.log(
+        `Successfully created match between ${firstPlayer.playerId} and ${secondPlayer.playerId} in room ${roomId}`
+      );
+    } finally {
+      // Always release the lock
+      await this.redisClient?.del(lockKey);
+    }
   }
 
   /**
@@ -603,6 +625,19 @@ export class MatchmakingService {
     player2: IPublicState,
     roomId: string
   ): Promise<void> {
+    // Prevent duplicate notifications for the same room
+    const notificationKey = `notify_${roomId}`;
+    const existingNotification = await this.redisClient?.get(notificationKey);
+
+    if (existingNotification) {
+      console.log(
+        `🚫 Skipping duplicate notification for room ${roomId} (already notified)`
+      );
+      return;
+    }
+
+    // Set a 5-second lock to prevent duplicate notifications
+    await this.redisClient?.setEx(notificationKey, 5, 'notified');
     if (!this.server) {
       console.error('Server not initialized in MatchmakingService');
       return;
@@ -641,6 +676,9 @@ export class MatchmakingService {
 
     // Emit locally and join room when sockets are on this instance
     if (socket1) {
+      console.log(
+        `🎯 [MATCH_FOUND] Direct emit to socket1 (${socket1.id}) for player ${player1.playerId} in room ${roomId}`
+      );
       socket1.emit('matchFound', payloadForP1);
       socket1.join(roomId);
       try {
@@ -662,6 +700,9 @@ export class MatchmakingService {
       }
     }
     if (socket2) {
+      console.log(
+        `🎯 [MATCH_FOUND] Direct emit to socket2 (${socket2.id}) for player ${player2.playerId} in room ${roomId}`
+      );
       socket2.emit('matchFound', payloadForP2);
       socket2.join(roomId);
       try {
@@ -685,12 +726,18 @@ export class MatchmakingService {
 
     // Always publish cross-instance targeted events so remote sockets get the message and join
     if (player1.socketId) {
+      console.log(
+        `📡 [MATCH_FOUND] Publishing cross-instance event for player1 (${player1.playerId}) socket ${player1.socketId} in room ${roomId}`
+      );
       await this.gameStateService.publishToRoom(roomId, 'matchFound', {
         payload: payloadForP1,
         targetSocketId: player1.socketId,
       });
     }
     if (player2.socketId) {
+      console.log(
+        `📡 [MATCH_FOUND] Publishing cross-instance event for player2 (${player2.playerId}) socket ${player2.socketId} in room ${roomId}`
+      );
       await this.gameStateService.publishToRoom(roomId, 'matchFound', {
         payload: payloadForP2,
         targetSocketId: player2.socketId,

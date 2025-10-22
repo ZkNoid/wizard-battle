@@ -533,6 +533,7 @@ export class GameStateService {
     const now = Date.now();
 
     // Prevent duplicate events within 1 second
+    // TODO: remove not working
     if (this.eventCache.has(eventKey)) {
       const lastSent = this.eventCache.get(eventKey);
       if (lastSent && now - lastSent < 1000) {
