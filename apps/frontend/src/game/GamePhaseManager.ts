@@ -45,7 +45,8 @@ export class GamePhaseManager {
   private onGameEnd?: (winner: boolean) => void;
   private hasSubmittedActions = false; // Track if actions were submitted this turn
   private hasSubmittedTrustedState = false; // Track if trusted state was submitted this turn
-  private trustedStatePollingInterval: NodeJS.Timeout | null = null;
+  private trustedStatePollingInterval: ReturnType<typeof setInterval> | null =
+    null;
   private phaseTimerDeadlineMs: number | null = null;
   private cachedTrustedStateForTurn?: ITrustedState; // Cached once per round
   private stageProcessMutex: Mutex;
