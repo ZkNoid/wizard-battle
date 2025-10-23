@@ -39,49 +39,9 @@ export default function Matchmaking({
   };
 
   useEffect(() => {
-    if (!socket) return;
-    if (!stater) return;
-    if (sendRequest.current) return;
-    sendRequest.current = true;
-    // Reuse stable playerId from sessionStorage (fallback to random if missing)
-    const stored =
-      typeof window !== 'undefined'
-        ? window.sessionStorage.getItem('playerId')
-        : null;
-    const playerId = stored
-      ? Number(stored)
-      : Math.floor(Math.random() * 10000);
-    if (typeof window !== 'undefined' && !stored) {
-      window.sessionStorage.setItem('playerId', String(playerId));
-    }
-    stater.state.playerId = Field.from(playerId);
+    if (!socket || !stater) return;
 
-    let publicState = stater.generatePublicState();
-
-    let data = {
-      playerId,
-      playerSetup: {
-        socketId: socket.id!,
-        playerId: playerId.toString(),
-        fields: JSON.stringify(State.toJSON(publicState)),
-      } satisfies IPublicState,
-      nonce: 0,
-      signature: '',
-      setupProof: '',
-    };
-
-    console.log(data);
-
-    if (playMode === PlayMode.PVE) {
-      socket.emit('joinBotMatchmaking', {
-        addToQueue: data,
-      });
-    } else {
-      socket.emit('joinMatchmaking', {
-        addToQueue: data,
-      });
-    }
-
+    // Handler defined first so it's available for both registration and cleanup
     const handleMatchFound = (response: IFoundMatch) => {
       console.log(
         '🎮 Match found! Creating GamePhaseManager and confirming joined...'
@@ -108,19 +68,57 @@ export default function Matchmaking({
       router.push(`/game`);
     };
 
+    // Always register the listener (runs every time effect executes)
     socket.on('matchFound', handleMatchFound);
 
-    // Cleanup function to remove event listener
+    // Only send matchmaking request once
+    if (!sendRequest.current) {
+      sendRequest.current = true;
+
+      // Reuse stable playerId from sessionStorage (fallback to random if missing)
+      const stored =
+        typeof window !== 'undefined'
+          ? window.sessionStorage.getItem('playerId')
+          : null;
+      const playerId = stored
+        ? Number(stored)
+        : Math.floor(Math.random() * 10000);
+      if (typeof window !== 'undefined' && !stored) {
+        window.sessionStorage.setItem('playerId', String(playerId));
+      }
+      stater.state.playerId = Field.from(playerId);
+
+      let publicState = stater.generatePublicState();
+
+      let data = {
+        playerId,
+        playerSetup: {
+          socketId: socket.id!,
+          playerId: playerId.toString(),
+          fields: JSON.stringify(State.toJSON(publicState)),
+        } satisfies IPublicState,
+        nonce: 0,
+        signature: '',
+        setupProof: '',
+      };
+
+      console.log(data);
+
+      if (playMode === PlayMode.PVE) {
+        socket.emit('joinBotMatchmaking', {
+          addToQueue: data,
+        });
+      } else {
+        socket.emit('joinMatchmaking', {
+          addToQueue: data,
+        });
+      }
+    }
+
+    // Always cleanup: removes listener on unmount or before re-run
     return () => {
       socket.off('matchFound', handleMatchFound);
     };
-
-    // socket.on("matchFound", (response: MatchFoundResponse) => {
-    //   setOpponentState(
-    //     response.state.find((player) => player.playerId !== socket.id)!,
-    //   );
-    //   router.push(`/game`);
-    // });
   }, [socket, stater]);
 
   useEffect(() => {
