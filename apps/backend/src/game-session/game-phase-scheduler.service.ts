@@ -1,5 +1,5 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { GameStateService } from './game-state.service';
 import { GameSessionGateway } from './game-session.gateway';
 import { GamePhase } from '../../../common/types/gameplay.types';
@@ -49,7 +49,7 @@ export class GamePhaseSchedulerService {
    * @notice Process pending phase transitions every 5 seconds
    * @dev Checks Redis for rooms that need phase advancement
    */
-  @Cron(CronExpression.EVERY_5_SECONDS)
+  @Cron('*/5 * * * * *')
   async processPhaseTransitions() {
     if (!(await this.withRetry(() => this.isLeader()))) return;
     try {
@@ -70,7 +70,7 @@ export class GamePhaseSchedulerService {
    * @dev If no one submits → draw. If some submit and others don't → non-submitters lose.
    *
    * */
-  @Cron(CronExpression.EVERY_5_SECONDS)
+  @Cron('*/5 * * * * *')
   async enforceSpellCastingTimeouts() {
     if (!(await this.withRetry(() => this.isLeader()))) return;
     try {
@@ -221,7 +221,7 @@ export class GamePhaseSchedulerService {
    * @notice Clean up inactive rooms every 5 minutes
    * @dev Removes rooms with no activity for extended periods
    */
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron('0 */5 * * * *')
   async cleanupInactiveRooms() {
     if (!(await this.withRetry(() => this.isLeader()))) return;
     try {
@@ -250,7 +250,7 @@ export class GamePhaseSchedulerService {
    * @notice Check for dead instances every minute
    * @dev Cleans up resources from crashed instances
    */
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron('0 * * * * *')
   async cleanupDeadInstances() {
     if (!(await this.withRetry(() => this.isLeader()))) return;
     try {
@@ -263,7 +263,7 @@ export class GamePhaseSchedulerService {
   /**
    * @notice Update instance heartbeat every 30 seconds
    */
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron('*/30 * * * * *')
   async updateInstanceHeartbeat() {
     try {
       await this.withRetry(() => this.gameStateService.updateHeartbeat());
@@ -276,7 +276,7 @@ export class GamePhaseSchedulerService {
    * @notice Health monitoring every 30 seconds
    * @dev Logs system health metrics and detects issues
    */
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron('*/30 * * * * *')
   async monitorSystemHealth() {
     try {
       const health = await this.withRetry(() => this.getSystemHealth());
@@ -300,7 +300,7 @@ export class GamePhaseSchedulerService {
    * @notice Purge stale matches every minute
    * @dev Ensures Redis 'matches' entries are removed when rooms are finished or missing
    */
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron('0 * * * * *')
   async purgeStaleMatches() {
     if (!(await this.withRetry(() => this.isLeader()))) return;
     try {
