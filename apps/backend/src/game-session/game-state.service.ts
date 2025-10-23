@@ -52,6 +52,7 @@ interface GameState {
   createdAt: number; // Game creation timestamp
   updatedAt: number; // Last modification timestamp
   playersConfirmedJoined: string[]; // Players who confirmed they joined the match
+  version: number; // Optimistic locking version
 }
 
 interface SocketMapping {
@@ -184,7 +185,7 @@ export class GameStateService {
     roomId: string,
     ttlMs: number = 5000,
     owner: string = `${this.instanceId}-${Date.now()}`,
-    namespace: string = 'lock:phase'
+    namespace: string = 'lock'
   ): Promise<{ ok: boolean; lockKey: string; owner: string }> {
     const lockKey = this.buildLockKey(namespace, roomId);
     try {
@@ -207,17 +208,25 @@ export class GameStateService {
    * Release a lock if owned by the provided owner
    */
   async releaseRoomLock(lockKey: string, owner: string): Promise<boolean> {
+    const script = `
+      if redis.call('get', KEYS[1]) == ARGV[1] then
+        return redis.call('del', KEYS[1])
+      else
+        return 0
+      end
+    `;
     try {
-      const current = await this.redisClient.get(lockKey);
-      if (current === owner) {
-        await this.redisClient.del(lockKey);
+      const result = (await this.redisClient.eval(script, {
+        keys: [lockKey],
+        arguments: [owner],
+      })) as number;
+      if (result === 1) {
         console.log(`🔓 Released lock ${lockKey} by ${owner}`);
         return true;
+      } else {
+        console.log(`⚠️ Skip releasing lock ${lockKey}: owner mismatch`);
+        return false;
       }
-      console.log(
-        `⚠️ Skip releasing lock ${lockKey}: owner mismatch (have=${current}, want=${owner})`
-      );
-      return false;
     } catch (error) {
       console.error(`❌ Error releasing lock ${lockKey}:`, error);
       return false;
@@ -363,6 +372,7 @@ export class GameStateService {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       playersConfirmedJoined: [],
+      version: 0,
     };
 
     await this.redisClient.hSet(
@@ -387,33 +397,56 @@ export class GameStateService {
   }
 
   /**
-   * Update game state partially
+   * Update game state partially with optimistic locking
    * @param roomId - The room identifier
    * @param updates - Partial state fields to merge
-   * @dev Loads the current state, merges the provided fields, refreshes the
-   * `updatedAt` timestamp, and persists back to the `game_states` hash.
+   * @dev Uses WATCH/MULTI/EXEC to ensure atomic update, retrying on conflict
    */
   async updateGameState(
     roomId: string,
     updates: Partial<GameState>
   ): Promise<void> {
-    const currentState = await this.getGameState(roomId);
-    if (!currentState) {
-      throw new Error(`Game state not found for room ${roomId}`);
+    const maxRetries = 5;
+    let attempts = 0;
+    const hashKey = 'game_states';
+
+    while (attempts < maxRetries) {
+      await this.redisClient.watch(hashKey);
+      try {
+        const stateStr = await this.redisClient.hGet(hashKey, roomId);
+        if (!stateStr) {
+          throw new Error(`Game state not found for room ${roomId}`);
+        }
+        const currentState: GameState = JSON.parse(stateStr);
+        const currentVersion = currentState.version ?? 0;
+
+        const updatedState: GameState = {
+          ...currentState,
+          ...updates,
+          updatedAt: Date.now(),
+          version: currentVersion + 1,
+        };
+
+        const multi = this.redisClient.multi();
+        multi.hSet(hashKey, roomId, JSON.stringify(updatedState));
+        const execResult = await multi.exec();
+
+        if (execResult !== null) {
+          console.log(`Updated game state for room ${roomId}`);
+          return;
+        }
+        // Conflict detected, retry
+        attempts++;
+        console.log(
+          `Update conflict for room ${roomId}, retrying (${attempts}/${maxRetries})`
+        );
+      } finally {
+        await this.redisClient.unwatch();
+      }
     }
-
-    const updatedState = {
-      ...currentState,
-      ...updates,
-      updatedAt: Date.now(),
-    };
-
-    await this.redisClient.hSet(
-      'game_states',
-      roomId,
-      JSON.stringify(updatedState)
+    throw new Error(
+      `Failed to update game state for room ${roomId} after ${maxRetries} attempts`
     );
-    console.log(`Updated game state for room ${roomId}`);
   }
 
   /**
@@ -977,60 +1010,7 @@ export class GameStateService {
     allHaveTrustedStates: boolean;
     updatedGameState: GameState | null;
   }> {
-    const lockKey = `lock:${roomId}`;
-    const lockValue = `${playerId}-${Date.now()}`;
-    const lockTimeout = 5000; // 5 seconds
-
-    console.log(
-      `🔧 Lock details: key=${lockKey}, value=${lockValue}, timeout=${lockTimeout}`
-    );
-
-    try {
-      // Acquire Redis lock with more robust retry logic
-      let lockAcquired = false;
-      let attempts = 0;
-      const maxAttempts = 20;
-      const baseDelay = 10; // Start with 10ms delay
-
-      while (!lockAcquired && attempts < maxAttempts) {
-        // Use a more atomic approach with EXISTS check
-        const exists = await this.redisClient.exists(lockKey);
-        if (exists === 0) {
-          // Lock doesn't exist, try to acquire it
-          const result = await this.redisClient.set(
-            lockKey,
-            String(lockValue),
-            {
-              PX: lockTimeout,
-              NX: true,
-            }
-          );
-          lockAcquired = result === 'OK';
-        }
-
-        if (!lockAcquired) {
-          attempts++;
-          const delay = baseDelay * Math.pow(2, attempts); // Exponential backoff
-          console.log(
-            `⏳ Player ${playerId} waiting for lock on room ${roomId} (attempt ${attempts}/${maxAttempts}, delay ${delay}ms)`
-          );
-          await new Promise((resolve) => setTimeout(resolve, delay));
-        }
-      }
-
-      if (!lockAcquired) {
-        console.error(
-          `❌ Player ${playerId} failed to acquire lock after ${maxAttempts} attempts`
-        );
-        return {
-          allReady: false,
-          allHaveTrustedStates: false,
-          updatedGameState: null,
-        };
-      }
-
-      console.log(`🔒 Player ${playerId} acquired lock for room ${roomId}`);
-
+    return this.withRoomLock(roomId, async () => {
       const gameState = await this.getGameState(roomId);
       if (!gameState) {
         return {
@@ -1121,22 +1101,7 @@ export class GameStateService {
         allHaveTrustedStates,
         updatedGameState: gameState,
       };
-    } finally {
-      // Release the lock - simplified approach
-      try {
-        const currentLockValue = await this.redisClient.get(lockKey);
-        if (currentLockValue === String(lockValue)) {
-          await this.redisClient.del(lockKey);
-          console.log(`🔓 Player ${playerId} released lock for room ${roomId}`);
-        } else {
-          console.log(
-            `⚠️ Lock value mismatch for room ${roomId}, not releasing`
-          );
-        }
-      } catch (error) {
-        console.error(`❌ Error releasing lock for room ${roomId}:`, error);
-      }
-    }
+    });
   }
 
   /**
