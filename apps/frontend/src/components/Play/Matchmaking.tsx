@@ -82,7 +82,7 @@ export default function Matchmaking({
       });
     }
 
-    socket.on('matchFound', (response: IFoundMatch) => {
+    const handleMatchFound = (response: IFoundMatch) => {
       console.log(
         '🎮 Match found! Creating GamePhaseManager and confirming joined...'
       );
@@ -106,7 +106,14 @@ export default function Matchmaking({
         )
       );
       router.push(`/game`);
-    });
+    };
+
+    socket.on('matchFound', handleMatchFound);
+
+    // Cleanup function to remove event listener
+    return () => {
+      socket.off('matchFound', handleMatchFound);
+    };
 
     // socket.on("matchFound", (response: MatchFoundResponse) => {
     //   setOpponentState(
