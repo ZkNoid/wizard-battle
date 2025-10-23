@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ScheduleModule } from '@nestjs/schedule';
 import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
 import { GameStateService } from './game-state.service';
 import { GameSessionGateway } from './game-session.gateway';
@@ -24,13 +25,49 @@ describe('GamePhaseSchedulerService', () => {
       keys: jest.fn().mockResolvedValue([]),
       hKeys: jest.fn().mockResolvedValue([]),
       get: jest.fn(),
-      set: jest.fn(),
+      set: jest.fn().mockResolvedValue('OK'),
       del: jest.fn(),
       hGetAll: jest.fn().mockResolvedValue({}),
       hDel: jest.fn(),
+      scan: jest.fn().mockResolvedValue({ cursor: '0', keys: [] }),
+      hScan: jest.fn().mockResolvedValue({ cursor: '0', entries: [] }),
+      sIsMember: jest.fn().mockResolvedValue(false),
+      sAdd: jest.fn().mockResolvedValue(1),
+      expire: jest.fn().mockResolvedValue(1),
     };
 
+    // Mock additional GameStateService methods
+    mockGameStateService.acquireRoomLock = jest
+      .fn()
+      .mockResolvedValue({
+        ok: true,
+        lockKey: 'test-lock',
+        owner: 'test-owner',
+      });
+    mockGameStateService.releaseRoomLock = jest.fn().mockResolvedValue(true);
+    mockGameStateService.isLeader = jest.fn().mockResolvedValue(true);
+    mockGameStateService.getInstanceId = jest
+      .fn()
+      .mockReturnValue('test-instance');
+    mockGameStateService.getInactiveRooms = jest.fn().mockResolvedValue([]);
+    mockGameStateService.cleanupRoom = jest.fn().mockResolvedValue(undefined);
+    mockGameStateService.cleanupDeadInstances = jest
+      .fn()
+      .mockResolvedValue(undefined);
+    mockGameStateService.updateHeartbeat = jest
+      .fn()
+      .mockResolvedValue(undefined);
+    mockGameStateService.removeGameState = jest
+      .fn()
+      .mockResolvedValue(undefined);
+    mockGameStateService.markRoomForCleanup = jest
+      .fn()
+      .mockResolvedValue(undefined);
+    mockGameStateService.publishToRoom = jest.fn().mockResolvedValue(undefined);
+    mockGameStateService.markPlayerDead = jest.fn().mockResolvedValue(null);
+
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ScheduleModule.forRoot()],
       providers: [
         GamePhaseSchedulerService,
         { provide: GameStateService, useValue: mockGameStateService },
@@ -55,7 +92,10 @@ describe('GamePhaseSchedulerService', () => {
         updatedAt: Date.now() - 1000,
       };
 
-      mockGameStateService.redisClient.hKeys.mockResolvedValue(['test-room']);
+      mockGameStateService.redisClient.scan.mockResolvedValue({
+        cursor: '0',
+        keys: ['game_states:test-room'],
+      });
       mockGameStateService.getGameState.mockResolvedValue(mockGameState);
 
       // Call the cron method directly
@@ -113,10 +153,10 @@ describe('GamePhaseSchedulerService', () => {
 
     it('should monitor system health via cron', async () => {
       // Mock room keys for health monitoring
-      mockGameStateService.redisClient.keys.mockResolvedValue([
-        'game_state:room1',
-        'game_state:room2',
-      ]);
+      mockGameStateService.redisClient.scan.mockResolvedValue({
+        cursor: '0',
+        keys: ['game_states:room1', 'game_states:room2'],
+      });
 
       const mockGameState1 = {
         roomId: 'room1',
@@ -204,7 +244,7 @@ CRON-BASED APPROACH:
   describe('Error Scenarios', () => {
     it('should handle errors gracefully in cron jobs', async () => {
       // Simulate Redis error
-      mockGameStateService.redisClient.keys.mockRejectedValue(
+      mockGameStateService.redisClient.scan.mockRejectedValue(
         new Error('Redis connection lost')
       );
 
@@ -231,7 +271,10 @@ CRON-BASED APPROACH:
         updatedAt: Date.now(),
       };
 
-      mockGameStateService.redisClient.hKeys.mockResolvedValue(['error-room']);
+      mockGameStateService.redisClient.scan.mockResolvedValue({
+        cursor: '0',
+        keys: ['game_states:error-room'],
+      });
       mockGameStateService.getGameState.mockResolvedValue(mockGameState);
       mockGameSessionGateway.advanceToSpellEffects.mockRejectedValue(
         new Error('Room processing failed')

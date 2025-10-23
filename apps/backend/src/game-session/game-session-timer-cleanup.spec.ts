@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ScheduleModule } from '@nestjs/schedule';
 import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
 import { GameStateService } from './game-state.service';
 import { GameSessionGateway } from './game-session.gateway';
@@ -28,6 +29,7 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
     mockGameSessionGateway = createMock<GameSessionGateway>();
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ScheduleModule.forRoot()],
       providers: [
         GamePhaseSchedulerService,
         { provide: GameStateService, useValue: mockGameStateService },

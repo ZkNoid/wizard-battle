@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ScheduleModule } from '@nestjs/schedule';
 import { GameSessionGateway } from './game-session.gateway';
 import { MatchmakingService } from '../matchmaking/matchmaking.service';
 import { GameStateService } from './game-state.service';
@@ -73,6 +74,7 @@ describe('GameSessionGateway - Room Cleanup Tests', () => {
     });
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ScheduleModule.forRoot()],
       providers: [
         GameSessionGateway,
         { provide: MatchmakingService, useValue: mockMatchmakingService },

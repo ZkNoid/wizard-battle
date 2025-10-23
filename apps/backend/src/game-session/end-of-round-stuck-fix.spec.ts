@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ScheduleModule } from '@nestjs/schedule';
 import { GameSessionGateway } from './game-session.gateway';
 import { GameStateService } from './game-state.service';
 import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
@@ -54,6 +55,7 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
     });
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ScheduleModule.forRoot()],
       providers: [
         GameSessionGateway,
         {
