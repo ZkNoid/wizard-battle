@@ -224,6 +224,38 @@ export class GameStateService {
     }
   }
 
+  /**
+   * Helper to execute a function under a room lock with retries
+   */
+  private async withRoomLock<T>(
+    roomId: string,
+    fn: () => Promise<T>,
+    ttlMs: number = 5000,
+    maxAttempts: number = 20,
+    baseDelay: number = 10
+  ): Promise<T> {
+    let attempts = 0;
+    while (attempts < maxAttempts) {
+      const { ok, lockKey, owner } = await this.acquireRoomLock(roomId, ttlMs);
+      if (ok) {
+        try {
+          return await fn();
+        } finally {
+          await this.releaseRoomLock(lockKey, owner);
+        }
+      }
+      attempts++;
+      const delay = baseDelay * Math.pow(2, attempts); // Exponential backoff
+      console.log(
+        `⏳ Waiting for lock on room ${roomId} (attempt ${attempts}/${maxAttempts}, delay ${delay}ms)`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+    throw new Error(
+      `Failed to acquire lock for room ${roomId} after ${maxAttempts} attempts`
+    );
+  }
+
   // Socket-to-Instance Mapping
   /**
    * Register a socket mapping
@@ -398,29 +430,31 @@ export class GameStateService {
     playerId: string,
     state: any
   ): Promise<void> {
-    const gameState = await this.getGameState(roomId);
-    if (!gameState) {
-      throw new Error(`Game state not found for room ${roomId}`);
-    }
+    await this.withRoomLock(roomId, async () => {
+      const gameState = await this.getGameState(roomId);
+      if (!gameState) {
+        throw new Error(`Game state not found for room ${roomId}`);
+      }
 
-    const playerIndex = gameState.players.findIndex((p) => p.id === playerId);
-    if (playerIndex === -1) {
-      throw new Error(`Player ${playerId} not found in room ${roomId}`);
-    }
+      const playerIndex = gameState.players.findIndex((p) => p.id === playerId);
+      if (playerIndex === -1) {
+        throw new Error(`Player ${playerId} not found in room ${roomId}`);
+      }
 
-    if (gameState.players[playerIndex]) {
-      gameState.players[playerIndex].state = state;
-      gameState.updatedAt = Date.now();
+      if (gameState.players[playerIndex]) {
+        gameState.players[playerIndex].state = state;
+        gameState.updatedAt = Date.now();
 
-      await this.redisClient.hSet(
-        'game_states',
-        roomId,
-        JSON.stringify(gameState)
-      );
-      console.log(`Updated player state for ${playerId} in room ${roomId}`);
-    } else {
-      throw new Error(`Player ${playerId} not found in room ${roomId}`);
-    }
+        await this.redisClient.hSet(
+          'game_states',
+          roomId,
+          JSON.stringify(gameState)
+        );
+        console.log(`Updated player state for ${playerId} in room ${roomId}`);
+      } else {
+        throw new Error(`Player ${playerId} not found in room ${roomId}`);
+      }
+    });
   }
 
   /**
@@ -434,26 +468,28 @@ export class GameStateService {
     playerId: string,
     socketId: string
   ): Promise<void> {
-    const gameState = await this.getGameState(roomId);
-    if (!gameState) return;
+    await this.withRoomLock(roomId, async () => {
+      const gameState = await this.getGameState(roomId);
+      if (!gameState) return;
 
-    const playerIndex =
-      gameState.players?.findIndex((p) => p.id === playerId) ?? -1;
-    if (playerIndex < 0) return;
+      const playerIndex =
+        gameState.players?.findIndex((p) => p.id === playerId) ?? -1;
+      if (playerIndex < 0) return;
 
-    if (gameState.players && gameState.players[playerIndex]) {
-      gameState.players[playerIndex].socketId = socketId;
-      gameState.updatedAt = Date.now();
+      if (gameState.players && gameState.players[playerIndex]) {
+        gameState.players[playerIndex].socketId = socketId;
+        gameState.updatedAt = Date.now();
 
-      await this.redisClient.hSet(
-        'game_states',
-        roomId,
-        JSON.stringify(gameState)
-      );
-      console.log(
-        `Updated player ${playerId} socketId in room ${roomId} to ${socketId}`
-      );
-    }
+        await this.redisClient.hSet(
+          'game_states',
+          roomId,
+          JSON.stringify(gameState)
+        );
+        console.log(
+          `Updated player ${playerId} socketId in room ${roomId} to ${socketId}`
+        );
+      }
+    });
   }
 
   /**
@@ -466,49 +502,51 @@ export class GameStateService {
     roomId: string,
     playerId: string
   ): Promise<boolean> {
-    const gameState = await this.getGameState(roomId);
-    if (!gameState) {
-      throw new Error(`Game state not found for room ${roomId}`);
-    }
+    return this.withRoomLock(roomId, async () => {
+      const gameState = await this.getGameState(roomId);
+      if (!gameState) {
+        throw new Error(`Game state not found for room ${roomId}`);
+      }
 
-    const playerIndex = gameState.players.findIndex((p) => p.id === playerId);
-    if (playerIndex === -1) {
-      throw new Error(`Player ${playerId} not found in room ${roomId}`);
-    }
+      const playerIndex = gameState.players.findIndex((p) => p.id === playerId);
+      if (playerIndex === -1) {
+        throw new Error(`Player ${playerId} not found in room ${roomId}`);
+      }
 
-    // Mark player as confirmed joined
-    if (gameState.players[playerIndex]) {
-      gameState.players[playerIndex].confirmedJoined = true;
-    }
+      // Mark player as confirmed joined
+      if (gameState.players[playerIndex]) {
+        gameState.players[playerIndex].confirmedJoined = true;
+      }
 
-    // Add to confirmed players list if not already there
-    // Initialize playersConfirmedJoined if it doesn't exist (for backward compatibility)
-    if (!gameState.playersConfirmedJoined) {
-      gameState.playersConfirmedJoined = [];
-    }
-    if (!gameState.playersConfirmedJoined.includes(playerId)) {
-      gameState.playersConfirmedJoined.push(playerId);
-    }
+      // Add to confirmed players list if not already there
+      // Initialize playersConfirmedJoined if it doesn't exist (for backward compatibility)
+      if (!gameState.playersConfirmedJoined) {
+        gameState.playersConfirmedJoined = [];
+      }
+      if (!gameState.playersConfirmedJoined.includes(playerId)) {
+        gameState.playersConfirmedJoined.push(playerId);
+      }
 
-    gameState.updatedAt = Date.now();
+      gameState.updatedAt = Date.now();
 
-    await this.redisClient.hSet(
-      'game_states',
-      roomId,
-      JSON.stringify(gameState)
-    );
+      await this.redisClient.hSet(
+        'game_states',
+        roomId,
+        JSON.stringify(gameState)
+      );
 
-    console.log(`Player ${playerId} confirmed joined in room ${roomId}`);
+      console.log(`Player ${playerId} confirmed joined in room ${roomId}`);
 
-    // Check if all players have confirmed
-    const allPlayersConfirmed = gameState.players.every(
-      (p) => p.confirmedJoined
-    );
-    console.log(
-      `All players confirmed: ${allPlayersConfirmed} (${gameState.playersConfirmedJoined?.length || 0}/${gameState.players.length})`
-    );
+      // Check if all players have confirmed
+      const allPlayersConfirmed = gameState.players.every(
+        (p) => p.confirmedJoined
+      );
+      console.log(
+        `All players confirmed: ${allPlayersConfirmed} (${gameState.playersConfirmedJoined?.length || 0}/${gameState.players.length})`
+      );
 
-    return allPlayersConfirmed;
+      return allPlayersConfirmed;
+    });
   }
 
   /**
@@ -658,24 +696,26 @@ export class GameStateService {
    * - Players ready list
    */
   async clearTurnData(roomId: string): Promise<void> {
-    const gameState = await this.getGameState(roomId);
-    if (!gameState) return;
+    await this.withRoomLock(roomId, async () => {
+      const gameState = await this.getGameState(roomId);
+      if (!gameState) return;
 
-    console.log(`🧹 Clearing turn data for room ${roomId}`);
+      console.log(`🧹 Clearing turn data for room ${roomId}`);
 
-    // Clear turn-specific player data
-    const clearedPlayers = gameState.players.map((player) => ({
-      ...player,
-      currentActions: undefined,
-      trustedState: undefined,
-    }));
+      // Clear turn-specific player data
+      const clearedPlayers = gameState.players.map((player) => ({
+        ...player,
+        currentActions: undefined,
+        trustedState: undefined,
+      }));
 
-    await this.updateGameState(roomId, {
-      players: clearedPlayers,
-      playersReady: [],
+      await this.updateGameState(roomId, {
+        players: clearedPlayers,
+        playersReady: [],
+      });
+
+      console.log(`✅ Turn data cleared for room ${roomId}`);
     });
-
-    console.log(`✅ Turn data cleared for room ${roomId}`);
   }
 
   /**
@@ -693,35 +733,37 @@ export class GameStateService {
    * - Persists changes to Redis for multi-instance consistency
    */
   async advanceGamePhase(roomId: string): Promise<GamePhase | null> {
-    const gameState = await this.getGameState(roomId);
-    if (!gameState) return null;
+    return this.withRoomLock(roomId, async () => {
+      const gameState = await this.getGameState(roomId);
+      if (!gameState) return null;
 
-    const phases = Object.values(GamePhase);
-    const currentPhaseIndex = phases.indexOf(gameState.currentPhase);
-    const nextPhase = phases[currentPhaseIndex + 1];
+      const phases = Object.values(GamePhase);
+      const currentPhaseIndex = phases.indexOf(gameState.currentPhase);
+      const nextPhase = phases[currentPhaseIndex + 1];
 
-    if (nextPhase) {
-      await this.updateGameState(roomId, {
-        currentPhase: nextPhase,
-        phaseStartTime: Date.now(),
-        playersReady: [],
-      });
-      console.log(
-        `🔄 Advanced room ${roomId} from ${gameState.currentPhase} to ${nextPhase}`
-      );
-      return nextPhase;
-    } else {
-      // Start new turn
-      const newTurn = gameState.turn + 1;
-      await this.updateGameState(roomId, {
-        turn: newTurn,
-        currentPhase: GamePhase.SPELL_CASTING,
-        phaseStartTime: Date.now(),
-        playersReady: [],
-      });
-      console.log(`🔄 Started new turn ${newTurn} for room ${roomId}`);
-      return GamePhase.SPELL_CASTING;
-    }
+      if (nextPhase) {
+        await this.updateGameState(roomId, {
+          currentPhase: nextPhase,
+          phaseStartTime: Date.now(),
+          playersReady: [],
+        });
+        console.log(
+          `🔄 Advanced room ${roomId} from ${gameState.currentPhase} to ${nextPhase}`
+        );
+        return nextPhase;
+      } else {
+        // Start new turn
+        const newTurn = gameState.turn + 1;
+        await this.updateGameState(roomId, {
+          turn: newTurn,
+          currentPhase: GamePhase.SPELL_CASTING,
+          phaseStartTime: Date.now(),
+          playersReady: [],
+        });
+        console.log(`🔄 Started new turn ${newTurn} for room ${roomId}`);
+        return GamePhase.SPELL_CASTING;
+      }
+    });
   }
 
   /**
@@ -743,69 +785,71 @@ export class GameStateService {
    * - Added validation to ensure player exists and is alive
    */
   async markPlayerReady(roomId: string, playerId: string): Promise<boolean> {
-    const gameState = await this.getGameState(roomId);
-    if (!gameState) return false;
+    return this.withRoomLock(roomId, async () => {
+      const gameState = await this.getGameState(roomId);
+      if (!gameState) return false;
 
-    // Validate that the player exists and is alive
-    const player = gameState.players.find((p) => p.id === playerId);
-    if (!player) {
+      // Validate that the player exists and is alive
+      const player = gameState.players.find((p) => p.id === playerId);
+      if (!player) {
+        console.log(
+          `⚠️ markPlayerReady: Player ${playerId} not found in room ${roomId}`
+        );
+        return false;
+      }
+
+      if (!player.isAlive) {
+        console.log(
+          `⚠️ markPlayerReady: Player ${playerId} is not alive in room ${roomId}`
+        );
+        return false;
+      }
+
+      // Add to ready list if not already present
+      if (!gameState.playersReady.includes(playerId)) {
+        gameState.playersReady.push(playerId);
+        await this.updateGameState(roomId, {
+          playersReady: gameState.playersReady,
+        });
+        console.log(
+          `✅ Added player ${playerId} to ready list in room ${roomId}`
+        );
+      } else {
+        console.log(
+          `ℹ️ Player ${playerId} already marked ready in room ${roomId}`
+        );
+      }
+
+      // Get fresh state after update to ensure consistency
+      const updatedGameState = await this.getGameState(roomId);
+      if (!updatedGameState) return false;
+
+      // Check if all alive players are ready
+      const alivePlayers = updatedGameState.players.filter((p) => p.isAlive);
+      const readyCount = updatedGameState.playersReady.length;
+      const aliveCount = alivePlayers.length;
+
       console.log(
-        `⚠️ markPlayerReady: Player ${playerId} not found in room ${roomId}`
+        `🔍 Readiness check for room ${roomId}: ${readyCount}/${aliveCount} players ready`
       );
-      return false;
-    }
 
-    if (!player.isAlive) {
-      console.log(
-        `⚠️ markPlayerReady: Player ${playerId} is not alive in room ${roomId}`
+      // Clean up playersReady list - remove any dead players
+      const cleanedPlayersReady = updatedGameState.playersReady.filter((id) =>
+        alivePlayers.some((p) => p.id === id)
       );
-      return false;
-    }
 
-    // Add to ready list if not already present
-    if (!gameState.playersReady.includes(playerId)) {
-      gameState.playersReady.push(playerId);
-      await this.updateGameState(roomId, {
-        playersReady: gameState.playersReady,
-      });
-      console.log(
-        `✅ Added player ${playerId} to ready list in room ${roomId}`
-      );
-    } else {
-      console.log(
-        `ℹ️ Player ${playerId} already marked ready in room ${roomId}`
-      );
-    }
+      if (cleanedPlayersReady.length !== updatedGameState.playersReady.length) {
+        console.log(
+          `🧹 Cleaned up playersReady list in room ${roomId}: removed ${updatedGameState.playersReady.length - cleanedPlayersReady.length} dead players`
+        );
+        await this.updateGameState(roomId, {
+          playersReady: cleanedPlayersReady,
+        });
+        return cleanedPlayersReady.length >= aliveCount;
+      }
 
-    // Get fresh state after update to ensure consistency
-    const updatedGameState = await this.getGameState(roomId);
-    if (!updatedGameState) return false;
-
-    // Check if all alive players are ready
-    const alivePlayers = updatedGameState.players.filter((p) => p.isAlive);
-    const readyCount = updatedGameState.playersReady.length;
-    const aliveCount = alivePlayers.length;
-
-    console.log(
-      `🔍 Readiness check for room ${roomId}: ${readyCount}/${aliveCount} players ready`
-    );
-
-    // Clean up playersReady list - remove any dead players
-    const cleanedPlayersReady = updatedGameState.playersReady.filter((id) =>
-      alivePlayers.some((p) => p.id === id)
-    );
-
-    if (cleanedPlayersReady.length !== updatedGameState.playersReady.length) {
-      console.log(
-        `🧹 Cleaned up playersReady list in room ${roomId}: removed ${updatedGameState.playersReady.length - cleanedPlayersReady.length} dead players`
-      );
-      await this.updateGameState(roomId, {
-        playersReady: cleanedPlayersReady,
-      });
-      return cleanedPlayersReady.length >= aliveCount;
-    }
-
-    return readyCount >= aliveCount;
+      return readyCount >= aliveCount;
+    });
   }
 
   /**
@@ -830,16 +874,19 @@ export class GameStateService {
     playerId: string,
     actions: IUserActions
   ): Promise<void> {
-    const gameState = await this.getGameState(roomId);
-    if (!gameState) throw new Error(`Game state not found for room ${roomId}`);
+    await this.withRoomLock(roomId, async () => {
+      const gameState = await this.getGameState(roomId);
+      if (!gameState)
+        throw new Error(`Game state not found for room ${roomId}`);
 
-    const playerIndex = gameState.players.findIndex((p) => p.id === playerId);
+      const playerIndex = gameState.players.findIndex((p) => p.id === playerId);
 
-    if (playerIndex === -1 || !gameState.players[playerIndex])
-      throw new Error(`Player ${playerId} not found in room ${roomId}`);
+      if (playerIndex === -1 || !gameState.players[playerIndex])
+        throw new Error(`Player ${playerId} not found in room ${roomId}`);
 
-    gameState.players[playerIndex].currentActions = actions;
-    await this.updateGameState(roomId, { players: gameState.players });
+      gameState.players[playerIndex].currentActions = actions;
+      await this.updateGameState(roomId, { players: gameState.players });
+    });
   }
 
   /**
@@ -899,15 +946,18 @@ export class GameStateService {
     playerId: string,
     trustedState: ITrustedState
   ): Promise<void> {
-    const gameState = await this.getGameState(roomId);
-    if (!gameState) throw new Error(`Game state not found for room ${roomId}`);
+    await this.withRoomLock(roomId, async () => {
+      const gameState = await this.getGameState(roomId);
+      if (!gameState)
+        throw new Error(`Game state not found for room ${roomId}`);
 
-    const playerIndex = gameState.players.findIndex((p) => p.id === playerId);
-    if (playerIndex === -1 || !gameState.players[playerIndex])
-      throw new Error(`Player ${playerId} not found in room ${roomId}`);
+      const playerIndex = gameState.players.findIndex((p) => p.id === playerId);
+      if (playerIndex === -1 || !gameState.players[playerIndex])
+        throw new Error(`Player ${playerId} not found in room ${roomId}`);
 
-    gameState.players[playerIndex].trustedState = trustedState;
-    await this.updateGameState(roomId, { players: gameState.players });
+      gameState.players[playerIndex].trustedState = trustedState;
+      await this.updateGameState(roomId, { players: gameState.players });
+    });
   }
 
   /**
@@ -1128,103 +1178,105 @@ export class GameStateService {
     roomId: string,
     playerId: string
   ): Promise<string | null> {
-    try {
-      const gameState = await this.getGameState(roomId);
-      if (!gameState) {
-        console.log(`⚠️ markPlayerDead: Room ${roomId} not found`);
-        return null;
-      }
+    return this.withRoomLock(roomId, async () => {
+      try {
+        const gameState = await this.getGameState(roomId);
+        if (!gameState) {
+          console.log(`⚠️ markPlayerDead: Room ${roomId} not found`);
+          return null;
+        }
 
-      // Validate input
-      if (!playerId || playerId.trim() === '') {
-        console.log(`⚠️ markPlayerDead: Invalid playerId: ${playerId}`);
-        return null;
-      }
+        // Validate input
+        if (!playerId || playerId.trim() === '') {
+          console.log(`⚠️ markPlayerDead: Invalid playerId: ${playerId}`);
+          return null;
+        }
 
-      const playerIndex = gameState.players.findIndex(
-        (p) => p && p.id === playerId
-      );
-      if (playerIndex === -1 || !gameState.players[playerIndex]) {
-        console.log(
-          `⚠️ markPlayerDead: Player ${playerId} not found in room ${roomId}`
+        const playerIndex = gameState.players.findIndex(
+          (p) => p && p.id === playerId
         );
-        return null;
-      }
+        if (playerIndex === -1 || !gameState.players[playerIndex]) {
+          console.log(
+            `⚠️ markPlayerDead: Player ${playerId} not found in room ${roomId}`
+          );
+          return null;
+        }
 
-      const targetPlayer = gameState.players[playerIndex];
+        const targetPlayer = gameState.players[playerIndex];
 
-      // Check if player is already dead
-      if (!targetPlayer.isAlive) {
-        console.log(`⚠️ markPlayerDead: Player ${playerId} is already dead`);
-        return null; // Don't process already dead players
-      }
+        // Check if player is already dead
+        if (!targetPlayer.isAlive) {
+          console.log(`⚠️ markPlayerDead: Player ${playerId} is already dead`);
+          return null; // Don't process already dead players
+        }
 
-      // Mark player as dead
-      targetPlayer.isAlive = false;
-      console.log(`💀 Player ${playerId} marked as dead in room ${roomId}`);
+        // Mark player as dead
+        targetPlayer.isAlive = false;
+        console.log(`💀 Player ${playerId} marked as dead in room ${roomId}`);
 
-      // END_OF_ROUND - issue fix
-      // Clean up playersReady list - remove dead player to prevent readiness calculation issues
-      const updatedPlayersReady = gameState.playersReady.filter(
-        (id) => id !== playerId
-      );
-      if (updatedPlayersReady.length !== gameState.playersReady.length) {
-        console.log(
-          `🧹 Removed dead player ${playerId} from playersReady list`
+        // END_OF_ROUND - issue fix
+        // Clean up playersReady list - remove dead player to prevent readiness calculation issues
+        const updatedPlayersReady = gameState.playersReady.filter(
+          (id) => id !== playerId
         );
-        gameState.playersReady = updatedPlayersReady;
-      }
+        if (updatedPlayersReady.length !== gameState.playersReady.length) {
+          console.log(
+            `🧹 Removed dead player ${playerId} from playersReady list`
+          );
+          gameState.playersReady = updatedPlayersReady;
+        }
 
-      // Clear trusted state of dead player to prevent state corruption
-      if (targetPlayer.trustedState) {
-        targetPlayer.trustedState = undefined;
-        console.log(`🧹 Cleared trusted state for dead player ${playerId}`);
-      }
+        // Clear trusted state of dead player to prevent state corruption
+        if (targetPlayer.trustedState) {
+          targetPlayer.trustedState = undefined;
+          console.log(`🧹 Cleared trusted state for dead player ${playerId}`);
+        }
 
-      // Check for winner - filter out null/undefined players and check isAlive safely
-      const alivePlayers = gameState.players.filter(
-        (p) => p && p.isAlive === true
-      );
+        // Check for winner - filter out null/undefined players and check isAlive safely
+        const alivePlayers = gameState.players.filter(
+          (p) => p && p.isAlive === true
+        );
 
-      console.log(`📊 Alive players count: ${alivePlayers.length}`);
+        console.log(`📊 Alive players count: ${alivePlayers.length}`);
 
-      if (alivePlayers.length === 1) {
-        // Winner found
-        const winner = alivePlayers[0]!;
+        if (alivePlayers.length === 1) {
+          // Winner found
+          const winner = alivePlayers[0]!;
+          await this.updateGameState(roomId, {
+            players: gameState.players,
+            playersReady: gameState.playersReady,
+            status: 'finished',
+          });
+          console.log(`🏆 Winner detected: ${winner.id} in room ${roomId}`);
+          return winner.id;
+        } else if (alivePlayers.length === 0) {
+          // Draw - no winner
+          await this.updateGameState(roomId, {
+            players: gameState.players,
+            playersReady: gameState.playersReady,
+            status: 'finished',
+          });
+          console.log(`🤝 Draw detected in room ${roomId}`);
+          return 'draw';
+        }
+
+        // Game continues - 2+ players still alive
         await this.updateGameState(roomId, {
           players: gameState.players,
           playersReady: gameState.playersReady,
-          status: 'finished',
         });
-        console.log(`🏆 Winner detected: ${winner.id} in room ${roomId}`);
-        return winner.id;
-      } else if (alivePlayers.length === 0) {
-        // Draw - no winner
-        await this.updateGameState(roomId, {
-          players: gameState.players,
-          playersReady: gameState.playersReady,
-          status: 'finished',
-        });
-        console.log(`🤝 Draw detected in room ${roomId}`);
-        return 'draw';
+        console.log(
+          `🎮 Game continues in room ${roomId} (${alivePlayers.length} players alive)`
+        );
+        return null;
+      } catch (error) {
+        console.error(
+          `❌ Error in markPlayerDead for room ${roomId}, player ${playerId}:`,
+          error
+        );
+        return null;
       }
-
-      // Game continues - 2+ players still alive
-      await this.updateGameState(roomId, {
-        players: gameState.players,
-        playersReady: gameState.playersReady,
-      });
-      console.log(
-        `🎮 Game continues in room ${roomId} (${alivePlayers.length} players alive)`
-      );
-      return null;
-    } catch (error) {
-      console.error(
-        `❌ Error in markPlayerDead for room ${roomId}, player ${playerId}:`,
-        error
-      );
-      return null;
-    }
+    });
   }
 
   /**
