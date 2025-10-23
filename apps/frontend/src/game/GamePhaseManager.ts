@@ -72,10 +72,15 @@ export class GamePhaseManager {
     this.onGameEnd = onGameEnd;
 
     // Send confirmation that player has joined the match
-    this.confirmJoined();
+    //this.confirmJoined();
 
     console.log('GamePhaseManager::initialization');
     this.stageProcessMutex = new Mutex();
+  }
+
+  public onGameLoaded() {
+    console.log('Game loaded by used, sendig confirmation');
+    this.confirmJoined();
   }
 
   /**

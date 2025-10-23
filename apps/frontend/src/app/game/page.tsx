@@ -306,6 +306,19 @@ export default function GamePage() {
   }, [setActionSend]);
 
   // Effects
+
+  useEffect(() => {
+    if (gamePhaseManager) {
+      // Wait for all game systems to be ready
+      const timer = setTimeout(() => {
+        console.log('🎮 Game systems ready, confirming player joined');
+        gamePhaseManager.onGameLoaded();
+      }, 2000); // 2 second delay to ensure everything is loaded
+
+      return () => clearTimeout(timer);
+    }
+  }, [gamePhaseManager]);
+
   useEffect(() => {
     if (!address) {
       router.replace('/');

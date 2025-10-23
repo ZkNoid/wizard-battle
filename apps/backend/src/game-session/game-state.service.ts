@@ -482,6 +482,10 @@ export class GameStateService {
     }
 
     // Add to confirmed players list if not already there
+    // Initialize playersConfirmedJoined if it doesn't exist (for backward compatibility)
+    if (!gameState.playersConfirmedJoined) {
+      gameState.playersConfirmedJoined = [];
+    }
     if (!gameState.playersConfirmedJoined.includes(playerId)) {
       gameState.playersConfirmedJoined.push(playerId);
     }
@@ -501,7 +505,7 @@ export class GameStateService {
       (p) => p.confirmedJoined
     );
     console.log(
-      `All players confirmed: ${allPlayersConfirmed} (${gameState.playersConfirmedJoined.length}/${gameState.players.length})`
+      `All players confirmed: ${allPlayersConfirmed} (${gameState.playersConfirmedJoined?.length || 0}/${gameState.players.length})`
     );
 
     return allPlayersConfirmed;
