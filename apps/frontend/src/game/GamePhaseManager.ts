@@ -89,7 +89,9 @@ export class GamePhaseManager {
         roomId: this.roomId,
         dead: { playerId },
       });
-    } catch {}
+    } catch (error) {
+      console.error('Failed to surrender:', error);
+    }
   }
 
   /**
