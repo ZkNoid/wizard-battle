@@ -476,13 +476,12 @@ export class GameStateService {
 
       if (gameState.players[playerIndex]) {
         gameState.players[playerIndex].state = state;
-        gameState.updatedAt = Date.now();
 
-        await this.redisClient.hSet(
-          'game_states',
-          roomId,
-          JSON.stringify(gameState)
-        );
+        // Use atomic update instead of direct Redis write
+        await this.updateGameState(roomId, {
+          players: gameState.players,
+        });
+
         console.log(`Updated player state for ${playerId} in room ${roomId}`);
       } else {
         throw new Error(`Player ${playerId} not found in room ${roomId}`);
@@ -511,13 +510,11 @@ export class GameStateService {
 
       if (gameState.players && gameState.players[playerIndex]) {
         gameState.players[playerIndex].socketId = socketId;
-        gameState.updatedAt = Date.now();
 
-        await this.redisClient.hSet(
-          'game_states',
-          roomId,
-          JSON.stringify(gameState)
-        );
+        // Use atomic update instead of direct Redis write
+        await this.updateGameState(roomId, {
+          players: gameState.players,
+        });
         console.log(
           `Updated player ${playerId} socketId in room ${roomId} to ${socketId}`
         );
@@ -560,13 +557,11 @@ export class GameStateService {
         gameState.playersConfirmedJoined.push(playerId);
       }
 
-      gameState.updatedAt = Date.now();
-
-      await this.redisClient.hSet(
-        'game_states',
-        roomId,
-        JSON.stringify(gameState)
-      );
+      // Use atomic update instead of direct Redis write
+      await this.updateGameState(roomId, {
+        players: gameState.players,
+        playersConfirmedJoined: gameState.playersConfirmedJoined,
+      });
 
       console.log(`Player ${playerId} confirmed joined in room ${roomId}`);
 
