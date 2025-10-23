@@ -65,7 +65,7 @@ export class GameSessionGateway {
    * emit locally) and subscribes to cross-instance room events from
    * `GameStateService`, routing them to `handleCrossInstanceEvent`.
    */
-  afterInit() {
+  async afterInit() {
     console.log('WebSocket Gateway initialized');
     this.matchmakingService.setServer(this.server);
 
@@ -81,16 +81,13 @@ export class GameSessionGateway {
     );
     pubClient.on('connect', () => console.log('Redis Pub Client Connected'));
     subClient.on('connect', () => console.log('Redis Sub Client Connected'));
-    Promise.all([pubClient.connect(), subClient.connect()])
-      .then(() => {
-        this.server.adapter(createAdapter(pubClient, subClient));
-      })
-      .catch((err) => console.error('Redis Connection Error', err));
+    await Promise.all([pubClient.connect(), subClient.connect()]);
+    this.server.adapter(createAdapter(pubClient, subClient));
 
     // Subscribe to cross-instance room events
-    // this.gameStateService.subscribeToRoomEvents(async (data) => {
-    //   await this.handleCrossInstanceEvent(data);
-    // });
+    await this.gameStateService.subscribeToRoomEvents(async (data) => {
+      await this.handleCrossInstanceEvent(data);
+    });
 
     // Perform startup cleanup once Redis is ready
     if (this.gameStateService.isRedisReady()) {
@@ -139,34 +136,34 @@ export class GameSessionGateway {
    * informs the matchmaking service so the player leaves queues/rooms and
    * peers can be notified.
    */
-  handleDisconnect(socket: Socket) {
+  async handleDisconnect(socket: Socket) {
     console.log(`Client disconnected: ${socket.id}`);
     // Clean up socket mapping and matchmaking
-    this.gameStateService.getSocketMapping(socket.id).then(async (mapping) => {
-      try {
-        await this.gameStateService.unregisterSocket(socket.id);
-      } catch (err) {
-        console.error('Failed to unregister socket mapping:', err);
-      }
+    const mapping = await this.gameStateService.getSocketMapping(socket.id);
+    try {
+      await this.gameStateService.unregisterSocket(socket.id);
+    } catch (err) {
+      console.error('Failed to unregister socket mapping:', err);
+    }
 
-      // If this was the last player in the room, perform cleanup
-      try {
-        if (mapping?.roomId) {
-          const remaining = await this.gameStateService.getSocketsInRoom(
-            mapping.roomId
+    // If this was the last player in the room, perform cleanup
+    try {
+      if (mapping?.roomId) {
+        const remaining = await this.gameStateService.getSocketsInRoom(
+          mapping.roomId
+        );
+        if (!remaining || remaining.length === 0) {
+          console.log(
+            `🧹 No sockets remain in room ${mapping.roomId}, cleaning up`
           );
-          if (!remaining || remaining.length === 0) {
-            console.log(
-              `🧹 No sockets remain in room ${mapping.roomId}, cleaning up`
-            );
-            await this.gameStateService.cleanupRoom(mapping.roomId);
-            await this.cleanupRoom(mapping.roomId, 'empty');
-          }
+          await this.gameStateService.cleanupRoom(mapping.roomId);
+          await this.cleanupRoom(mapping.roomId, 'empty');
         }
-      } catch (err) {
-        console.error('Failed to cleanup empty room on disconnect:', err);
       }
-    });
+    } catch (err) {
+      console.error('Failed to cleanup empty room on disconnect:', err);
+    }
+
     this.matchmakingService.leaveMatchmaking(socket);
   }
 
@@ -230,6 +227,11 @@ export class GameSessionGateway {
     socket: Socket,
     data: { roomId: string; message: any }
   ) {
+    if (!this.gameStateService.isRedisReady()) {
+      console.warn('handleGameMessage rejected: Redis not ready');
+      return;
+    }
+
     const match = await this.matchmakingService.getMatchInfo(data.roomId);
     const gameState = await this.gameStateService.getGameState(data.roomId);
 
@@ -270,6 +272,15 @@ export class GameSessionGateway {
     socket: Socket,
     data: { roomId: string; playerId: string; state: any }
   ) {
+    if (!this.gameStateService.isRedisReady()) {
+      console.warn('handleUpdatePlayerState rejected: Redis not ready');
+      socket.emit('playerStateUpdated', {
+        success: false,
+        error: 'Redis not ready',
+      });
+      return;
+    }
+
     try {
       await this.gameStateService.updatePlayerState(
         data.roomId,
@@ -464,7 +475,7 @@ export class GameSessionGateway {
         console.log(`📝 Player ${playerId} submitted ${actionCount} actions`);
       }
 
-      // Check if player is already ready to prevent spam
+      // Check action submission with more detail
       if (gameState.playersReady.includes(playerId)) {
         console.log(
           `ℹ️ Player ${playerId} already marked ready in room ${data.roomId}`
@@ -695,74 +706,60 @@ export class GameSessionGateway {
     socket: Socket,
     data: { roomId: string; dead: IDead }
   ) {
-    try {
-      // Validate input data
-      if (!data || !data.roomId || !data.dead || !data.dead.playerId) {
-        console.log(`⚠️ handleReportDead: Invalid data received`, data);
-        return;
-      }
+    // Validate input data
+    if (!data || !data.roomId || !data.dead || !data.dead.playerId) {
+      console.log(`⚠️ handleReportDead: Invalid data received`, data);
+      return;
+    }
 
+    console.log(
+      `🔍 Processing death report: Player ${data.dead.playerId} in room ${data.roomId}`
+    );
+
+    const winnerId = await this.gameStateService.markPlayerDead(
+      data.roomId,
+      data.dead.playerId
+    );
+
+    if (winnerId) {
+      // Game ended, announce winner
+      const gameEnd: IGameEnd = { winnerId };
       console.log(
-        `🔍 Processing death report: Player ${data.dead.playerId} in room ${data.roomId}`
+        `📢 Broadcasting game end: ${winnerId} wins in room ${data.roomId}`
       );
 
-      const winnerId = await this.gameStateService.markPlayerDead(
+      this.server.to(data.roomId).emit('gameEnd', gameEnd);
+      await this.gameStateService.publishToRoom(
         data.roomId,
-        data.dead.playerId
+        'gameEnd',
+        gameEnd
       );
+      // Immediately destroy room resources when game ends
+      try {
+        // Use Redis transaction to ensure atomic cleanup
+        const multi = this.matchmakingService.redisClient.multi();
+        multi.hDel('matches', data.roomId);
+        multi.hDel('game_states', data.roomId);
 
-      if (winnerId) {
-        // Game ended, announce winner
-        const gameEnd: IGameEnd = { winnerId };
+        const results = await multi.exec();
         console.log(
-          `📢 Broadcasting game end: ${winnerId} wins in room ${data.roomId}`
+          `🗑️ Atomically removed match and game state for ${data.roomId}`
         );
 
-        this.server.to(data.roomId).emit('gameEnd', gameEnd);
-        await this.gameStateService.publishToRoom(
-          data.roomId,
-          'gameEnd',
-          gameEnd
+        await this.cleanupRoom(data.roomId, 'game_ended');
+        console.log(`🗑️ Destroyed room ${data.roomId} after game end`);
+      } catch (cleanupErr) {
+        console.error(
+          'Failed immediate cleanup after game end, marking for cleanup:',
+          cleanupErr
         );
-        // Immediately destroy room resources when game ends
-        try {
-          // Use Redis transaction to ensure atomic cleanup
-          const multi = this.matchmakingService.redisClient.multi();
-          multi.hDel('matches', data.roomId);
-          multi.hDel('game_states', data.roomId);
-
-          const results = await multi.exec();
-          console.log(
-            `🗑️ Atomically removed match and game state for ${data.roomId}`
-          );
-
-          await this.cleanupRoom(data.roomId, 'game_ended');
-          console.log(`🗑️ Destroyed room ${data.roomId} after game end`);
-        } catch (cleanupErr) {
-          console.error(
-            'Failed immediate cleanup after game end, marking for cleanup:',
-            cleanupErr
-          );
-          await this.gameStateService.markRoomForCleanup(
-            data.roomId,
-            'game_ended_fallback_mark'
-          );
-        }
-      } else {
-        console.log(`🎮 Game continues in room ${data.roomId} - no winner yet`);
-      }
-    } catch (error) {
-      console.error(
-        `❌ Failed to handle player death in room ${data?.roomId}:`,
-        error
-      );
-      // ✅ FIXED: Mark room for cleanup on error too
-      if (data?.roomId) {
         await this.gameStateService.markRoomForCleanup(
           data.roomId,
-          'error_in_death_handling'
+          'game_ended_fallback_mark'
         );
       }
+    } else {
+      console.log(`🎮 Game continues in room ${data.roomId} - no winner yet`);
     }
   }
 
@@ -779,57 +776,48 @@ export class GameSessionGateway {
     socket: Socket,
     data: { roomId: string; playerId: string }
   ) {
-    try {
-      // Validate input data
-      if (!data || !data.roomId || !data.playerId) {
-        console.log(`⚠️ handleConfirmJoined: Invalid data received`, data);
-        return;
-      }
+    // Validate input data
+    if (!data || !data.roomId || !data.playerId) {
+      console.log(`⚠️ handleConfirmJoined: Invalid data received`, data);
+      return;
+    }
 
+    console.log(
+      `✅ Player ${data.playerId} confirmed joined in room ${data.roomId}`
+    );
+
+    // Confirm player joined and check if all players have confirmed
+    const allPlayersConfirmed = await this.gameStateService.confirmPlayerJoined(
+      data.roomId,
+      data.playerId
+    );
+
+    if (allPlayersConfirmed) {
       console.log(
-        `✅ Player ${data.playerId} confirmed joined in room ${data.roomId}`
+        `🎮 All players confirmed in room ${data.roomId}, starting game...`
       );
 
-      // Confirm player joined and check if all players have confirmed
-      const allPlayersConfirmed =
-        await this.gameStateService.confirmPlayerJoined(
-          data.roomId,
-          data.playerId
-        );
+      // Start the game after all players have confirmed
+      await this.gameStateService.updateGameState(data.roomId, {
+        status: 'active',
+      });
 
-      if (allPlayersConfirmed) {
-        console.log(
-          `🎮 All players confirmed in room ${data.roomId}, starting game...`
-        );
+      // Emit the first turn to start gameplay
+      const state = await this.gameStateService.getGameState(data.roomId);
+      const phaseTimeout =
+        state?.phaseTimeout ?? Number(process.env.SPELL_CAST_TIMEOUT || 120000);
 
-        // Start the game after all players have confirmed
-        await this.gameStateService.updateGameState(data.roomId, {
-          status: 'active',
-        });
-
-        // Emit the first turn to start gameplay
-        const state = await this.gameStateService.getGameState(data.roomId);
-        const phaseTimeout =
-          state?.phaseTimeout ??
-          Number(process.env.SPELL_CAST_TIMEOUT || 120000);
-
-        this.server
-          .to(data.roomId)
-          .emit('newTurn', { phase: 'spell_casting', phaseTimeout });
-        await this.gameStateService.publishToRoom(data.roomId, 'newTurn', {
-          phase: 'spell_casting',
-          phaseTimeout,
-        });
-        console.log(`🎮 Started first turn for match in room ${data.roomId}`);
-      } else {
-        console.log(
-          `⏳ Waiting for other players to confirm in room ${data.roomId}`
-        );
-      }
-    } catch (error) {
-      console.error(
-        `❌ Failed to handle player confirmation in room ${data?.roomId}:`,
-        error
+      this.server
+        .to(data.roomId)
+        .emit('newTurn', { phase: 'spell_casting', phaseTimeout });
+      await this.gameStateService.publishToRoom(data.roomId, 'newTurn', {
+        phase: 'spell_casting',
+        phaseTimeout,
+      });
+      console.log(`🎮 Started first turn for match in room ${data.roomId}`);
+    } else {
+      console.log(
+        `⏳ Waiting for other players to confirm in room ${data.roomId}`
       );
     }
   }

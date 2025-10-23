@@ -56,6 +56,7 @@ interface Match {
   player1: IPublicState;
   player2: IPublicState;
   roomId: string;
+  createdAt: number;
 }
 
 /**
@@ -169,6 +170,17 @@ export class MatchmakingService {
    */
   @Cron(CronExpression.EVERY_30_SECONDS)
   private async processMatchmaking() {
+    const lockKey = 'matchmaking_lock';
+    const lockAcquired = await this.redisClient.set(lockKey, 'locked', {
+      EX: 60,
+      NX: true,
+    });
+
+    if (!lockAcquired) {
+      console.log('Matchmaking lock not acquired, skipping this cycle');
+      return;
+    }
+
     try {
       const waitingPlayers = await this.redisClient.lRange(
         'waiting:queue',
@@ -187,25 +199,16 @@ export class MatchmakingService {
         `Processing matchmaking for ${waitingPlayers.length} players`
       );
 
-      // Players Sorting
-      //  By time in queue
-
       // Parse and sort players by wait time (oldest first)
-      // const queuedPlayers: QueuedPlayer[] = waitingPlayers
-      //   .map((p) => JSON.parse(p))
-      //   .sort((a, b) => a.timestamp - b.timestamp);
-
-      // By level
       const queuedPlayers: QueuedPlayer[] = waitingPlayers
         .map((p) => JSON.parse(p))
-        .sort((a, b) => a.level - b.level);
+        .sort((a, b) => a.timestamp - b.timestamp);
 
-      // DEBUG, queued players datas
       // Filter out players who are already in active matches
       const activeMatches = await this.redisClient.hGetAll('matches');
       const activePlayerIds = new Set<string>();
 
-      // Check if there are any active matchess
+      // Check if there are any active matches
       if (activeMatches && Object.keys(activeMatches).length > 0) {
         for (const [_, matchData] of Object.entries(activeMatches)) {
           try {
@@ -279,18 +282,9 @@ export class MatchmakingService {
       );
 
       while (filteredQueuedPlayers.length >= 2) {
-        // FIFO: pick first, then find the next with different playerId
         const first = filteredQueuedPlayers.shift()!;
-        const idx = filteredQueuedPlayers.findIndex(
-          (qp) => qp.player.playerId !== first.player.playerId
-        );
-        if (idx === -1) {
-          // No eligible opponent; reinsert first and break
-          filteredQueuedPlayers.unshift(first);
-          break;
-        }
-        const [second] = filteredQueuedPlayers.splice(idx, 1);
-        await this.createMatch(first.player, (second as QueuedPlayer).player);
+        const second = filteredQueuedPlayers.shift()!;
+        await this.createMatch(first.player, second.player);
       }
 
       // Update remaining players in queue
@@ -299,6 +293,63 @@ export class MatchmakingService {
       }
     } catch (error) {
       console.error('Error in matchmaking loop:', error);
+    } finally {
+      await this.redisClient.del(lockKey);
+    }
+  }
+
+  /**
+   * Cleanup stale matches
+   *
+   * @dev This function runs every hour to clean up stale matches from Redis.
+   * It removes matches that are older than 1 hour to prevent memory buildup.
+   *
+   * @dev Cleanup Flow:
+   * 1. Retrieves all active matches from Redis 'matches' hash
+   * 2. Checks each match's age using createdAt timestamp
+   * 3. If match is older than 1 hour, removes game state and deletes match record
+   * 4. Logs cleanup operations for monitoring
+   *
+   * @dev Redis Operations:
+   * - HGETALL: Retrieves all matches
+   * - HDEL: Removes stale match records
+   * - Efficient batch cleanup
+   *
+   * @dev Game State Cleanup:
+   * - Calls GameStateService.removeGameState() for each stale room
+   * - Prevents orphaned game states
+   *
+   * @dev Performance Considerations:
+   * - Runs infrequently (every hour)
+   * - Handles potentially large number of matches
+   * - Asynchronous operations for efficiency
+   *
+   * @dev Error Handling:
+   * - Graceful handling of JSON parsing errors
+   * - Continues cleanup even if individual removals fail
+   * - Logs errors without throwing
+   */
+  @Cron(CronExpression.EVERY_HOUR)
+  private async cleanupStaleMatches() {
+    try {
+      const activeMatches = await this.redisClient.hGetAll('matches');
+      const now = Date.now();
+      const staleThreshold = 60 * 60 * 1000; // 1 hour
+
+      for (const [roomId, matchData] of Object.entries(activeMatches)) {
+        try {
+          const match: Match = JSON.parse(matchData);
+          if (now - match.createdAt > staleThreshold) {
+            await this.gameStateService.removeGameState(roomId);
+            await this.redisClient.hDel('matches', roomId);
+            console.log(`Cleaned up stale match in room ${roomId}`);
+          }
+        } catch (error) {
+          console.error(`Error processing match ${roomId} for cleanup:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Error in stale matches cleanup:', error);
     }
   }
 
@@ -413,7 +464,6 @@ export class MatchmakingService {
           `Match already exists for room ${roomId}, skipping creation`
         );
 
-        // DEBUG: Rejoin logic: ensure both players are (re)joined to the existing room and notified
         // Rejoin logic: ensure both players are (re)joined to the existing room and notified
         try {
           // Attempt to notify both players again and (re)join sockets to the room
@@ -426,7 +476,7 @@ export class MatchmakingService {
               socketId: firstPlayer.socketId,
             });
             console.log(
-              `Player ${firstPlayer.playerId}successfully re-joined room ${roomId}`
+              `Player ${firstPlayer.playerId} successfully re-joined room ${roomId}`
             );
           }
           if (secondPlayer.socketId) {
@@ -435,7 +485,7 @@ export class MatchmakingService {
               socketId: secondPlayer.socketId,
             });
             console.log(
-              `Player ${firstPlayer.playerId}successfully re-joined room ${roomId}`
+              `Player ${secondPlayer.playerId} successfully re-joined room ${roomId}`
             );
           }
         } catch (err) {
@@ -449,6 +499,7 @@ export class MatchmakingService {
         player1: firstPlayer,
         player2: secondPlayer,
         roomId,
+        createdAt: Date.now(),
       };
 
       // Store match in Redis FIRST
@@ -637,7 +688,7 @@ export class MatchmakingService {
     }
 
     // Set a 5-second lock to prevent duplicate notifications
-    await this.redisClient?.setEx(notificationKey, 5, 'notified');
+    await this.redisClient?.set(notificationKey, 'notified', { EX: 5 });
     if (!this.server) {
       console.error('Server not initialized in MatchmakingService');
       return;
@@ -681,6 +732,7 @@ export class MatchmakingService {
       );
       socket1.emit('matchFound', payloadForP1);
       socket1.join(roomId);
+      socket1.leave('queue:general');
       try {
         await this.gameStateService.registerSocket(
           socket1,
@@ -705,6 +757,7 @@ export class MatchmakingService {
       );
       socket2.emit('matchFound', payloadForP2);
       socket2.join(roomId);
+      socket2.leave('queue:general');
       try {
         await this.gameStateService.registerSocket(
           socket2,
@@ -1195,14 +1248,22 @@ export class MatchmakingService {
       const botSetup = botClient.getCurrentState();
       botSetup.socketId = botClient.getSocketId() || '';
 
-      // Generate room ID (player first, then bot for consistency)
-      const roomId = `${player.playerId}-${botId}`;
+      // Generate room ID with sorted IDs for consistency
+      const sortedIds = [player.playerId, botId].sort((a, b) =>
+        a.localeCompare(b)
+      );
+      const roomId = `${sortedIds[0]}-${sortedIds[1]}`;
+
+      // Assign player1 and player2 based on sorted order
+      const player1 = sortedIds[0] === player.playerId ? player : botSetup;
+      const player2 = sortedIds[0] === player.playerId ? botSetup : player;
 
       // Create match object
       const match: Match = {
-        player1: player,
-        player2: botSetup,
+        player1,
+        player2,
         roomId: roomId,
+        createdAt: Date.now(),
       };
 
       // Store match in Redis
@@ -1210,12 +1271,12 @@ export class MatchmakingService {
 
       // Initialize game state
       await this.gameStateService.createGameState(roomId, [
-        { id: player.playerId!, socketId: player.socketId! },
-        { id: botId, socketId: botSetup.socketId },
+        { id: player1.playerId!, socketId: player1.socketId! },
+        { id: player2.playerId!, socketId: player2.socketId! },
       ]);
 
       // Notify both players of the match
-      await this.notifyPlayersOfMatch(player, botSetup, roomId);
+      await this.notifyPlayersOfMatch(player1, player2, roomId);
 
       // Start the first turn after a short delay to allow both players to join the room
       setTimeout(async () => {
@@ -1388,6 +1449,9 @@ export class MatchmakingService {
       null
     );
     socket.emit('removeFromQueue', removeFromQueue);
+
+    // Leave the queue room
+    socket.leave('queue:general');
 
     // Check for match in Redis
     const matches = await this.redisClient.hGetAll('matches');

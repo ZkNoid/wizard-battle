@@ -12,7 +12,8 @@ import { GamePhase } from '../../../common/types/gameplay.types';
 @Injectable()
 export class GamePhaseSchedulerService {
   private lastMetricsLog = 0;
-  private processedTimeouts = new Set<string>(); // Track processed timeout rooms
+  private processedTimeoutsKey = 'processed_timeouts'; // Redis key for shared set
+  private transitioning = new Set<string>();
 
   constructor(
     private readonly gameStateService: GameStateService,
@@ -21,16 +22,43 @@ export class GamePhaseSchedulerService {
   ) {}
 
   /**
+   * Retry wrapper with circuit breaker
+   */
+  private async withRetry<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 3,
+    baseDelay: number = 1000
+  ): Promise<T> {
+    let lastError: Error | null = null;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.warn(
+          `Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms: ${lastError.message}`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+    throw lastError || new Error('Operation failed after max retries');
+  }
+
+  /**
    * @notice Process pending phase transitions every 5 seconds
    * @dev Checks Redis for rooms that need phase advancement
    */
   @Cron(CronExpression.EVERY_5_SECONDS)
   async processPhaseTransitions() {
+    if (!(await this.withRetry(() => this.isLeader()))) return;
     try {
-      const pendingTransitions = await this.getPendingPhaseTransitions();
+      const pendingTransitions = await this.withRetry(() =>
+        this.getPendingPhaseTransitions()
+      );
 
       for (const transition of pendingTransitions) {
-        await this.executePhaseTransition(transition);
+        await this.withRetry(() => this.executePhaseTransition(transition));
       }
     } catch (error) {
       console.error('Error processing phase transitions:', error);
@@ -44,13 +72,15 @@ export class GamePhaseSchedulerService {
    * */
   @Cron(CronExpression.EVERY_5_SECONDS)
   async enforceSpellCastingTimeouts() {
+    if (!(await this.withRetry(() => this.isLeader()))) return;
     try {
-      const roomIds =
-        await this.gameStateService.redisClient.hKeys('game_states');
+      const roomIds = await this.withRetry(() => this.getAllRoomIdsWithScan());
       const now = Date.now();
 
       for (const roomId of roomIds) {
-        const gameState = await this.gameStateService.getGameState(roomId);
+        const gameState = await this.withRetry(() =>
+          this.gameStateService.getGameState(roomId)
+        );
         if (!gameState || gameState.status !== 'active') continue;
         if (gameState.currentPhase !== GamePhase.SPELL_CASTING) continue;
 
@@ -60,34 +90,55 @@ export class GamePhaseSchedulerService {
         const timeSincePhaseStart = now - gameState.phaseStartTime;
         if (timeSincePhaseStart < configuredTimeout) continue;
 
+        const isProcessed = await this.withRetry(() =>
+          this.gameStateService.redisClient.sIsMember(
+            this.processedTimeoutsKey,
+            roomId
+          )
+        );
+        if (isProcessed) continue;
+
         const alivePlayers = gameState.players.filter((p) => p.isAlive);
         const submitters = alivePlayers.filter((p) => !!p.currentActions);
         const nonSubmitters = alivePlayers.filter((p) => !p.currentActions);
 
-        // Only log timeout once per room to prevent spam
-        if (!this.processedTimeouts.has(roomId)) {
-          console.log(
-            `⏰ SPELL_CASTING timeout in room ${roomId} after ${timeSincePhaseStart}ms`
-          );
-          this.processedTimeouts.add(roomId);
-        }
+        // Only log action once per room to prevent spam
+        console.log(
+          `⏰ SPELL_CASTING timeout in room ${roomId} after ${timeSincePhaseStart}ms`
+        );
+        await this.withRetry(() =>
+          this.gameStateService.redisClient.sAdd(
+            this.processedTimeoutsKey,
+            roomId
+          )
+        );
 
         if (submitters.length === 0) {
           console.log(`🤝 No actions submitted in room ${roomId} → draw`);
-          await this.gameStateService.updateGameState(roomId, {
-            status: 'finished',
-          });
+          await this.withRetry(() =>
+            this.gameStateService.updateGameState(roomId, {
+              status: 'finished',
+            })
+          );
           const gameEnd = { winnerId: 'draw' };
           this.gameSessionGateway.server.to(roomId).emit('gameEnd', gameEnd);
-          await this.gameStateService.publishToRoom(roomId, 'gameEnd', gameEnd);
-          await this.gameStateService.markRoomForCleanup(
-            roomId,
-            'spell_casting_timeout_draw'
+          await this.withRetry(() =>
+            this.gameStateService.publishToRoom(roomId, 'gameEnd', gameEnd)
+          );
+          await this.withRetry(() =>
+            this.gameStateService.markRoomForCleanup(
+              roomId,
+              'spell_casting_timeout_draw'
+            )
           );
           // Remove match and game state to allow rematch
           try {
-            await this.gameStateService.removeGameState(roomId);
-            await this.gameStateService.redisClient.hDel('matches', roomId);
+            await this.withRetry(() =>
+              this.gameStateService.removeGameState(roomId)
+            );
+            await this.withRetry(() =>
+              this.gameStateService.redisClient.hDel('matches', roomId)
+            );
             console.log(
               `🗑️ Cleared match and state for timed-out room ${roomId}`
             );
@@ -97,8 +148,13 @@ export class GamePhaseSchedulerService {
               cleanupErr
             );
           }
-          // Clear timeout tracking for this room
-          this.processedTimeouts.delete(roomId);
+          // Expire the processed entry after some time
+          await this.withRetry(() =>
+            this.gameStateService.redisClient.expire(
+              this.processedTimeoutsKey,
+              3600
+            )
+          ); // 1 hour
           continue;
         }
 
@@ -111,9 +167,8 @@ export class GamePhaseSchedulerService {
 
           let winnerId: string | null = null;
           for (const p of nonSubmitters) {
-            const res = await this.gameStateService.markPlayerDead(
-              roomId,
-              p.id
+            const res = await this.withRetry(() =>
+              this.gameStateService.markPlayerDead(roomId, p.id)
             );
             if (res) winnerId = res;
           }
@@ -124,19 +179,23 @@ export class GamePhaseSchedulerService {
               `📢 Broadcasting game end for room ${roomId}, winner: ${winnerId}`
             );
             this.gameSessionGateway.server.to(roomId).emit('gameEnd', gameEnd);
-            await this.gameStateService.publishToRoom(
-              roomId,
-              'gameEnd',
-              gameEnd
+            await this.withRetry(() =>
+              this.gameStateService.publishToRoom(roomId, 'gameEnd', gameEnd)
             );
-            await this.gameStateService.markRoomForCleanup(
-              roomId,
-              'spell_casting_timeout_winner_decided'
+            await this.withRetry(() =>
+              this.gameStateService.markRoomForCleanup(
+                roomId,
+                'spell_casting_timeout_winner_decided'
+              )
             );
             // Remove match and game state to allow rematch
             try {
-              await this.gameStateService.removeGameState(roomId);
-              await this.gameStateService.redisClient.hDel('matches', roomId);
+              await this.withRetry(() =>
+                this.gameStateService.removeGameState(roomId)
+              );
+              await this.withRetry(() =>
+                this.gameStateService.redisClient.hDel('matches', roomId)
+              );
               console.log(
                 `🗑️ Cleared match and state for finished room ${roomId}`
               );
@@ -146,8 +205,6 @@ export class GamePhaseSchedulerService {
                 cleanupErr
               );
             }
-            // Clear timeout tracking for this room
-            this.processedTimeouts.delete(roomId);
           } else {
             console.log(
               `🎮 Room ${roomId} continues after removing non-submitters (multiple submitters alive)`
@@ -166,15 +223,19 @@ export class GamePhaseSchedulerService {
    */
   @Cron(CronExpression.EVERY_5_MINUTES)
   async cleanupInactiveRooms() {
+    if (!(await this.withRetry(() => this.isLeader()))) return;
     try {
       console.log('🧹 Running inactive room cleanup...');
-      const inactiveRooms =
-        await this.gameStateService.getInactiveRooms(1800000); // 30 minutes
+      const inactiveRooms = await this.withRetry(() =>
+        this.gameStateService.getInactiveRooms(1800000)
+      ); // 30 minutes
 
       for (const roomId of inactiveRooms) {
         console.log(`🧹 Cleaning up inactive room: ${roomId}`);
-        await this.gameStateService.cleanupRoom(roomId);
-        await this.gameSessionGateway.cleanupRoom(roomId, 'inactive');
+        await this.withRetry(() => this.gameStateService.cleanupRoom(roomId));
+        await this.withRetry(() =>
+          this.gameSessionGateway.cleanupRoom(roomId, 'inactive')
+        );
       }
 
       if (inactiveRooms.length > 0) {
@@ -191,8 +252,9 @@ export class GamePhaseSchedulerService {
    */
   @Cron(CronExpression.EVERY_MINUTE)
   async cleanupDeadInstances() {
+    if (!(await this.withRetry(() => this.isLeader()))) return;
     try {
-      await this.gameStateService.cleanupDeadInstances();
+      await this.withRetry(() => this.gameStateService.cleanupDeadInstances());
     } catch (error) {
       console.error('Error cleaning up dead instances:', error);
     }
@@ -204,7 +266,7 @@ export class GamePhaseSchedulerService {
   @Cron(CronExpression.EVERY_30_SECONDS)
   async updateInstanceHeartbeat() {
     try {
-      await this.gameStateService.updateHeartbeat();
+      await this.withRetry(() => this.gameStateService.updateHeartbeat());
     } catch (error) {
       console.error('Error updating instance heartbeat:', error);
     }
@@ -217,7 +279,7 @@ export class GamePhaseSchedulerService {
   @Cron(CronExpression.EVERY_30_SECONDS)
   async monitorSystemHealth() {
     try {
-      const health = await this.getSystemHealth();
+      const health = await this.withRetry(() => this.getSystemHealth());
 
       if (health.issues.length > 0) {
         console.warn('🚨 System health issues detected:', health.issues);
@@ -240,18 +302,24 @@ export class GamePhaseSchedulerService {
    */
   @Cron(CronExpression.EVERY_MINUTE)
   async purgeStaleMatches() {
+    if (!(await this.withRetry(() => this.isLeader()))) return;
     try {
-      const matches =
-        await this.gameStateService.redisClient.hGetAll('matches');
+      const matches = await this.withRetry(() =>
+        this.getAllHashEntriesWithScan('matches')
+      );
       if (!matches || Object.keys(matches).length === 0) return;
 
-      for (const [roomId, _] of Object.entries(matches)) {
-        const state = await this.gameStateService.getGameState(roomId);
+      for (const [roomId] of Object.entries(matches)) {
+        const state = await this.withRetry(() =>
+          this.gameStateService.getGameState(roomId)
+        );
         const timeoutMs = Number(process.env.SPELL_CAST_TIMEOUT || 120000);
 
         if (!state) {
           // Only remove stale match entry; do not touch game state here
-          await this.gameStateService.redisClient.hDel('matches', roomId);
+          await this.withRetry(() =>
+            this.gameStateService.redisClient.hDel('matches', roomId)
+          );
           console.log(`🧽 Purged stale match with no state: ${roomId}`);
           continue;
         }
@@ -262,7 +330,9 @@ export class GamePhaseSchedulerService {
         if (isInactive && isOld) {
           // Only purge stale match entry; avoid deleting game state here to prevent mid-game loss.
           // Room state cleanup should be handled by explicit cleanup flows (e.g., cleanupRoom, markRoomForCleanup, end-of-game paths).
-          await this.gameStateService.redisClient.hDel('matches', roomId);
+          await this.withRetry(() =>
+            this.gameStateService.redisClient.hDel('matches', roomId)
+          );
           console.log(
             `🧽 Purged stale match entry (state retained) for room: ${roomId}`
           );
@@ -274,6 +344,59 @@ export class GamePhaseSchedulerService {
   }
 
   /**
+   * Check if this instance is the leader
+   */
+  private async isLeader(): Promise<boolean> {
+    const owner = this.gameStateService.getInstanceId();
+    const { ok } = await this.gameStateService.acquireRoomLock(
+      'global',
+      10000, // 10s TTL
+      owner,
+      'lock:scheduler'
+    );
+    return ok;
+  }
+
+  /**
+   * Get all room IDs using SCAN for scalability
+   */
+  private async getAllRoomIdsWithScan(): Promise<string[]> {
+    const roomIds: string[] = [];
+    let cursor = '0';
+    do {
+      const reply = await this.gameStateService.redisClient.scan(cursor, {
+        MATCH: 'game_states:*',
+        COUNT: 1000,
+      });
+      cursor = reply.cursor;
+      roomIds.push(...reply.keys.map((key) => key.replace('game_states:', '')));
+    } while (cursor !== '0');
+    return roomIds;
+  }
+
+  /**
+   * Get all hash entries using HSCAN for scalability
+   */
+  private async getAllHashEntriesWithScan(
+    hashKey: string
+  ): Promise<Record<string, string>> {
+    const entries: Record<string, string> = {};
+    let cursor = '0';
+    do {
+      const reply = await this.gameStateService.redisClient.hScan(
+        hashKey,
+        cursor,
+        { COUNT: 1000 }
+      );
+      cursor = reply.cursor;
+      for (const entry of reply.entries) {
+        entries[entry.field] = entry.value;
+      }
+    } while (cursor !== '0');
+    return entries;
+  }
+
+  /**
    * @notice Get rooms that need phase transitions
    */
   private async getPendingPhaseTransitions(): Promise<PhaseTransition[]> {
@@ -281,8 +404,7 @@ export class GamePhaseSchedulerService {
     const now = Date.now();
 
     // Get all active rooms
-    const roomIds =
-      await this.gameStateService.redisClient.hKeys('game_states');
+    const roomIds = await this.getAllRoomIdsWithScan();
 
     for (const roomId of roomIds) {
       const gameState = await this.gameStateService.getGameState(roomId);
@@ -402,6 +524,13 @@ export class GamePhaseSchedulerService {
   ): Promise<void> {
     const { roomId, currentPhase, nextPhase } = transition;
 
+    if (this.transitioning.has(roomId)) {
+      console.log(`Skipping reentrant phase transition for ${roomId}`);
+      return;
+    }
+
+    this.transitioning.add(roomId);
+
     try {
       // Per-room distributed lock to avoid duplicate transitions across instances
       const owner = `${this.gameStateService.getInstanceId()}-${process.pid}-${Date.now()}`;
@@ -456,19 +585,23 @@ export class GamePhaseSchedulerService {
       console.error(`Failed to execute phase transition for ${roomId}:`, error);
       // Clean up room on persistent errors
       await this.gameStateService.cleanupRoom(roomId);
+    } finally {
+      this.transitioning.delete(roomId);
     }
   }
-  private async getSystemHealth() {
-    const roomKeys =
-      await this.gameStateService.redisClient.keys('game_state:*');
+  /**
+   * @notice Get system health metrics and detect issues
+   * @return System health data including metrics and issues
+   */
+  private async getSystemHealth(): Promise<{ metrics: any; issues: string[] }> {
+    const roomKeys = await this.getAllRoomIdsWithScan();
     const now = Date.now();
     const issues: string[] = [];
 
     let oldestRoom: { roomId: string; age: number } | null = null;
     let totalPlayers = 0;
 
-    for (const key of roomKeys.slice(0, 100)) {
-      // Sample for performance
+    for (const key of roomKeys) {
       const roomId = key.replace('game_state:', '');
       const gameState = await this.gameStateService.getGameState(roomId);
 
@@ -508,7 +641,10 @@ export class GamePhaseSchedulerService {
     for (const roomId of roomIds) {
       try {
         // Clear timeout tracking
-        this.processedTimeouts.delete(roomId);
+        await this.gameStateService.redisClient.sRem(
+          this.processedTimeoutsKey,
+          roomId
+        );
 
         // Remove from matches
         await this.gameStateService.redisClient.hDel('matches', roomId);
