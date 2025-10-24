@@ -527,48 +527,48 @@ export class MatchmakingService {
         // Even if notification fails, the match is still valid
       }
 
-      // // Set up confirmation timeout - if players don't confirm within 30 seconds, start anyway
-      // // TODO: Is realy necessary
-      // setTimeout(async () => {
-      //   try {
-      //     const state = await this.gameStateService.getGameState(roomId);
-      //     if (state && state.status === 'waiting') {
-      //       console.log(
-      //         `⏰ Confirmation timeout reached for room ${roomId}, starting game anyway`
-      //       );
+      // Set up confirmation timeout - if players don't confirm within 30 seconds, start anyway
+      // TODO: Findout why first time confirm is not send to the server ?
+      setTimeout(async () => {
+        try {
+          const state = await this.gameStateService.getGameState(roomId);
+          if (state && state.status === 'waiting') {
+            console.log(
+              `⏰ Confirmation timeout reached for room ${roomId}, starting game anyway`
+            );
 
-      //       await this.gameStateService.updateGameState(roomId, {
-      //         status: 'active',
-      //       });
+            await this.gameStateService.updateGameState(roomId, {
+              status: 'active',
+            });
 
-      //       // Emit the first turn to start gameplay
-      //       if (this.server) {
-      //         const phaseTimeout =
-      //           state?.phaseTimeout ??
-      //           Number(process.env.SPELL_CAST_TIMEOUT || 120000);
+            // Emit the first turn to start gameplay
+            if (this.server) {
+              const phaseTimeout =
+                state?.phaseTimeout ??
+                Number(process.env.SPELL_CAST_TIMEOUT || 120000);
 
-      //         console.log(
-      //           '[NEWTURN] ▶⏰ Emit `createMatch::newTurn` Confirmation timeout forces newTurn'
-      //         );
-      //         this.server
-      //           .to(roomId)
-      //           .emit('newTurn', { phase: 'spell_casting', phaseTimeout });
-      //         await this.gameStateService.publishToRoom(roomId, 'newTurn', {
-      //           phase: 'spell_casting',
-      //           phaseTimeout,
-      //         });
-      //         console.log(
-      //           `🎮 Started first turn for match in room ${roomId} (timeout)`
-      //         );
-      //       }
-      //     }
-      //   } catch (error) {
-      //     console.error(
-      //       'Failed to start first turn for match (timeout):',
-      //       error
-      //     );
-      //   }
-      // }, 30000); // 30 second timeout for confirmations
+              console.log(
+                '[NEWTURN] ▶⏰ Emit `createMatch::newTurn` Confirmation timeout forces newTurn'
+              );
+              this.server
+                .to(roomId)
+                .emit('newTurn', { phase: 'spell_casting', phaseTimeout });
+              await this.gameStateService.publishToRoom(roomId, 'newTurn', {
+                phase: 'spell_casting',
+                phaseTimeout,
+              });
+              console.log(
+                `🎮 Started first turn for match in room ${roomId} (timeout)`
+              );
+            }
+          }
+        } catch (error) {
+          console.error(
+            'Failed to start first turn for match (timeout):',
+            error
+          );
+        }
+      }, 90000); // 30 second timeout for confirmations
 
       // ONLY AFTER everything is successful, remove players from queue
       // This ensures we don't lose players if match creation fails
