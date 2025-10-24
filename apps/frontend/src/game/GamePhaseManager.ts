@@ -11,6 +11,7 @@ import { EventBus } from './EventBus';
 import { allSpells } from '../../../common/stater/spells';
 import { gameEventEmitter } from '../engine/gameEventEmitter';
 import { Mutex } from 'async-mutex';
+import type { Socket } from 'socket.io-client';
 
 /**
  * @title Frontend Game Phase Manager
@@ -35,7 +36,7 @@ import { Mutex } from 'async-mutex';
  */
 export class GamePhaseManager {
   public currentPhase: GamePhase = GamePhase.SPELL_CASTING;
-  private socket: any;
+  private socket: Socket;
   private roomId: string;
   private stater: Stater; // Your Stater instance
   private lastActions?: IUserActions; // Add this property
@@ -52,7 +53,7 @@ export class GamePhaseManager {
   private stageProcessMutex: Mutex;
 
   constructor(
-    socket: any,
+    socket: Socket,
     roomId: string,
     stater: Stater,
     setOpponentState: (state: State) => void,
@@ -692,9 +693,13 @@ export class GamePhaseManager {
    * @dev Should be called when game ends or component unmounts
    */
   public cleanup(): void {
+    console.log('Cleaning up GamePhaseManager');
     this.stopTrustedStatePolling();
     this.hasSubmittedTrustedState = true;
     this.hasSubmittedActions = true;
+
+    EventBus.off('request-phase-timer');
+    this.socket.removeAllListeners();
   }
 
   /**

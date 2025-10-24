@@ -20,6 +20,7 @@ import type {
 } from '../../../../common/types/gameplay.types';
 import { GamePhase } from '../../../../common/types/gameplay.types';
 import { EventBus } from '@/game/EventBus';
+import type { GamePhaseManager } from '@/game/GamePhaseManager';
 import {
   Tilemap,
   EntityOverlay,
@@ -64,6 +65,8 @@ export default function GamePage() {
   const isInitialized = useRef<boolean>(false);
   const staterRef = useRef(stater);
   const opponentStateRef = useRef(opponentState);
+  const gamePhaseManagerRef = useRef<GamePhaseManager | null>(null);
+  const isMountedRef = useRef<boolean>(true);
 
   // Derived state
   const entities = getAllEntities();
@@ -380,16 +383,60 @@ export default function GamePage() {
     };
   }, [initMovementHandler, addEntity, clearEntities]);
 
+  // Track gamePhaseManager changes and handle cleanup of old instances
+  useEffect(() => {
+    if (gamePhaseManager) {
+      // If there's a different manager in the ref, clean up the old one
+      if (
+        gamePhaseManagerRef.current &&
+        gamePhaseManagerRef.current !== gamePhaseManager
+      ) {
+        console.log('🧹 Cleaning up OLD GamePhaseManager instance');
+        gamePhaseManagerRef.current.cleanup();
+      }
+      // Store the current manager
+      gamePhaseManagerRef.current = gamePhaseManager;
+      console.log('📌 Stored GamePhaseManager reference');
+    }
+  }, [gamePhaseManager]);
+
   useEffect(() => {
     gamePhaseManager?.setOnNewTurnHook(onNewTurnHook);
   }, [gamePhaseManager, onNewTurnHook]);
 
-  // Cleanup game phase manager on unmount
+  // Cleanup game phase manager ONLY on final unmount (not during Strict Mode double-mount)
   useEffect(() => {
+    isMountedRef.current = true;
+    console.log('✅ GamePage mounted');
+
     return () => {
-      gamePhaseManager?.cleanup();
+      console.log('⏳ GamePage cleanup triggered');
+
+      // Set flag immediately to prevent race conditions
+      isMountedRef.current = false;
+
+      // Delay cleanup to see if component remounts (Strict Mode behavior)
+      // In Strict Mode: component unmounts then immediately remounts
+      // In real unmount: component stays unmounted
+      setTimeout(() => {
+        // After delay, check if still unmounted (real unmount vs Strict Mode remount)
+        if (!isMountedRef.current && gamePhaseManagerRef.current) {
+          console.log(
+            '🛑 REAL unmount confirmed - cleaning up GamePhaseManager'
+          );
+          gamePhaseManagerRef.current.cleanup();
+          gamePhaseManagerRef.current = null;
+        } else {
+          console.log(
+            '🔄 Component remounted (Strict Mode) - skipping cleanup'
+          );
+        }
+      }, 0);
+
+      // Note: We can't clear this timeout on remount since the cleanup has already run
+      // But that's OK - the isMountedRef.current check handles it
     };
-  }, [gamePhaseManager]);
+  }, []);
 
   useEffect(() => {
     const handleSceneReady = (
