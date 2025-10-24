@@ -851,6 +851,28 @@ export class GameSessionGateway {
   }
 
   /**
+   * Check if this instance has any local players in the specified room
+   * @param roomId - The room ID to check
+   * @returns True if this instance has players in the room, false otherwise
+   */
+  private async hasLocalPlayersInRoom(roomId: string): Promise<boolean> {
+    try {
+      const gameState = await this.gameStateService.getGameState(roomId);
+      if (!gameState) return false;
+
+      const currentInstanceId = this.gameStateService.getInstanceId();
+
+      // Check if any player in the room is managed by this instance
+      return gameState.players.some(
+        (player) => player.instanceId === currentInstanceId
+      );
+    } catch (error) {
+      console.error(`Error checking local players in room ${roomId}:`, error);
+      return false;
+    }
+  }
+
+  /**
    * @param data - The data object containing the roomId, event, data, originInstanceId, and timestamp
    * @dev Handles events published by other instances on the Redis channel and
    * re-emits them to any local sockets subscribed to the target room. For
@@ -870,6 +892,24 @@ export class GameSessionGateway {
     if (data.originInstanceId === this.gameStateService.getInstanceId()) {
       console.log(
         `🚫 [CROSS_INSTANCE] Skipping event ${data.event} from own instance ${data.originInstanceId} in room ${data.roomId}`
+      );
+      return;
+    }
+
+    // Validate instance ID format (should be PID-timestamp)
+    const instanceIdPattern = /^\d+-\d+$/;
+    if (!instanceIdPattern.test(data.originInstanceId)) {
+      console.log(
+        `⚠️ [CROSS_INSTANCE] Ignoring event ${data.event} from invalid instance ID ${data.originInstanceId} in room ${data.roomId}`
+      );
+      return;
+    }
+
+    // Only process events if this instance has players in the room
+    const hasLocalPlayers = await this.hasLocalPlayersInRoom(data.roomId);
+    if (!hasLocalPlayers) {
+      console.log(
+        `🚫 [CROSS_INSTANCE] Ignoring event ${data.event} for room ${data.roomId} - no local players`
       );
       return;
     }
