@@ -527,7 +527,7 @@ export class MatchmakingService {
         // Even if notification fails, the match is still valid
       }
 
-      // Set up confirmation timeout - if players don't confirm within 30 seconds, start anyway
+      // Set up confirmation timeout - if players don't confirm within 90 seconds, start anyway
       // TODO: Findout why first time confirm is not send to the server ?
       setTimeout(async () => {
         try {
@@ -568,7 +568,7 @@ export class MatchmakingService {
             error
           );
         }
-      }, 90000); // 30 second timeout for confirmations
+      }, 90000); // 90 second timeout for confirmations
 
       // ONLY AFTER everything is successful, remove players from queue
       // This ensures we don't lose players if match creation fails

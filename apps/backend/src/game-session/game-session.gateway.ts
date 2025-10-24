@@ -920,8 +920,12 @@ export class GameSessionGateway {
             }
           } else {
             console.log(
-              `⚠️ [MATCH_FOUND] Target socket ${data.data.targetSocketId} not found on this instance for room ${data.roomId}`
+              `⚠️ [MATCH_FOUND] Target socket ${data.data.targetSocketId} not found on this instance for room ${data.roomId}, broadcasting to room instead`
             );
+            // Fallback: broadcast to room if specific socket not found
+            this.server
+              .to(data.roomId)
+              .emit('matchFound', data.data?.payload ?? data.data);
           }
         } else {
           console.log(
