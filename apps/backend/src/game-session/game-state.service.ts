@@ -410,6 +410,8 @@ export class GameStateService {
     let attempts = 0;
     const hashKey = 'game_states';
 
+    console.log('💣💣💣💣💣💣 Atomic GameStateService::updateGameState');
+
     while (attempts < maxRetries) {
       await this.redisClient.watch(hashKey);
       try {

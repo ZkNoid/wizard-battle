@@ -807,6 +807,9 @@ export class GameSessionGateway {
       const phaseTimeout =
         state?.phaseTimeout ?? Number(process.env.SPELL_CAST_TIMEOUT || 120000);
 
+      console.log(
+        '[newTurn] ▶️ Emit `handleConfirmJoined:newTurn` the first turn to start gameplay'
+      );
       this.server
         .to(data.roomId)
         .emit('newTurn', { phase: 'spell_casting', phaseTimeout });
@@ -985,6 +988,9 @@ export class GameSessionGateway {
 
       case 'newTurn':
         // Broadcast new turn to local sockets
+        console.log(
+          '[NEWTURN]  Emit `handleCrossInstanceEvent:newTurn`  Broadcast new turn to local sockets'
+        );
         this.server.to(data.roomId).emit('newTurn', data.data);
         break;
 
@@ -1171,6 +1177,10 @@ export class GameSessionGateway {
     const state = await this.gameStateService.getGameState(roomId);
     const phaseTimeout =
       state?.phaseTimeout ?? Number(process.env.SPELL_CAST_TIMEOUT || 120000);
+
+    console.log(
+      '[NEWTURN] ▶️ Emit `startNextTurn:newTurn` newTurn on nextTurn'
+    );
 
     this.server
       .to(roomId)
