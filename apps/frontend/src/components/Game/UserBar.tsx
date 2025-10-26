@@ -7,6 +7,8 @@ import { HpBackground } from './assets/hp-background';
 import { LvlBackground } from './assets/lvl-background';
 import { WarriorSwordIcon } from './assets/warrior-sword-icon';
 import Image from 'next/image';
+import { useState, useEffect, useRef } from 'react';
+import { DamageIndicator } from './DamageIndicator';
 
 export function UserBar({
   name,
@@ -33,8 +35,47 @@ export function UserBar({
 }) {
   const healthPercentage = (health / maxHealth) * 100;
 
+  // Track damage indicators
+  const [showDamage, setShowDamage] = useState(false);
+  const [damageValue, setDamageValue] = useState(0);
+  const previousHealthRef = useRef(health);
+  const isInitialized = useRef(false);
+
+  useEffect(() => {
+    const previousHealth = previousHealthRef.current;
+
+    // Don't show damage on first render
+    if (!isInitialized.current) {
+      isInitialized.current = true;
+      previousHealthRef.current = health;
+      return;
+    }
+
+    if (previousHealth > health) {
+      const damage = previousHealth - health;
+      setDamageValue(damage);
+      setShowDamage(true);
+
+      // Hide damage indicator after animation
+      const timer = setTimeout(() => {
+        setShowDamage(false);
+      }, 800);
+
+      return () => clearTimeout(timer);
+    }
+
+    previousHealthRef.current = health;
+  }, [health]);
+
   return (
-    <div className={cn('flex flex-row items-center gap-0', className)}>
+    <div className={cn('relative flex flex-row items-center gap-0', className)}>
+      {/* Damage Indicator */}
+      <DamageIndicator
+        damage={damageValue}
+        isVisible={showDamage}
+        position="top"
+      />
+
       {/* Avatar */}
       <div className="w-35 h-35 border-3 border-main-gray overflow-hidden bg-[#FBFAFA]">
         {wizardType === 'wizard' && (
