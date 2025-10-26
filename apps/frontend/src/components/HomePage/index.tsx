@@ -21,6 +21,7 @@ import BoxButton from '../shared/BoxButton';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useMinaAppkit } from 'mina-appkit';
+import InventoryModal from '../InventoryModal';
 
 enum TabHover {
   CRAFT,
@@ -34,6 +35,9 @@ export default function HomePage() {
   const [tab, setTab] = useState<Tab>(Tab.HOME);
   const [tabHover, setTabHover] = useState<TabHover | undefined>(undefined);
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(false);
+
+  const [isInventoryModalOpen, setIsInventoryModalOpen] =
+    useState<boolean>(false);
 
   const router = useRouter();
   const { address, triggerWallet } = useMinaAppkit();
@@ -67,7 +71,13 @@ export default function HomePage() {
               className="h-8 w-8"
             />
           </BoxButton>
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
+          <BoxButton
+            color="gray"
+            onClick={() => {
+              setIsInventoryModalOpen(true);
+            }}
+            className="size-16"
+          >
             <Image
               src={'/icons/inventory.png'}
               width={28}
@@ -228,7 +238,7 @@ export default function HomePage() {
         <button
           className="col-span-2 col-start-5 row-span-3 row-start-4 size-full cursor-pointer"
           onClick={() => {
-            alert('Coming soon...');
+            setIsInventoryModalOpen(true);
           }}
           onMouseEnter={() => setTabHover(TabHover.CHARACTERS)}
           onMouseLeave={() => setTabHover(undefined)}
@@ -242,6 +252,10 @@ export default function HomePage() {
           onMouseLeave={() => setTabHover(undefined)}
         />
       </div>
+
+      {isInventoryModalOpen && (
+        <InventoryModal onClose={() => setIsInventoryModalOpen(false)} />
+      )}
     </main>
   );
 }
