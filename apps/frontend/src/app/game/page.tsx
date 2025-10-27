@@ -460,22 +460,7 @@ export default function GamePage() {
   return (
     <Game actionInfo={actionInfo}>
       {/* Left half - Ally map */}
-      <div
-        onClick={() => {
-          const effectId = gameEventEmitter.throwEffect({
-            overlayId: 'user',
-            animationName: 'fireball',
-            x: 0,
-            y: 0,
-            scale: 1.5,
-            loop: true,
-          });
-          setTimeout(() => {
-            gameEventEmitter.removeEffect(effectId);
-          }, 5000);
-        }}
-        className="relative"
-      >
+      <div className="relative">
         <Tilemap
           width={GRID_WIDTH}
           height={GRID_HEIGHT}
