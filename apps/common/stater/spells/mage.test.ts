@@ -40,6 +40,7 @@ describe('Mage Spells', () => {
         }),
         isSome: Field(1),
       }),
+      speed: Int64.from(1),
     });
 
     const spellStats = Array(5)

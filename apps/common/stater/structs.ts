@@ -18,6 +18,7 @@ export class PlayerStats extends Struct({
   hp: Int64,
   maxHp: Int64,
   position: PositionOption,
+  speed: Int64,
 }) {}
 
 export class SpellStats extends Struct({

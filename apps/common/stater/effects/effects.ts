@@ -33,6 +33,24 @@ const bleedingEffect: IEffectInfo = {
   },
 };
 
+const slowingRestorationEffect: IEffectInfo = {
+  id: CircuitString.fromString('SlowingRestoration').hash(),
+  name: 'SlowingRestoration',
+  apply: (state: State, publicState: State, param: Field) => {
+    console.log('Applying slowing restoration effect');
+    state.playerStats.speed = state.playerStats.speed.add(Int64.from(1));
+  },
+};
+
+const slowingEffect: IEffectInfo = {
+  id: CircuitString.fromString('Slowing').hash(),
+  name: 'Slowing',
+  apply: (state: State, publicState: State, param: Field) => {
+    console.log('Applying slowing effect');
+    state.playerStats.speed = state.playerStats.speed.sub(Int64.from(1));
+  },
+};
+
 const decoyEffect: IEffectInfo = {
   id: CircuitString.fromString('Decoy').hash(),
   name: 'Decoy',
@@ -92,6 +110,8 @@ export const allEffectsInfo: IEffectInfo[] = [
   bleedingEffect,
   decoyEffect,
   cloudEffect,
+  slowingRestorationEffect,
+  slowingEffect,
 ];
 
 const EffectsId: Record<string, Field> = {};

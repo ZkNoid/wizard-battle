@@ -156,6 +156,14 @@ export const HailOfArrowsModifyer = (
   if (isSlowing) {
     state.pushEffect(
       new Effect({
+        effectId: CircuitString.fromString('SlowingRestoration').hash(),
+        duration: Field.from(3),
+        param: Field(0),
+      }),
+      'endOfRound'
+    );
+    state.pushEffect(
+      new Effect({
         effectId: CircuitString.fromString('Slowing').hash(),
         duration: Field.from(2),
         param: Field(0),
