@@ -59,9 +59,29 @@ export interface AnimationConfig {
 
 // Throw effect event for playing animations at specific tile coordinates
 export interface ThrowEffectEvent {
+  overlayId: string;
+  animationName: string;
   x: number; // tilemap coordinate (0-7)
   y: number; // tilemap coordinate (0-7)
-  animationName: string;
   scale?: number;
   duration?: number; // Optional duration override
+  loop?: boolean; // Optional loop parameter for animation
+  effectId: string; // Auto-generated effect ID
+}
+
+// Remove effect event for removing effects by ID
+export interface RemoveEffectEvent {
+  effectId: string;
+  overlayId?: string; // Optional overlayId to filter effects
+}
+
+// Parameters for throwEffect function
+export interface ThrowEffectParams {
+  overlayId: string;
+  animationName: string;
+  x: number; // tilemap coordinate (0-7)
+  y: number; // tilemap coordinate (0-7)
+  scale?: number;
+  duration?: number; // Optional duration override
+  loop?: boolean; // Optional loop parameter for animation
 }

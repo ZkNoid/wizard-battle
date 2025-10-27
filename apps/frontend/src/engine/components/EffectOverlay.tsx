@@ -1,6 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AnimatedCanvas } from './AnimatedCanvas';
-import { gameEventEmitter, type ThrowEffectEvent } from '../gameEventEmitter';
+import {
+  gameEventEmitter,
+  type ThrowEffectEvent,
+  type RemoveEffectEvent,
+} from '../gameEventEmitter';
 import { loadAnimation } from '../utils/animationLoader';
 import type { Animation } from '../types/animation';
 
@@ -54,7 +58,6 @@ export function EffectOverlay({
 }) {
   const [activeEffects, setActiveEffects] = useState<EffectInstance[]>([]);
   const [completedEffects, setCompletedEffects] = useState<string[]>([]);
-  const effectCounterRef = useRef(0);
 
   // Handle completed effects
   useEffect(() => {
@@ -66,6 +69,27 @@ export function EffectOverlay({
     }
   }, [completedEffects]);
 
+  // Handle remove effect events
+  useEffect(() => {
+    const handleRemoveEffect = (event: RemoveEffectEvent) => {
+      const { effectId, overlayId: eventOverlayId } = event;
+
+      // If event specifies an overlayId, only process if it matches
+      if (eventOverlayId && eventOverlayId !== overlayId) {
+        return; // Skip this event, it's not for this overlay
+      }
+
+      // Remove the effect by ID (search in active effects)
+      setCompletedEffects((prev) => [...prev, effectId]);
+    };
+
+    gameEventEmitter.onRemoveEffect(handleRemoveEffect);
+
+    return () => {
+      gameEventEmitter.offRemoveEffect(handleRemoveEffect);
+    };
+  }, [overlayId]);
+
   useEffect(() => {
     const handleThrowEffect = async (event: ThrowEffectEvent) => {
       const {
@@ -75,6 +99,8 @@ export function EffectOverlay({
         y,
         scale,
         duration,
+        loop,
+        effectId,
       } = event;
 
       // Filter by overlayId if specified
@@ -97,23 +123,24 @@ export function EffectOverlay({
       }
 
       try {
-        // Load animation
+        // Load animation with loop parameter from event
+        const shouldLoop = loop ?? false;
         const { animation, image } = await loadAnimation(
           effectConfig.json,
           effectConfig.image,
           animationName,
-          false // Effects usually don't loop
+          shouldLoop
         );
 
-        // Create effect instance
+        // Create effect instance using the ID from event
         const effectInstance: EffectInstance = {
-          id: `effect_${++effectCounterRef.current}`,
+          id: effectId,
           x,
           y,
           animation: {
             ...animation,
-            oneTime: true, // Effects are always one-time
-            loop: false,
+            oneTime: !shouldLoop, // One-time if not looping
+            loop: shouldLoop,
             scale: scale || 1,
           },
           image,

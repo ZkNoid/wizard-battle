@@ -75,7 +75,13 @@ const LightningBoldSceneEffect = (
   ];
 
   positions.forEach((position) => {
-    gameEmitter.throwEffect(type, 'lightning', position.x, position.y, 1.2);
+    gameEmitter.throwEffect({
+      overlayId: type,
+      animationName: 'lightning',
+      x: position.x,
+      y: position.y,
+      scale: 1.2,
+    });
   });
 };
 
@@ -149,7 +155,13 @@ const FireBallSceneEffect = (
   ];
 
   positions.forEach((position) => {
-    gameEmitter.throwEffect(type, 'fireball', position.x, position.y, 1.5);
+    gameEmitter.throwEffect({
+      overlayId: type,
+      animationName: 'fireball',
+      x: position.x,
+      y: position.y,
+      scale: 1.5,
+    });
   });
 };
 
@@ -199,14 +211,32 @@ const LaserSceneEffect = (
 ) => {
   for (let i = 0; i < 8; i++) {
     if (i === y) continue;
-    gameEmitter.throwEffect(type, 'laser_vertical', x, i, 1.5);
+    gameEmitter.throwEffect({
+      overlayId: type,
+      animationName: 'laser_vertical',
+      x,
+      y: i,
+      scale: 1.5,
+    });
   }
   for (let i = 0; i < 8; i++) {
     if (i === x) continue;
-    gameEmitter.throwEffect(type, 'laser_horisontal', i, y, 1.5);
+    gameEmitter.throwEffect({
+      overlayId: type,
+      animationName: 'laser_horisontal',
+      x: i,
+      y,
+      scale: 1.5,
+    });
   }
 
-  gameEmitter.throwEffect(type, 'laser_center', x, y, 1.5);
+  gameEmitter.throwEffect({
+    overlayId: type,
+    animationName: 'laser_center',
+    x,
+    y,
+    scale: 1.5,
+  });
 };
 
 export class TeleportData extends Struct({

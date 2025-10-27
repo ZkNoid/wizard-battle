@@ -33,10 +33,30 @@ export interface ThrowEffectEvent {
   y: number; // tilemap coordinate (0-7)
   scale?: number;
   duration?: number; // Optional duration override
+  loop?: boolean; // Optional loop parameter for animation
+  effectId: string; // Auto-generated effect ID
+}
+
+// Type for removing effects by ID
+export interface RemoveEffectEvent {
+  effectId: string;
+  overlayId?: string; // Optional overlayId to filter effects
+}
+
+// Parameters for throwEffect function
+export interface ThrowEffectParams {
+  overlayId: string;
+  animationName: string;
+  x: number; // tilemap coordinate (0-7)
+  y: number; // tilemap coordinate (0-7)
+  scale?: number;
+  duration?: number; // Optional duration override
+  loop?: boolean; // Optional loop parameter for animation
 }
 
 export class GameEventEmitter extends EventEmitter {
   private static instance: GameEventEmitter;
+  private effectCounter = 0;
 
   private constructor() {
     super();
@@ -47,6 +67,11 @@ export class GameEventEmitter extends EventEmitter {
       GameEventEmitter.instance = new GameEventEmitter();
     }
     return GameEventEmitter.instance;
+  }
+
+  // Generate unique effect ID
+  private generateEffectId(): string {
+    return `effect_${++this.effectCounter}_${Date.now()}`;
   }
 
   // Simple API for movement on the tilemap
@@ -141,19 +166,23 @@ export class GameEventEmitter extends EventEmitter {
   }
 
   // Throw effect API - plays animation at specific tile coordinates
-  throwEffect(
-    overlayId: string,
-    animationName: string,
-    x: number,
-    y: number,
-    scale?: number,
-    duration?: number
-  ) {
+  throwEffect({
+    overlayId,
+    animationName,
+    x,
+    y,
+    scale,
+    duration,
+    loop,
+  }: ThrowEffectParams): string {
     // Checking the boundaries of the tilemap (0-7)
     if (x < 0 || x >= 8 || y < 0 || y >= 8) {
       console.warn(`Invalid tilemap coordinates: x=${x}, y=${y}. Must be 0-7.`);
-      return;
+      return '';
     }
+
+    // Generate unique effect ID
+    const effectId = this.generateEffectId();
 
     const event: ThrowEffectEvent = {
       overlayId,
@@ -162,8 +191,12 @@ export class GameEventEmitter extends EventEmitter {
       y,
       scale,
       duration,
+      loop,
+      effectId,
     };
     this.emit('throwEffect', event);
+
+    return effectId;
   }
 
   onThrowEffect(callback: (event: ThrowEffectEvent) => void) {
@@ -172,6 +205,23 @@ export class GameEventEmitter extends EventEmitter {
 
   offThrowEffect(callback: (event: ThrowEffectEvent) => void) {
     this.off('throwEffect', callback);
+  }
+
+  // Remove effect API - removes effect by ID
+  removeEffect(effectId: string, overlayId?: string) {
+    const event: RemoveEffectEvent = {
+      effectId,
+      overlayId,
+    };
+    this.emit('removeEffect', event);
+  }
+
+  onRemoveEffect(callback: (event: RemoveEffectEvent) => void) {
+    this.on('removeEffect', callback);
+  }
+
+  offRemoveEffect(callback: (event: RemoveEffectEvent) => void) {
+    this.off('removeEffect', callback);
   }
 }
 
