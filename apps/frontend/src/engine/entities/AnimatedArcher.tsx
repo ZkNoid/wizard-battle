@@ -40,8 +40,8 @@ const animations: Record<string, AnimationConfig> = {
     loop: false,
     scale: 1,
   },
-  smokeCloud: {
-    name: 'smokeCloud',
+  smokecloud: {
+    name: 'smokecloud',
     spritesheetJson: '/assets/spritesheets/archer/smokeCloud.json',
     spritesheetImage: '/assets/spritesheets/archer/smokeCloud.png',
     loop: false,
