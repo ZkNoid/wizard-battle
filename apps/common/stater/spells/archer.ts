@@ -52,18 +52,18 @@ export const ArrowModifyer = (
   // Bleeding effect
 
   const chance = Poseidon.hash([state.randomSeed]).toBigInt() % 2n;
-  const isBleeding = chance === 1n;
+  const isBleeding = directHit.toBoolean() && chance === 1n;
 
-  // if (isBleeding) {
-  state.pushEffect(
-    new Effect({
-      effectId: CircuitString.fromString('Bleeding').hash(),
-      duration: Field.from(3),
-      param: Field(0),
-    }),
-    'endOfRound'
-  );
-  // }
+  if (isBleeding) {
+    state.pushEffect(
+      new Effect({
+        effectId: CircuitString.fromString('Bleeding').hash(),
+        duration: Field.from(3),
+        param: Field(0),
+      }),
+      'endOfRound'
+    );
+  }
 };
 
 const ArrowSceneEffect = (
@@ -167,11 +167,8 @@ export const HailOfArrowsModifyer = (
   const selfPosition = state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
   const distance = selfPosition.manhattanDistance(targetPosition);
-  const damageToApply = Provable.if(
-    distance.lessThanOrEqual(UInt64.from(3)),
-    Int64.from(50),
-    Int64.from(0)
-  );
+  const hasDamage = distance.lessThanOrEqual(UInt64.from(3));
+  const damageToApply = Provable.if(hasDamage, Int64.from(50), Int64.from(0));
 
   state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 
@@ -179,7 +176,7 @@ export const HailOfArrowsModifyer = (
   // Slowing effect
 
   const chance = Poseidon.hash([state.randomSeed]).toBigInt() % 10n;
-  const isSlowing = chance <= 2n;
+  const isSlowing = hasDamage.toBoolean() && chance <= 2n;
 
   if (isSlowing) {
     state.pushEffect(
