@@ -230,7 +230,7 @@ export class MatchmakingService {
 
       // Dedupe by logical playerId to prevent self-matching
       const seen = new Set<string>();
-      const filteredQueuedPlayers: QueuedPlayer[] = [];
+      const filteredQueuedPlayersDeduped: QueuedPlayer[] = [];
       for (const qp of filteredQueuedPlayersInitial) {
         const pid = qp.player.playerId;
         if (!pid) continue;
@@ -242,6 +242,28 @@ export class MatchmakingService {
           continue;
         }
         seen.add(pid);
+        filteredQueuedPlayersDeduped.push(qp);
+      }
+
+      // Filter to only include players whose sockets are local to this instance
+      // This prevents matching players that belong to other instances
+      const filteredQueuedPlayers: QueuedPlayer[] = [];
+      for (const qp of filteredQueuedPlayersDeduped) {
+        if (!qp.player.socketId) {
+          // Skip players without socket IDs
+          continue;
+        }
+
+        // Check if the socket exists locally on this instance
+        // If server.sockets.sockets.get() returns undefined, the socket is on a different instance
+        const isLocalSocket =
+          this.server?.sockets.sockets.get(qp.player.socketId) !== undefined;
+
+        if (!isLocalSocket) {
+          // Player is on a different instance, skip for this matchmaking cycle
+          continue;
+        }
+
         filteredQueuedPlayers.push(qp);
       }
 
@@ -274,8 +296,10 @@ export class MatchmakingService {
         return;
       }
 
+      const nonLocalCount =
+        filteredQueuedPlayersDeduped.length - filteredQueuedPlayers.length;
       console.log(
-        `Processing matchmaking for ${filteredQueuedPlayers.length} available players (${queuedPlayers.length - filteredQueuedPlayers.length} already in matches)`
+        `Processing matchmaking for ${filteredQueuedPlayers.length} local players (${queuedPlayers.length - filteredQueuedPlayersDeduped.length} already in matches, ${nonLocalCount} on other instances)`
       );
       console.log(
         `Actual Redis queue length: ${await this.redisClient.lLen('waiting:queue')}`
@@ -431,8 +455,23 @@ export class MatchmakingService {
       return;
     }
 
+    // Verify both players have local sockets (defensive check)
+    const socket1Local = player1.socketId
+      ? this.server?.sockets.sockets.get(player1.socketId) !== undefined
+      : false;
+    const socket2Local = player2.socketId
+      ? this.server?.sockets.sockets.get(player2.socketId) !== undefined
+      : false;
+
+    if (!socket1Local || !socket2Local) {
+      console.warn(
+        `⚠️ Cannot create match: Player ${player1.playerId} (local: ${socket1Local}) or player ${player2.playerId} (local: ${socket2Local}) is not on this instance. Skipping.`
+      );
+      return;
+    }
+
     console.log(
-      `Creating match between ${player1.playerId} and ${player2.playerId}`
+      `Creating match between ${player1.playerId} and ${player2.playerId} (both local to this instance)`
     );
 
     // Sort player IDs for consistent room ID
