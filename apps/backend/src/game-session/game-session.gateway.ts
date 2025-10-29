@@ -800,6 +800,8 @@ export class GameSessionGateway {
       // Start the game after all players have confirmed
       await this.gameStateService.updateGameState(data.roomId, {
         status: 'active',
+        // Reset phaseStartTime so SPELL_CASTING timeout starts from actual game start
+        phaseStartTime: Date.now(),
       });
 
       // Emit the first turn to start gameplay
