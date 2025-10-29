@@ -8,9 +8,11 @@ import { PlaySteps } from '@/lib/enums/PlaySteps';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { MAX_SELECTED_SKILLS } from '@/lib/constants/wizards';
-import { type Wizard } from '../../../../common/wizards';
+import { WizardId, type Wizard } from '../../../../common/wizards';
 import { allSpells } from '../../../../common/stater/spells';
 import { SpellStats } from '../../../../common/stater/structs';
+import { SPELLS_INFO } from '@/lib/constants/spellsInfo';
+import { SpellTooltip } from '../Game/SpellTooltip';
 
 export default function CharacterSelect({
   setPlayStep,
@@ -44,60 +46,71 @@ export default function CharacterSelect({
           Choose Skills
         </span>
         <span className="font-pixel text-main-gray mt-4 text-center text-xs">
-          Invisibility (passive) - The Arcane Sorcerer can blend seamlessly into
-          their surroundings, becoming completely invisible to enemies.
+          {currentWizard.id === WizardId.ARCHER
+            ? 'Light on the feet (passive) - +50% movement. If archer doesn’t move, next turn +30% damage and +10% Crit. Chance.'
+            : 'Invisibility (passive) - The Arcane Sorcerer can blend seamlessly into their surroundings, becoming completely invisible to enemies'}
         </span>
         {/* Skills */}
         <div className="mt-5 grid grid-cols-4 gap-5">
           {currentWizardSpells.map((spell) => (
-            <div
+            <SpellTooltip
               key={spell.id.toString()}
-              className="size-22.5 relative flex cursor-pointer items-center justify-center transition-transform duration-300 hover:scale-110"
+              spellInfo={
+                SPELLS_INFO.find((item) => item.title === spell.name) ?? {
+                  image: '/wizards/skills/empty.png',
+                  title: 'Unknown',
+                  description: 'Unknown',
+                  cooldown: 0,
+                  tags: [],
+                }
+              }
             >
-              <div className="relative z-10 size-full">
-                <Image
-                  className={cn(
-                    'size-full border-4 border-black',
-                    selectedSkills.some(
-                      (s) => s.spellId.toString() === spell.id.toString()
-                    ) && 'scale-110',
-                    !selectedSkills.some(
-                      (s) => s.spellId.toString() === spell.id.toString()
-                    ) &&
-                      selectedSkillsLength >= MAX_SELECTED_SKILLS &&
-                      'hover:scale-none cursor-not-allowed opacity-50'
-                  )}
-                  src={spell.image ?? ''}
-                  alt={'skill'}
-                  fill
-                  quality={100}
-                  unoptimized={true}
-                  onClick={() => {
-                    if (
+              <div className="size-22.5 relative flex cursor-pointer items-center justify-center transition-transform duration-300 hover:scale-110">
+                <div className="relative z-10 size-full">
+                  <Image
+                    className={cn(
+                      'size-full border-4 border-black',
                       selectedSkills.some(
                         (s) => s.spellId.toString() === spell.id.toString()
-                      )
-                    ) {
-                      setSelectedSkills(
-                        selectedSkills.filter(
-                          (s) => s.spellId.toString() !== spell.id.toString()
+                      ) && 'scale-110',
+                      !selectedSkills.some(
+                        (s) => s.spellId.toString() === spell.id.toString()
+                      ) &&
+                        selectedSkillsLength >= MAX_SELECTED_SKILLS &&
+                        'hover:scale-none cursor-not-allowed opacity-50'
+                    )}
+                    src={spell.image ?? ''}
+                    alt={'skill'}
+                    fill
+                    quality={100}
+                    unoptimized={true}
+                    onClick={() => {
+                      if (
+                        selectedSkills.some(
+                          (s) => s.spellId.toString() === spell.id.toString()
                         )
-                      );
-                    } else {
-                      if (selectedSkillsLength < MAX_SELECTED_SKILLS) {
-                        setSelectedSkills([
-                          ...selectedSkills,
-                          // Copy spell stats
-                          SpellStats.fromJSON(
-                            SpellStats.toJSON(spell.defaultValue)
-                          ),
-                        ]);
+                      ) {
+                        setSelectedSkills(
+                          selectedSkills.filter(
+                            (s) => s.spellId.toString() !== spell.id.toString()
+                          )
+                        );
+                      } else {
+                        if (selectedSkillsLength < MAX_SELECTED_SKILLS) {
+                          setSelectedSkills([
+                            ...selectedSkills,
+                            // Copy spell stats
+                            SpellStats.fromJSON(
+                              SpellStats.toJSON(spell.defaultValue)
+                            ),
+                          ]);
+                        }
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                </div>
               </div>
-            </div>
+            </SpellTooltip>
           ))}
           {/* Empty skills */}
           {Array.from({ length: 4 - (currentWizardSpells.length % 4) }).map(
