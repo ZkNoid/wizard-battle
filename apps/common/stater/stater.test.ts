@@ -28,6 +28,7 @@ describe('Stater', () => {
         }),
         isSome: Field(1),
       }),
+      speed: Int64.from(1),
     });
 
     const spellStats = Array(5)
@@ -287,6 +288,7 @@ describe('Stater', () => {
         hp: Int64.from(150),
         maxHp: Int64.from(150),
         position: new PositionOption({ value: position, isSome: Field(1) }),
+        speed: Int64.from(1),
       });
 
       expect(playerStats.hp.toString()).toBe('150');

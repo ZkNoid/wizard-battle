@@ -52,18 +52,32 @@ export const ArrowModifyer = (
   // Bleeding effect
 
   const chance = Poseidon.hash([state.randomSeed]).toBigInt() % 2n;
-  const isBleeding = chance === 1n;
+  const isBleeding = directHit.toBoolean() && chance === 1n;
 
-  // if (isBleeding) {
-  state.pushEffect(
-    new Effect({
-      effectId: CircuitString.fromString('Bleeding').hash(),
-      duration: Field.from(3),
-      param: Field(0),
-    }),
-    'endOfRound'
-  );
-  // }
+  if (isBleeding) {
+    state.pushEffect(
+      new Effect({
+        effectId: CircuitString.fromString('Bleeding').hash(),
+        duration: Field.from(3),
+        param: Field(0),
+      }),
+      'endOfRound'
+    );
+  }
+};
+
+const ArrowSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: any,
+  type: 'user' | 'enemy'
+) => {
+  gameEmitter.throwEffect({
+    animationName: 'arrow',
+    x,
+    y,
+    overlayId: type,
+  });
 };
 
 export class AimingShotData extends Struct({
@@ -112,6 +126,20 @@ export const AimingShotModifyer = (
   state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 };
 
+const AimingShotSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: any,
+  type: 'user' | 'enemy'
+) => {
+  gameEmitter.throwEffect({
+    animationName: 'aimingshot',
+    x,
+    y,
+    overlayId: type,
+  });
+};
+
 export class HailOfArrowsData extends Struct({
   position: Position,
 }) {}
@@ -139,11 +167,8 @@ export const HailOfArrowsModifyer = (
   const selfPosition = state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
   const distance = selfPosition.manhattanDistance(targetPosition);
-  const damageToApply = Provable.if(
-    distance.lessThanOrEqual(UInt64.from(3)),
-    Int64.from(50),
-    Int64.from(0)
-  );
+  const hasDamage = distance.lessThanOrEqual(UInt64.from(3));
+  const damageToApply = Provable.if(hasDamage, Int64.from(50), Int64.from(0));
 
   state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
 
@@ -151,9 +176,17 @@ export const HailOfArrowsModifyer = (
   // Slowing effect
 
   const chance = Poseidon.hash([state.randomSeed]).toBigInt() % 10n;
-  const isSlowing = chance <= 2n;
+  const isSlowing = hasDamage.toBoolean() && chance <= 2n;
 
   if (isSlowing) {
+    state.pushEffect(
+      new Effect({
+        effectId: CircuitString.fromString('SlowingRestoration').hash(),
+        duration: Field.from(3),
+        param: Field(0),
+      }),
+      'endOfRound'
+    );
     state.pushEffect(
       new Effect({
         effectId: CircuitString.fromString('Slowing').hash(),
@@ -163,6 +196,30 @@ export const HailOfArrowsModifyer = (
       'endOfRound'
     );
   }
+};
+
+const HailOfArrowsSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: any,
+  type: 'user' | 'enemy'
+) => {
+  let positions = [
+    { x: x, y: y },
+    { x: x + 1, y: y },
+    { x: x - 1, y: y },
+    { x: x, y: y + 1 },
+    { x: x, y: y - 1 },
+  ];
+
+  positions.forEach((position) => {
+    gameEmitter.throwEffect({
+      animationName: 'hailofarrows',
+      x: position.x,
+      y: position.y,
+      overlayId: type,
+    });
+  });
 };
 
 export class DecoyData extends Struct({}) {}
@@ -232,6 +289,21 @@ export const CloudModifyer = (
   );
 };
 
+const CloudSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: any,
+  type: 'user' | 'enemy'
+) => {
+  gameEmitter.throwEffect({
+    animationName: 'smokecloud',
+    x,
+    y,
+    overlayId: type,
+    loop: true,
+  });
+};
+
 export const archerSpells: ISpell<any>[] = [
   {
     id: CircuitString.fromString('Arrow').hash(),
@@ -243,6 +315,7 @@ export const archerSpells: ISpell<any>[] = [
     modifyerData: ArrowData,
     modifyer: ArrowModifyer,
     cast: ArrowCast,
+    sceneEffect: ArrowSceneEffect,
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('Arrow').hash(),
@@ -259,6 +332,7 @@ export const archerSpells: ISpell<any>[] = [
     image: '/wizards/skills/aimingShot.png',
     modifyerData: AimingShotData,
     modifyer: AimingShotModifyer,
+    sceneEffect: AimingShotSceneEffect,
     cast: AimingShotCast,
     target: 'enemy',
     defaultValue: {
@@ -277,6 +351,7 @@ export const archerSpells: ISpell<any>[] = [
     modifyerData: HailOfArrowsData,
     modifyer: HailOfArrowsModifyer,
     cast: HailOfArrowsCast,
+    sceneEffect: HailOfArrowsSceneEffect,
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('HailOfArrows').hash(),
@@ -311,6 +386,7 @@ export const archerSpells: ISpell<any>[] = [
     modifyerData: CloudData,
     modifyer: CloudModifyer,
     cast: CloudCast,
+    sceneEffect: CloudSceneEffect,
     target: 'ally',
     defaultValue: {
       spellId: CircuitString.fromString('Cloud').hash(),

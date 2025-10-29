@@ -99,7 +99,10 @@ export default function Game({
                 .filter((spell) => spell !== undefined) ?? []
             }
           />
-          <ActionsBg className="absolute left-0 top-0 z-[1] -ml-10 size-28" />
+          <ActionsBg
+            className="absolute left-0 top-0 z-[1] -ml-10 size-28"
+            actionInfo={actionInfo}
+          />
           <SkillsBg className="absolute inset-0 size-full" />
         </div>
         <Clock />

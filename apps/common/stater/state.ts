@@ -45,6 +45,7 @@ export class State extends Struct({
           value: new Position({ x: Int64.from(0), y: Int64.from(0) }),
           isSome: Field(1),
         }),
+        speed: Int64.from(1),
       }),
       spellStats: Array(spellStatsAmount).fill(
         new SpellStats({

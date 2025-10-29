@@ -11,6 +11,7 @@ import { CharacterBg } from './assets/character-bg';
 import { LvlBg } from './assets/lvl-bg';
 import { LEVELS_XP, levelFromXp } from '@/lib/constants/levels';
 import { SmBtn } from './assets/sm-btn';
+import { InventoryTooltip } from './InventoryTooltip';
 
 const MAX_ITEMS = 35;
 
@@ -336,22 +337,24 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   onClick={() => handleUnequip('gem')}
                 >
                   {equippedItems.gem ? (
-                    <Image
-                      src={`/items/${equippedItems.gem.image}`}
-                      width={100}
-                      height={100}
-                      alt={equippedItems.gem.title}
-                      className="size-full object-contain object-center"
-                      quality={100}
-                      unoptimized={true}
-                    />
+                    <InventoryTooltip item={equippedItems.gem}>
+                      <Image
+                        src={`/items/${equippedItems.gem.image}`}
+                        width={100}
+                        height={100}
+                        alt={equippedItems.gem.title}
+                        className="pointer-events-none size-full select-none object-contain object-center"
+                        quality={100}
+                        unoptimized={true}
+                      />
+                    </InventoryTooltip>
                   ) : (
                     <Image
                       src="/inventory/placeholders/gem.png"
                       width={100}
                       height={100}
                       alt="gem-placeholder"
-                      className="size-full select-none object-contain object-center"
+                      className="pointer-events-none size-full select-none object-contain object-center"
                     />
                   )}
                   <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
@@ -363,22 +366,24 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   onClick={() => handleUnequip('ring')}
                 >
                   {equippedItems.ring ? (
-                    <Image
-                      src={`/items/${equippedItems.ring.image}`}
-                      width={100}
-                      height={100}
-                      alt={equippedItems.ring.title}
-                      className="size-full select-none object-contain object-center"
-                      quality={100}
-                      unoptimized={true}
-                    />
+                    <InventoryTooltip item={equippedItems.ring}>
+                      <Image
+                        src={`/items/${equippedItems.ring.image}`}
+                        width={100}
+                        height={100}
+                        alt={equippedItems.ring.title}
+                        className="pointer-events-none size-full select-none object-contain object-center"
+                        quality={100}
+                        unoptimized={true}
+                      />
+                    </InventoryTooltip>
                   ) : (
                     <Image
                       src="/inventory/placeholders/ring.png"
                       width={100}
                       height={100}
                       alt="ring-placeholder"
-                      className="size-full select-none object-contain object-center"
+                      className="pointer-events-none size-full select-none object-contain object-center"
                     />
                   )}
                   <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
@@ -390,22 +395,24 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   onClick={() => handleUnequip('necklace')}
                 >
                   {equippedItems.necklace ? (
-                    <Image
-                      src={`/items/${equippedItems.necklace.image}`}
-                      width={100}
-                      height={100}
-                      alt={equippedItems.necklace.title}
-                      className="size-full select-none object-contain object-center"
-                      quality={100}
-                      unoptimized={true}
-                    />
+                    <InventoryTooltip item={equippedItems.necklace}>
+                      <Image
+                        src={`/items/${equippedItems.necklace.image}`}
+                        width={100}
+                        height={100}
+                        alt={equippedItems.necklace.title}
+                        className="pointer-events-none size-full select-none object-contain object-center"
+                        quality={100}
+                        unoptimized={true}
+                      />
+                    </InventoryTooltip>
                   ) : (
                     <Image
                       src="/inventory/placeholders/necklace.png"
                       width={100}
                       height={100}
                       alt="necklace-placeholder"
-                      className="size-full select-none object-contain object-center"
+                      className="pointer-events-none size-full select-none object-contain object-center"
                     />
                   )}
                   <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
@@ -445,22 +452,24 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   onClick={() => handleUnequip('arms')}
                 >
                   {equippedItems.arms ? (
-                    <Image
-                      src={`/items/${equippedItems.arms.image}`}
-                      width={100}
-                      height={100}
-                      alt={equippedItems.arms.title}
-                      className="size-full select-none object-contain object-center"
-                      quality={100}
-                      unoptimized={true}
-                    />
+                    <InventoryTooltip item={equippedItems.arms}>
+                      <Image
+                        src={`/items/${equippedItems.arms.image}`}
+                        width={100}
+                        height={100}
+                        alt={equippedItems.arms.title}
+                        className="pointer-events-none size-full select-none object-contain object-center"
+                        quality={100}
+                        unoptimized={true}
+                      />
+                    </InventoryTooltip>
                   ) : (
                     <Image
                       src="/inventory/placeholders/arms.png"
                       width={100}
                       height={100}
                       alt="arms-placeholder"
-                      className="size-full select-none object-contain object-center"
+                      className="pointer-events-none size-full select-none object-contain object-center"
                     />
                   )}
                   <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
@@ -472,15 +481,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   onClick={() => handleUnequip('legs')}
                 >
                   {equippedItems.legs ? (
-                    <Image
-                      src={`/items/${equippedItems.legs.image}`}
-                      width={100}
-                      height={100}
-                      alt={equippedItems.legs.title}
-                      className="pointer-events-none size-full select-none object-contain object-center"
-                      quality={100}
-                      unoptimized={true}
-                    />
+                    <InventoryTooltip item={equippedItems.legs}>
+                      <Image
+                        src={`/items/${equippedItems.legs.image}`}
+                        width={100}
+                        height={100}
+                        alt={equippedItems.legs.title}
+                        className="pointer-events-none size-full select-none object-contain object-center"
+                        quality={100}
+                        unoptimized={true}
+                      />
+                    </InventoryTooltip>
                   ) : (
                     <Image
                       src="/inventory/placeholders/legs.png"
@@ -499,22 +510,24 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   onClick={() => handleUnequip('belt')}
                 >
                   {equippedItems.belt ? (
-                    <Image
-                      src={`/items/${equippedItems.belt.image}`}
-                      width={100}
-                      height={100}
-                      alt={equippedItems.belt.title}
-                      className="size-full select-none object-contain object-center"
-                      quality={100}
-                      unoptimized={true}
-                    />
+                    <InventoryTooltip item={equippedItems.belt}>
+                      <Image
+                        src={`/items/${equippedItems.belt.image}`}
+                        width={100}
+                        height={100}
+                        alt={equippedItems.belt.title}
+                        className="pointer-events-none size-full select-none object-contain object-center"
+                        quality={100}
+                        unoptimized={true}
+                      />
+                    </InventoryTooltip>
                   ) : (
                     <Image
                       src="/inventory/placeholders/belt.png"
                       width={100}
                       height={100}
                       alt="belt-placeholder"
-                      className="size-full select-none object-contain object-center"
+                      className="pointer-events-none size-full select-none object-contain object-center"
                     />
                   )}
                   <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
@@ -613,15 +626,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                 onDragStart={() => handleDragStart(item)}
                 onDragEnd={handleDragEnd}
               >
-                <Image
-                  src={`/items/${item.image}`}
-                  width={100}
-                  height={100}
-                  alt={item.title}
-                  quality={100}
-                  unoptimized={true}
-                  className="size-full object-contain object-center"
-                />
+                <InventoryTooltip item={item}>
+                  <Image
+                    src={`/items/${item.image}`}
+                    width={100}
+                    height={100}
+                    alt={item.title}
+                    quality={100}
+                    unoptimized={true}
+                    className="size-full object-contain object-center"
+                  />
+                </InventoryTooltip>
                 <div className="font-pixel text-main-gray absolute bottom-2 right-2 text-sm font-bold">
                   {item.amount}
                 </div>

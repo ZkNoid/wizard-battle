@@ -6,6 +6,9 @@ import type { ISpell } from '../../../../common/stater/spells/interface';
 import { useInGameStore } from '@/lib/store/inGameStore';
 import { EventBus } from '@/game/EventBus';
 import type { Int64 } from 'o1js';
+import { SpellTooltip } from './SpellTooltip';
+import { SpellTag } from '@/lib/types/ISpellInfo';
+import { SPELLS_INFO } from '@/lib/constants/spellsInfo';
 
 export function Spells({
   skills,
@@ -21,41 +24,54 @@ export function Spells({
     <div className="relative z-[1] ml-6 flex h-full w-full flex-row items-center justify-center gap-2.5">
       <>
         {skills.map((skill) => (
-          <button
-            key={skill.id.toString()}
-            disabled={+skill.currentCooldown !== 0}
-            className={
-              'not-disabled:cursor-pointer not-disabled:transition-transform not-disabled:duration-300 not-disabled:hover:scale-110 group relative size-16 disabled:cursor-not-allowed'
-            }
-            onClick={() => {
-              console.log('Picked spell', skill.id.toString());
-
-              if (pickedSpellId?.toString() === skill.id.toString()) {
-                setPickedSpellId(null);
-              } else {
-                setPickedSpellId(skill.id);
+          <SpellTooltip
+            key={skill.name}
+            spellInfo={
+              SPELLS_INFO.find((spell) => spell.title === skill.name) ?? {
+                image: '/wizards/skills/empty.png',
+                title: 'Unknown',
+                description: 'Unknown',
+                cooldown: 0,
+                tags: [],
               }
-            }}
+            }
           >
-            <Image
-              className={cn(
-                'size-full border-4 border-black',
-                pickedSpellId === skill.id &&
-                  'ring-2 ring-blue-500 ring-offset-2'
-              )}
-              src={skill.image ?? ''}
-              alt={'skill'}
-              width={64}
-              height={64}
-              quality={100}
-              unoptimized={true}
-            />
-            <div className="invisible absolute inset-0 z-0 flex size-full items-center justify-center border-4 border-black backdrop-blur-[2px] group-disabled:visible">
-              <span className="font-pixel text-lg text-white">
-                {skill.currentCooldown.toString()}
-              </span>
-            </div>
-          </button>
+            <button
+              key={skill.id.toString()}
+              disabled={+skill.currentCooldown !== 0}
+              className={
+                'not-disabled:cursor-pointer not-disabled:transition-transform not-disabled:duration-300 not-disabled:hover:scale-110 group relative size-16 disabled:cursor-not-allowed'
+              }
+              onClick={() => {
+                console.log('Picked spell', skill.id.toString());
+
+                if (pickedSpellId?.toString() === skill.id.toString()) {
+                  setPickedSpellId(null);
+                } else {
+                  setPickedSpellId(skill.id);
+                }
+              }}
+            >
+              <Image
+                className={cn(
+                  'size-full border-4 border-black',
+                  pickedSpellId === skill.id &&
+                    'ring-2 ring-blue-500 ring-offset-2'
+                )}
+                src={skill.image ?? ''}
+                alt={'skill'}
+                width={64}
+                height={64}
+                quality={100}
+                unoptimized={true}
+              />
+              <div className="invisible absolute inset-0 z-0 flex size-full items-center justify-center border-4 border-black backdrop-blur-[2px] group-disabled:visible">
+                <span className="font-pixel text-lg text-white">
+                  {skill.currentCooldown.toString()}
+                </span>
+              </div>
+            </button>
+          </SpellTooltip>
         ))}
         {Array.from({ length: MAX_SKILLS - skills.length }).map((_, index) => (
           <Image
