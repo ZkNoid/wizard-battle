@@ -77,6 +77,7 @@ const ArrowSceneEffect = (
     x,
     y,
     overlayId: type,
+    scale: 1.5,
   });
 };
 
@@ -137,6 +138,7 @@ const AimingShotSceneEffect = (
     x,
     y,
     overlayId: type,
+    scale: 1.5,
   });
 };
 
@@ -218,6 +220,7 @@ const HailOfArrowsSceneEffect = (
       x: position.x,
       y: position.y,
       overlayId: type,
+      scale: 1.5,
     });
   });
 };
@@ -301,6 +304,7 @@ const CloudSceneEffect = (
     y,
     overlayId: type,
     loop: true,
+    scale: 1.5,
   });
 };
 

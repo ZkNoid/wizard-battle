@@ -43,6 +43,22 @@ const AVAILABLE_EFFECTS: Record<string, { json: string; image: string }> = {
     json: '/assets/spritesheets/Laser_Reaction_Bottom.json',
     image: '/assets/spritesheets/Laser_Reaction_Bottom.png',
   },
+  arrow: {
+    json: '/assets/spritesheets/archer/HailOfArrows_Reaction.json',
+    image: '/assets/spritesheets/archer/HailOfArrows_Reaction.png',
+  },
+  hailofarrows: {
+    json: '/assets/spritesheets/archer/HailOfArrows_Reaction.json',
+    image: '/assets/spritesheets/archer/HailOfArrows_Reaction.png',
+  },
+  aimingshot: {
+    json: '/assets/spritesheets/archer/HailOfArrows_Reaction.json',
+    image: '/assets/spritesheets/archer/HailOfArrows_Reaction.png',
+  },
+  smokecloud: {
+    json: '/assets/spritesheets/archer/SmokeCloud_Reaction.json',
+    image: '/assets/spritesheets/archer/SmokeCloud_Reaction.png',
+  },
 };
 
 export function EffectOverlay({
