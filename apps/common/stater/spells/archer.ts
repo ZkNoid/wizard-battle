@@ -341,7 +341,7 @@ export const archerSpells: ISpell<any>[] = [
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('AimingShot').hash(),
-      cooldown: Int64.from(1),
+      cooldown: Int64.from(2),
       currentCooldown: Int64.from(0),
     },
   },
@@ -359,7 +359,7 @@ export const archerSpells: ISpell<any>[] = [
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('HailOfArrows').hash(),
-      cooldown: Int64.from(1),
+      cooldown: Int64.from(3),
       currentCooldown: Int64.from(0),
     },
   },
@@ -376,7 +376,7 @@ export const archerSpells: ISpell<any>[] = [
     target: 'ally',
     defaultValue: {
       spellId: CircuitString.fromString('Decoy').hash(),
-      cooldown: Int64.from(1),
+      cooldown: Int64.from(3),
       currentCooldown: Int64.from(0),
     },
   },
