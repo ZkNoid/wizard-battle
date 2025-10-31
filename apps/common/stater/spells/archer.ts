@@ -394,7 +394,7 @@ export const archerSpells: ISpell<any>[] = [
     target: 'ally',
     defaultValue: {
       spellId: CircuitString.fromString('Cloud').hash(),
-      cooldown: Int64.from(1),
+      cooldown: Int64.from(3),
       currentCooldown: Int64.from(0),
     },
   },
