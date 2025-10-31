@@ -220,7 +220,7 @@ const HailOfArrowsSceneEffect = (
       x: position.x,
       y: position.y,
       overlayId: type,
-      scale: 1.5,
+      scale: 3,
     });
   });
 };
@@ -323,7 +323,7 @@ const CloudSceneEffect = (
       y: position.y,
       overlayId: type,
       loop: true,
-      scale: 3,
+      scale: 1.5,
     });
     effectsId.push(effectId);
   });
