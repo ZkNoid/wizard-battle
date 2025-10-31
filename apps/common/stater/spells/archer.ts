@@ -298,14 +298,47 @@ const CloudSceneEffect = (
   gameEmitter: any,
   type: 'user' | 'enemy'
 ) => {
-  gameEmitter.throwEffect({
-    animationName: 'smokecloud',
-    x,
-    y,
-    overlayId: type,
-    loop: true,
-    scale: 1.5,
+  let positions = [
+    { x: x, y: y },
+    { x: x + 1, y: y },
+    { x: x - 1, y: y },
+    { x: x, y: y + 1 },
+    { x: x, y: y - 1 },
+    { x: x + 1, y: y + 1 },
+    { x: x - 1, y: y + 1 },
+    { x: x + 1, y: y - 1 },
+    { x: x - 1, y: y - 1 },
+    { x: x + 2, y: y },
+    { x: x - 2, y: y },
+    { x: x, y: y + 2 },
+    { x: x, y: y - 2 },
+  ];
+
+  let effectsId: any = [];
+
+  positions.forEach((position) => {
+    let effectId = gameEmitter.throwEffect({
+      animationName: 'smokecloud',
+      x: position.x,
+      y: position.y,
+      overlayId: type,
+      loop: true,
+      scale: 1.5,
+    });
+    effectsId.push(effectId);
   });
+
+  let duration = 3;
+
+  return () => {
+    if (duration > 0) {
+      duration--;
+    } else {
+      effectsId.forEach((effectId: any) => {
+        gameEmitter.removeEffect(effectId);
+      });
+    }
+  };
 };
 
 export const archerSpells: ISpell<any>[] = [
@@ -392,6 +425,7 @@ export const archerSpells: ISpell<any>[] = [
     cast: CloudCast,
     sceneEffect: CloudSceneEffect,
     target: 'ally',
+    globalStatus: 'global',
     defaultValue: {
       spellId: CircuitString.fromString('Cloud').hash(),
       cooldown: Int64.from(3),

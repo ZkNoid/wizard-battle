@@ -620,6 +620,8 @@ export class GamePhaseManager {
       `🔄 Reset action tracking for player ${this.getPlayerId()} for new turn`
     );
 
+    gameEventEmitter.emit('newTurn');
+
     if (this.onNewTurnHook) {
       this.onNewTurnHook();
     }
@@ -662,12 +664,16 @@ export class GamePhaseManager {
           };
         }
 
-        spell?.sceneEffect?.(
+        const sceneeffectNewTurnFunction = spell?.sceneEffect?.(
           +coordinates.x,
           +coordinates.y,
           gameEventEmitter,
           type
         );
+
+        if (sceneeffectNewTurnFunction) {
+          gameEventEmitter.on('newTurn', sceneeffectNewTurnFunction);
+        }
       });
     }
   }

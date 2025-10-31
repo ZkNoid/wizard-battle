@@ -12,6 +12,7 @@ export interface ISpell<T> {
   image: string;
   modifyerData: any;
   target: 'ally' | 'enemy';
+  globalStatus?: 'global' | 'local';
   modifyer: (state: State, spellCast: SpellCast<T>) => void;
   cast: (
     state: State,
@@ -24,7 +25,7 @@ export interface ISpell<T> {
     y: number,
     gameEmitter: any,
     type: 'user' | 'enemy'
-  ) => void;
+  ) => (() => void) | void;
   priority?: number;
   defaultValue: SpellStats;
 }

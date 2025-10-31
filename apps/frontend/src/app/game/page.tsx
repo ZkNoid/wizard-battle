@@ -247,7 +247,9 @@ export default function GamePage() {
         console.log('Apply actions locally');
         stater.applyActionsLocally({ actions: [userAction], signature: '' });
         syncState();
-        userAction = null;
+        if (spell.globalStatus !== 'global') {
+          userAction = null;
+        }
       }
 
       console.log('userAction:', userAction);
