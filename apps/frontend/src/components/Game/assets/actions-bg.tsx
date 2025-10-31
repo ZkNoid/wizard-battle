@@ -73,9 +73,6 @@ export const ActionsBg = ({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      style={{
-        transformOrigin: '53px 52px', // Center of SVG
-      }}
       animate={{
         rotate: rotationAngle,
       }}
