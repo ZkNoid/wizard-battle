@@ -323,7 +323,7 @@ const CloudSceneEffect = (
       y: position.y,
       overlayId: type,
       loop: true,
-      scale: 1.5,
+      scale: 3,
     });
     effectsId.push(effectId);
   });
