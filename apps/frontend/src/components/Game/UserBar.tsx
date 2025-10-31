@@ -35,46 +35,125 @@ export function UserBar({
 }) {
   const healthPercentage = (health / maxHealth) * 100;
 
-  // Track damage indicators
-  const [showDamage, setShowDamage] = useState(false);
-  const [damageValue, setDamageValue] = useState(0);
+  // Track damage/heal indicators
+  const [showIndicator, setShowIndicator] = useState(false);
+  const [indicatorValue, setIndicatorValue] = useState(0);
+  const [isHeal, setIsHeal] = useState(false);
+  const [indicatorKey, setIndicatorKey] = useState(0);
   const previousHealthRef = useRef(health);
   const isInitialized = useRef(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isAnimatingRef = useRef(false);
+  const lastShownHealthRef = useRef<number | null>(null);
+  const lastShownTimeRef = useRef<number>(0);
 
   useEffect(() => {
     const previousHealth = previousHealthRef.current;
 
-    // Don't show damage on first render
+    // Don't show indicator on first render
     if (!isInitialized.current) {
       isInitialized.current = true;
       previousHealthRef.current = health;
       return;
     }
 
-    if (previousHealth > health) {
-      const damage = previousHealth - health;
-      setDamageValue(damage);
-      setShowDamage(true);
-
-      // Hide damage indicator after animation
-      const timer = setTimeout(() => {
-        setShowDamage(false);
-      }, 800);
-
-      return () => clearTimeout(timer);
+    // Ignore if health hasn't actually changed (prevent duplicate triggers from same value)
+    if (Math.abs(health - previousHealth) < 0.01) {
+      return;
     }
 
-    previousHealthRef.current = health;
+    // Don't trigger if already animating - accumulate changes instead
+    if (isAnimatingRef.current) {
+      // Store the accumulated change but don't show yet
+      const accumulatedDiff = health - previousHealthRef.current;
+      previousHealthRef.current = health;
+
+      // Will process when animation finishes
+      return;
+    }
+
+    const healthDiff = health - previousHealth;
+
+    // Only show indicator if there's a meaningful change (more than 0.5 to avoid floating point issues)
+    if (Math.abs(healthDiff) > 0.5) {
+      const now = Date.now();
+      const timeSinceLastShow = now - lastShownTimeRef.current;
+      const sameValueAsLastShow =
+        lastShownHealthRef.current !== null &&
+        Math.abs(lastShownHealthRef.current - health) < 0.1;
+
+      // Prevent duplicate shows within 500ms for the same health value (debounce)
+      if (sameValueAsLastShow && timeSinceLastShow < 500) {
+        previousHealthRef.current = health;
+        return;
+      }
+
+      // Prevent duplicate shows - check if we're already showing this exact value
+      if (
+        showIndicator &&
+        Math.abs(indicatorValue - Math.abs(healthDiff)) < 0.1
+      ) {
+        previousHealthRef.current = health;
+        return;
+      }
+
+      // Clear any existing timer (shouldn't happen but safety check)
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+
+      // Mark as animating BEFORE updating state
+      isAnimatingRef.current = true;
+
+      const newValue = Math.abs(healthDiff);
+      const newIsHeal = healthDiff > 0;
+      const newKey = indicatorKey + 1;
+
+      // Record that we're showing this health value now
+      lastShownHealthRef.current = health;
+      lastShownTimeRef.current = now;
+
+      // Update values and increment key to force new animation
+      setIndicatorValue(newValue);
+      setIsHeal(newIsHeal);
+      setIndicatorKey(newKey);
+
+      // Update previous health BEFORE showing indicator to prevent duplicate triggers
+      previousHealthRef.current = health;
+
+      setShowIndicator(true);
+
+      // Hide indicator after animation (2 seconds for full animation)
+      timerRef.current = setTimeout(() => {
+        setShowIndicator(false);
+        isAnimatingRef.current = false;
+      }, 2100);
+    } else {
+      // Small change, just update the ref without showing indicator
+      previousHealthRef.current = health;
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [health]);
 
   return (
     <div className={cn('relative flex flex-row items-center gap-0', className)}>
-      {/* Damage Indicator */}
-      <DamageIndicator
-        damage={damageValue}
-        isVisible={showDamage}
-        position="top"
-      />
+      {/* Damage/Heal Indicator */}
+      {showIndicator && (
+        <DamageIndicator
+          value={indicatorValue}
+          isVisible={showIndicator}
+          isHeal={isHeal}
+          position="top"
+          indicatorKey={indicatorKey}
+        />
+      )}
 
       {/* Avatar */}
       <div className="w-35 h-35 border-3 border-main-gray overflow-hidden bg-[#FBFAFA]">
