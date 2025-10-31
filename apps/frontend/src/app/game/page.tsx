@@ -186,9 +186,10 @@ export default function GamePage() {
 
         const userX = +stater?.state?.playerStats.position.value.x!;
         const userY = +stater?.state?.playerStats.position.value.y!;
+        const speed = +stater?.state?.playerStats.speed!;
 
-        if (Math.abs(userX - x) + Math.abs(userY - y) >= 2) {
-          console.log('Location is too far away');
+        if (Math.abs(userX - x) + Math.abs(userY - y) > speed) {
+          console.log('Location is too far away. Speed:', speed);
           return;
         }
 

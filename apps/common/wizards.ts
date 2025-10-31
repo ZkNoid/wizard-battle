@@ -38,6 +38,7 @@ const mageDefaultState = () => {
 const archerDefaultState = () => {
   let state = State.default();
   state.wizardId = WizardId.ARCHER;
+  state.playerStats.speed = Int64.from(3);
 
   return state;
 };
