@@ -7,13 +7,13 @@ import HowToPlay from '../HowToPlay';
 import Support from '../Support';
 import { TopBarIcon } from '../BaseLayout/assets/top-bar-icon';
 import Image from 'next/image';
-import background from '../../../public/menu/background.svg';
-import hoverCraft from '../../../public/menu/hover-craft.png';
-import hoverExpeditions from '../../../public/menu/hover-expeditions.png';
-import hoverPVP from '../../../public/menu/hover-pvp.png';
-import hoverMarket from '../../../public/menu/hover-market.png';
-import hoverMarketSmall from '../../../public/menu/hover-market-small.svg';
-import hoverCharacters from '../../../public/menu/hover-characters.png';
+// import background from '../../../public/menu/background.svg';
+// import hoverCraft from '../../../public/menu/hover-craft.png';
+// import hoverExpeditions from '../../../public/menu/hover-expeditions.png';
+// import hoverPVP from '../../../public/menu/hover-pvp.png';
+// import hoverMarket from '../../../public/menu/hover-market.png';
+// import hoverMarketSmall from '../../../public/menu/hover-market-small.svg';
+// import hoverCharacters from '../../../public/menu/hover-characters.png';
 import { SettingsBar } from '../BaseLayout/SettingsBar';
 import Wallet from '../Wallet';
 import { Button } from '../shared/Button';
@@ -174,9 +174,11 @@ export default function HomePage() {
       {/* Background */}
       <div className="-z-49 top-19 absolute inset-0 max-h-screen w-full">
         <Image
-          src={background}
+          src={'/menu/background.png'}
           width={1920}
           height={1080}
+          unoptimized={true}
+          quality={100}
           alt="background"
           className="pixel-art absolute inset-0 -z-50 size-full object-cover object-center"
         />
@@ -185,21 +187,23 @@ export default function HomePage() {
           <Image
             src={
               tabHover === TabHover.EXPEDITIONS
-                ? hoverExpeditions
+                ? '/menu/hover-expeditions.png'
                 : tabHover === TabHover.PVP
-                  ? hoverPVP
+                  ? '/menu/hover-pvp.png'
                   : tabHover === TabHover.MARKET
                     ? isLargeScreen
-                      ? hoverMarket
-                      : hoverMarketSmall
+                      ? '/menu/hover-market.png'
+                      : '/menu/hover-market-small.png'
                     : tabHover === TabHover.CHARACTERS
-                      ? hoverCharacters
+                      ? '/menu/hover-characters.png'
                       : tabHover === TabHover.CRAFT
-                        ? hoverCraft
-                        : undefined
+                        ? '/menu/hover-craft.png'
+                        : ''
             }
             width={1920}
             height={1080}
+            unoptimized={true}
+            quality={100}
             alt="hoverBuilding"
             className="pixel-art -z-49 absolute inset-0 size-full object-cover object-center"
           />

@@ -19,6 +19,7 @@ import {
 import { useMinaAppkit } from 'mina-appkit';
 import { api } from '@/trpc/react';
 import { useInGameStore, useUserInformationStore } from '@/lib/store';
+import Image from 'next/image';
 
 export default function GameResult({
   type,
@@ -83,8 +84,30 @@ export default function GameResult({
     <div className="flex h-full w-full flex-col">
       {/* Image */}
       <div className="mt-5 flex w-full items-center justify-center">
-        {type === 'win' && <CrownImage className="w-71 h-71" />}
-        {type === 'lose' && <SkullImage className="w-71 h-71" />}
+        {/* {type === 'win' && <CrownImage className="w-71 h-71" />} */}
+        {/* {type === 'lose' && <SkullImage className="w-71 h-71" />} */}
+        {type === 'win' && (
+          <Image
+            src={'/result/crown.png'}
+            width={300}
+            height={300}
+            alt="crown"
+            unoptimized={true}
+            quality={100}
+            className="w-71 h-71 object-contain object-center"
+          />
+        )}
+        {type === 'lose' && (
+          <Image
+            src={'/result/skull.png'}
+            width={300}
+            height={300}
+            alt="skull"
+            unoptimized={true}
+            quality={100}
+            className="w-71 h-71 object-contain object-center"
+          />
+        )}
       </div>
 
       <div className="mt-5 flex flex-col items-center justify-center gap-5">
