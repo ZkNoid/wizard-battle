@@ -7,7 +7,7 @@ export const ALL_TILES = [
   },
   {
     id: 'grass',
-    name: 'Marsh',
+    name: 'Meadows',
     description: 'A passable map feature that slows movement for 1 turn.',
   },
   {

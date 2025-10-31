@@ -328,7 +328,7 @@ export default function MapEditor() {
           </div>
         </div>
       </div>
-      {saveSlots.map((slot, index) => (
+      {/* {saveSlots.map((slot, index) => (
         <SaveSlot
           key={slot}
           slot={slot}
@@ -336,7 +336,7 @@ export default function MapEditor() {
           isActive={activeSlot === slot}
           onClick={() => handleSlotChange(slot)}
         />
-      ))}
+      ))} */}
       <Background className="w-290 h-170 absolute inset-0 z-[1]" />
     </div>
   );
