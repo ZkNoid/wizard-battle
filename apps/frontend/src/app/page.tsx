@@ -5,7 +5,7 @@ import dynamicImport from 'next/dynamic';
 
 const Home = dynamicImport(() => import('./Home'), {
   ssr: false,
-  loading: () => <FullscreenLoader />,
+  loading: () => <FullscreenLoader showWizard={false} />,
 });
 
 export default function Page() {

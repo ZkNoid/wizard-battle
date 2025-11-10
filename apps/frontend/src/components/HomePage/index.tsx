@@ -22,6 +22,8 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useMinaAppkit } from 'mina-appkit';
 import InventoryModal from '../InventoryModal';
+import WelcomeScreen from '../WelcomeScreen';
+import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 
 enum TabHover {
   CRAFT,
@@ -41,6 +43,8 @@ export default function HomePage() {
 
   const router = useRouter();
   const { address, triggerWallet } = useMinaAppkit();
+  const { hasShownWelcomeScreen, setHasShownWelcomeScreen } =
+    useMiscellaneousSessionStore();
 
   useEffect(() => {
     const handleResize = () => {
@@ -56,7 +60,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="relative flex h-screen w-screen">
+    <main className="relative flex h-screen w-full overflow-hidden">
       <div className="z-1 absolute left-0 top-2.5 grid w-full grid-cols-3 items-center px-20">
         <SettingsBar setTab={setTab} />
         <div className="flex w-full items-center justify-center gap-5">
@@ -259,6 +263,9 @@ export default function HomePage() {
 
       {isInventoryModalOpen && (
         <InventoryModal onClose={() => setIsInventoryModalOpen(false)} />
+      )}
+      {!hasShownWelcomeScreen && (
+        <WelcomeScreen onClick={() => setHasShownWelcomeScreen(true)} />
       )}
     </main>
   );

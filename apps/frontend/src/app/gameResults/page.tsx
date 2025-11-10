@@ -11,7 +11,7 @@ import { PlaySteps } from '@/lib/enums/PlaySteps';
 
 const GameResult = dynamicImport(() => import('@/components/GameResult'), {
   ssr: false,
-  loading: () => <FullscreenLoader />,
+  loading: () => <FullscreenLoader text="Calculating results" />,
 });
 
 function GameResultsContent() {

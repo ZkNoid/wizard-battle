@@ -66,6 +66,12 @@
 }
 
 @layer utilities {
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
   body {
     font-family: Helvetica, sans-serif;
     color: #f2f2f2;

@@ -3,39 +3,30 @@
 import Image from 'next/image';
 import { motion } from 'motion/react';
 
-export function FullscreenLoader({
-  text = 'Loading',
-  showWizard = true,
-  showTitle = false,
-}: {
-  text?: string;
-  showWizard?: boolean;
-  showTitle?: boolean;
-}) {
+export default function WelcomeScreen({ onClick }: { onClick: () => void }) {
   return (
-    <div className="absolute inset-0 z-[9999] h-screen w-full overflow-hidden">
-      {showTitle && (
-        <Image
-          src="/loading/title.png"
-          alt="title"
-          unoptimized={true}
-          quality={100}
-          width={3840}
-          height={2160}
-          className="z-2 pixel-art absolute inset-0 size-full object-fill object-center"
-        />
-      )}
-      {showWizard && (
-        <Image
-          src="/loading/wizard.png"
-          alt="wizard"
-          unoptimized={true}
-          quality={100}
-          width={3840}
-          height={2160}
-          className="z-1 pixel-art absolute inset-0 size-full object-fill object-center"
-        />
-      )}
+    <button
+      className="absolute inset-0 z-[9999] h-screen w-full overflow-hidden"
+      onClick={onClick}
+    >
+      <Image
+        src="/loading/title.png"
+        alt="title"
+        unoptimized={true}
+        quality={100}
+        width={3840}
+        height={2160}
+        className="z-2 pixel-art absolute inset-0 size-full object-fill object-center"
+      />
+      <Image
+        src="/loading/wizard.png"
+        alt="wizard"
+        unoptimized={true}
+        quality={100}
+        width={3840}
+        height={2160}
+        className="z-1 pixel-art absolute inset-0 size-full object-fill object-center"
+      />
       <Image
         src="/loading/background.png"
         alt="background"
@@ -47,7 +38,7 @@ export function FullscreenLoader({
       />
       <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center justify-center gap-1">
         <span className="font-pixel text-4xl font-bold text-[#ACB0BC]">
-          {text}
+          Click to start
         </span>
         <div className="flex gap-1">
           <motion.span
@@ -90,6 +81,6 @@ export function FullscreenLoader({
           </motion.span>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

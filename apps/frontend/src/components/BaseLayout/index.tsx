@@ -21,7 +21,7 @@ export default function BaseLayout({
   }, [backgroundImage]);
 
   return (
-    <main className="relative flex h-screen w-screen">
+    <main className="relative flex h-screen w-full overflow-hidden">
       {/* Main Content */}
       {children}
 

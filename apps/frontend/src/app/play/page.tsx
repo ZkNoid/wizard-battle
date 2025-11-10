@@ -10,7 +10,7 @@ import { useEffect } from 'react';
 
 const Play = dynamicImport(() => import('@/components/Play'), {
   ssr: false,
-  loading: () => <FullscreenLoader />,
+  loading: () => <FullscreenLoader showWizard={false} />,
 });
 
 export default function PlayPage() {

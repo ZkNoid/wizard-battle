@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { FullscreenLoader } from "@/components/shared/FullscreenLoader";
-import dynamic from "next/dynamic";
+import { FullscreenLoader } from '@/components/shared/FullscreenLoader';
+import dynamic from 'next/dynamic';
 
-const BaseLayout = dynamic(() => import("@/components/BaseLayout"), {
+const BaseLayout = dynamic(() => import('@/components/BaseLayout'), {
   ssr: false,
-  loading: () => <FullscreenLoader />,
+  loading: () => <FullscreenLoader showWizard={false} />,
 });
 
 export default BaseLayout;
