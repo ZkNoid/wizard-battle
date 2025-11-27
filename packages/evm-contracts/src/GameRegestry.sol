@@ -8,6 +8,10 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {Array} from "./libraries/Array.sol";
 
 /**
+ * Need to apply for CEI principles: Check, Effect, Interaction or PRE-PI-CHECK (Pre-post interaction check) principles: Check, Effect, Interaction
+ */
+
+/**
  * @title Game Regestry
  * @author Alexander Scherbatyuk
  * @notice Main game regestry contract, that consist of all game on-chain resources.
@@ -29,7 +33,9 @@ import {Array} from "./libraries/Array.sol";
 contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll Access (Owner access is limited to revoke / grant ADMIN_ROLE)
     using Array for string[];
 
-    // Errors
+    /*//////////////////////////////////////////////////////////////
+                               ERRORS
+    //////////////////////////////////////////////////////////////*/
 
     error GameRegestry__AdminRoleRevokeNotAllowed();
     error GameRegestry__AdminRoleGrantNotAllowed();
@@ -45,10 +51,11 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
     error GameRegestry__InvalidResource();
     error GameRegestry__NonceAlreadyUsed();
     error GameRegestry__InvalidGameSigner();
+    error GameRegestry__NotAllowedToCommit();
 
-
-
-    //Enums
+    /*//////////////////////////////////////////////////////////////
+                               ENUMS
+    //////////////////////////////////////////////////////////////*/
 
     enum GameElementType {
         COIN,
@@ -57,7 +64,9 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
         UNIQUE_ITEM
     }
 
-    // Structs
+    /*//////////////////////////////////////////////////////////////
+                               STRUCTS
+    //////////////////////////////////////////////////////////////*/
 
     /// @dev default uinified struct for any type of a game element
     struct GameElementStruct {
@@ -74,32 +83,30 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
         bytes callData;
     }
 
-    // Arrays
-
-    /// @notice these arrays are informational, to provide list of available game elements to the game client / market
-    /// @dev must be restricted for updating, only GAME_SIGNER_ROLE can add / remove game elements to the list
-    // string[] private s_coins; // coins names that are available within the game
-    // string[] private s_resources; // resource names that are available within the game
-    // string[] private s_characters; // characters types that are available within the game
-    // string[] private s_uiniqueItems; // uinique items names that are available within the game
-
-    // Mapping
+    /*//////////////////////////////////////////////////////////////
+                               MAPPINGS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice these arrays are informational, to provide list of available game elements to the game client / market
     /// @dev must be restricted for updating, only GAME_SIGNER_ROLE can add / remove game elements to the list
     mapping(GameElementType => string[]) private s_gameElementsByType; // game elements by type
-
     mapping(bytes32 => GameElementStruct) private s_resourceToGameElement; // client would call a specific function to get GameElementStruct in order to build a commit data
     mapping(uint256 => bool) private s_usedNonces; // nonce is used to prevent replay attacks
    
-    // Constants
+    /*//////////////////////////////////////////////////////////////
+                               CONSTANTS
+    //////////////////////////////////////////////////////////////*/
 
     bytes32 private constant MARKET_ROLE = keccak256("MARKET_ROLE");
     bytes32 private constant GAME_SIGNER_ROLE = keccak256("GAME_SIGNER_ROLE");
-    bytes32 private constant MESSAGE_TYPEHASH = keccak256("CommitStruct(address target,address account,address signer, uint256 nonce, bytes callData)");
+    bytes32 private constant MESSAGE_TYPEHASH = keccak256("CommitStruct(address target,address account,address signer,uint256 nonce,bytes callData)");
 
     //address private s_market; // use hasRole MARKET_ROLE to commit marketplace transactions
     //address private s_gameSigner; // use hasRole GAME_SIGNER_ROLE to verify signature of the message from a player
+
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
 
     event GameRegestry__CommitResources(bytes indexed commit);
     event GameRegestry__RemoveGameElement(uint256 indexed index, GameElementType elementType);
@@ -111,7 +118,9 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
     event GameRegestry__AddGameElementStruct(bytes32 indexed nameHash, address indexed tokenAddress, uint256 indexed tokenId, bool requiresTokenId);
     
 
-    // Modifiers
+     /*//////////////////////////////////////////////////////////////
+                               MODIFIERS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Modifier to check if the caller has the GAME_SIGNER_ROLE
@@ -133,7 +142,9 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
         _;
     }
 
-    // Functions
+    /*//////////////////////////////////////////////////////////////
+                               FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Constructor
@@ -166,35 +177,20 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
      * @param resourceHash hash of the resource
      * @param commit commit data
      * @param signature signature of the commit data
+     * @dev q can we use FREI-PI CHECK (Pre-post interaction check) principles here?
      */
     function commitResources(bytes32 resourceHash, bytes calldata commit, bytes memory signature) external {
         if (resourceHash == bytes32(0) || commit.length == 0 || signature.length == 0) {
             revert GameRegestry__InvalidCommitData();
         }
-        GameElementStruct memory gameElement = s_resourceToGameElement[resourceHash];
-        (address target,address account, address signer, uint256 nonce, bytes memory callData) = abi.decode(commit,(address, address, address, uint256, bytes));
+   
+        (uint256 nonce, address target, bytes memory callData) = _verifyInputs(resourceHash, commit, signature);
 
-        if (s_usedNonces[nonce]) {
-            revert GameRegestry__NonceAlreadyUsed();
-        }
-        if (gameElement.tokenAddress == address(0)) {
-            revert GameRegestry__InvalidResource();
-        }
-        if (target == address(0)) {
-            revert GameRegestry__InvalidTarget();
-        }
-        if (account == address(0)) {
-            revert GameRegestry__InvalidPlayer();
-        }
-        if (!hasRole(GAME_SIGNER_ROLE, signer)) {
-            revert GameRegestry__InvalidSigner();
-        }
-        if (!_verifySignature(target, account, signer, nonce, callData, signature)) {
-            revert GameRegestry__InvalidSignatureMessage();
-        }
         emit GameRegestry__CommitResources(commit);
         s_usedNonces[nonce] = true;
         _commitDispatcher(target, callData);
+
+        _verifyAfter();
     }
 
     /**
@@ -222,15 +218,6 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
      */
     function addGameElement(GameElementType elementType, string memory name) external onlyGameSignerRole {
         s_gameElementsByType[elementType].push(name);
-        // if (elementType == GameElementType.COIN) {
-        //     s_coins.push(name);
-        // } else if (elementType == GameElementType.RESOURCE) {
-        //     s_resources.push(name);
-        // } else if (elementType == GameElementType.CHARACTER) {
-        //     s_characters.push(name);
-        // } else if (elementType == GameElementType.UNIQUE_ITEM) {
-        //     s_uiniqueItems.push(name);
-        // }
         emit GameRegestry__AddGameElement(name, elementType);
     }
 
@@ -240,15 +227,6 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
      * @param index index of the game element
      */
     function removeGameElement(GameElementType elementType, uint256 index) external onlyGameSignerRole {
-        // if (elementType == GameElementType.COIN) {
-        //     s_coins.removeByIndex(index);
-        // } else if (elementType == GameElementType.RESOURCE) {
-        //     s_resources.removeByIndex(index);
-        // } else if (elementType == GameElementType.CHARACTER) {
-        //     s_characters.removeByIndex(index);
-        // } else if (elementType == GameElementType.UNIQUE_ITEM) {
-        //     s_uiniqueItems.removeByIndex(index);
-        // }
         s_gameElementsByType[elementType].removeByIndex(index);
         emit GameRegestry__RemoveGameElement(index, elementType);
     }
@@ -324,11 +302,54 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
         if (target == address(0)) {
             revert GameRegestry__InvalidTarget();
         }
+        emit GameRegestry__CommitConfirmed(callData);
         (bool success, ) = target.call(callData);
         if (!success) {
             revert GameRegestry__CommitFailed();
         }
-        emit GameRegestry__CommitConfirmed(callData);
+
+    }
+
+    /// TODO: identify core invariants and verify them after the commit
+    function _verifyAfter() private {
+        // Possible invariants to verify (not specificly to this contractm, but to the protocol):
+        // - ERC20 tokens supply did not changed / or changed by the expected amount
+        // - ERC721 tokens supply did not changed / or changed by the expected amount
+        // - ERC1155 tokens supply did not changed / or changed by the expected amount
+    }
+
+    /// TODO: verify inputs of the commit data
+    function _verifyInputs(bytes32 resourceHash, bytes calldata commit, bytes memory signature) private view returns(uint256 nonce, address target, bytes memory callData) {
+        GameElementStruct memory gameElement = s_resourceToGameElement[resourceHash];
+        address account;
+        address signer;
+
+        (target, account, signer, nonce, callData) = abi.decode(commit,(address, address, address, uint256, bytes));
+
+        if (s_usedNonces[nonce]) {
+            revert GameRegestry__NonceAlreadyUsed();
+        }
+        if (gameElement.tokenAddress == address(0)) {
+            revert GameRegestry__InvalidResource();
+        }
+        if (target == address(0)) {
+            revert GameRegestry__InvalidTarget();
+        }
+        if (account == address(0)) {
+            revert GameRegestry__InvalidPlayer();
+        }
+        if (!hasRole(GAME_SIGNER_ROLE, signer)) {
+            revert GameRegestry__InvalidSigner();
+        }
+
+        if(hasRole(MARKET_ROLE, account) || hasRole(GAME_SIGNER_ROLE, account)) {
+            revert GameRegestry__NotAllowedToCommit();
+        }
+        if (!_verifySignature(target, account, signer, nonce, callData, signature)) {
+            revert GameRegestry__InvalidSignatureMessage();
+        }
+
+        return (nonce, target, callData);
     }
 
 
@@ -359,6 +380,7 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
      * @param nonce nonce
      * @param callData call data
      */
+    // q maybe make it public, for server to call -> mmegapot alike
     function _getMessageHash(address target, address account, address signer, uint256 nonce, bytes memory callData) private view returns (bytes32 digest) {
         bytes32 hashStruct = keccak256(abi.encode(MESSAGE_TYPEHASH, CommitStruct({target: target, account: account, signer: signer, nonce: nonce, callData: callData})));
         return _hashTypedDataV4(hashStruct);
