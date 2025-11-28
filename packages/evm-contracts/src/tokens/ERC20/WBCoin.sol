@@ -1,109 +1,118 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+// q who can mint and burn tokens:
+// - q can a admin mint and burn tokens? - yes
+// - q can a game signer mint and burn tokens? - ?
+// - q can a game instance mint and burn tokens? - ?
+// - q can a marketplace mint and burn tokens? - no
+// - q can a player mint and burn tokens? - no
+// - q can a player mint and burn tokens? - no
 
-contract WBCoin is Ownable, AccessControl, ERC20 {
-    using SafeERC20 for IERC20; // to use safe transfer and safe transfer from
+import {AccessControlDefaultAdminRulesUpgradeable} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlDefaultAdminRulesUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+
+contract WBCoin is Initializable, AccessControlDefaultAdminRulesUpgradeable, ERC20Upgradeable, UUPSUpgradeable {
     // Errors
-
     error WBCoin__OnlyGameSignerRole();
     error WBCoin__OnlyGameSignerOrMarketRole();
     error WBCoin__AdminRoleRenounceNotAllowed();
     error WBCoin__AdminRoleGrantNotAllowed();
     error WBCoin__AdminRoleRevokeNotAllowed();
+    error WBCoin__OnlyAdminOrGameRegestryRole();
 
-    bytes32 private constant MARKET_ROLE = keccak256("MARKET_ROLE");
-    bytes32 private constant GAME_SIGNER_ROLE = keccak256("GAME_SIGNER_ROLE");
+    // State variables
+    // bytes32 private constant GAME_SIGNER_ROLE = keccak256("GAME_SIGNER_ROLE");
     bytes32 private constant GAME_REGISTRY_ROLE = keccak256("GAME_REGISTRY_ROLE");
 
 
-    // Modifiers
+    // Events
+    event RevokeAdminRole(address indexed account);
+    event GrantAdminRole(address indexed account);
 
+
+    // Modifiers
     /**
      * @notice Modifier to check if the caller has the GAME_SIGNER_ROLE
+     * q can a game signer mint and burn tokens, meaning that a game instance does it derectly without using the game regestry contract?
      */
-    modifier onlyGameSignerRole() {
-        // Check 1: msg.sender must have GAME_REGISTRY_ROLE or GAME_SIGNER_ROLE
-        if (!hasRole(GAME_REGISTRY_ROLE, msg.sender) && !hasRole(GAME_SIGNER_ROLE, msg.sender)) {
-            revert WBCoin__OnlyGameSignerRole();
-        }
-
-        // Check 2: If msg.sender has GAME_REGISTRY_ROLE, then tx.origin must have GAME_SIGNER_ROLE
-        if (hasRole(GAME_REGISTRY_ROLE, msg.sender)) {
-            if (!hasRole(GAME_SIGNER_ROLE, tx.origin)) {
-                revert WBCoin__OnlyGameSignerRole();
-            }
+    modifier onlyAdminOrGameRegestryRole() {
+        // Check: msg.sender must have DEFAULT_ADMIN_ROLE or GAME_REGISTRY_ROLE
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender) && !hasRole(GAME_REGISTRY_ROLE, msg.sender)) {
+            revert WBCoin__OnlyAdminOrGameRegestryRole();
         }
 
         _;
     }
 
-    /**
-     * @notice Modifier to check if the caller has the GAME_SIGNER_ROLE or MARKET_ROLE
-     * @dev check if the caller has the GAME_SIGNER_ROLE or MARKET_ROLE from the transaction origin or message sender
-     * @dev tx.origin supposed to be game client or marketplace, sended through the game regestry contract or directly
-     */
-    modifier onlyGameSignerOrMarketRole() {
-        // Check 1: msg.sender must have GAME_REGISTRY_ROLE or GAME_SIGNER_ROLE or MARKET_ROLE
-        if (!hasRole(GAME_REGISTRY_ROLE, msg.sender) && !hasRole(GAME_SIGNER_ROLE, msg.sender) && !hasRole(MARKET_ROLE, msg.sender)) {
-            revert WBCoin__OnlyGameSignerOrMarketRole();
-        }
-
-        // Check 2: If msg.sender has GAME_REGISTRY_ROLE, then tx.origin must have GAME_SIGNER_ROLE or MARKET_ROLE
-        if (hasRole(GAME_REGISTRY_ROLE, msg.sender)) {
-            if (!hasRole(GAME_SIGNER_ROLE, tx.origin) && !hasRole(MARKET_ROLE, tx.origin)) {
-                revert WBCoin__OnlyGameSignerOrMarketRole();
-            }
-        }
-
-        _;
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
     }
 
-    constructor(string memory name, string memory symbol, address initialOwner) Ownable(initialOwner) ERC20(name, symbol) {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    }
-
-
-     /**
-     * @notice Renounces a role from the calling account, allows everyone to renounce their own role except for DEFAULT_ADMIN_ROLE.
-     * @param role role to renounce
-     * @param callerConfirmation caller confirmation address
-     */
-    function renounceRole(bytes32 role, address callerConfirmation) public override {
-        if (role == DEFAULT_ADMIN_ROLE) {
-            revert WBCoin__AdminRoleRenounceNotAllowed();
-        }
-        super.renounceRole(role, callerConfirmation);
-    }
-
-    /**
-     * @notice Grant role to an account
-     * @param role role to grant
-     * @param account account to grant role to
-     */
-    function grantRole(bytes32 role, address account) public override onlyRole(getRoleAdmin(role)) {
-        if (role == DEFAULT_ADMIN_ROLE) {
-            revert WBCoin__AdminRoleGrantNotAllowed();
-        }
-        super.grantRole(role, account);
-    }
-
-    /**
-     * @notice Revoke role from an account
-     * @param role role to revoke
-     * @param account account to revoke role from
-     * @dev revoke role only if it is not DEFAULT_ADMIN_ROLE
-     */
-    function revokeRole(bytes32 role, address account) public override onlyRole(getRoleAdmin(role)) {
-        if (role == DEFAULT_ADMIN_ROLE) {
-            revert WBCoin__AdminRoleRevokeNotAllowed();
-        }
-        super.revokeRole(role, account);
-    }
-
+    /*//////////////////////////////////////////////////////////////
+                            EXTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     
+    function initialize(string memory name, string memory symbol) external initializer {
+        __ERC20_init(name, symbol);
+        __AccessControlDefaultAdminRules_init(1 days, msg.sender);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            PUBLIC FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+    /**
+     * @notice Mint tokens to an account
+     * @param to address to mint tokens to
+     * @param amount amount of tokens to mint
+     */
+    function mint(address to, uint256 amount) public onlyAdminOrGameRegestryRole {
+        _mint(to, amount);
+    }
+
+    /**
+     * @notice Burn tokens from an account
+     * @param from address to burn tokens from
+     * @param amount amount of tokens to burn
+     */
+    function burn(address from, uint256 amount) public onlyAdminOrGameRegestryRole {
+        _burn(from, amount);
+    }
+     
+   
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {}
 }
+
+// Layout of Contract:
+// version
+// imports
+// interfaces, libraries, contracts
+// errors
+// Type declarations
+// State variables
+// Events
+// Modifiers
+// Functions
+
+// Layout of Functions:
+// constructor
+// receive function (if exists)
+// fallback function (if exists)
+// external
+// public
+// internal
+// private
+// internal & private view & pure functions
+// external & public view & pure functions
+
+// CEI:
+// Check
+// Effect
+// Interaction

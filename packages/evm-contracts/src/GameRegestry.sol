@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {AccessControlDefaultAdminRulesUpgradeable} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlDefaultAdminRulesUpgradeable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Array} from "./libraries/Array.sol";
 
 /**
@@ -30,7 +32,7 @@ import {Array} from "./libraries/Array.sol";
  * - GAME_SIGNER_ROLE: can sign commit data, to mint, burn, transfer, etc game elements
  * - MARKET_ROLE: can sign commit marketplace transactions only for game elements that are registered in the regestry
  */
-contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll Access (Owner access is limited to revoke / grant ADMIN_ROLE)
+contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdminRulesUpgradeable, EIP712Upgradeable, ReentrancyGuard { // Ownable, Controll Access (Owner access is limited to revoke / grant ADMIN_ROLE)
     using Array for string[];
 
     /*//////////////////////////////////////////////////////////////
@@ -52,7 +54,9 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
     error GameRegestry__NonceAlreadyUsed();
     error GameRegestry__InvalidGameSigner();
     error GameRegestry__NotAllowedToCommit();
-
+    error GameRegestry__BatchLengthZero();
+    error GameRegestry__BatchLengthTooLong();
+    error GameRegestry__InvalidNonce();
     /*//////////////////////////////////////////////////////////////
                                ENUMS
     //////////////////////////////////////////////////////////////*/
@@ -76,7 +80,7 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
     }
 
     struct CommitStruct {
-         address target;
+        address target;
         address account;
         address signer;
         uint256 nonce;
@@ -108,14 +112,15 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event GameRegestry__CommitResources(bytes indexed commit);
-    event GameRegestry__RemoveGameElement(uint256 indexed index, GameElementType elementType);
-    event GameRegestry__AddGameElement(string indexed name, GameElementType elementType);
-    event GameRegestry__RevokeAdminRole(address indexed account);
-    event GameRegestry__GrantAdminRole(address indexed account);
-    event GameRegestry__CommitConfirmed(bytes indexed commit);
-    event GameRegestry__CommitRejected(bytes indexed commit);
-    event GameRegestry__AddGameElementStruct(bytes32 indexed nameHash, address indexed tokenAddress, uint256 indexed tokenId, bool requiresTokenId);
+    event CommitResources(bytes indexed commit);
+    event CommitBatch(uint256 indexed nonce, bytes[] indexed commits);
+    event RemoveGameElement(uint256 indexed index, GameElementType elementType);
+    event AddGameElement(string indexed name, GameElementType elementType);
+    event RevokeAdminRole(address indexed account);
+    event GrantAdminRole(address indexed account);
+    event CommitConfirmed(bytes indexed commit);
+    event CommitRejected(bytes indexed commit);
+    event AddGameElementStruct(bytes32 indexed nameHash, address indexed tokenAddress, uint256 indexed tokenId, bool requiresTokenId);
     
 
      /*//////////////////////////////////////////////////////////////
@@ -141,6 +146,10 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
         }
         _;
     }
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     /*//////////////////////////////////////////////////////////////
                                FUNCTIONS
@@ -154,7 +163,9 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
      * @param _uiniqueItems uinique items names that are available within the game
      * @param _gameSigner game signer address
      */
-    constructor(string[] memory _coins, string[] memory _resources, string[] memory _characters, string[] memory _uiniqueItems, address _gameSigner) Ownable(_msgSender()) EIP712("GameRegestry", "1") {
+    function initialize(string[] memory _coins, string[] memory _resources, string[] memory _characters, string[] memory _uiniqueItems, address _gameSigner) external initializer {
+        __EIP712_init("GameRegestry", "1");
+        __AccessControlDefaultAdminRules_init(1 days, msg.sender);
   
         s_gameElementsByType[GameElementType.COIN] = _coins;
         s_gameElementsByType[GameElementType.RESOURCE] = _resources;
@@ -164,13 +175,39 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
         if (_gameSigner == address(0)) {
             revert GameRegestry__InvalidGameSigner();
         }
-        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _grantRole(GAME_SIGNER_ROLE, _gameSigner);
     }
 
     /*//////////////////////////////////////////////////////////////
                            EXTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+    /**
+     * @notice Commit batch of resources to the regestry
+     * @param commits array of commit data
+     */
+    function commitBatch(uint256 nonce, bytes[] calldata commits) external nonReentrant {
+        if (nonce == 0) {
+            revert GameRegestry__InvalidNonce();
+        }
+        if (commits.length == 0) {
+            revert GameRegestry__BatchLengthZero();
+        }
+        if (commits.length > 10) {
+            revert GameRegestry__BatchLengthTooLong();
+        }
+        s_usedNonces[nonce] = true;
+
+        emit CommitBatch(nonce, commits);
+
+        for (uint256 i = 0; i < commits.length;) {
+            (bytes32 resourceHash, bytes memory commit, bytes memory signature) = abi.decode(commits[i], (bytes32, bytes, bytes));
+            _commitResource(resourceHash, commit, signature);
+
+            unchecked {
+                ++i;
+            }
+        }
+    }
 
     /**
      * @notice Commit resources to the regestry
@@ -179,36 +216,8 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
      * @param signature signature of the commit data
      * @dev q can we use FREI-PI CHECK (Pre-post interaction check) principles here?
      */
-    function commitResources(bytes32 resourceHash, bytes calldata commit, bytes memory signature) external {
-        if (resourceHash == bytes32(0) || commit.length == 0 || signature.length == 0) {
-            revert GameRegestry__InvalidCommitData();
-        }
-   
-        (uint256 nonce, address target, bytes memory callData) = _verifyInputs(resourceHash, commit, signature);
-
-        emit GameRegestry__CommitResources(commit);
-        s_usedNonces[nonce] = true;
-        _commitDispatcher(target, callData);
-
-        _verifyAfter();
-    }
-
-    /**
-     * @notice Revoke admin role from an account
-     * @param account account to revoke admin role from
-     */
-    function revokeAdminRole(address account) external onlyOwner {
-        _revokeRole(DEFAULT_ADMIN_ROLE, account);
-        emit GameRegestry__RevokeAdminRole(account);
-    }
-
-    /**
-     * @notice Grant admin role to an account
-     * @param account account to grant admin role to
-     */
-    function grantAdminRole(address account) external onlyOwner {
-        _grantRole(DEFAULT_ADMIN_ROLE, account);
-        emit GameRegestry__GrantAdminRole(account);
+    function commitResource(bytes32 resourceHash, bytes memory commit, bytes memory signature) external nonReentrant {
+        _commitResource(resourceHash, commit, signature);
     }
 
     /**
@@ -218,7 +227,7 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
      */
     function addGameElement(GameElementType elementType, string memory name) external onlyGameSignerRole {
         s_gameElementsByType[elementType].push(name);
-        emit GameRegestry__AddGameElement(name, elementType);
+        emit AddGameElement(name, elementType);
     }
 
     /**
@@ -228,7 +237,7 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
      */
     function removeGameElement(GameElementType elementType, uint256 index) external onlyGameSignerRole {
         s_gameElementsByType[elementType].removeByIndex(index);
-        emit GameRegestry__RemoveGameElement(index, elementType);
+        emit RemoveGameElement(index, elementType);
     }
 
 
@@ -245,53 +254,38 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
             tokenId: tokenId,
             requiresTokenId: requiresTokenId
         });
-        emit GameRegestry__AddGameElementStruct(nameHash, tokenAddress, tokenId, requiresTokenId);
+        emit AddGameElementStruct(nameHash, tokenAddress, tokenId, requiresTokenId);
     }
 
     /*//////////////////////////////////////////////////////////////
                             PUBLIC FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /**
-     * @notice Renounces a role from the calling account, allows everyone to renounce their own role except for DEFAULT_ADMIN_ROLE.
-     * @param role role to renounce
-     * @param callerConfirmation caller confirmation address
-     */
-    function renounceRole(bytes32 role, address callerConfirmation) public override {
-        if (role == DEFAULT_ADMIN_ROLE) {
-            revert GameRegestry__AdminRoleRenounceNotAllowed();
-        }
-        super.renounceRole(role, callerConfirmation);
-    }
-
-    /**
-     * @notice Grant role to an account
-     * @param role role to grant
-     * @param account account to grant role to
-     */
-    function grantRole(bytes32 role, address account) public override onlyRole(getRoleAdmin(role)) {
-        if (role == DEFAULT_ADMIN_ROLE) {
-            revert GameRegestry__AdminRoleGrantNotAllowed();
-        }
-        super.grantRole(role, account);
-    }
-
-    /**
-     * @notice Revoke role from an account
-     * @param role role to revoke
-     * @param account account to revoke role from
-     * @dev revoke role only if it is not DEFAULT_ADMIN_ROLE
-     */
-    function revokeRole(bytes32 role, address account) public override onlyRole(getRoleAdmin(role)) {
-        if (role == DEFAULT_ADMIN_ROLE) {
-            revert GameRegestry__AdminRoleRevokeNotAllowed();
-        }
-        super.revokeRole(role, account);
-    }
+   
 
     /*//////////////////////////////////////////////////////////////
                            PRIVATE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Commit resource to the regestry
+     * @param resourceHash hash of the resource
+     * @param commit commit data
+     * @param signature signature of the commit data
+     */
+    function _commitResource(bytes32 resourceHash, bytes memory commit, bytes memory signature) private {
+        if (resourceHash == bytes32(0) || commit.length == 0 || signature.length == 0) {
+            revert GameRegestry__InvalidCommitData();
+        }
+   
+        (uint256 nonce, address target, bytes memory callData) = _verifyInputs(resourceHash, commit, signature);
+
+        emit CommitResources(commit);
+        s_usedNonces[nonce] = true;
+        _commitDispatcher(target, callData);
+
+        _verifyAfter();
+    }
 
     /**
      * @notice Dispatcher for the commit data
@@ -302,7 +296,7 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
         if (target == address(0)) {
             revert GameRegestry__InvalidTarget();
         }
-        emit GameRegestry__CommitConfirmed(callData);
+        emit CommitConfirmed(callData);
         (bool success, ) = target.call(callData);
         if (!success) {
             revert GameRegestry__CommitFailed();
@@ -319,7 +313,7 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
     }
 
     /// TODO: verify inputs of the commit data
-    function _verifyInputs(bytes32 resourceHash, bytes calldata commit, bytes memory signature) private view returns(uint256 nonce, address target, bytes memory callData) {
+    function _verifyInputs(bytes32 resourceHash, bytes memory commit, bytes memory signature) private view returns(uint256 nonce, address target, bytes memory callData) {
         GameElementStruct memory gameElement = s_resourceToGameElement[resourceHash];
         address account;
         address signer;
@@ -433,6 +427,20 @@ contract GameRegestry is Ownable, AccessControl, EIP712 { // Ownable, Controll A
         return s_resourceToGameElement[resourceHash];
     }
 
+    /**
+     * @notice Check nonce used
+     * @param nonce nonce
+     * @return true if nonce is used, false otherwise
+     */
+    function getIsNonceUsed(uint256 nonce) external view returns(bool) {
+        return s_usedNonces[nonce];
+    }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {}
 }
 
 // Layout of Contract:

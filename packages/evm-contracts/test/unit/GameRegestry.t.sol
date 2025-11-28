@@ -9,7 +9,8 @@ contract GameRegestryTest is Test {
 
     function setUp() public {
         //(string[] memory _coins, string[] memory _resources, string[] memory _characters, string[] memory _uiniqueItems, address _gameSigner
-        gameRegestry = new GameRegestry(new string[](0), new string[](0), new string[](0), new string[](0), address(0));
+        gameRegestry = new GameRegestry();
+        gameRegestry.initialize(new string[](0), new string[](0), new string[](0), new string[](0), address(0));
     }
 
     /*//////////////////////////////////////////////////////////////

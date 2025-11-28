@@ -1,83 +1,44 @@
-## Foundry
-
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
-
-Foundry consists of:
-
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
 ## Overview
 
-This package contains the smart contracts for Wizard Battle. It includes a small registry contract and a set of token contracts representing game assets and currency.
+![Architecture](./img/architecture.png)
 
-### Architecture
+## GameRegestry.sol
 
-![Wizard Battle contracts architecture](./img/architecture.png)
+### Interactions
 
-### Contract structure
+![GameRegestry.sol Schema](./img/schema.png)
 
-- **GameRegestry.sol**: Central on-chain registry for core contract addresses and roles. Intended to provide a single source of truth that other contracts can reference for permissions and cross-contract lookups.
-- **tokens/ ERC20 / WBCoin.sol**: Fungible in-game currency. Minting/burning is restricted to authorized game logic (e.g., game server, admin, or registry-approved operators).
-- **tokens/ ERC1155 / WBResources.sol**: Multi-token resource collection (materials, consumables, etc.). Batch mint/burn and transfers for efficient gameplay operations.
-- **tokens/ ERC721 / WBCharacter.sol**: Non-fungible player characters or unique items. Each token is unique and can hold metadata used by the game client.
+### External functions
 
-These contracts are designed to be composed via the registry so the game backend can safely mint/burn assets and manage permissions from a single place.
+- **`commitResource(bytes32 resourceHash, bytes commit, bytes signature)`**: Commit a signed game action; verifies inputs/signature, marks nonce used, dispatches the call to a target contract, and runs post-commit checks.
+- **`commitBatch(uint256 nonce, bytes[] calldata commits)`**: Commit a batch of signed game actions; verifies inputs/signature, marks nonce used, dispatches the call to a target contract, and runs post-commit checks.
+- **`revokeAdminRole(address account)`**: Owner-only function to revoke `DEFAULT_ADMIN_ROLE` from `account`.
+- **`grantAdminRole(address account)`**: Owner-only function to grant `DEFAULT_ADMIN_ROLE` to `account`.
+- **`addGameElement(GameElementType elementType, string name)`**: Adds a new game element name to the registry under a given type; restricted to `GAME_SIGNER_ROLE`.
+- **`removeGameElement(GameElementType elementType, uint256 index)`**: Removes a game element name by index from a given type array; restricted to `GAME_SIGNER_ROLE`.
+- **`addGameElementStruct(bytes32 nameHash, address tokenAddress, uint256 tokenId, bool requiresTokenId)`**: Registers on-chain token mapping for a resource (ERC20/721/1155, etc.) keyed by `nameHash`; restricted to `GAME_SIGNER_ROLE`.
 
-## Usage
+### Public functions (overrides)
 
-### Build
+- **`renounceRole(bytes32 role, address callerConfirmation)`**: Standard AccessControl `renounceRole` with a restriction that `DEFAULT_ADMIN_ROLE` cannot be renounced.
+- **`grantRole(bytes32 role, address account)`**: Standard AccessControl `grantRole` override that forbids granting `DEFAULT_ADMIN_ROLE` via this function.
+- **`revokeRole(bytes32 role, address account)`**: Standard AccessControl `revokeRole` override that forbids revoking `DEFAULT_ADMIN_ROLE` via this function.
 
-```shell
-$ forge build
-```
+### Private functions
 
-### Test
+- **`_commitDispatcher(address target, bytes callData)`**: Low-level dispatcher that sends the commit call to `target` using `call`, reverting on failure.
+- **`_verifyAfter()`**: Placeholder hook intended for protocol-level post-commit invariant checks (token supplies, etc.).
+- **`_verifyInputs(bytes32 resourceHash, bytes commit, bytes signature)`**: Validates commit payload and signer, checks nonce and roles, and decodes commit into `(nonce, target, callData)`.
 
-```shell
-$ forge test
-```
+### Private view functions
 
-### Format
+- **`_verifySignature(address target, address account, address signer, uint256 nonce, bytes callData, bytes signature)`**: Builds a typed EIP-712 hash and verifies that the recovered signer has `GAME_SIGNER_ROLE`.
+- **`_getMessageHash(address target, address account, address signer, uint256 nonce, bytes callData)`**: Constructs the EIP-712 typed data hash for a `CommitStruct` used in signature validation.
 
-```shell
-$ forge fmt
-```
+### External view functions
 
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+- **`getGameCoinsList()`**: Returns the list of registered coin names.
+- **`getResourcesList()`**: Returns the list of registered resource names.
+- **`getCharactersList()`**: Returns the list of registered character types.
+- **`getUniqueItemsList()`**: Returns the list of registered unique item names.
+- **`getGameElement(bytes32 resourceHash)`**: Returns the `GameElementStruct` describing the on-chain token mapping for a given resource hash.
