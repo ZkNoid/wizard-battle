@@ -142,3 +142,5 @@ volumes:
 networks:
   bridge:
     driver: bridge
+  orbitrium_net:
+    driver: bridge
