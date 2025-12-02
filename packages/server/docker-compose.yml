@@ -49,38 +49,24 @@ services:
       - ./backups:/backups # host folder where backups will be stored
     command: |
       sh -c '
-        apk add --no-cache bash curl
-        echo "Creating backup directory..."
-        mkdir -p $BACKUP_DIR
-        
-        # Simple backup script
-        cat > /backup.sh <<'EOF'
-      #!/bin/bash
-      set -e
+        # Install only what we really need
+        apk add --no-cache bash dcron curl
 
-      TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-      BACKUP_FILE="$BACKUP_DIR/orbitrium_db_$TIMESTAMP.sql.gz"
+        # Make sure the script from the host is executable
+        if [ ! -f /backups/backup.sh ]; then
+          echo "ERROR: /backups/backup.sh not found on host!" >&2
+          exit 1
+        fi
+        chmod +x /backups/backup.sh
 
-      echo "[$(date)] Starting backup..."
-      pg_dump -h $PGHOST -U $PGUSER -d $PGDATABASE --clean --if-exists | gzip > "$BACKUP_FILE"
+        # Schedule it (minute hour day month weekday)
+        echo "$BACKUP_TIME /backups/backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
 
-      echo "[$(date)] Backup created: $BACKUP_FILE"
+        # Create log file so tail works immediately
+        touch /var/log/backup.log
 
-      # Cleanup old backups
-      if [ -n "$BACKUP_KEEP_DAYS" ]; then
-        find "$BACKUP_DIR" -name "orbitrium_db_*.sql.gz" -mtime +$BACKUP_KEEP_DAYS -delete
-        echo "[$(date)] Old backups older than $BACKUP_KEEP_DAYS days removed."
-      fi
-      EOF
-
-        chmod +x /backup.sh
-
-        # Install cron
-        apk add --no-cache cronic dcron
-        echo "$BACKUP_TIME * * * /backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
-
-        # Start cron and tail logs
-        crond && echo "Backup scheduler started (daily at $BACKUP_TIME UTC)" && tail -f /var/log/backup.log
+        echo "Backup scheduler started - will run /backups/backup.sh daily at 03:00 UTC"
+        crond -f -L /dev/stdout
       '
     depends_on:
       postgres:
