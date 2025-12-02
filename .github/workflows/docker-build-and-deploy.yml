@@ -156,28 +156,27 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            cat > .env << EOF
-              MONGO_USERNAME=${{ secrets.MONGO_USERNAME }}
-              MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}
-              POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-              POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-              POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-              # Add any other variables you need here, e.g.:
-              # SOME_API_KEY=${{ secrets.SOME_API_KEY }}
-              EOF
+            cd ${{ secrets.TARGET_PATH }}
 
-              # Optional: set correct permissions (paranoid mode)
-              chmod 600 .env
+            # === Regenerate .env securely ===
+            cat > .env << 'EOT'
+            MONGO_USERNAME=${{ secrets.MONGO_USERNAME }}
+            MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            EOT
 
-              # Clean up old unused images/containers
-              docker system prune -f
+            chmod 600 .env
 
-              # Load the new image you just pushed/scp'd
-              docker load -i ${{ steps.calc-container.outputs.container_name }}.tar
+            # === Deploy ===
+            docker system prune -f
+            docker load -i ${{ steps.calc-container.outputs.container_name }}.tar
 
-              # Gracefully stop & remove old container (idempotent)
-              docker stop ${{ steps.calc-container.outputs.container_name }} || true
-              docker rm ${{ steps.calc-container.outputs.container_name }} || true
+            docker stop ${{ steps.calc-container.outputs.container_name }} || true
+            docker rm ${{ steps.calc-container.outputs.container_name }} || true
 
-              # Bring up the stack with the fresh .env
-              docker compose up -d
+            docker compose up -d
+
+            echo "Deployment complete!"
+            docker compose ps
