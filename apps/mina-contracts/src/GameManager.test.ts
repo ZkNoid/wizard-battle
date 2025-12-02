@@ -19,7 +19,11 @@ import {
   GameRecordProof,
   GameRecordProofPublicInput,
 } from './Proofs/GameRecordProof';
-import { FraudProgram } from './Proofs/FraudProoof';
+import {
+  FraudProgram,
+  FraudProofPublicInput,
+  FraudProof,
+} from './Proofs/FraudProoof';
 
 /* --------------------------------- Test helpers --------------------------------- */
 const gameId = Field(1);
@@ -279,76 +283,219 @@ describe('GameManagerV2 (slot-based deadlines)', () => {
     expect(app.gamesRoot.get()).toEqual(finalRoot);
   });
 
-  // test('proveFraud finalizes FRAUD from AwaitingChallenge', async () => {
-  //   // Reset to Started → Awaiting again to test fraud flow
-  //   const mm = new MerkleMap();
-  //   const witness = wit(mm);
+  test('proveFraud finalizes FRAUD from AwaitingChallenge', async () => {
+    // Reset to Started → Awaiting again to test fraud flow
+    const mm = new MerkleMap();
+    const witness = wit(mm);
 
-  //   // start
-  //   let tx5 = await Mina.transaction(admin, async () => {
-  //     app.startGame(gameId, setupHash, witness);
-  //   });
-  //   await tx5.prove();
-  //   await tx5.sign([adminKey]).send();
-  //   const started = leaf(
-  //     GameStatus.Started,
-  //     UInt32.from(0),
-  //     setupHash,
-  //     Field(0),
-  //     Field(0)
-  //   );
-  //   const startedRoot = witness.computeRootAndKey(started.hash())[0];
-  //   expect(app.gamesRoot.get()).toEqual(startedRoot);
+    // start
+    let txStart = await Mina.transaction(admin, async () => {
+      await app.startGame(gameId, setupHash, witness);
+    });
+    await txStart.prove();
+    await txStart.sign([adminKey]).send();
 
-  //   // set new slot baseline
-  //   setSlot(30_000n);
+    const started = leaf(
+      GameStatus.Started,
+      UInt32.from(0),
+      setupHash,
+      Field(0),
+      Field(0)
+    );
+    const startedRoot = witness.computeRootAndKey(started.hash())[0];
+    expect(app.gamesRoot.get()).toEqual(startedRoot);
 
-  //   let tx6 = await Mina.transaction(admin, async () => {
-  //     app.finishGame(
-  //       gameId,
-  //       resultHash,
-  //       witness,
-  //       GameStatus.Started,
-  //       setupHash
-  //     );
-  //   });
-  //   await tx6.prove();
-  //   await tx6.sign([adminKey]).send();
+    // set new slot baseline
+    setSlot(30_000n);
 
-  //   const deadlineSlot = UInt32.from(30_000 + 100); // 30_100
-  //   const awaiting = leaf(
-  //     GameStatus.AwaitingChallenge,
-  //     deadlineSlot,
-  //     setupHash,
-  //     resultHash,
-  //     Field(0)
-  //   );
-  //   const awaitingRoot = witness.computeRootAndKey(awaiting.hash())[0];
-  //   expect(app.gamesRoot.get()).toEqual(awaitingRoot);
+    let txFinish = await Mina.transaction(admin, async () => {
+      await app.finishGame(
+        gameId,
+        resultHash,
+        witness,
+        GameStatus.Started,
+        setupHash
+      );
+    });
+    await txFinish.prove();
+    await txFinish.sign([adminKey]).send();
 
-  //   const fproof = await DummyFraudProof.make(gameId, setupHash, fraudHash);
+    const deadlineSlot = UInt32.from(30_000 + 100); // 30_100
+    const awaiting = leaf(
+      GameStatus.AwaitingChallenge,
+      deadlineSlot,
+      setupHash,
+      resultHash,
+      Field(0)
+    );
+    const awaitingRoot = witness.computeRootAndKey(awaiting.hash())[0];
+    expect(app.gamesRoot.get()).toEqual(awaitingRoot);
 
-  //   await Mina.transaction(userKey, async () => {
-  //     app.proveFraud(
-  //       gameId,
-  //       witness,
-  //       fproof,
-  //       deadlineSlot,
-  //       setupHash,
-  //       resultHash
-  //     );
-  //   }).send();
+    // Create fraud proof
+    console.log('Before FraudProgram.prove');
+    const fraudProofResult = await FraudProgram.prove(
+      new FraudProofPublicInput({
+        fraudHash,
+      })
+    );
+    console.log('After FraudProgram.prove');
 
-  //   const finalizedFraud = leaf(
-  //     GameStatus.FinalizedFraud,
-  //     UInt32.from(0),
-  //     setupHash,
-  //     Field(0),
-  //     fraudHash
-  //   );
-  //   const finalRoot = witness.computeRootAndKey(finalizedFraud.hash())[0];
-  //   expect(app.gamesRoot.get()).toEqual(finalRoot);
-  // });
+    let txFraud = await Mina.transaction(user, async () => {
+      await app.proveFraud(
+        gameId,
+        witness,
+        fraudProofResult.proof,
+        deadlineSlot,
+        setupHash,
+        resultHash
+      );
+    });
+    await txFraud.prove();
+    await txFraud.sign([userKey]).send();
+
+    const finalizedFraud = leaf(
+      GameStatus.FinalizedFraud,
+      UInt32.from(0),
+      setupHash,
+      Field(0),
+      fraudHash
+    );
+    const finalRoot = witness.computeRootAndKey(finalizedFraud.hash())[0];
+    expect(app.gamesRoot.get()).toEqual(finalRoot);
+  });
+
+  test('proveFraud works even close to deadline', async () => {
+    // Test that fraud proof can be submitted right before the deadline
+    const mm = new MerkleMap();
+    const witness = wit(mm);
+
+    // Start game
+    let txStart = await Mina.transaction(admin, async () => {
+      await app.startGame(gameId, setupHash, witness);
+    });
+    await txStart.prove();
+    await txStart.sign([adminKey]).send();
+
+    // Finish game at slot 50_000
+    setSlot(50_000n);
+    let txFinish = await Mina.transaction(admin, async () => {
+      await app.finishGame(
+        gameId,
+        resultHash,
+        witness,
+        GameStatus.Started,
+        setupHash
+      );
+    });
+    await txFinish.prove();
+    await txFinish.sign([adminKey]).send();
+
+    const deadlineSlot = UInt32.from(50_000 + 100); // 50_100
+
+    // Advance time to just before deadline (50_099)
+    setSlot(50_099n);
+
+    // Create and submit fraud proof
+    const fraudProofResult = await FraudProgram.prove(
+      new FraudProofPublicInput({
+        fraudHash,
+      })
+    );
+
+    let txFraud = await Mina.transaction(user, async () => {
+      await app.proveFraud(
+        gameId,
+        witness,
+        fraudProofResult.proof,
+        deadlineSlot,
+        setupHash,
+        resultHash
+      );
+    });
+    await txFraud.prove();
+    await txFraud.sign([userKey]).send();
+
+    const finalizedFraud = leaf(
+      GameStatus.FinalizedFraud,
+      UInt32.from(0),
+      setupHash,
+      Field(0),
+      fraudHash
+    );
+    const finalRoot = witness.computeRootAndKey(finalizedFraud.hash())[0];
+    expect(app.gamesRoot.get()).toEqual(finalRoot);
+  });
+
+  test('proveFraud cannot finalize already finalized game', async () => {
+    // Test that fraud proof cannot be submitted after game is already finalized OK
+    const mm = new MerkleMap();
+    const witness = wit(mm);
+
+    // Start and finish game
+    let txStart = await Mina.transaction(admin, async () => {
+      await app.startGame(gameId, setupHash, witness);
+    });
+    await txStart.prove();
+    await txStart.sign([adminKey]).send();
+
+    setSlot(60_000n);
+    let txFinish = await Mina.transaction(admin, async () => {
+      await app.finishGame(
+        gameId,
+        resultHash,
+        witness,
+        GameStatus.Started,
+        setupHash
+      );
+    });
+    await txFinish.prove();
+    await txFinish.sign([adminKey]).send();
+
+    const deadlineSlot = UInt32.from(60_000 + 100); // 60_100
+
+    // Prove game record to finalize OK
+    const proof = await GameRecordProgram.prove(
+      new GameRecordProofPublicInput({
+        gameId,
+        setupHash,
+      }),
+      resultHash
+    );
+
+    let txProve = await Mina.transaction(user, async () => {
+      app.proveGameRecord(
+        gameId,
+        witness,
+        proof.proof,
+        deadlineSlot,
+        resultHash
+      );
+    });
+    await txProve.prove();
+    await txProve.sign([userKey]).send();
+
+    // Now try to submit fraud proof - should fail because game is already finalized
+    const fraudProofResult = await FraudProgram.prove(
+      new FraudProofPublicInput({
+        fraudHash,
+      })
+    );
+
+    await expect(async () => {
+      let txFraud = await Mina.transaction(user, async () => {
+        await app.proveFraud(
+          gameId,
+          witness,
+          fraudProofResult.proof,
+          deadlineSlot,
+          setupHash,
+          resultHash
+        );
+      });
+      await txFraud.prove();
+      await txFraud.sign([userKey]).send();
+    }).rejects.toThrow();
+  });
 
   test('proveByTimeout finalizes OK when current slot >= deadlineSlot', async () => {
     // Reset to Started → Awaiting

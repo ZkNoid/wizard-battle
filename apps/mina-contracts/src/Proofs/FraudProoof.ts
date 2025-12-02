@@ -1,8 +1,12 @@
-import { Struct, ZkProgram } from 'o1js';
+import { Bool, Field, Struct, ZkProgram } from 'o1js';
 
-export class FraudProofPublicInput extends Struct({}) {}
+export class FraudProofPublicInput extends Struct({
+  fraudHash: Field,
+}) {}
 
-export class FraudProofPublicOutput extends Struct({}) {}
+export class FraudProofPublicOutput extends Struct({
+  isFraud: Bool,
+}) {}
 
 export const FraudProgram = ZkProgram({
   name: 'FraudProof',
@@ -13,7 +17,9 @@ export const FraudProgram = ZkProgram({
       privateInputs: [],
       async method(publicInput: FraudProofPublicInput) {
         return {
-          publicOutput: FraudProofPublicOutput,
+          publicOutput: {
+            isFraud: Bool(true),
+          },
         };
       },
     },

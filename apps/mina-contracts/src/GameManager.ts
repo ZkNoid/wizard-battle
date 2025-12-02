@@ -18,6 +18,7 @@ import {
 } from 'o1js';
 
 import { GameRecordProof } from './Proofs/GameRecordProof';
+import { FraudProof } from './Proofs/FraudProoof';
 
 /* ------------------------------ Types & enums ------------------------------ */
 
@@ -379,42 +380,42 @@ export class GameManager extends SmartContract {
   }
 
   /** Finalize FRAUD on valid fraud proof */
-  // @method async proveFraud(
-  //   gameId: Field,
-  //   witness: MerkleMapWitness,
-  //   proof: FraudProof,
-  //   // we still expect the current leaf is AwaitingChallenge with some deadline
-  //   deadlineSlot: UInt32,
-  //   expectedSetupHash: Field,
-  //   expectedResultHash: Field // optional: bind more context if your fraud proof does
-  // ) {
-  //   const currentRoot = this.gamesRoot.getAndRequireEquals();
+  @method async proveFraud(
+    gameId: Field,
+    witness: MerkleMapWitness,
+    proof: FraudProof,
+    // we still expect the current leaf is AwaitingChallenge with some deadline
+    deadlineSlot: UInt32,
+    expectedSetupHash: Field,
+    expectedResultHash: Field // optional: bind more context if your fraud proof does
+  ) {
+    const currentRoot = this.gamesRoot.getAndRequireEquals();
 
-  //   proof.publicOutput.fraud.assertTrue();
+    proof.publicOutput.isFraud.assertTrue();
 
-  //   const awaitingLeaf = new GameLeaf({
-  //     status: GameStatus.AwaitingChallenge,
-  //     challengeDeadlineSlot: deadlineSlot,
-  //     setupHash: expectedSetupHash,
-  //     resultHash: expectedResultHash,
-  //     fraudHash: Field(0),
-  //   });
+    const awaitingLeaf = new GameLeaf({
+      status: GameStatus.AwaitingChallenge,
+      challengeDeadlineSlot: deadlineSlot,
+      setupHash: expectedSetupHash,
+      resultHash: expectedResultHash,
+      fraudHash: Field(0),
+    });
 
-  //   const [rootBefore] = witness.computeRootAndKey(awaitingLeaf.hash());
-  //   rootBefore.assertEquals(currentRoot);
+    const [rootBefore] = witness.computeRootAndKey(awaitingLeaf.hash());
+    rootBefore.assertEquals(currentRoot);
 
-  //   const finalized = new GameLeaf({
-  //     status: GameStatus.FinalizedFraud,
-  //     challengeDeadlineSlot: UInt32.from(0),
-  //     setupHash: expectedSetupHash,
-  //     resultHash: Field(0),
-  //     fraudHash: proof.publicInput.fraudHash,
-  //   });
+    const finalized = new GameLeaf({
+      status: GameStatus.FinalizedFraud,
+      challengeDeadlineSlot: UInt32.from(0),
+      setupHash: expectedSetupHash,
+      resultHash: Field(0),
+      fraudHash: proof.publicInput.fraudHash,
+    });
 
-  //   const newRoot = witness.computeRootAndKey(finalized.hash())[0];
-  //   this.gamesRoot.set(newRoot);
-  //   this.emitEvent('GameFinalizedFraud', gameId);
-  // }
+    const newRoot = witness.computeRootAndKey(finalized.hash())[0];
+    this.gamesRoot.set(newRoot);
+    this.emitEvent('GameFinalizedFraud', gameId);
+  }
 
   /**
    * proveByTimeout()
