@@ -58,27 +58,6 @@ export class GameLeaf extends Struct({
   }
 }
 
-/* ----------------------------- Proof placeholders ----------------------------- */
-
-export class GameRecordPublicInput extends Struct({
-  gameId: Field,
-  setupHash: Field,
-  resultHash: Field,
-}) {}
-export class GameRecordPublicOutput extends Struct({ ok: Bool }) {}
-// export class GameRecordProof extends Proof<
-//   GameRecordPublicInput,
-//   GameRecordPublicOutput
-// > {}
-
-export class FraudPublicInput extends Struct({
-  gameId: Field,
-  setupHash: Field,
-  fraudHash: Field,
-}) {}
-// export class FraudPublicOutput extends Struct({ fraud: Bool }) {}
-// export class FraudProof extends Proof<FraudPublicInput, FraudPublicOutput> {}
-
 /* --------------------------------- Contract --------------------------------- */
 
 export class GameManager extends SmartContract {
