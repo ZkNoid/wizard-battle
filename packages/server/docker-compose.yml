@@ -7,8 +7,8 @@ services:
     volumes:
       - mongodb_data:/data/db
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=iRBps4IeGXYVEaJ
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
     networks:
       - bridge
 
@@ -16,15 +16,15 @@ services:
     image: postgres:16-alpine
     container_name: orbitrium-postgres
     environment:
-      POSTGRES_USER: orbitrium
-      POSTGRES_PASSWORD: 3EV5apRHHy6p1ds
-      POSTGRES_DB: orbitrium_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U orbitrium -d orbitrium_db']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,9 +39,9 @@ services:
     container_name: orbitrium-postgres-backup
     environment:
       PGHOST: postgres # connects to the postgres service above
-      PGUSER: orbitrium
-      PGPASSWORD: 3EV5apRHHy6p1ds
-      PGDATABASE: orbitrium_db
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
       BACKUP_DIR: /backups
       BACKUP_KEEP_DAYS: 7 # keep last 7 daily backups
       BACKUP_TIME: '03:00' # time of day to run backup (UTC!)
@@ -51,7 +51,7 @@ services:
       sh -c '
         apk add --no-cache bash curl
         echo "Creating backup directory..."
-        mkdir -p $$BACKUP_DIR
+        mkdir -p $BACKUP_DIR
         
         # Simple backup script
         cat > /backup.sh <<'EOF'
@@ -59,17 +59,17 @@ services:
       set -e
 
       TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-      BACKUP_FILE="$$BACKUP_DIR/orbitrium_db_$$TIMESTAMP.sql.gz"
+      BACKUP_FILE="$BACKUP_DIR/orbitrium_db_$TIMESTAMP.sql.gz"
 
       echo "[$(date)] Starting backup..."
-      pg_dump -h $$PGHOST -U $$PGUSER -d $$PGDATABASE --clean --if-exists | gzip > "$$BACKUP_FILE"
+      pg_dump -h $PGHOST -U $PGUSER -d $PGDATABASE --clean --if-exists | gzip > "$BACKUP_FILE"
 
-      echo "[$(date)] Backup created: $$BACKUP_FILE"
+      echo "[$(date)] Backup created: $BACKUP_FILE"
 
       # Cleanup old backups
-      if [ -n "$$BACKUP_KEEP_DAYS" ]; then
-        find "$$BACKUP_DIR" -name "orbitrium_db_*.sql.gz" -mtime +$$BACKUP_KEEP_DAYS -delete
-        echo "[$(date)] Old backups older than $$BACKUP_KEEP_DAYS days removed."
+      if [ -n "$BACKUP_KEEP_DAYS" ]; then
+        find "$BACKUP_DIR" -name "orbitrium_db_*.sql.gz" -mtime +$BACKUP_KEEP_DAYS -delete
+        echo "[$(date)] Old backups older than $BACKUP_KEEP_DAYS days removed."
       fi
       EOF
 
@@ -77,10 +77,10 @@ services:
 
         # Install cron
         apk add --no-cache cronic dcron
-        echo "$$BACKUP_TIME * * * /backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
+        echo "$BACKUP_TIME * * * /backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
 
         # Start cron and tail logs
-        crond && echo "Backup scheduler started (daily at $$BACKUP_TIME UTC)" && tail -f /var/log/backup.log
+        crond && echo "Backup scheduler started (daily at $BACKUP_TIME UTC)" && tail -f /var/log/backup.log
       '
     depends_on:
       postgres:
