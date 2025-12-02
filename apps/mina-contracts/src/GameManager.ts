@@ -368,9 +368,12 @@ export class GameManager extends SmartContract {
     expectedSetupHash: Field,
     expectedResultHash: Field // optional: bind more context if your fraud proof does
   ) {
-    const currentRoot = this.gamesRoot.getAndRequireEquals();
+    proof.verify();
+    proof.publicInput.stateTreeHash.assertEquals(expectedResultHash);
 
-    proof.publicOutput.isFraud.assertTrue();
+    // Verify the proof's public fields
+
+    const currentRoot = this.gamesRoot.getAndRequireEquals();
 
     const awaitingLeaf = new GameLeaf({
       status: GameStatus.AwaitingChallenge,

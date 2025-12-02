@@ -1,4 +1,12 @@
-import { Bool, Field, MerkleMapWitness, Struct, ZkProgram } from 'o1js';
+import {
+  Bool,
+  Field,
+  MerkleMapWitness,
+  Struct,
+  VerificationKey,
+  ZkProgram,
+} from 'o1js';
+import { SpellsDynamicProof } from './DynamicProof';
 
 export class FraudProofPublicInput extends Struct({
   fraudHash: Field,
@@ -7,11 +15,13 @@ export class FraudProofPublicInput extends Struct({
   state1Witness: MerkleMapWitness,
   state2Hash: Field,
   state2Witness: MerkleMapWitness,
+  vkRoot: Field,
+  vk: VerificationKey,
+  vkWitness: MerkleMapWitness,
+  dynamicProof: SpellsDynamicProof,
 }) {}
 
-export class FraudProofPublicOutput extends Struct({
-  isFraud: Bool,
-}) {}
+export class FraudProofPublicOutput extends Struct({}) {}
 
 export function proveFraud(publicInput: FraudProofPublicInput) {
   // Check that the state tree hashes are correct
@@ -25,12 +35,28 @@ export function proveFraud(publicInput: FraudProofPublicInput) {
   );
   rootBefore2.assertEquals(publicInput.stateTreeHash);
 
-  // Unpack states hashes
+  // Check vk merkle root
+  const [rootBeforeVk] = publicInput.vkWitness.computeRootAndKey(
+    publicInput.vk.hash
+  );
+  rootBeforeVk.assertEquals(publicInput.vkRoot);
+
+  // TODO verify states are sequential
+
+  // Verify proof
+  publicInput.dynamicProof.verify(publicInput.vk);
+
+  publicInput.dynamicProof.publicInput.initialStateHash.assertEquals(
+    publicInput.state1Hash
+  );
+
+  // In case of fraud, the final state hash should be different from the initial state hash
+  publicInput.dynamicProof.publicOutput.finalStateHash.assertNotEquals(
+    publicInput.state2Hash
+  );
 
   return {
-    publicOutput: {
-      isFraud: Bool(true),
-    },
+    publicOutput: {},
   };
 }
 
