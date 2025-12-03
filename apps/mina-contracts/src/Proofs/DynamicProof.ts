@@ -2,6 +2,7 @@ import { DynamicProof, FeatureFlags, Field, Struct } from 'o1js';
 
 export class SpellsPublicInput extends Struct({
   initialStateHash: Field,
+  spellCastHash: Field,
 }) {}
 
 export class SpellsPublicOutput extends Struct({

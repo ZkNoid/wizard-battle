@@ -9,6 +9,16 @@ export const GameStatus = {
   FinalizedFraud: UInt32.from(4),
 } as const;
 
+export class Setup extends Struct({}) {}
+
+export class Result extends Struct({
+  statesRoot: Field,
+}) {
+  hash(): Field {
+    return Poseidon.hash([this.statesRoot]);
+  }
+}
+
 export class GameLeaf extends Struct({
   status: UInt32,
   challengeDeadlineSlot: UInt32,

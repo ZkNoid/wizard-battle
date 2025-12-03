@@ -19,44 +19,7 @@ import {
 
 import { GameRecordProof } from './Proofs/GameRecordProof';
 import { FraudProof } from './Proofs/FraudProoof';
-
-/* ------------------------------ Types & enums ------------------------------ */
-
-export const GameStatus = {
-  Empty: UInt32.from(0),
-  Started: UInt32.from(1),
-  AwaitingChallenge: UInt32.from(2),
-  FinalizedOk: UInt32.from(3),
-  FinalizedFraud: UInt32.from(4),
-} as const;
-
-// ⬇️ deadline is now a SLOT (UInt32), not ms.
-export class GameLeaf extends Struct({
-  status: UInt32,
-  challengeDeadlineSlot: UInt32,
-  setupHash: Field,
-  resultHash: Field,
-  fraudHash: Field,
-}) {
-  static empty(): GameLeaf {
-    return new GameLeaf({
-      status: GameStatus.Empty,
-      challengeDeadlineSlot: UInt32.from(0),
-      setupHash: Field(0),
-      resultHash: Field(0),
-      fraudHash: Field(0),
-    });
-  }
-  hash(): Field {
-    return Poseidon.hash([
-      this.status.value,
-      this.challengeDeadlineSlot.value,
-      this.setupHash,
-      this.resultHash,
-      this.fraudHash,
-    ]);
-  }
-}
+import { GameLeaf, GameStatus, Result } from './Proofs/GameLeaf';
 
 /* --------------------------------- Contract --------------------------------- */
 
@@ -366,10 +329,10 @@ export class GameManager extends SmartContract {
     // we still expect the current leaf is AwaitingChallenge with some deadline
     deadlineSlot: UInt32,
     expectedSetupHash: Field,
-    expectedResultHash: Field // optional: bind more context if your fraud proof does
+    expectedResult: Result
   ) {
     proof.verify();
-    proof.publicInput.stateTreeHash.assertEquals(expectedResultHash);
+    proof.publicInput.stateTreeHash.assertEquals(expectedResult.statesRoot);
 
     // Verify the proof's public fields
 
@@ -379,7 +342,7 @@ export class GameManager extends SmartContract {
       status: GameStatus.AwaitingChallenge,
       challengeDeadlineSlot: deadlineSlot,
       setupHash: expectedSetupHash,
-      resultHash: expectedResultHash,
+      resultHash: expectedResult.hash(),
       fraudHash: Field(0),
     });
 
