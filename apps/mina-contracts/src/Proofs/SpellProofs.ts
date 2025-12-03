@@ -27,44 +27,27 @@ export function verifySpellCastTransition<T>(
   };
 }
 
-export class LightningBoldSpellCast
-  extends Struct({
-    caster: Field,
-    spellId: Field,
-    target: Field,
-    additionalData: LightningBoldData,
-  })
-  implements SpellCast<LightningBoldData>
-{
-  hash(): Field {
-    return Poseidon.hash([
-      this.caster,
-      this.spellId,
-      this.target,
-      this.additionalData.position.hash(),
-    ]);
-  }
-}
-
-export const LightningBoldProgram = ZkProgram({
-  name: 'LightningBold',
-  publicInput: SpellsPublicInput,
-  publicOutput: SpellsPublicOutput,
-  methods: {
-    prove: {
-      privateInputs: [State, LightningBoldSpellCast],
-      async method(
-        publicInput: SpellsPublicInput,
-        state: State,
-        spellCast: LightningBoldSpellCast
-      ) {
-        return verifySpellCastTransition(
-          publicInput,
-          state,
-          spellCast,
-          LightningBoldModifyer
-        );
+export const splellsProofs = allSpells.map((spell) => {
+  return ZkProgram({
+    name: spell.name,
+    publicInput: SpellsPublicInput,
+    publicOutput: SpellsPublicOutput,
+    methods: {
+      prove: {
+        privateInputs: [State, spell.spellCast],
+        async method(
+          publicInput: SpellsPublicInput,
+          state: State,
+          spellCast: typeof spell.spellCast
+        ) {
+          return verifySpellCastTransition(
+            publicInput,
+            state,
+            spellCast,
+            spell.modifyer
+          );
+        },
       },
     },
-  },
+  });
 });
