@@ -16,20 +16,39 @@ export class ArrowData extends Struct({
   position: Position,
 }) {}
 
+export class ArrowSpellCast
+  extends Struct({
+    caster: Field,
+    spellId: Field,
+    target: Field,
+    additionalData: ArrowData,
+  })
+  implements SpellCast<ArrowData>
+{
+  hash(): Field {
+    return Poseidon.hash([
+      this.caster,
+      this.spellId,
+      this.target,
+      this.additionalData.position.hash(),
+    ]);
+  }
+}
+
 export const ArrowCast = (
   state: State,
   caster: Field,
   target: Field,
   position: Position
 ): SpellCast<ArrowData> => {
-  return {
+  return new ArrowSpellCast({
     spellId: CircuitString.fromString('Arrow').hash(),
     caster,
     target,
     additionalData: {
       position,
     },
-  };
+  });
 };
 
 export const ArrowModifyer = (
@@ -85,20 +104,39 @@ export class AimingShotData extends Struct({
   position: Position,
 }) {}
 
+export class AimingShotSpellCast
+  extends Struct({
+    caster: Field,
+    spellId: Field,
+    target: Field,
+    additionalData: AimingShotData,
+  })
+  implements SpellCast<AimingShotData>
+{
+  hash(): Field {
+    return Poseidon.hash([
+      this.caster,
+      this.spellId,
+      this.target,
+      this.additionalData.position.hash(),
+    ]);
+  }
+}
+
 export const AimingShotCast = (
   state: State,
   caster: Field,
   target: Field,
   position: Position
 ): SpellCast<AimingShotData> => {
-  return {
+  return new AimingShotSpellCast({
     spellId: CircuitString.fromString('AimingShot').hash(),
     caster,
     target,
     additionalData: {
       position,
     },
-  };
+  });
 };
 
 export const AimingShotModifyer = (
@@ -146,20 +184,39 @@ export class HailOfArrowsData extends Struct({
   position: Position,
 }) {}
 
+export class HailOfArrowsSpellCast
+  extends Struct({
+    caster: Field,
+    spellId: Field,
+    target: Field,
+    additionalData: HailOfArrowsData,
+  })
+  implements SpellCast<HailOfArrowsData>
+{
+  hash(): Field {
+    return Poseidon.hash([
+      this.caster,
+      this.spellId,
+      this.target,
+      this.additionalData.position.hash(),
+    ]);
+  }
+}
+
 export const HailOfArrowsCast = (
   state: State,
   caster: Field,
   target: Field,
   position: Position
 ): SpellCast<HailOfArrowsData> => {
-  return {
+  return new HailOfArrowsSpellCast({
     spellId: CircuitString.fromString('HailOfArrows').hash(),
     caster,
     target,
     additionalData: {
       position,
     },
-  };
+  });
 };
 
 export const HailOfArrowsModifyer = (
@@ -227,17 +284,31 @@ const HailOfArrowsSceneEffect = (
 
 export class DecoyData extends Struct({}) {}
 
+export class DecoySpellCast
+  extends Struct({
+    caster: Field,
+    spellId: Field,
+    target: Field,
+    additionalData: DecoyData,
+  })
+  implements SpellCast<DecoyData>
+{
+  hash(): Field {
+    return Poseidon.hash([this.caster, this.spellId, this.target]);
+  }
+}
+
 export const DecoyCast = (
   state: State,
   caster: Field,
   target: Field
 ): SpellCast<DecoyData> => {
-  return {
+  return new DecoySpellCast({
     spellId: CircuitString.fromString('Decoy').hash(),
     caster,
     target,
     additionalData: {},
-  };
+  });
 };
 
 export const DecoyModifyer = (
@@ -258,20 +329,39 @@ export class CloudData extends Struct({
   position: Position,
 }) {}
 
+export class CloudSpellCast
+  extends Struct({
+    caster: Field,
+    spellId: Field,
+    target: Field,
+    additionalData: CloudData,
+  })
+  implements SpellCast<CloudData>
+{
+  hash(): Field {
+    return Poseidon.hash([
+      this.caster,
+      this.spellId,
+      this.target,
+      this.additionalData.position.hash(),
+    ]);
+  }
+}
+
 export const CloudCast = (
   state: State,
   caster: Field,
   target: Field,
   position: Position
 ): SpellCast<CloudData> => {
-  return {
+  return new CloudSpellCast({
     spellId: CircuitString.fromString('Cloud').hash(),
     caster,
     target,
     additionalData: {
       position,
     },
-  };
+  });
 };
 
 export const CloudModifyer = (
@@ -351,6 +441,7 @@ export const archerSpells: ISpell<any>[] = [
     image: '/wizards/skills/arrow.png',
     modifyerData: ArrowData,
     modifyer: ArrowModifyer,
+    spellCast: ArrowSpellCast,
     cast: ArrowCast,
     sceneEffect: ArrowSceneEffect,
     target: 'enemy',
@@ -369,6 +460,7 @@ export const archerSpells: ISpell<any>[] = [
     image: '/wizards/skills/aimingShot.png',
     modifyerData: AimingShotData,
     modifyer: AimingShotModifyer,
+    spellCast: AimingShotSpellCast,
     sceneEffect: AimingShotSceneEffect,
     cast: AimingShotCast,
     target: 'enemy',
@@ -387,6 +479,7 @@ export const archerSpells: ISpell<any>[] = [
     image: '/wizards/skills/hailOfArrows.png',
     modifyerData: HailOfArrowsData,
     modifyer: HailOfArrowsModifyer,
+    spellCast: HailOfArrowsSpellCast,
     cast: HailOfArrowsCast,
     sceneEffect: HailOfArrowsSceneEffect,
     target: 'enemy',
@@ -405,6 +498,7 @@ export const archerSpells: ISpell<any>[] = [
     image: '/wizards/skills/decoy.png',
     modifyerData: DecoyData,
     modifyer: DecoyModifyer,
+    spellCast: DecoySpellCast,
     cast: DecoyCast,
     target: 'ally',
     defaultValue: {
@@ -422,6 +516,7 @@ export const archerSpells: ISpell<any>[] = [
     image: '/wizards/skills/smokeCloud.png',
     modifyerData: CloudData,
     modifyer: CloudModifyer,
+    spellCast: CloudSpellCast,
     cast: CloudCast,
     sceneEffect: CloudSceneEffect,
     target: 'ally',

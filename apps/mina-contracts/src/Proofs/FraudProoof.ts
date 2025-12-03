@@ -67,6 +67,8 @@ export function proveFraud(publicInput: FraudProofPublicInput) {
     'Final state hash mismatch. finalStateHash'
   );
 
+  // Verify sender authentication
+
   return {
     publicOutput: {},
   };
