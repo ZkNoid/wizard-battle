@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {AccessControlDefaultAdminRulesUpgradeable} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlDefaultAdminRulesUpgradeable.sol";
+import {AccessControlDefaultAdminRulesUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlDefaultAdminRulesUpgradeable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -32,7 +33,13 @@ import {Array} from "./libraries/Array.sol";
  * - GAME_SIGNER_ROLE: can sign commit data, to mint, burn, transfer, etc game elements
  * - MARKET_ROLE: can sign commit marketplace transactions only for game elements that are registered in the regestry
  */
-contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdminRulesUpgradeable, EIP712Upgradeable, ReentrancyGuard { // Ownable, Controll Access (Owner access is limited to revoke / grant ADMIN_ROLE)
+contract GameRegestry is
+    Initializable,
+    UUPSUpgradeable,
+    AccessControlDefaultAdminRulesUpgradeable,
+    EIP712Upgradeable,
+    ReentrancyGuard // Ownable, Controll Access (Owner access is limited to revoke / grant ADMIN_ROLE)
+{
     using Array for string[];
 
     /*//////////////////////////////////////////////////////////////
@@ -96,14 +103,15 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
     mapping(GameElementType => string[]) private s_gameElementsByType; // game elements by type
     mapping(bytes32 => GameElementStruct) private s_resourceToGameElement; // client would call a specific function to get GameElementStruct in order to build a commit data
     mapping(uint256 => bool) private s_usedNonces; // nonce is used to prevent replay attacks
-   
+
     /*//////////////////////////////////////////////////////////////
                                CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
     bytes32 private constant MARKET_ROLE = keccak256("MARKET_ROLE");
     bytes32 private constant GAME_SIGNER_ROLE = keccak256("GAME_SIGNER_ROLE");
-    bytes32 private constant MESSAGE_TYPEHASH = keccak256("CommitStruct(address target,address account,address signer,uint256 nonce,bytes callData)");
+    bytes32 private constant MESSAGE_TYPEHASH =
+        keccak256("CommitStruct(address target,address account,address signer,uint256 nonce,bytes callData)");
 
     //address private s_market; // use hasRole MARKET_ROLE to commit marketplace transactions
     //address private s_gameSigner; // use hasRole GAME_SIGNER_ROLE to verify signature of the message from a player
@@ -120,10 +128,11 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
     event GrantAdminRole(address indexed account);
     event CommitConfirmed(bytes indexed commit);
     event CommitRejected(bytes indexed commit);
-    event AddGameElementStruct(bytes32 indexed nameHash, address indexed tokenAddress, uint256 indexed tokenId, bool requiresTokenId);
-    
+    event AddGameElementStruct(
+        bytes32 indexed nameHash, address indexed tokenAddress, uint256 indexed tokenId, bool requiresTokenId
+    );
 
-     /*//////////////////////////////////////////////////////////////
+    /*//////////////////////////////////////////////////////////////
                                MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
@@ -147,6 +156,7 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
         _;
     }
     /// @custom:oz-upgrades-unsafe-allow constructor
+
     constructor() {
         _disableInitializers();
     }
@@ -163,10 +173,16 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
      * @param _uiniqueItems uinique items names that are available within the game
      * @param _gameSigner game signer address
      */
-    function initialize(string[] memory _coins, string[] memory _resources, string[] memory _characters, string[] memory _uiniqueItems, address _gameSigner) external initializer {
+    function initialize(
+        string[] memory _coins,
+        string[] memory _resources,
+        string[] memory _characters,
+        string[] memory _uiniqueItems,
+        address _gameSigner
+    ) external initializer {
         __EIP712_init("GameRegestry", "1");
         __AccessControlDefaultAdminRules_init(1 days, msg.sender);
-  
+
         s_gameElementsByType[GameElementType.COIN] = _coins;
         s_gameElementsByType[GameElementType.RESOURCE] = _resources;
         s_gameElementsByType[GameElementType.CHARACTER] = _characters;
@@ -200,7 +216,8 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
         emit CommitBatch(nonce, commits);
 
         for (uint256 i = 0; i < commits.length;) {
-            (bytes32 resourceHash, bytes memory commit, bytes memory signature) = abi.decode(commits[i], (bytes32, bytes, bytes));
+            (bytes32 resourceHash, bytes memory commit, bytes memory signature) =
+                abi.decode(commits[i], (bytes32, bytes, bytes));
             _commitResource(resourceHash, commit, signature);
 
             unchecked {
@@ -240,7 +257,6 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
         emit RemoveGameElement(index, elementType);
     }
 
-
     /**
      * @notice Add game element struct to the regestry
      * @param nameHash hash of the game element name
@@ -248,20 +264,18 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
      * @param tokenId token id
      * @param requiresTokenId if true, then tokenId is required to be added to the commit data
      */
-    function addGameElementStruct(bytes32 nameHash, address tokenAddress, uint256 tokenId, bool requiresTokenId) external onlyGameSignerRole {
-        s_resourceToGameElement[nameHash] = GameElementStruct({
-            tokenAddress: tokenAddress,
-            tokenId: tokenId,
-            requiresTokenId: requiresTokenId
-        });
+    function addGameElementStruct(bytes32 nameHash, address tokenAddress, uint256 tokenId, bool requiresTokenId)
+        external
+        onlyGameSignerRole
+    {
+        s_resourceToGameElement[nameHash] =
+            GameElementStruct({tokenAddress: tokenAddress, tokenId: tokenId, requiresTokenId: requiresTokenId});
         emit AddGameElementStruct(nameHash, tokenAddress, tokenId, requiresTokenId);
     }
 
     /*//////////////////////////////////////////////////////////////
                             PUBLIC FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-
-   
 
     /*//////////////////////////////////////////////////////////////
                            PRIVATE FUNCTIONS
@@ -277,7 +291,7 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
         if (resourceHash == bytes32(0) || commit.length == 0 || signature.length == 0) {
             revert GameRegestry__InvalidCommitData();
         }
-   
+
         (uint256 nonce, address target, bytes memory callData) = _verifyInputs(resourceHash, commit, signature);
 
         emit CommitResources(commit);
@@ -297,11 +311,10 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
             revert GameRegestry__InvalidTarget();
         }
         emit CommitConfirmed(callData);
-        (bool success, ) = target.call(callData);
+        (bool success,) = target.call(callData);
         if (!success) {
             revert GameRegestry__CommitFailed();
         }
-
     }
 
     /// TODO: identify core invariants and verify them after the commit
@@ -313,12 +326,16 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
     }
 
     /// TODO: verify inputs of the commit data
-    function _verifyInputs(bytes32 resourceHash, bytes memory commit, bytes memory signature) private view returns(uint256 nonce, address target, bytes memory callData) {
+    function _verifyInputs(bytes32 resourceHash, bytes memory commit, bytes memory signature)
+        private
+        view
+        returns (uint256 nonce, address target, bytes memory callData)
+    {
         GameElementStruct memory gameElement = s_resourceToGameElement[resourceHash];
         address account;
         address signer;
 
-        (target, account, signer, nonce, callData) = abi.decode(commit,(address, address, address, uint256, bytes));
+        (target, account, signer, nonce, callData) = abi.decode(commit, (address, address, address, uint256, bytes));
 
         if (s_usedNonces[nonce]) {
             revert GameRegestry__NonceAlreadyUsed();
@@ -336,7 +353,7 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
             revert GameRegestry__InvalidSigner();
         }
 
-        if(hasRole(MARKET_ROLE, account) || hasRole(GAME_SIGNER_ROLE, account)) {
+        if (hasRole(MARKET_ROLE, account) || hasRole(GAME_SIGNER_ROLE, account)) {
             revert GameRegestry__NotAllowedToCommit();
         }
         if (!_verifySignature(target, account, signer, nonce, callData, signature)) {
@@ -345,7 +362,6 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
 
         return (nonce, target, callData);
     }
-
 
     /*//////////////////////////////////////////////////////////////
                          PRIVATE VIEW FUNCTIONS
@@ -360,7 +376,14 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
      * @param callData call data
      * @param signature signature
      */
-    function _verifySignature(address target, address account, address signer, uint256 nonce, bytes memory callData, bytes memory signature) private view returns(bool) {
+    function _verifySignature(
+        address target,
+        address account,
+        address signer,
+        uint256 nonce,
+        bytes memory callData,
+        bytes memory signature
+    ) private view returns (bool) {
         bytes32 hash = _getMessageHash(target, account, signer, nonce, callData);
         (address actualSignature,,) = ECDSA.tryRecover(hash, signature);
         return hasRole(GAME_SIGNER_ROLE, actualSignature);
@@ -375,11 +398,19 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
      * @param callData call data
      */
     // q maybe make it public, for server to call -> mmegapot alike
-    function _getMessageHash(address target, address account, address signer, uint256 nonce, bytes memory callData) private view returns (bytes32 digest) {
-        bytes32 hashStruct = keccak256(abi.encode(MESSAGE_TYPEHASH, CommitStruct({target: target, account: account, signer: signer, nonce: nonce, callData: callData})));
+    function _getMessageHash(address target, address account, address signer, uint256 nonce, bytes memory callData)
+        private
+        view
+        returns (bytes32 digest)
+    {
+        bytes32 hashStruct = keccak256(
+            abi.encode(
+                MESSAGE_TYPEHASH,
+                CommitStruct({target: target, account: account, signer: signer, nonce: nonce, callData: callData})
+            )
+        );
         return _hashTypedDataV4(hashStruct);
     }
-
 
     /*//////////////////////////////////////////////////////////////
                         EXTERNAL VIEW FUNCTIONS
@@ -389,7 +420,7 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
      * @notice Get game coins list
      * @return coins list
      */
-    function getGameCoinsList() external view returns(string[] memory) {
+    function getGameCoinsList() external view returns (string[] memory) {
         return s_gameElementsByType[GameElementType.COIN];
     }
 
@@ -397,7 +428,7 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
      * @notice Get resources list
      * @return resources list
      */
-    function getResourcesList() external view returns(string[] memory) {
+    function getResourcesList() external view returns (string[] memory) {
         return s_gameElementsByType[GameElementType.RESOURCE];
     }
 
@@ -405,25 +436,24 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
      * @notice Get characters list
      * @return characters list
      */
-    function getCharactersList() external view returns(string[] memory) {
+    function getCharactersList() external view returns (string[] memory) {
         return s_gameElementsByType[GameElementType.CHARACTER];
     }
-    
+
     /**
      * @notice Get unique items list
      * @return unique items list
      */
-    function getUniqueItemsList() external view returns(string[] memory) {
+    function getUniqueItemsList() external view returns (string[] memory) {
         return s_gameElementsByType[GameElementType.UNIQUE_ITEM];
     }
-
 
     /**
      * @notice Get game element struct
      * @param resourceHash hash of the resource
      * @return game element struct
      */
-    function getGameElement(bytes32 resourceHash) external view returns(GameElementStruct memory) {
+    function getGameElement(bytes32 resourceHash) external view returns (GameElementStruct memory) {
         return s_resourceToGameElement[resourceHash];
     }
 
@@ -432,15 +462,11 @@ contract GameRegestry is Initializable, UUPSUpgradeable, AccessControlDefaultAdm
      * @param nonce nonce
      * @return true if nonce is used, false otherwise
      */
-    function getIsNonceUsed(uint256 nonce) external view returns(bool) {
+    function getIsNonceUsed(uint256 nonce) external view returns (bool) {
         return s_usedNonces[nonce];
     }
 
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 }
 
 // Layout of Contract:

@@ -3,23 +3,26 @@
 pragma solidity ^0.8.27;
 
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {ERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-import {ERC721BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
-import {ERC721EnumerableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-import {ERC721PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721PausableUpgradeable.sol";
-import {ERC721URIStorageUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import {ERC1155Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import {ERC1155BurnableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol";
+import {ERC1155PausableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155PausableUpgradeable.sol";
+import {ERC1155SupplyUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract MyToken is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, ERC721PausableUpgradeable, AccessControlUpgradeable, ERC721BurnableUpgradeable, UUPSUpgradeable {
-    /// @custom:storage-location erc7201:myProject.MyToken
-    struct MyTokenStorage {
-        uint256 _nextTokenId;
-    }
-
-    // keccak256(abi.encode(uint256(keccak256("myProject.MyToken")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant MYTOKEN_STORAGE_LOCATION = 0xfbb7c9e4123fcf4b1aad53c70358f7b1c1d7cf28092f5178b53e55db565e9200;
-
+contract WBResources is
+    Initializable,
+    ERC1155Upgradeable,
+    AccessControlUpgradeable,
+    ERC1155PausableUpgradeable,
+    ERC1155BurnableUpgradeable,
+    ERC1155SupplyUpgradeable,
+    UUPSUpgradeable
+{
+    bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
@@ -29,21 +32,21 @@ contract MyToken is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeabl
         _disableInitializers();
     }
 
-    function initialize(address defaultAdmin, address pauser, address minter, address upgrader)
-        public
-        initializer
-    {
-        __ERC721_init("WBResources", "WBR");
-        __ERC721Enumerable_init();
-        __ERC721URIStorage_init();
-        __ERC721Pausable_init();
+    function initialize(address defaultAdmin, address pauser, address minter, address upgrader) public initializer {
+        __ERC1155_init("");
         __AccessControl_init();
-        __ERC721Burnable_init();
+        __ERC1155Pausable_init();
+        __ERC1155Burnable_init();
+        __ERC1155Supply_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
         _grantRole(PAUSER_ROLE, pauser);
         _grantRole(MINTER_ROLE, minter);
         _grantRole(UPGRADER_ROLE, upgrader);
+    }
+
+    function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {
+        _setURI(newuri);
     }
 
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -54,58 +57,32 @@ contract MyToken is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeabl
         _unpause();
     }
 
-    function safeMint(address to, string memory uri)
+    function mint(address account, uint256 id, uint256 amount, bytes memory data) public onlyRole(MINTER_ROLE) {
+        _mint(account, id, amount, data);
+    }
+
+    function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data)
         public
         onlyRole(MINTER_ROLE)
-        returns (uint256)
     {
-        MyTokenStorage storage $ = _getMyTokenStorage();
-        uint256 tokenId = $._nextTokenId++;
-        _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
-        return tokenId;
+        _mintBatch(to, ids, amounts, data);
     }
 
-    function _getMyTokenStorage() private pure returns (MyTokenStorage storage $) {
-        assembly { $.slot := MYTOKEN_STORAGE_LOCATION }
-    }
-
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(UPGRADER_ROLE)
-    {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
 
     // The following functions are overrides required by Solidity.
 
-    function _update(address to, uint256 tokenId, address auth)
+    function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
         internal
-        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721PausableUpgradeable)
-        returns (address)
+        override(ERC1155Upgradeable, ERC1155PausableUpgradeable, ERC1155SupplyUpgradeable)
     {
-        return super._update(to, tokenId, auth);
-    }
-
-    function _increaseBalance(address account, uint128 value)
-        internal
-        override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
-    {
-        super._increaseBalance(account, value);
-    }
-
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
-        returns (string memory)
-    {
-        return super.tokenURI(tokenId);
+        super._update(from, to, ids, values);
     }
 
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, AccessControlUpgradeable)
+        override(ERC1155Upgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);

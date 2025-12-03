@@ -1,36 +1,60 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.30;
+// Compatible with OpenZeppelin Contracts ^5.5.0
+pragma solidity ^0.8.27;
 
-import {AccessControlDefaultAdminRulesUpgradeable} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlDefaultAdminRulesUpgradeable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-import {ERC721BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
-import {ERC721EnumerableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-import {ERC721PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721PausableUpgradeable.sol";
-import {ERC721URIStorageUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {ERC721BurnableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
+import {ERC721EnumerableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import {ERC721PausableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721PausableUpgradeable.sol";
+import {ERC721URIStorageUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
+contract WBCharacter is
+    Initializable,
+    ERC721Upgradeable,
+    ERC721EnumerableUpgradeable,
+    ERC721URIStorageUpgradeable,
+    ERC721PausableUpgradeable,
+    AccessControlUpgradeable,
+    ERC721BurnableUpgradeable,
+    UUPSUpgradeable
+{
+    /// @custom:storage-location erc7201:myProject.MyToken
+    struct WBCharacterStorage {
+        uint256 _nextTokenId;
+    }
 
-contract WBCharacter is Initializable, UUPSUpgradeable, AccessControlDefaultAdminRulesUpgradeable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, ERC721PausableUpgradeable, ERC721BurnableUpgradeable {
+    // keccak256(abi.encode(uint256(keccak256("myProject.MyToken")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant WB_CHARACTER_STORAGE_LOCATION =
+        0xfbb7c9e4123fcf4b1aad53c70358f7b1c1d7cf28092f5178b53e55db565e9200;
+
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 private constant MARKET_ROLE = keccak256("MARKET_ROLE");
-    bytes32 private constant GAME_SIGNER_ROLE = keccak256("GAME_SIGNER_ROLE");
+    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
-    uint256 private _nextTokenId;
-
-      /// @custom:oz-upgrades-unsafe-allow constructor
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
-    function initialize(string memory name, string memory symbol) external initializer {
-        __ERC721_init(name, symbol);
-        __AccessControlDefaultAdminRules_init(1 days, msg.sender);
-        _grantRole(PAUSER_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
-        _grantRole(MARKET_ROLE, msg.sender);
-        _grantRole(GAME_SIGNER_ROLE, msg.sender);
+    function initialize(address defaultAdmin, address pauser, address minter, address upgrader) public initializer {
+        __ERC721_init("WBCharacter", "WBCH");
+        __ERC721Enumerable_init();
+        __ERC721URIStorage_init();
+        __ERC721Pausable_init();
+        __AccessControl_init();
+        __ERC721Burnable_init();
+
+        _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
+        _grantRole(PAUSER_ROLE, pauser);
+        _grantRole(MINTER_ROLE, minter);
+        _grantRole(UPGRADER_ROLE, upgrader);
     }
 
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -41,16 +65,21 @@ contract WBCharacter is Initializable, UUPSUpgradeable, AccessControlDefaultAdmi
         _unpause();
     }
 
-    function safeMint(address to, string memory uri)
-        public
-        onlyRole(MINTER_ROLE)
-        returns (uint256)
-    {
-        uint256 tokenId = _nextTokenId++;
+    function safeMint(address to, string memory uri) public onlyRole(MINTER_ROLE) returns (uint256) {
+        WBCharacterStorage storage $ = _getWBCharacterStorage();
+        uint256 tokenId = $._nextTokenId++;
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
         return tokenId;
     }
+
+    function _getWBCharacterStorage() private pure returns (WBCharacterStorage storage $) {
+        assembly {
+            $.slot := WB_CHARACTER_STORAGE_LOCATION
+        }
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
 
     // The following functions are overrides required by Solidity.
 
@@ -81,15 +110,9 @@ contract WBCharacter is Initializable, UUPSUpgradeable, AccessControlDefaultAdmi
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, AccessControlDefaultAdminRulesUpgradeable)
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
     }
-
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {}
 }

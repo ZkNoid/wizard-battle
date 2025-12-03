@@ -3,14 +3,18 @@ pragma solidity 0.8.30;
 
 import {Test} from "forge-std/Test.sol";
 import {GameRegestry} from "src/GameRegestry.sol";
+import {DeployGameRegestry} from "script/DeployGameRegestry.s.sol";
 
 contract GameRegestryTest is Test {
     GameRegestry public gameRegestry;
 
     function setUp() public {
-        //(string[] memory _coins, string[] memory _resources, string[] memory _characters, string[] memory _uiniqueItems, address _gameSigner
-        gameRegestry = new GameRegestry();
-        gameRegestry.initialize(new string[](0), new string[](0), new string[](0), new string[](0), address(0));
+        address gameRegestryAddress = new DeployGameRegestry().deploy();
+        gameRegestry = GameRegestry(gameRegestryAddress);
+    }
+
+    function test_setUp() public pure {
+        assert(true);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -20,7 +24,7 @@ contract GameRegestryTest is Test {
     function test_addGameElement() public {}
     function test_removeGameElement() public {}
     function test_commitResources() public {}
-    
+
     /*//////////////////////////////////////////////////////////////
                             ADMIN FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -29,7 +33,6 @@ contract GameRegestryTest is Test {
     function test_revokeAdminRole() public {}
     function test_grantAdminRole() public {}
     function test_renounceAdminRole() public {}
-
 
     /*//////////////////////////////////////////////////////////////
                              GET FUNCTIONS
