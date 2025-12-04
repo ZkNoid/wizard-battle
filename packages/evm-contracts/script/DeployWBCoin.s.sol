@@ -7,7 +7,7 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 
 contract DeployWBCoin is Script {
     function run() public returns (address proxyWbCoin) {
-        proxyWbCoin = deploy();
+        (proxyWbCoin) = deploy();
     }
 
     function deploy() public returns (address) {
@@ -17,6 +17,6 @@ contract DeployWBCoin is Script {
             address(wbCoin), abi.encodeCall(wbCoin.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))
         );
         vm.stopBroadcast();
-        return address(proxy);
+        return (address(proxy));
     }
 }

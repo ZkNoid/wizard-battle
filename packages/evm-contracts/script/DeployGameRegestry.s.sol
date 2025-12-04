@@ -15,7 +15,10 @@ contract DeployGameRegestry is Script {
         GameRegestry gameRegestry = new GameRegestry();
         ERC1967Proxy proxy = new ERC1967Proxy(
             address(gameRegestry),
-            abi.encodeCall(gameRegestry.initialize, (new string[](0), new string[](0), new string[](0), new string[](0), msg.sender))
+            abi.encodeCall(
+                gameRegestry.initialize,
+                (new string[](0), new string[](0), new string[](0), new string[](0), msg.sender)
+            )
         );
         vm.stopBroadcast();
         return address(proxy);

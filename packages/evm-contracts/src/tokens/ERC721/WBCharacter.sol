@@ -115,4 +115,9 @@ contract WBCharacter is
     {
         return super.supportsInterface(interfaceId);
     }
+
+    // TODO: Decide need to override or not
+    function _baseURI() internal pure override returns (string memory) {
+        return "";
+    }
 }

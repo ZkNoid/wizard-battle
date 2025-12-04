@@ -11,7 +11,6 @@ contract WBResourcesTest is Test {
     function setUp() public {
         address wbResourcesAddress = new DeployWBResources().deploy();
         wbResources = WBResources(wbResourcesAddress);
-
     }
 
     function test_setUp() public pure {
