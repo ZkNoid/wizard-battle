@@ -1,12 +1,32 @@
-Compiling 98 files with Solc 0.8.30
-Solc 0.8.30 finished in 3.12s
+Compiling 100 files with Solc 0.8.30
+Solc 0.8.30 finished in 3.96s
 Compiler run successful!
 Analysing contracts...
 Running tests...
 
-Ran 1 test for test/unit/WBCharacter.t.sol:WBCharacterTest
-[PASS] test_setUp() (gas: 182)
-Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 3.68ms (1.66ms CPU time)
+Ran 21 tests for test/unit/WBRresources.t.sol:WBResourcesTest
+[PASS] test_BurnReducesSupply() (gas: 111087)
+[PASS] test_DeployDeploy() (gas: 8260980)
+[PASS] test_DeployRun() (gas: 8261035)
+[PASS] test_Initialization() (gas: 54506)
+[PASS] test_InitializeCannotBeCalledTwice() (gas: 17727)
+[PASS] test_MintBatchByMinter() (gas: 156509)
+[PASS] test_MintBatchRevertsIfNotMinter() (gas: 28428)
+[PASS] test_MintByMinter() (gas: 99436)
+[PASS] test_MintRevertsIfNotMinter() (gas: 25907)
+[PASS] test_PauseAndUnpause() (gas: 30940)
+[PASS] test_PauseRevertsIfNotPauser() (gas: 21686)
+[PASS] test_SetURIRevertsWithoutRole() (gas: 23052)
+[PASS] test_SetURIWithDifferentURIs() (gas: 82993)
+[PASS] test_SetURIWithRole() (gas: 60720)
+[PASS] test_SupportsInterface() (gas: 13550)
+[PASS] test_TransfersAllowedWhenUnpaused() (gas: 139720)
+[PASS] test_TransfersBlockedWhenPaused() (gas: 130552)
+[PASS] test_UpgradeByUpgrader() (gas: 3755004)
+[PASS] test_UpgradeRevertsIfNotUpgrader() (gas: 3753371)
+[PASS] test_setURI() (gas: 51686)
+[PASS] test_setURIRevertsIfNotURISetter() (gas: 23053)
+Suite result: ok. 21 passed; 0 failed; 0 skipped; finished in 24.70ms (50.20ms CPU time)
 
 Ran 16 tests for test/unit/WebCoin.t.sol:WBCoinTest
 [PASS] test_AdminCanGrantAndRevokeRoles() (gas: 49190)
@@ -25,7 +45,7 @@ Ran 16 tests for test/unit/WebCoin.t.sol:WBCoinTest
 [PASS] test_UnpauseByPauser() (gas: 34152)
 [PASS] test_UpgradeByUpgrader() (gas: 2454502)
 [PASS] test_UpgradeRevertsIfNotUpgrader() (gas: 2450014)
-Suite result: ok. 16 passed; 0 failed; 0 skipped; finished in 13.80ms (35.89ms CPU time)
+Suite result: ok. 16 passed; 0 failed; 0 skipped; finished in 25.99ms (33.06ms CPU time)
 
 Ran 14 tests for test/unit/GameRegestry.t.sol:GameRegestryTest
 [PASS] test_addGameElement() (gas: 188)
@@ -42,31 +62,40 @@ Ran 14 tests for test/unit/GameRegestry.t.sol:GameRegestryTest
 [PASS] test_revokeAdminRole() (gas: 188)
 [PASS] test_revokeRole() (gas: 211)
 [PASS] test_setUp() (gas: 249)
-Suite result: ok. 14 passed; 0 failed; 0 skipped; finished in 13.89ms (16.51ms CPU time)
+Suite result: ok. 14 passed; 0 failed; 0 skipped; finished in 26.07ms (25.15ms CPU time)
 
-Ran 19 tests for test/unit/WBRresources.t.sol:WBResourcesTest
-[PASS] test_BurnReducesSupply() (gas: 111175)
-[PASS] test_DeployDeploy() (gas: 8260980)
-[PASS] test_DeployRun() (gas: 8261057)
-[PASS] test_Initialization() (gas: 54506)
-[PASS] test_InitializeCannotBeCalledTwice() (gas: 17727)
-[PASS] test_MintBatchByMinter() (gas: 156487)
-[PASS] test_MintBatchRevertsIfNotMinter() (gas: 28406)
-[PASS] test_MintByMinter() (gas: 99414)
-[PASS] test_MintRevertsIfNotMinter() (gas: 25885)
-[PASS] test_PauseAndUnpause() (gas: 30940)
-[PASS] test_PauseRevertsIfNotPauser() (gas: 21664)
-[PASS] test_SetURIRevertsWithoutRole() (gas: 23052)
-[PASS] test_SetURIWithDifferentURIs() (gas: 82993)
-[PASS] test_SetURIWithRole() (gas: 60720)
-[PASS] test_SupportsInterface() (gas: 13550)
-[PASS] test_TransfersAllowedWhenUnpaused() (gas: 139720)
-[PASS] test_TransfersBlockedWhenPaused() (gas: 130463)
-[PASS] test_setURI() (gas: 51686)
-[PASS] test_setURIRevertsIfNotURISetter() (gas: 23075)
-Suite result: ok. 19 passed; 0 failed; 0 skipped; finished in 13.87ms (34.43ms CPU time)
+Ran 28 tests for test/unit/WBCharacter.t.sol:WBCharacterTest
+[PASS] test_AdminCanGrantAndRevokeRoles() (gas: 49208)
+[PASS] test_Approve() (gas: 185883)
+[PASS] test_Burn() (gas: 133260)
+[PASS] test_BurnRevertsIfNotOwner() (gas: 164176)
+[PASS] test_DeployDeploy() (gas: 7993226)
+[PASS] test_DeployRun() (gas: 7993281)
+[PASS] test_EnumerableAfterBurn() (gas: 283891)
+[PASS] test_EnumerableAfterTransfer() (gas: 327966)
+[PASS] test_EnumerableFunctions() (gas: 473169)
+[PASS] test_Initialization() (gas: 65923)
+[PASS] test_InitializeCannotBeCalledTwice() (gas: 26227)
+[PASS] test_NonAdminCannotGrantRoles() (gas: 26821)
+[PASS] test_PauseByPauser() (gas: 43726)
+[PASS] test_PauseRevertsIfNotPauser() (gas: 21663)
+[PASS] test_SafeMintByMinter() (gas: 165550)
+[PASS] test_SafeMintMultipleTokens() (gas: 322104)
+[PASS] test_SafeMintRevertsIfNotMinter() (gas: 26446)
+[PASS] test_SafeTransferFrom() (gas: 182191)
+[PASS] test_SetApprovalForAll() (gas: 350143)
+[PASS] test_SupportsInterface() (gas: 18415)
+[PASS] test_TokenURI() (gas: 158618)
+[PASS] test_TokenURIRevertsForNonExistentToken() (gas: 18811)
+[PASS] test_TransfersAllowedWhenUnpaused() (gas: 191794)
+[PASS] test_TransfersBlockedWhenPaused() (gas: 187962)
+[PASS] test_UnpauseByPauser() (gas: 34257)
+[PASS] test_UnpauseRevertsIfNotPauser() (gas: 51840)
+[PASS] test_UpgradeByUpgrader() (gas: 3614586)
+[PASS] test_UpgradeRevertsIfNotUpgrader() (gas: 3610399)
+Suite result: ok. 28 passed; 0 failed; 0 skipped; finished in 26.13ms (59.53ms CPU time)
 
-Ran 4 test suites in 361.26ms (45.23ms CPU time): 50 tests passed, 0 failed, 0 skipped (50 total tests)
+Ran 4 test suites in 433.10ms (102.89ms CPU time): 79 tests passed, 0 failed, 0 skipped (79 total tests)
 script/DeployGameRegestry.s.sol:
 - Line (location: (source ID: 83, lines: 9..12, bytes: 287..390), hits: 0) -> "function run() public returns (a...xyGameRegestry = deploy();\n    }"
 - Function "run" (location: (source ID: 83, lines: 9..12, bytes: 287..390), hits: 0) -> "function run() public returns (a...xyGameRegestry = deploy();\n    }"
@@ -88,24 +117,24 @@ script/DeployGameRegestry.s.sol:
 - Statement (location: (source ID: 83, lines: 24..25, bytes: 835..856), hits: 14) -> "return address(proxy)"
 
 script/DeployWBCharacter.s.sol:
-- Line (location: (source ID: 84, lines: 9..12, bytes: 298..399), hits: 0) -> "function run() public returns (a...oxyWbCharacter = deploy();\n    }"
-- Function "run" (location: (source ID: 84, lines: 9..12, bytes: 298..399), hits: 0) -> "function run() public returns (a...oxyWbCharacter = deploy();\n    }"
-- Line (location: (source ID: 84, lines: 10..11, bytes: 365..392), hits: 0) -> "proxyWbCharacter = deploy()"
-- Statement (location: (source ID: 84, lines: 10..11, bytes: 365..392), hits: 0) -> "proxyWbCharacter = deploy()"
-- Line (location: (source ID: 84, lines: 13..23, bytes: 405..789), hits: 1) -> "function deploy() public returns...    return address(proxy);\n    }"
-- Function "deploy" (location: (source ID: 84, lines: 13..23, bytes: 405..789), hits: 1) -> "function deploy() public returns...    return address(proxy);\n    }"
-- Line (location: (source ID: 84, lines: 14..15, bytes: 458..477), hits: 1) -> "vm.startBroadcast()"
-- Statement (location: (source ID: 84, lines: 14..15, bytes: 458..477), hits: 1) -> "vm.startBroadcast()"
-- Line (location: (source ID: 84, lines: 15..16, bytes: 487..530), hits: 1) -> "WBCharacter wbCharacter = new WBCharacter()"
-- Statement (location: (source ID: 84, lines: 15..16, bytes: 487..530), hits: 1) -> "WBCharacter wbCharacter = new WBCharacter()"
-- Statement (location: (source ID: 84, lines: 15..16, bytes: 513..530), hits: 1) -> "new WBCharacter()"
-- Line (location: (source ID: 84, lines: 16..20, bytes: 540..723), hits: 1) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
-- Statement (location: (source ID: 84, lines: 16..20, bytes: 540..723), hits: 1) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
-- Statement (location: (source ID: 84, lines: 16..20, bytes: 561..723), hits: 1) -> "new ERC1967Proxy(\n            ad...g.sender, msg.sender))\n        )"
-- Line (location: (source ID: 84, lines: 20..21, bytes: 733..751), hits: 1) -> "vm.stopBroadcast()"
-- Statement (location: (source ID: 84, lines: 20..21, bytes: 733..751), hits: 1) -> "vm.stopBroadcast()"
-- Line (location: (source ID: 84, lines: 21..22, bytes: 761..782), hits: 1) -> "return address(proxy)"
-- Statement (location: (source ID: 84, lines: 21..22, bytes: 761..782), hits: 1) -> "return address(proxy)"
+- Line (location: (source ID: 84, lines: 9..12, bytes: 298..399), hits: 1) -> "function run() public returns (a...oxyWbCharacter = deploy();\n    }"
+- Function "run" (location: (source ID: 84, lines: 9..12, bytes: 298..399), hits: 1) -> "function run() public returns (a...oxyWbCharacter = deploy();\n    }"
+- Line (location: (source ID: 84, lines: 10..11, bytes: 365..392), hits: 1) -> "proxyWbCharacter = deploy()"
+- Statement (location: (source ID: 84, lines: 10..11, bytes: 365..392), hits: 1) -> "proxyWbCharacter = deploy()"
+- Line (location: (source ID: 84, lines: 13..23, bytes: 405..789), hits: 29) -> "function deploy() public returns...    return address(proxy);\n    }"
+- Function "deploy" (location: (source ID: 84, lines: 13..23, bytes: 405..789), hits: 29) -> "function deploy() public returns...    return address(proxy);\n    }"
+- Line (location: (source ID: 84, lines: 14..15, bytes: 458..477), hits: 30) -> "vm.startBroadcast()"
+- Statement (location: (source ID: 84, lines: 14..15, bytes: 458..477), hits: 30) -> "vm.startBroadcast()"
+- Line (location: (source ID: 84, lines: 15..16, bytes: 487..530), hits: 30) -> "WBCharacter wbCharacter = new WBCharacter()"
+- Statement (location: (source ID: 84, lines: 15..16, bytes: 487..530), hits: 30) -> "WBCharacter wbCharacter = new WBCharacter()"
+- Statement (location: (source ID: 84, lines: 15..16, bytes: 513..530), hits: 30) -> "new WBCharacter()"
+- Line (location: (source ID: 84, lines: 16..20, bytes: 540..723), hits: 30) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
+- Statement (location: (source ID: 84, lines: 16..20, bytes: 540..723), hits: 30) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
+- Statement (location: (source ID: 84, lines: 16..20, bytes: 561..723), hits: 30) -> "new ERC1967Proxy(\n            ad...g.sender, msg.sender))\n        )"
+- Line (location: (source ID: 84, lines: 20..21, bytes: 733..751), hits: 30) -> "vm.stopBroadcast()"
+- Statement (location: (source ID: 84, lines: 20..21, bytes: 733..751), hits: 30) -> "vm.stopBroadcast()"
+- Line (location: (source ID: 84, lines: 21..22, bytes: 761..782), hits: 30) -> "return address(proxy)"
+- Statement (location: (source ID: 84, lines: 21..22, bytes: 761..782), hits: 30) -> "return address(proxy)"
 
 script/DeployWBCoin.s.sol:
 - Line (location: (source ID: 85, lines: 9..12, bytes: 282..375), hits: 1) -> "function run() public returns (a... (proxyWBCoin) = deploy();\n    }"
@@ -132,20 +161,20 @@ script/DeployWBResources.s.sol:
 - Function "run" (location: (source ID: 86, lines: 9..12, bytes: 299..400), hits: 1) -> "function run() public returns (a...oxyWbResources = deploy();\n    }"
 - Line (location: (source ID: 86, lines: 10..11, bytes: 366..393), hits: 1) -> "proxyWbResources = deploy()"
 - Statement (location: (source ID: 86, lines: 10..11, bytes: 366..393), hits: 1) -> "proxyWbResources = deploy()"
-- Line (location: (source ID: 86, lines: 13..23, bytes: 406..790), hits: 20) -> "function deploy() public returns...    return address(proxy);\n    }"
-- Function "deploy" (location: (source ID: 86, lines: 13..23, bytes: 406..790), hits: 20) -> "function deploy() public returns...    return address(proxy);\n    }"
-- Line (location: (source ID: 86, lines: 14..15, bytes: 459..478), hits: 21) -> "vm.startBroadcast()"
-- Statement (location: (source ID: 86, lines: 14..15, bytes: 459..478), hits: 21) -> "vm.startBroadcast()"
-- Line (location: (source ID: 86, lines: 15..16, bytes: 488..531), hits: 21) -> "WBResources wbResources = new WBResources()"
-- Statement (location: (source ID: 86, lines: 15..16, bytes: 488..531), hits: 21) -> "WBResources wbResources = new WBResources()"
-- Statement (location: (source ID: 86, lines: 15..16, bytes: 514..531), hits: 21) -> "new WBResources()"
-- Line (location: (source ID: 86, lines: 16..20, bytes: 541..724), hits: 21) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
-- Statement (location: (source ID: 86, lines: 16..20, bytes: 541..724), hits: 21) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
-- Statement (location: (source ID: 86, lines: 16..20, bytes: 562..724), hits: 21) -> "new ERC1967Proxy(\n            ad...g.sender, msg.sender))\n        )"
-- Line (location: (source ID: 86, lines: 20..21, bytes: 734..752), hits: 21) -> "vm.stopBroadcast()"
-- Statement (location: (source ID: 86, lines: 20..21, bytes: 734..752), hits: 21) -> "vm.stopBroadcast()"
-- Line (location: (source ID: 86, lines: 21..22, bytes: 762..783), hits: 21) -> "return address(proxy)"
-- Statement (location: (source ID: 86, lines: 21..22, bytes: 762..783), hits: 21) -> "return address(proxy)"
+- Line (location: (source ID: 86, lines: 13..23, bytes: 406..790), hits: 22) -> "function deploy() public returns...    return address(proxy);\n    }"
+- Function "deploy" (location: (source ID: 86, lines: 13..23, bytes: 406..790), hits: 22) -> "function deploy() public returns...    return address(proxy);\n    }"
+- Line (location: (source ID: 86, lines: 14..15, bytes: 459..478), hits: 23) -> "vm.startBroadcast()"
+- Statement (location: (source ID: 86, lines: 14..15, bytes: 459..478), hits: 23) -> "vm.startBroadcast()"
+- Line (location: (source ID: 86, lines: 15..16, bytes: 488..531), hits: 23) -> "WBResources wbResources = new WBResources()"
+- Statement (location: (source ID: 86, lines: 15..16, bytes: 488..531), hits: 23) -> "WBResources wbResources = new WBResources()"
+- Statement (location: (source ID: 86, lines: 15..16, bytes: 514..531), hits: 23) -> "new WBResources()"
+- Line (location: (source ID: 86, lines: 16..20, bytes: 541..724), hits: 23) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
+- Statement (location: (source ID: 86, lines: 16..20, bytes: 541..724), hits: 23) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
+- Statement (location: (source ID: 86, lines: 16..20, bytes: 562..724), hits: 23) -> "new ERC1967Proxy(\n            ad...g.sender, msg.sender))\n        )"
+- Line (location: (source ID: 86, lines: 20..21, bytes: 734..752), hits: 23) -> "vm.stopBroadcast()"
+- Statement (location: (source ID: 86, lines: 20..21, bytes: 734..752), hits: 23) -> "vm.stopBroadcast()"
+- Line (location: (source ID: 86, lines: 21..22, bytes: 762..783), hits: 23) -> "return address(proxy)"
+- Statement (location: (source ID: 86, lines: 21..22, bytes: 762..783), hits: 23) -> "return address(proxy)"
 
 src/GameMarket.sol:
 - Line (location: (source ID: 87, lines: 11..14, bytes: 575..628), hits: 0) -> "constructor() {\n        _disableInitializers();\n    }"
@@ -399,32 +428,32 @@ src/libraries/Array.sol:
 - Statement (location: (source ID: 89, lines: 12..13, bytes: 303..314), hits: 0) -> "array.pop()"
 
 src/tokens/ERC1155/WBResources.sol:
-- Line (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 21) -> "constructor() {\n        _disableInitializers();\n    }"
-- Function "constructor" (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 21) -> "constructor() {\n        _disableInitializers();\n    }"
-- Line (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 21) -> "_disableInitializers()"
-- Statement (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 21) -> "_disableInitializers()"
-- Line (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 22) -> "function initialize(address defa...ETTER_ROLE, defaultAdmin);\n    }"
-- Function "initialize" (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 22) -> "function initialize(address defa...ETTER_ROLE, defaultAdmin);\n    }"
-- Line (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 21) -> "__ERC1155_init(\"\")"
-- Statement (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 21) -> "__ERC1155_init(\"\")"
-- Line (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 21) -> "__AccessControl_init()"
-- Statement (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 21) -> "__AccessControl_init()"
-- Line (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 21) -> "__ERC1155Pausable_init()"
-- Statement (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 21) -> "__ERC1155Pausable_init()"
-- Line (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 21) -> "__ERC1155Burnable_init()"
-- Statement (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 21) -> "__ERC1155Burnable_init()"
-- Line (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 21) -> "__ERC1155Supply_init()"
-- Statement (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 21) -> "__ERC1155Supply_init()"
-- Line (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 21) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
-- Statement (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 21) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
-- Line (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 21) -> "_grantRole(PAUSER_ROLE, pauser)"
-- Statement (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 21) -> "_grantRole(PAUSER_ROLE, pauser)"
-- Line (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 21) -> "_grantRole(MINTER_ROLE, minter)"
-- Statement (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 21) -> "_grantRole(MINTER_ROLE, minter)"
-- Line (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 21) -> "_grantRole(UPGRADER_ROLE, upgrader)"
-- Statement (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 21) -> "_grantRole(UPGRADER_ROLE, upgrader)"
-- Line (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 21) -> "_grantRole(URI_SETTER_ROLE, defaultAdmin)"
-- Statement (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 21) -> "_grantRole(URI_SETTER_ROLE, defaultAdmin)"
+- Line (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 25) -> "constructor() {\n        _disableInitializers();\n    }"
+- Function "constructor" (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 25) -> "constructor() {\n        _disableInitializers();\n    }"
+- Line (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 25) -> "_disableInitializers()"
+- Statement (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 25) -> "_disableInitializers()"
+- Line (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 24) -> "function initialize(address defa...ETTER_ROLE, defaultAdmin);\n    }"
+- Function "initialize" (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 24) -> "function initialize(address defa...ETTER_ROLE, defaultAdmin);\n    }"
+- Line (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 23) -> "__ERC1155_init(\"\")"
+- Statement (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 23) -> "__ERC1155_init(\"\")"
+- Line (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 23) -> "__AccessControl_init()"
+- Statement (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 23) -> "__AccessControl_init()"
+- Line (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 23) -> "__ERC1155Pausable_init()"
+- Statement (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 23) -> "__ERC1155Pausable_init()"
+- Line (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 23) -> "__ERC1155Burnable_init()"
+- Statement (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 23) -> "__ERC1155Burnable_init()"
+- Line (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 23) -> "__ERC1155Supply_init()"
+- Statement (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 23) -> "__ERC1155Supply_init()"
+- Line (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 23) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
+- Statement (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 23) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
+- Line (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 23) -> "_grantRole(PAUSER_ROLE, pauser)"
+- Statement (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 23) -> "_grantRole(PAUSER_ROLE, pauser)"
+- Line (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 23) -> "_grantRole(MINTER_ROLE, minter)"
+- Statement (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 23) -> "_grantRole(MINTER_ROLE, minter)"
+- Line (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 23) -> "_grantRole(UPGRADER_ROLE, upgrader)"
+- Statement (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 23) -> "_grantRole(UPGRADER_ROLE, upgrader)"
+- Line (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 23) -> "_grantRole(URI_SETTER_ROLE, defaultAdmin)"
+- Statement (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 23) -> "_grantRole(URI_SETTER_ROLE, defaultAdmin)"
 - Line (location: (source ID: 90, lines: 51..54, bytes: 2226..2355), hits: 5) -> "function setURI(uint256 tokenId,... _setURI(tokenId, newuri);\n    }"
 - Function "setURI" (location: (source ID: 90, lines: 51..54, bytes: 2226..2355), hits: 5) -> "function setURI(uint256 tokenId,... _setURI(tokenId, newuri);\n    }"
 - Line (location: (source ID: 90, lines: 52..53, bytes: 2324..2348), hits: 3) -> "_setURI(tokenId, newuri)"
@@ -450,8 +479,8 @@ src/tokens/ERC1155/WBResources.sol:
 - Function "mintBatch" (location: (source ID: 90, lines: 71..77, bytes: 2877..3075), hits: 2) -> "function mintBatch(address to, u...h(to, ids, amounts, data);\n    }"
 - Line (location: (source ID: 90, lines: 75..76, bytes: 3034..3068), hits: 1) -> "_mintBatch(to, ids, amounts, data)"
 - Statement (location: (source ID: 90, lines: 75..76, bytes: 3034..3068), hits: 1) -> "_mintBatch(to, ids, amounts, data)"
-- Line (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 0) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
-- Function "_authorizeUpgrade" (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 0) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
+- Line (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 2) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
+- Function "_authorizeUpgrade" (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 2) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
 - Line (location: (source ID: 90, lines: 82..88, bytes: 3253..3508), hits: 8) -> "function _update(address from, a...te(from, to, ids, values);\n    }"
 - Function "_update" (location: (source ID: 90, lines: 82..88, bytes: 3253..3508), hits: 8) -> "function _update(address from, a...te(from, to, ids, values);\n    }"
 - Line (location: (source ID: 90, lines: 86..87, bytes: 3465..3501), hits: 8) -> "super._update(from, to, ids, values)"
@@ -505,408 +534,176 @@ src/tokens/ERC20/WBCoin.sol:
 - Statement (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7) -> "super._update(from, to, value)"
 
 src/tokens/ERC721/WBCharacter.sol:
-- Line (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 1) -> "constructor() {\n        _disableInitializers();\n    }"
-- Function "constructor" (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 1) -> "constructor() {\n        _disableInitializers();\n    }"
-- Line (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 1) -> "_disableInitializers()"
-- Statement (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 1) -> "_disableInitializers()"
-- Line (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 1) -> "function initialize(address defa...(UPGRADER_ROLE, upgrader);\n    }"
-- Function "initialize" (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 1) -> "function initialize(address defa...(UPGRADER_ROLE, upgrader);\n    }"
-- Line (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 1) -> "__ERC721_init(\"WBCharacter\", \"WBCH\")"
-- Statement (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 1) -> "__ERC721_init(\"WBCharacter\", \"WBCH\")"
-- Line (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 1) -> "__ERC721Enumerable_init()"
-- Statement (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 1) -> "__ERC721Enumerable_init()"
-- Line (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 1) -> "__ERC721URIStorage_init()"
-- Statement (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 1) -> "__ERC721URIStorage_init()"
-- Line (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 1) -> "__ERC721Pausable_init()"
-- Statement (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 1) -> "__ERC721Pausable_init()"
-- Line (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 1) -> "__AccessControl_init()"
-- Statement (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 1) -> "__AccessControl_init()"
-- Line (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 1) -> "__ERC721Burnable_init()"
-- Statement (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 1) -> "__ERC721Burnable_init()"
-- Line (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 1) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
-- Statement (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 1) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
-- Line (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 1) -> "_grantRole(PAUSER_ROLE, pauser)"
-- Statement (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 1) -> "_grantRole(PAUSER_ROLE, pauser)"
-- Line (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 1) -> "_grantRole(MINTER_ROLE, minter)"
-- Statement (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 1) -> "_grantRole(MINTER_ROLE, minter)"
-- Line (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 1) -> "_grantRole(UPGRADER_ROLE, upgrader)"
-- Statement (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 1) -> "_grantRole(UPGRADER_ROLE, upgrader)"
-- Line (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 0) -> "function pause() public onlyRole..._ROLE) {\n        _pause();\n    }"
-- Function "pause" (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 0) -> "function pause() public onlyRole..._ROLE) {\n        _pause();\n    }"
-- Line (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 0) -> "_pause()"
-- Statement (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 0) -> "_pause()"
-- Line (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 0) -> "function unpause() public onlyRo...OLE) {\n        _unpause();\n    }"
-- Function "unpause" (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 0) -> "function unpause() public onlyRo...OLE) {\n        _unpause();\n    }"
-- Line (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 0) -> "_unpause()"
-- Statement (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 0) -> "_unpause()"
-- Line (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 0) -> "function safeMint(address to, st...);\n        return tokenId;\n    }"
-- Function "safeMint" (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 0) -> "function safeMint(address to, st...);\n        return tokenId;\n    }"
-- Line (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 0) -> "WBCharacterStorage storage $ = _getWBCharacterStorage()"
-- Statement (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 0) -> "WBCharacterStorage storage $ = _getWBCharacterStorage()"
-- Statement (location: (source ID: 92, lines: 69..70, bytes: 2810..2834), hits: 0) -> "_getWBCharacterStorage()"
-- Line (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 0) -> "uint256 tokenId = $._nextTokenId++"
-- Statement (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 0) -> "uint256 tokenId = $._nextTokenId++"
-- Statement (location: (source ID: 92, lines: 70..71, bytes: 2862..2878), hits: 0) -> "$._nextTokenId++"
-- Line (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 0) -> "_safeMint(to, tokenId)"
-- Statement (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 0) -> "_safeMint(to, tokenId)"
-- Line (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 0) -> "_setTokenURI(tokenId, uri)"
-- Statement (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 0) -> "_setTokenURI(tokenId, uri)"
-- Line (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 0) -> "return tokenId"
-- Statement (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 0) -> "return tokenId"
-- Line (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 0) -> "function _getWBCharacterStorage(...STORAGE_LOCATION\n        }\n    }"
-- Function "_getWBCharacterStorage" (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 0) -> "function _getWBCharacterStorage(...STORAGE_LOCATION\n        }\n    }"
-- Line (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 0) -> "$.slot := WB_CHARACTER_STORAGE_LOCATION"
-- Statement (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 0) -> "$.slot := WB_CHARACTER_STORAGE_LOCATION"
-- Line (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 0) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
-- Function "_authorizeUpgrade" (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 0) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
-- Line (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 0) -> "function _update(address to, uin...update(to, tokenId, auth);\n    }"
-- Function "_update" (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 0) -> "function _update(address to, uin...update(to, tokenId, auth);\n    }"
-- Line (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 0) -> "return super._update(to, tokenId, auth)"
-- Statement (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 0) -> "return super._update(to, tokenId, auth)"
-- Statement (location: (source ID: 92, lines: 91..92, bytes: 3551..3583), hits: 0) -> "super._update(to, tokenId, auth)"
+- Line (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 32) -> "constructor() {\n        _disableInitializers();\n    }"
+- Function "constructor" (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 32) -> "constructor() {\n        _disableInitializers();\n    }"
+- Line (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 32) -> "_disableInitializers()"
+- Statement (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 32) -> "_disableInitializers()"
+- Line (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 31) -> "function initialize(address defa...(UPGRADER_ROLE, upgrader);\n    }"
+- Function "initialize" (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 31) -> "function initialize(address defa...(UPGRADER_ROLE, upgrader);\n    }"
+- Line (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 30) -> "__ERC721_init(\"WBCharacter\", \"WBCH\")"
+- Statement (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 30) -> "__ERC721_init(\"WBCharacter\", \"WBCH\")"
+- Line (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 30) -> "__ERC721Enumerable_init()"
+- Statement (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 30) -> "__ERC721Enumerable_init()"
+- Line (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 30) -> "__ERC721URIStorage_init()"
+- Statement (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 30) -> "__ERC721URIStorage_init()"
+- Line (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 30) -> "__ERC721Pausable_init()"
+- Statement (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 30) -> "__ERC721Pausable_init()"
+- Line (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 30) -> "__AccessControl_init()"
+- Statement (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 30) -> "__AccessControl_init()"
+- Line (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 30) -> "__ERC721Burnable_init()"
+- Statement (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 30) -> "__ERC721Burnable_init()"
+- Line (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 30) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
+- Statement (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 30) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
+- Line (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 30) -> "_grantRole(PAUSER_ROLE, pauser)"
+- Statement (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 30) -> "_grantRole(PAUSER_ROLE, pauser)"
+- Line (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 30) -> "_grantRole(MINTER_ROLE, minter)"
+- Statement (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 30) -> "_grantRole(MINTER_ROLE, minter)"
+- Line (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 30) -> "_grantRole(UPGRADER_ROLE, upgrader)"
+- Statement (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 30) -> "_grantRole(UPGRADER_ROLE, upgrader)"
+- Line (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 6) -> "function pause() public onlyRole..._ROLE) {\n        _pause();\n    }"
+- Function "pause" (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 6) -> "function pause() public onlyRole..._ROLE) {\n        _pause();\n    }"
+- Line (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 5) -> "_pause()"
+- Statement (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 5) -> "_pause()"
+- Line (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 3) -> "function unpause() public onlyRo...OLE) {\n        _unpause();\n    }"
+- Function "unpause" (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 3) -> "function unpause() public onlyRo...OLE) {\n        _unpause();\n    }"
+- Line (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 2) -> "_unpause()"
+- Statement (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 2) -> "_unpause()"
+- Line (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 20) -> "function safeMint(address to, st...);\n        return tokenId;\n    }"
+- Function "safeMint" (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 20) -> "function safeMint(address to, st...);\n        return tokenId;\n    }"
+- Line (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 19) -> "WBCharacterStorage storage $ = _getWBCharacterStorage()"
+- Statement (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 19) -> "WBCharacterStorage storage $ = _getWBCharacterStorage()"
+- Statement (location: (source ID: 92, lines: 69..70, bytes: 2810..2834), hits: 19) -> "_getWBCharacterStorage()"
+- Line (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 19) -> "uint256 tokenId = $._nextTokenId++"
+- Statement (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 19) -> "uint256 tokenId = $._nextTokenId++"
+- Statement (location: (source ID: 92, lines: 70..71, bytes: 2862..2878), hits: 19) -> "$._nextTokenId++"
+- Line (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 19) -> "_safeMint(to, tokenId)"
+- Statement (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 19) -> "_safeMint(to, tokenId)"
+- Line (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 19) -> "_setTokenURI(tokenId, uri)"
+- Statement (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 19) -> "_setTokenURI(tokenId, uri)"
+- Line (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 19) -> "return tokenId"
+- Statement (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 19) -> "return tokenId"
+- Line (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 19) -> "function _getWBCharacterStorage(...STORAGE_LOCATION\n        }\n    }"
+- Function "_getWBCharacterStorage" (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 19) -> "function _getWBCharacterStorage(...STORAGE_LOCATION\n        }\n    }"
+- Line (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 19) -> "$.slot := WB_CHARACTER_STORAGE_LOCATION"
+- Statement (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 19) -> "$.slot := WB_CHARACTER_STORAGE_LOCATION"
+- Line (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 2) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
+- Function "_authorizeUpgrade" (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 2) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
+- Line (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 27) -> "function _update(address to, uin...update(to, tokenId, auth);\n    }"
+- Function "_update" (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 27) -> "function _update(address to, uin...update(to, tokenId, auth);\n    }"
+- Line (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 27) -> "return super._update(to, tokenId, auth)"
+- Statement (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 27) -> "return super._update(to, tokenId, auth)"
+- Statement (location: (source ID: 92, lines: 91..92, bytes: 3551..3583), hits: 27) -> "super._update(to, tokenId, auth)"
 - Line (location: (source ID: 92, lines: 94..100, bytes: 3596..3795), hits: 0) -> "function _increaseBalance(addres...seBalance(account, value);\n    }"
 - Function "_increaseBalance" (location: (source ID: 92, lines: 94..100, bytes: 3596..3795), hits: 0) -> "function _increaseBalance(addres...seBalance(account, value);\n    }"
 - Line (location: (source ID: 92, lines: 98..99, bytes: 3750..3788), hits: 0) -> "super._increaseBalance(account, value)"
 - Statement (location: (source ID: 92, lines: 98..99, bytes: 3750..3788), hits: 0) -> "super._increaseBalance(account, value)"
-- Line (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 0) -> "function tokenURI(uint256 tokenI...n super.tokenURI(tokenId);\n    }"
-- Function "tokenURI" (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 0) -> "function tokenURI(uint256 tokenI...n super.tokenURI(tokenId);\n    }"
-- Line (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 0) -> "return super.tokenURI(tokenId)"
-- Statement (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 0) -> "return super.tokenURI(tokenId)"
-- Statement (location: (source ID: 92, lines: 107..108, bytes: 3982..4005), hits: 0) -> "super.tokenURI(tokenId)"
-- Line (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 0) -> "function supportsInterface(bytes...rtsInterface(interfaceId);\n    }"
-- Function "supportsInterface" (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 0) -> "function supportsInterface(bytes...rtsInterface(interfaceId);\n    }"
-- Line (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 0) -> "return super.supportsInterface(interfaceId)"
-- Statement (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 0) -> "return super.supportsInterface(interfaceId)"
-- Statement (location: (source ID: 92, lines: 116..117, bytes: 4257..4293), hits: 0) -> "super.supportsInterface(interfaceId)"
-- Line (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 0) -> "function _baseURI() internal pur...mory) {\n        return \"\";\n    }"
-- Function "_baseURI" (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 0) -> "function _baseURI() internal pur...mory) {\n        return \"\";\n    }"
-- Line (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 0) -> "return \"\""
-- Statement (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 0) -> "return \"\""
+- Line (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 5) -> "function tokenURI(uint256 tokenI...n super.tokenURI(tokenId);\n    }"
+- Function "tokenURI" (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 5) -> "function tokenURI(uint256 tokenI...n super.tokenURI(tokenId);\n    }"
+- Line (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 5) -> "return super.tokenURI(tokenId)"
+- Statement (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 5) -> "return super.tokenURI(tokenId)"
+- Statement (location: (source ID: 92, lines: 107..108, bytes: 3982..4005), hits: 5) -> "super.tokenURI(tokenId)"
+- Line (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 4) -> "function supportsInterface(bytes...rtsInterface(interfaceId);\n    }"
+- Function "supportsInterface" (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 4) -> "function supportsInterface(bytes...rtsInterface(interfaceId);\n    }"
+- Line (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 4) -> "return super.supportsInterface(interfaceId)"
+- Statement (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 4) -> "return super.supportsInterface(interfaceId)"
+- Statement (location: (source ID: 92, lines: 116..117, bytes: 4257..4293), hits: 4) -> "super.supportsInterface(interfaceId)"
+- Line (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 4) -> "function _baseURI() internal pur...mory) {\n        return \"\";\n    }"
+- Function "_baseURI" (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 4) -> "function _baseURI() internal pur...mory) {\n        return \"\";\n    }"
+- Line (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 4) -> "return \"\""
+- Statement (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 4) -> "return \"\""
+
+test/mocks/WBCharacterV2Mock.sol:
+- Line (location: (source ID: 93, lines: 9..12, bytes: 209..305), hits: 0) -> "function newFunction() external ...       return \"Upgraded!\";\n    }"
+- Function "newFunction" (location: (source ID: 93, lines: 9..12, bytes: 209..305), hits: 0) -> "function newFunction() external ...       return \"Upgraded!\";\n    }"
+- Line (location: (source ID: 93, lines: 10..11, bytes: 280..298), hits: 0) -> "return \"Upgraded!\""
+- Statement (location: (source ID: 93, lines: 10..11, bytes: 280..298), hits: 0) -> "return \"Upgraded!\""
 
 test/mocks/WBCoinV2Mock.sol:
-- Line (location: (source ID: 93, lines: 9..12, bytes: 188..284), hits: 0) -> "function newFunction() external ...       return \"Upgraded!\";\n    }"
-- Function "newFunction" (location: (source ID: 93, lines: 9..12, bytes: 188..284), hits: 0) -> "function newFunction() external ...       return \"Upgraded!\";\n    }"
-- Line (location: (source ID: 93, lines: 10..11, bytes: 259..277), hits: 0) -> "return \"Upgraded!\""
-- Statement (location: (source ID: 93, lines: 10..11, bytes: 259..277), hits: 0) -> "return \"Upgraded!\""
+- Line (location: (source ID: 94, lines: 9..12, bytes: 188..284), hits: 0) -> "function newFunction() external ...       return \"Upgraded!\";\n    }"
+- Function "newFunction" (location: (source ID: 94, lines: 9..12, bytes: 188..284), hits: 0) -> "function newFunction() external ...       return \"Upgraded!\";\n    }"
+- Line (location: (source ID: 94, lines: 10..11, bytes: 259..277), hits: 0) -> "return \"Upgraded!\""
+- Statement (location: (source ID: 94, lines: 10..11, bytes: 259..277), hits: 0) -> "return \"Upgraded!\""
 
-Anchors for Contract "GameMarket" (solc 0.8.30, source ID 87):
-- creation IC 56 -> Item 72: Line (location: (source ID: 87, lines: 11..14, bytes: 575..628), hits: 0)
-- creation IC 56 -> Item 73: Function "constructor" (location: (source ID: 87, lines: 11..14, bytes: 575..628), hits: 0)
-- creation IC 68 -> Item 74: Line (location: (source ID: 87, lines: 12..13, bytes: 599..621), hits: 0)
-- creation IC 68 -> Item 75: Statement (location: (source ID: 87, lines: 12..13, bytes: 599..621), hits: 0)
--  runtime IC 726 -> Item 76: Line (location: (source ID: 87, lines: 15..18, bytes: 634..751), hits: 0)
--  runtime IC 726 -> Item 77: Function "initialize" (location: (source ID: 87, lines: 15..18, bytes: 634..751), hits: 0)
--  runtime IC 2153 -> Item 78: Line (location: (source ID: 87, lines: 16..17, bytes: 687..744), hits: 0)
--  runtime IC 2153 -> Item 79: Statement (location: (source ID: 87, lines: 16..17, bytes: 687..744), hits: 0)
--  runtime IC 3723 -> Item 80: Line (location: (source ID: 87, lines: 19..20, bytes: 757..860), hits: 0)
--  runtime IC 3723 -> Item 81: Function "_authorizeUpgrade" (location: (source ID: 87, lines: 19..20, bytes: 757..860), hits: 0)
-
-Anchors for Contract "DeployGameRegestry" (solc 0.8.30, source ID 83):
--  runtime IC 97 -> Item 0: Line (location: (source ID: 83, lines: 9..12, bytes: 287..390), hits: 0)
--  runtime IC 97 -> Item 1: Function "run" (location: (source ID: 83, lines: 9..12, bytes: 287..390), hits: 0)
--  runtime IC 911 -> Item 2: Line (location: (source ID: 83, lines: 10..11, bytes: 355..383), hits: 0)
--  runtime IC 911 -> Item 3: Statement (location: (source ID: 83, lines: 10..11, bytes: 355..383), hits: 0)
--  runtime IC 67 -> Item 4: Line (location: (source ID: 83, lines: 13..26, bytes: 396..863), hits: 14)
--  runtime IC 67 -> Item 5: Function "deploy" (location: (source ID: 83, lines: 13..26, bytes: 396..863), hits: 14)
--  runtime IC 180 -> Item 6: Line (location: (source ID: 83, lines: 14..15, bytes: 449..468), hits: 14)
--  runtime IC 180 -> Item 7: Statement (location: (source ID: 83, lines: 14..15, bytes: 449..468), hits: 14)
--  runtime IC 270 -> Item 8: Line (location: (source ID: 83, lines: 15..16, bytes: 478..524), hits: 14)
--  runtime IC 270 -> Item 9: Statement (location: (source ID: 83, lines: 15..16, bytes: 478..524), hits: 14)
--  runtime IC 271 -> Item 10: Statement (location: (source ID: 83, lines: 15..16, bytes: 506..524), hits: 14)
--  runtime IC 311 -> Item 11: Line (location: (source ID: 83, lines: 16..23, bytes: 534..797), hits: 14)
--  runtime IC 311 -> Item 12: Statement (location: (source ID: 83, lines: 16..23, bytes: 534..797), hits: 14)
--  runtime IC 312 -> Item 13: Statement (location: (source ID: 83, lines: 16..23, bytes: 555..797), hits: 14)
--  runtime IC 812 -> Item 14: Line (location: (source ID: 83, lines: 23..24, bytes: 807..825), hits: 14)
--  runtime IC 812 -> Item 15: Statement (location: (source ID: 83, lines: 23..24, bytes: 807..825), hits: 14)
--  runtime IC 902 -> Item 16: Line (location: (source ID: 83, lines: 24..25, bytes: 835..856), hits: 14)
--  runtime IC 902 -> Item 17: Statement (location: (source ID: 83, lines: 24..25, bytes: 835..856), hits: 14)
+test/mocks/WBResourcesV2Mock.sol:
+- Line (location: (source ID: 95, lines: 9..12, bytes: 210..306), hits: 0) -> "function newFunction() external ...       return \"Upgraded!\";\n    }"
+- Function "newFunction" (location: (source ID: 95, lines: 9..12, bytes: 210..306), hits: 0) -> "function newFunction() external ...       return \"Upgraded!\";\n    }"
+- Line (location: (source ID: 95, lines: 10..11, bytes: 281..299), hits: 0) -> "return \"Upgraded!\""
+- Statement (location: (source ID: 95, lines: 10..11, bytes: 281..299), hits: 0) -> "return \"Upgraded!\""
 
 Anchors for Contract "WBCharacter" (solc 0.8.30, source ID 92):
-- creation IC 56 -> Item 419: Line (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 1)
-- creation IC 56 -> Item 420: Function "constructor" (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 1)
-- creation IC 68 -> Item 421: Line (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 1)
-- creation IC 68 -> Item 422: Statement (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 1)
--  runtime IC 2020 -> Item 423: Line (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 1)
--  runtime IC 2020 -> Item 424: Function "initialize" (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 1)
--  runtime IC 4654 -> Item 425: Line (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 1)
--  runtime IC 4654 -> Item 426: Statement (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 1)
--  runtime IC 4770 -> Item 427: Line (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 1)
--  runtime IC 4770 -> Item 428: Statement (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 1)
--  runtime IC 4778 -> Item 429: Line (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 1)
--  runtime IC 4778 -> Item 430: Statement (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 1)
--  runtime IC 4786 -> Item 431: Line (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 1)
--  runtime IC 4786 -> Item 432: Statement (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 1)
--  runtime IC 4794 -> Item 433: Line (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 1)
--  runtime IC 4794 -> Item 434: Statement (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 1)
--  runtime IC 4802 -> Item 435: Line (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 1)
--  runtime IC 4802 -> Item 436: Statement (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 1)
--  runtime IC 4810 -> Item 437: Line (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 1)
--  runtime IC 4810 -> Item 438: Statement (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 1)
--  runtime IC 4823 -> Item 439: Line (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 1)
--  runtime IC 4823 -> Item 440: Statement (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 1)
--  runtime IC 4866 -> Item 441: Line (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 1)
--  runtime IC 4866 -> Item 442: Statement (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 1)
--  runtime IC 4909 -> Item 443: Line (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 1)
--  runtime IC 4909 -> Item 444: Statement (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 1)
--  runtime IC 1386 -> Item 445: Line (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 0)
--  runtime IC 1386 -> Item 446: Function "pause" (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 0)
--  runtime IC 3544 -> Item 447: Line (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 0)
--  runtime IC 3544 -> Item 448: Statement (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 0)
--  runtime IC 992 -> Item 449: Line (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 0)
--  runtime IC 992 -> Item 450: Function "unpause" (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 0)
--  runtime IC 2983 -> Item 451: Line (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 0)
--  runtime IC 2983 -> Item 452: Statement (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 0)
--  runtime IC 1734 -> Item 453: Line (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 0)
--  runtime IC 1734 -> Item 454: Function "safeMint" (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 0)
--  runtime IC 4009 -> Item 455: Line (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 0)
--  runtime IC 4009 -> Item 456: Statement (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 0)
--  runtime IC 4010 -> Item 457: Statement (location: (source ID: 92, lines: 69..70, bytes: 2810..2834), hits: 0)
--  runtime IC 4020 -> Item 458: Line (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 0)
--  runtime IC 4020 -> Item 459: Statement (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 0)
--  runtime IC 4021 -> Item 460: Statement (location: (source ID: 92, lines: 70..71, bytes: 2862..2878), hits: 0)
--  runtime IC 4046 -> Item 461: Line (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 0)
--  runtime IC 4046 -> Item 462: Statement (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 0)
--  runtime IC 4056 -> Item 463: Line (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 0)
--  runtime IC 4056 -> Item 464: Statement (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 0)
--  runtime IC 4066 -> Item 465: Line (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 0)
--  runtime IC 4066 -> Item 466: Statement (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 0)
--  runtime IC 8099 -> Item 467: Line (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 0)
--  runtime IC 8099 -> Item 468: Function "_getWBCharacterStorage" (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 0)
--  runtime IC 8101 -> Item 469: Line (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 0)
--  runtime IC 8101 -> Item 470: Statement (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 0)
--  runtime IC 6397 -> Item 471: Line (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 0)
--  runtime IC 6397 -> Item 472: Function "_authorizeUpgrade" (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 0)
--  runtime IC 5481 -> Item 473: Line (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 0)
--  runtime IC 5481 -> Item 474: Function "_update" (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 0)
--  runtime IC 5483 -> Item 475: Line (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 0)
--  runtime IC 5483 -> Item 476: Statement (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 0)
--  runtime IC 5483 -> Item 477: Statement (location: (source ID: 92, lines: 91..92, bytes: 3551..3583), hits: 0)
--  runtime IC 1674 -> Item 482: Line (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 0)
--  runtime IC 1674 -> Item 483: Function "tokenURI" (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 0)
--  runtime IC 3950 -> Item 484: Line (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 0)
--  runtime IC 3950 -> Item 485: Statement (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 0)
--  runtime IC 3950 -> Item 486: Statement (location: (source ID: 92, lines: 107..108, bytes: 3982..4005), hits: 0)
--  runtime IC 508 -> Item 487: Line (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 0)
--  runtime IC 508 -> Item 488: Function "supportsInterface" (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 0)
--  runtime IC 2062 -> Item 489: Line (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 0)
--  runtime IC 2062 -> Item 490: Statement (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 0)
--  runtime IC 2062 -> Item 491: Statement (location: (source ID: 92, lines: 116..117, bytes: 4257..4293), hits: 0)
--  runtime IC 9464 -> Item 492: Line (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 0)
--  runtime IC 9464 -> Item 493: Function "_baseURI" (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 0)
--  runtime IC 9467 -> Item 494: Line (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 0)
--  runtime IC 9467 -> Item 495: Statement (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 0)
-
-Anchors for Contract "DeployWBCoin" (solc 0.8.30, source ID 85):
--  runtime IC 97 -> Item 36: Line (location: (source ID: 85, lines: 9..12, bytes: 282..375), hits: 1)
--  runtime IC 97 -> Item 37: Function "run" (location: (source ID: 85, lines: 9..12, bytes: 282..375), hits: 1)
--  runtime IC 601 -> Item 38: Line (location: (source ID: 85, lines: 10..11, bytes: 344..368), hits: 1)
--  runtime IC 601 -> Item 39: Statement (location: (source ID: 85, lines: 10..11, bytes: 344..368), hits: 1)
--  runtime IC 67 -> Item 40: Line (location: (source ID: 85, lines: 13..22, bytes: 381..730), hits: 17)
--  runtime IC 67 -> Item 41: Function "deploy" (location: (source ID: 85, lines: 13..22, bytes: 381..730), hits: 17)
--  runtime IC 180 -> Item 42: Line (location: (source ID: 85, lines: 14..15, bytes: 434..453), hits: 18)
--  runtime IC 180 -> Item 43: Statement (location: (source ID: 85, lines: 14..15, bytes: 434..453), hits: 18)
--  runtime IC 270 -> Item 44: Line (location: (source ID: 85, lines: 15..16, bytes: 463..491), hits: 18)
--  runtime IC 270 -> Item 45: Statement (location: (source ID: 85, lines: 15..16, bytes: 463..491), hits: 18)
--  runtime IC 271 -> Item 46: Statement (location: (source ID: 85, lines: 15..16, bytes: 479..491), hits: 18)
--  runtime IC 311 -> Item 47: Line (location: (source ID: 85, lines: 16..19, bytes: 501..662), hits: 18)
--  runtime IC 311 -> Item 48: Statement (location: (source ID: 85, lines: 16..19, bytes: 501..662), hits: 18)
--  runtime IC 312 -> Item 49: Statement (location: (source ID: 85, lines: 16..19, bytes: 522..662), hits: 18)
--  runtime IC 502 -> Item 50: Line (location: (source ID: 85, lines: 19..20, bytes: 672..690), hits: 18)
--  runtime IC 502 -> Item 51: Statement (location: (source ID: 85, lines: 19..20, bytes: 672..690), hits: 18)
--  runtime IC 592 -> Item 52: Line (location: (source ID: 85, lines: 20..21, bytes: 700..723), hits: 18)
--  runtime IC 592 -> Item 53: Statement (location: (source ID: 85, lines: 20..21, bytes: 700..723), hits: 18)
-
-Anchors for Contract "WBCoinV2Mock" (solc 0.8.30, source ID 93):
-- creation IC 72 -> Item 379: Line (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20)
-- creation IC 72 -> Item 380: Function "constructor" (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20)
-- creation IC 72 -> Item 381: Line (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20)
-- creation IC 72 -> Item 382: Statement (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20)
--  runtime IC 679 -> Item 496: Line (location: (source ID: 93, lines: 9..12, bytes: 188..284), hits: 0)
--  runtime IC 679 -> Item 497: Function "newFunction" (location: (source ID: 93, lines: 9..12, bytes: 188..284), hits: 0)
--  runtime IC 2192 -> Item 498: Line (location: (source ID: 93, lines: 10..11, bytes: 259..277), hits: 0)
--  runtime IC 2192 -> Item 499: Statement (location: (source ID: 93, lines: 10..11, bytes: 259..277), hits: 0)
--  runtime IC 1813 -> Item 383: Line (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19)
--  runtime IC 1813 -> Item 384: Function "initialize" (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19)
--  runtime IC 3853 -> Item 385: Line (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18)
--  runtime IC 3853 -> Item 386: Statement (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18)
--  runtime IC 3969 -> Item 387: Line (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18)
--  runtime IC 3969 -> Item 388: Statement (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18)
--  runtime IC 3977 -> Item 389: Line (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18)
--  runtime IC 3977 -> Item 390: Statement (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18)
--  runtime IC 3985 -> Item 391: Line (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18)
--  runtime IC 3985 -> Item 392: Statement (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18)
--  runtime IC 3993 -> Item 393: Line (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18)
--  runtime IC 3993 -> Item 394: Statement (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18)
--  runtime IC 4006 -> Item 395: Line (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18)
--  runtime IC 4006 -> Item 396: Statement (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18)
--  runtime IC 4049 -> Item 397: Line (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18)
--  runtime IC 4049 -> Item 398: Statement (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18)
--  runtime IC 4092 -> Item 399: Line (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18)
--  runtime IC 4092 -> Item 400: Statement (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18)
--  runtime IC 1319 -> Item 401: Line (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4)
--  runtime IC 1319 -> Item 402: Function "pause" (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4)
--  runtime IC 2910 -> Item 403: Line (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3)
--  runtime IC 2910 -> Item 404: Statement (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3)
--  runtime IC 963 -> Item 405: Line (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1)
--  runtime IC 963 -> Item 406: Function "unpause" (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1)
--  runtime IC 2546 -> Item 407: Line (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1)
--  runtime IC 2546 -> Item 408: Statement (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1)
--  runtime IC 985 -> Item 409: Line (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5)
--  runtime IC 985 -> Item 410: Function "mint" (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5)
--  runtime IC 2599 -> Item 411: Line (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4)
--  runtime IC 2599 -> Item 412: Statement (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4)
--  runtime IC 5940 -> Item 413: Line (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2)
--  runtime IC 5940 -> Item 414: Function "_authorizeUpgrade" (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2)
--  runtime IC 7105 -> Item 415: Line (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7)
--  runtime IC 7105 -> Item 416: Function "_update" (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7)
--  runtime IC 7106 -> Item 417: Line (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7)
--  runtime IC 7106 -> Item 418: Statement (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7)
-
-Anchors for Contract "WBCoin" (solc 0.8.30, source ID 91):
-- creation IC 56 -> Item 379: Line (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20)
-- creation IC 56 -> Item 380: Function "constructor" (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20)
-- creation IC 68 -> Item 381: Line (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20)
-- creation IC 68 -> Item 382: Statement (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20)
--  runtime IC 1707 -> Item 383: Line (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19)
--  runtime IC 1707 -> Item 384: Function "initialize" (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19)
--  runtime IC 3681 -> Item 385: Line (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18)
--  runtime IC 3681 -> Item 386: Statement (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18)
--  runtime IC 3797 -> Item 387: Line (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18)
--  runtime IC 3797 -> Item 388: Statement (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18)
--  runtime IC 3805 -> Item 389: Line (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18)
--  runtime IC 3805 -> Item 390: Statement (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18)
--  runtime IC 3813 -> Item 391: Line (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18)
--  runtime IC 3813 -> Item 392: Statement (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18)
--  runtime IC 3821 -> Item 393: Line (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18)
--  runtime IC 3821 -> Item 394: Statement (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18)
--  runtime IC 3834 -> Item 395: Line (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18)
--  runtime IC 3834 -> Item 396: Statement (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18)
--  runtime IC 3877 -> Item 397: Line (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18)
--  runtime IC 3877 -> Item 398: Statement (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18)
--  runtime IC 3920 -> Item 399: Line (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18)
--  runtime IC 3920 -> Item 400: Statement (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18)
--  runtime IC 1213 -> Item 401: Line (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4)
--  runtime IC 1213 -> Item 402: Function "pause" (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4)
--  runtime IC 2738 -> Item 403: Line (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3)
--  runtime IC 2738 -> Item 404: Statement (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3)
--  runtime IC 899 -> Item 405: Line (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1)
--  runtime IC 899 -> Item 406: Function "unpause" (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1)
--  runtime IC 2379 -> Item 407: Line (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1)
--  runtime IC 2379 -> Item 408: Statement (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1)
--  runtime IC 921 -> Item 409: Line (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5)
--  runtime IC 921 -> Item 410: Function "mint" (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5)
--  runtime IC 2432 -> Item 411: Line (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4)
--  runtime IC 2432 -> Item 412: Statement (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4)
--  runtime IC 5768 -> Item 413: Line (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2)
--  runtime IC 5768 -> Item 414: Function "_authorizeUpgrade" (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2)
--  runtime IC 6933 -> Item 415: Line (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7)
--  runtime IC 6933 -> Item 416: Function "_update" (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7)
--  runtime IC 6934 -> Item 417: Line (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7)
--  runtime IC 6934 -> Item 418: Statement (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7)
-
-Anchors for Contract "WBResources" (solc 0.8.30, source ID 90):
-- creation IC 56 -> Item 317: Line (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 21)
-- creation IC 56 -> Item 318: Function "constructor" (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 21)
-- creation IC 68 -> Item 319: Line (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 21)
-- creation IC 68 -> Item 320: Statement (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 21)
--  runtime IC 1926 -> Item 321: Line (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 22)
--  runtime IC 1926 -> Item 322: Function "initialize" (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 22)
--  runtime IC 4534 -> Item 323: Line (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 21)
--  runtime IC 4534 -> Item 324: Statement (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 21)
--  runtime IC 4557 -> Item 325: Line (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 21)
--  runtime IC 4557 -> Item 326: Statement (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 21)
--  runtime IC 4565 -> Item 327: Line (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 21)
--  runtime IC 4565 -> Item 328: Statement (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 21)
--  runtime IC 4573 -> Item 329: Line (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 21)
--  runtime IC 4573 -> Item 330: Statement (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 21)
--  runtime IC 4581 -> Item 331: Line (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 21)
--  runtime IC 4581 -> Item 332: Statement (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 21)
--  runtime IC 4589 -> Item 333: Line (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 21)
--  runtime IC 4589 -> Item 334: Statement (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 21)
--  runtime IC 4602 -> Item 335: Line (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 21)
--  runtime IC 4602 -> Item 336: Statement (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 21)
--  runtime IC 4645 -> Item 337: Line (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 21)
--  runtime IC 4645 -> Item 338: Statement (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 21)
--  runtime IC 4688 -> Item 339: Line (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 21)
--  runtime IC 4688 -> Item 340: Statement (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 21)
--  runtime IC 4731 -> Item 341: Line (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 21)
--  runtime IC 4731 -> Item 342: Statement (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 21)
--  runtime IC 1336 -> Item 343: Line (location: (source ID: 90, lines: 51..54, bytes: 2226..2355), hits: 5)
--  runtime IC 1336 -> Item 344: Function "setURI" (location: (source ID: 90, lines: 51..54, bytes: 2226..2355), hits: 5)
--  runtime IC 3367 -> Item 345: Line (location: (source ID: 90, lines: 52..53, bytes: 2324..2348), hits: 3)
--  runtime IC 3367 -> Item 346: Statement (location: (source ID: 90, lines: 52..53, bytes: 2324..2348), hits: 3)
--  runtime IC 1314 -> Item 347: Line (location: (source ID: 90, lines: 55..58, bytes: 2361..2432), hits: 3)
--  runtime IC 1314 -> Item 348: Function "pause" (location: (source ID: 90, lines: 55..58, bytes: 2361..2432), hits: 3)
--  runtime IC 3314 -> Item 349: Line (location: (source ID: 90, lines: 56..57, bytes: 2417..2425), hits: 2)
--  runtime IC 3314 -> Item 350: Statement (location: (source ID: 90, lines: 56..57, bytes: 2417..2425), hits: 2)
--  runtime IC 616 -> Item 351: Line (location: (source ID: 90, lines: 59..62, bytes: 2438..2628), hits: 7)
--  runtime IC 616 -> Item 352: Function "uri" (location: (source ID: 90, lines: 59..62, bytes: 2438..2628), hits: 7)
--  runtime IC 2085 -> Item 353: Line (location: (source ID: 90, lines: 60..61, bytes: 2573..2621), hits: 10)
--  runtime IC 2085 -> Item 354: Statement (location: (source ID: 90, lines: 60..61, bytes: 2573..2621), hits: 10)
--  runtime IC 2085 -> Item 355: Statement (location: (source ID: 90, lines: 60..61, bytes: 2580..2621), hits: 10)
--  runtime IC 938 -> Item 356: Line (location: (source ID: 90, lines: 63..66, bytes: 2634..2709), hits: 1)
--  runtime IC 938 -> Item 357: Function "unpause" (location: (source ID: 90, lines: 63..66, bytes: 2634..2709), hits: 1)
--  runtime IC 2593 -> Item 358: Line (location: (source ID: 90, lines: 64..65, bytes: 2692..2702), hits: 1)
--  runtime IC 2593 -> Item 359: Statement (location: (source ID: 90, lines: 64..65, bytes: 2692..2702), hits: 1)
--  runtime IC 1232 -> Item 360: Line (location: (source ID: 90, lines: 67..70, bytes: 2715..2871), hits: 5)
--  runtime IC 1232 -> Item 361: Function "mint" (location: (source ID: 90, lines: 67..70, bytes: 2715..2871), hits: 5)
--  runtime IC 3217 -> Item 362: Line (location: (source ID: 90, lines: 68..69, bytes: 2832..2864), hits: 4)
--  runtime IC 3217 -> Item 363: Statement (location: (source ID: 90, lines: 68..69, bytes: 2832..2864), hits: 4)
--  runtime IC 718 -> Item 364: Line (location: (source ID: 90, lines: 71..77, bytes: 2877..3075), hits: 2)
--  runtime IC 718 -> Item 365: Function "mintBatch" (location: (source ID: 90, lines: 71..77, bytes: 2877..3075), hits: 2)
--  runtime IC 2166 -> Item 366: Line (location: (source ID: 90, lines: 75..76, bytes: 3034..3068), hits: 1)
--  runtime IC 2166 -> Item 367: Statement (location: (source ID: 90, lines: 75..76, bytes: 3034..3068), hits: 1)
--  runtime IC 6626 -> Item 368: Line (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 0)
--  runtime IC 6626 -> Item 369: Function "_authorizeUpgrade" (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 0)
--  runtime IC 9808 -> Item 370: Line (location: (source ID: 90, lines: 82..88, bytes: 3253..3508), hits: 8)
--  runtime IC 9808 -> Item 371: Function "_update" (location: (source ID: 90, lines: 82..88, bytes: 3253..3508), hits: 8)
--  runtime IC 9809 -> Item 372: Line (location: (source ID: 90, lines: 86..87, bytes: 3465..3501), hits: 8)
--  runtime IC 9809 -> Item 373: Statement (location: (source ID: 90, lines: 86..87, bytes: 3465..3501), hits: 8)
--  runtime IC 556 -> Item 374: Line (location: (source ID: 90, lines: 89..97, bytes: 3514..3739), hits: 2)
--  runtime IC 556 -> Item 375: Function "supportsInterface" (location: (source ID: 90, lines: 89..97, bytes: 3514..3739), hits: 2)
--  runtime IC 2067 -> Item 376: Line (location: (source ID: 90, lines: 95..96, bytes: 3689..3732), hits: 2)
--  runtime IC 2067 -> Item 377: Statement (location: (source ID: 90, lines: 95..96, bytes: 3689..3732), hits: 2)
--  runtime IC 2067 -> Item 378: Statement (location: (source ID: 90, lines: 95..96, bytes: 3696..3732), hits: 2)
-
-Anchors for Contract "DeployWBCharacter" (solc 0.8.30, source ID 84):
--  runtime IC 97 -> Item 18: Line (location: (source ID: 84, lines: 9..12, bytes: 298..399), hits: 0)
--  runtime IC 97 -> Item 19: Function "run" (location: (source ID: 84, lines: 9..12, bytes: 298..399), hits: 0)
--  runtime IC 601 -> Item 20: Line (location: (source ID: 84, lines: 10..11, bytes: 365..392), hits: 0)
--  runtime IC 601 -> Item 21: Statement (location: (source ID: 84, lines: 10..11, bytes: 365..392), hits: 0)
--  runtime IC 67 -> Item 22: Line (location: (source ID: 84, lines: 13..23, bytes: 405..789), hits: 1)
--  runtime IC 67 -> Item 23: Function "deploy" (location: (source ID: 84, lines: 13..23, bytes: 405..789), hits: 1)
--  runtime IC 180 -> Item 24: Line (location: (source ID: 84, lines: 14..15, bytes: 458..477), hits: 1)
--  runtime IC 180 -> Item 25: Statement (location: (source ID: 84, lines: 14..15, bytes: 458..477), hits: 1)
--  runtime IC 270 -> Item 26: Line (location: (source ID: 84, lines: 15..16, bytes: 487..530), hits: 1)
--  runtime IC 270 -> Item 27: Statement (location: (source ID: 84, lines: 15..16, bytes: 487..530), hits: 1)
--  runtime IC 271 -> Item 28: Statement (location: (source ID: 84, lines: 15..16, bytes: 513..530), hits: 1)
--  runtime IC 311 -> Item 29: Line (location: (source ID: 84, lines: 16..20, bytes: 540..723), hits: 1)
--  runtime IC 311 -> Item 30: Statement (location: (source ID: 84, lines: 16..20, bytes: 540..723), hits: 1)
--  runtime IC 312 -> Item 31: Statement (location: (source ID: 84, lines: 16..20, bytes: 561..723), hits: 1)
--  runtime IC 502 -> Item 32: Line (location: (source ID: 84, lines: 20..21, bytes: 733..751), hits: 1)
--  runtime IC 502 -> Item 33: Statement (location: (source ID: 84, lines: 20..21, bytes: 733..751), hits: 1)
--  runtime IC 592 -> Item 34: Line (location: (source ID: 84, lines: 21..22, bytes: 761..782), hits: 1)
--  runtime IC 592 -> Item 35: Statement (location: (source ID: 84, lines: 21..22, bytes: 761..782), hits: 1)
-
-Anchors for Contract "DeployWBResources" (solc 0.8.30, source ID 86):
--  runtime IC 97 -> Item 54: Line (location: (source ID: 86, lines: 9..12, bytes: 299..400), hits: 1)
--  runtime IC 97 -> Item 55: Function "run" (location: (source ID: 86, lines: 9..12, bytes: 299..400), hits: 1)
--  runtime IC 601 -> Item 56: Line (location: (source ID: 86, lines: 10..11, bytes: 366..393), hits: 1)
--  runtime IC 601 -> Item 57: Statement (location: (source ID: 86, lines: 10..11, bytes: 366..393), hits: 1)
--  runtime IC 67 -> Item 58: Line (location: (source ID: 86, lines: 13..23, bytes: 406..790), hits: 20)
--  runtime IC 67 -> Item 59: Function "deploy" (location: (source ID: 86, lines: 13..23, bytes: 406..790), hits: 20)
--  runtime IC 180 -> Item 60: Line (location: (source ID: 86, lines: 14..15, bytes: 459..478), hits: 21)
--  runtime IC 180 -> Item 61: Statement (location: (source ID: 86, lines: 14..15, bytes: 459..478), hits: 21)
--  runtime IC 270 -> Item 62: Line (location: (source ID: 86, lines: 15..16, bytes: 488..531), hits: 21)
--  runtime IC 270 -> Item 63: Statement (location: (source ID: 86, lines: 15..16, bytes: 488..531), hits: 21)
--  runtime IC 271 -> Item 64: Statement (location: (source ID: 86, lines: 15..16, bytes: 514..531), hits: 21)
--  runtime IC 311 -> Item 65: Line (location: (source ID: 86, lines: 16..20, bytes: 541..724), hits: 21)
--  runtime IC 311 -> Item 66: Statement (location: (source ID: 86, lines: 16..20, bytes: 541..724), hits: 21)
--  runtime IC 312 -> Item 67: Statement (location: (source ID: 86, lines: 16..20, bytes: 562..724), hits: 21)
--  runtime IC 502 -> Item 68: Line (location: (source ID: 86, lines: 20..21, bytes: 734..752), hits: 21)
--  runtime IC 502 -> Item 69: Statement (location: (source ID: 86, lines: 20..21, bytes: 734..752), hits: 21)
--  runtime IC 592 -> Item 70: Line (location: (source ID: 86, lines: 21..22, bytes: 762..783), hits: 21)
--  runtime IC 592 -> Item 71: Statement (location: (source ID: 86, lines: 21..22, bytes: 762..783), hits: 21)
+- creation IC 56 -> Item 419: Line (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 32)
+- creation IC 56 -> Item 420: Function "constructor" (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 32)
+- creation IC 68 -> Item 421: Line (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 32)
+- creation IC 68 -> Item 422: Statement (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 32)
+-  runtime IC 2020 -> Item 423: Line (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 31)
+-  runtime IC 2020 -> Item 424: Function "initialize" (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 31)
+-  runtime IC 4654 -> Item 425: Line (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 30)
+-  runtime IC 4654 -> Item 426: Statement (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 30)
+-  runtime IC 4770 -> Item 427: Line (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 30)
+-  runtime IC 4770 -> Item 428: Statement (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 30)
+-  runtime IC 4778 -> Item 429: Line (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 30)
+-  runtime IC 4778 -> Item 430: Statement (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 30)
+-  runtime IC 4786 -> Item 431: Line (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 30)
+-  runtime IC 4786 -> Item 432: Statement (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 30)
+-  runtime IC 4794 -> Item 433: Line (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 30)
+-  runtime IC 4794 -> Item 434: Statement (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 30)
+-  runtime IC 4802 -> Item 435: Line (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 30)
+-  runtime IC 4802 -> Item 436: Statement (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 30)
+-  runtime IC 4810 -> Item 437: Line (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 30)
+-  runtime IC 4810 -> Item 438: Statement (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 30)
+-  runtime IC 4823 -> Item 439: Line (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 30)
+-  runtime IC 4823 -> Item 440: Statement (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 30)
+-  runtime IC 4866 -> Item 441: Line (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 30)
+-  runtime IC 4866 -> Item 442: Statement (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 30)
+-  runtime IC 4909 -> Item 443: Line (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 30)
+-  runtime IC 4909 -> Item 444: Statement (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 30)
+-  runtime IC 1386 -> Item 445: Line (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 6)
+-  runtime IC 1386 -> Item 446: Function "pause" (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 6)
+-  runtime IC 3544 -> Item 447: Line (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 5)
+-  runtime IC 3544 -> Item 448: Statement (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 5)
+-  runtime IC 992 -> Item 449: Line (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 3)
+-  runtime IC 992 -> Item 450: Function "unpause" (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 3)
+-  runtime IC 2983 -> Item 451: Line (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 2)
+-  runtime IC 2983 -> Item 452: Statement (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 2)
+-  runtime IC 1734 -> Item 453: Line (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 20)
+-  runtime IC 1734 -> Item 454: Function "safeMint" (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 20)
+-  runtime IC 4009 -> Item 455: Line (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 19)
+-  runtime IC 4009 -> Item 456: Statement (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 19)
+-  runtime IC 4010 -> Item 457: Statement (location: (source ID: 92, lines: 69..70, bytes: 2810..2834), hits: 19)
+-  runtime IC 4020 -> Item 458: Line (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 19)
+-  runtime IC 4020 -> Item 459: Statement (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 19)
+-  runtime IC 4021 -> Item 460: Statement (location: (source ID: 92, lines: 70..71, bytes: 2862..2878), hits: 19)
+-  runtime IC 4046 -> Item 461: Line (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 19)
+-  runtime IC 4046 -> Item 462: Statement (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 19)
+-  runtime IC 4056 -> Item 463: Line (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 19)
+-  runtime IC 4056 -> Item 464: Statement (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 19)
+-  runtime IC 4066 -> Item 465: Line (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 19)
+-  runtime IC 4066 -> Item 466: Statement (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 19)
+-  runtime IC 8099 -> Item 467: Line (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 19)
+-  runtime IC 8099 -> Item 468: Function "_getWBCharacterStorage" (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 19)
+-  runtime IC 8101 -> Item 469: Line (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 19)
+-  runtime IC 8101 -> Item 470: Statement (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 19)
+-  runtime IC 6397 -> Item 471: Line (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 2)
+-  runtime IC 6397 -> Item 472: Function "_authorizeUpgrade" (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 2)
+-  runtime IC 5481 -> Item 473: Line (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 27)
+-  runtime IC 5481 -> Item 474: Function "_update" (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 27)
+-  runtime IC 5483 -> Item 475: Line (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 27)
+-  runtime IC 5483 -> Item 476: Statement (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 27)
+-  runtime IC 5483 -> Item 477: Statement (location: (source ID: 92, lines: 91..92, bytes: 3551..3583), hits: 27)
+-  runtime IC 1674 -> Item 482: Line (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 5)
+-  runtime IC 1674 -> Item 483: Function "tokenURI" (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 5)
+-  runtime IC 3950 -> Item 484: Line (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 5)
+-  runtime IC 3950 -> Item 485: Statement (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 5)
+-  runtime IC 3950 -> Item 486: Statement (location: (source ID: 92, lines: 107..108, bytes: 3982..4005), hits: 5)
+-  runtime IC 508 -> Item 487: Line (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 4)
+-  runtime IC 508 -> Item 488: Function "supportsInterface" (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 4)
+-  runtime IC 2062 -> Item 489: Line (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 4)
+-  runtime IC 2062 -> Item 490: Statement (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 4)
+-  runtime IC 2062 -> Item 491: Statement (location: (source ID: 92, lines: 116..117, bytes: 4257..4293), hits: 4)
+-  runtime IC 9464 -> Item 492: Line (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 4)
+-  runtime IC 9464 -> Item 493: Function "_baseURI" (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 4)
+-  runtime IC 9467 -> Item 494: Line (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 4)
+-  runtime IC 9467 -> Item 495: Statement (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 4)
 
 Anchors for Contract "GameRegestry" (solc 0.8.30, source ID 88):
 - creation IC 56 -> Item 98: Line (location: (source ID: 88, lines: 160..163, bytes: 7134..7187), hits: 14)
@@ -1135,4 +932,395 @@ Anchors for Contract "GameRegestry" (solc 0.8.30, source ID 88):
 -  runtime IC 9764 -> Item 314: Statement (location: (source ID: 89, lines: 11..12, bytes: 255..293), hits: 0)
 -  runtime IC 9847 -> Item 315: Line (location: (source ID: 89, lines: 12..13, bytes: 303..314), hits: 0)
 -  runtime IC 9847 -> Item 316: Statement (location: (source ID: 89, lines: 12..13, bytes: 303..314), hits: 0)
+
+Anchors for Contract "WBCoin" (solc 0.8.30, source ID 91):
+- creation IC 56 -> Item 379: Line (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20)
+- creation IC 56 -> Item 380: Function "constructor" (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20)
+- creation IC 68 -> Item 381: Line (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20)
+- creation IC 68 -> Item 382: Statement (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20)
+-  runtime IC 1707 -> Item 383: Line (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19)
+-  runtime IC 1707 -> Item 384: Function "initialize" (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19)
+-  runtime IC 3681 -> Item 385: Line (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18)
+-  runtime IC 3681 -> Item 386: Statement (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18)
+-  runtime IC 3797 -> Item 387: Line (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18)
+-  runtime IC 3797 -> Item 388: Statement (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18)
+-  runtime IC 3805 -> Item 389: Line (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18)
+-  runtime IC 3805 -> Item 390: Statement (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18)
+-  runtime IC 3813 -> Item 391: Line (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18)
+-  runtime IC 3813 -> Item 392: Statement (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18)
+-  runtime IC 3821 -> Item 393: Line (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18)
+-  runtime IC 3821 -> Item 394: Statement (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18)
+-  runtime IC 3834 -> Item 395: Line (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18)
+-  runtime IC 3834 -> Item 396: Statement (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18)
+-  runtime IC 3877 -> Item 397: Line (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18)
+-  runtime IC 3877 -> Item 398: Statement (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18)
+-  runtime IC 3920 -> Item 399: Line (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18)
+-  runtime IC 3920 -> Item 400: Statement (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18)
+-  runtime IC 1213 -> Item 401: Line (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4)
+-  runtime IC 1213 -> Item 402: Function "pause" (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4)
+-  runtime IC 2738 -> Item 403: Line (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3)
+-  runtime IC 2738 -> Item 404: Statement (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3)
+-  runtime IC 899 -> Item 405: Line (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1)
+-  runtime IC 899 -> Item 406: Function "unpause" (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1)
+-  runtime IC 2379 -> Item 407: Line (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1)
+-  runtime IC 2379 -> Item 408: Statement (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1)
+-  runtime IC 921 -> Item 409: Line (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5)
+-  runtime IC 921 -> Item 410: Function "mint" (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5)
+-  runtime IC 2432 -> Item 411: Line (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4)
+-  runtime IC 2432 -> Item 412: Statement (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4)
+-  runtime IC 5768 -> Item 413: Line (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2)
+-  runtime IC 5768 -> Item 414: Function "_authorizeUpgrade" (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2)
+-  runtime IC 6933 -> Item 415: Line (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7)
+-  runtime IC 6933 -> Item 416: Function "_update" (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7)
+-  runtime IC 6934 -> Item 417: Line (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7)
+-  runtime IC 6934 -> Item 418: Statement (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7)
+
+Anchors for Contract "DeployWBCharacter" (solc 0.8.30, source ID 84):
+-  runtime IC 97 -> Item 18: Line (location: (source ID: 84, lines: 9..12, bytes: 298..399), hits: 1)
+-  runtime IC 97 -> Item 19: Function "run" (location: (source ID: 84, lines: 9..12, bytes: 298..399), hits: 1)
+-  runtime IC 601 -> Item 20: Line (location: (source ID: 84, lines: 10..11, bytes: 365..392), hits: 1)
+-  runtime IC 601 -> Item 21: Statement (location: (source ID: 84, lines: 10..11, bytes: 365..392), hits: 1)
+-  runtime IC 67 -> Item 22: Line (location: (source ID: 84, lines: 13..23, bytes: 405..789), hits: 29)
+-  runtime IC 67 -> Item 23: Function "deploy" (location: (source ID: 84, lines: 13..23, bytes: 405..789), hits: 29)
+-  runtime IC 180 -> Item 24: Line (location: (source ID: 84, lines: 14..15, bytes: 458..477), hits: 30)
+-  runtime IC 180 -> Item 25: Statement (location: (source ID: 84, lines: 14..15, bytes: 458..477), hits: 30)
+-  runtime IC 270 -> Item 26: Line (location: (source ID: 84, lines: 15..16, bytes: 487..530), hits: 30)
+-  runtime IC 270 -> Item 27: Statement (location: (source ID: 84, lines: 15..16, bytes: 487..530), hits: 30)
+-  runtime IC 271 -> Item 28: Statement (location: (source ID: 84, lines: 15..16, bytes: 513..530), hits: 30)
+-  runtime IC 311 -> Item 29: Line (location: (source ID: 84, lines: 16..20, bytes: 540..723), hits: 30)
+-  runtime IC 311 -> Item 30: Statement (location: (source ID: 84, lines: 16..20, bytes: 540..723), hits: 30)
+-  runtime IC 312 -> Item 31: Statement (location: (source ID: 84, lines: 16..20, bytes: 561..723), hits: 30)
+-  runtime IC 502 -> Item 32: Line (location: (source ID: 84, lines: 20..21, bytes: 733..751), hits: 30)
+-  runtime IC 502 -> Item 33: Statement (location: (source ID: 84, lines: 20..21, bytes: 733..751), hits: 30)
+-  runtime IC 592 -> Item 34: Line (location: (source ID: 84, lines: 21..22, bytes: 761..782), hits: 30)
+-  runtime IC 592 -> Item 35: Statement (location: (source ID: 84, lines: 21..22, bytes: 761..782), hits: 30)
+
+Anchors for Contract "DeployWBCoin" (solc 0.8.30, source ID 85):
+-  runtime IC 97 -> Item 36: Line (location: (source ID: 85, lines: 9..12, bytes: 282..375), hits: 1)
+-  runtime IC 97 -> Item 37: Function "run" (location: (source ID: 85, lines: 9..12, bytes: 282..375), hits: 1)
+-  runtime IC 601 -> Item 38: Line (location: (source ID: 85, lines: 10..11, bytes: 344..368), hits: 1)
+-  runtime IC 601 -> Item 39: Statement (location: (source ID: 85, lines: 10..11, bytes: 344..368), hits: 1)
+-  runtime IC 67 -> Item 40: Line (location: (source ID: 85, lines: 13..22, bytes: 381..730), hits: 17)
+-  runtime IC 67 -> Item 41: Function "deploy" (location: (source ID: 85, lines: 13..22, bytes: 381..730), hits: 17)
+-  runtime IC 180 -> Item 42: Line (location: (source ID: 85, lines: 14..15, bytes: 434..453), hits: 18)
+-  runtime IC 180 -> Item 43: Statement (location: (source ID: 85, lines: 14..15, bytes: 434..453), hits: 18)
+-  runtime IC 270 -> Item 44: Line (location: (source ID: 85, lines: 15..16, bytes: 463..491), hits: 18)
+-  runtime IC 270 -> Item 45: Statement (location: (source ID: 85, lines: 15..16, bytes: 463..491), hits: 18)
+-  runtime IC 271 -> Item 46: Statement (location: (source ID: 85, lines: 15..16, bytes: 479..491), hits: 18)
+-  runtime IC 311 -> Item 47: Line (location: (source ID: 85, lines: 16..19, bytes: 501..662), hits: 18)
+-  runtime IC 311 -> Item 48: Statement (location: (source ID: 85, lines: 16..19, bytes: 501..662), hits: 18)
+-  runtime IC 312 -> Item 49: Statement (location: (source ID: 85, lines: 16..19, bytes: 522..662), hits: 18)
+-  runtime IC 502 -> Item 50: Line (location: (source ID: 85, lines: 19..20, bytes: 672..690), hits: 18)
+-  runtime IC 502 -> Item 51: Statement (location: (source ID: 85, lines: 19..20, bytes: 672..690), hits: 18)
+-  runtime IC 592 -> Item 52: Line (location: (source ID: 85, lines: 20..21, bytes: 700..723), hits: 18)
+-  runtime IC 592 -> Item 53: Statement (location: (source ID: 85, lines: 20..21, bytes: 700..723), hits: 18)
+
+Anchors for Contract "WBCoinV2Mock" (solc 0.8.30, source ID 94):
+- creation IC 72 -> Item 379: Line (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20)
+- creation IC 72 -> Item 380: Function "constructor" (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20)
+- creation IC 72 -> Item 381: Line (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20)
+- creation IC 72 -> Item 382: Statement (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20)
+-  runtime IC 679 -> Item 500: Line (location: (source ID: 94, lines: 9..12, bytes: 188..284), hits: 0)
+-  runtime IC 679 -> Item 501: Function "newFunction" (location: (source ID: 94, lines: 9..12, bytes: 188..284), hits: 0)
+-  runtime IC 2192 -> Item 502: Line (location: (source ID: 94, lines: 10..11, bytes: 259..277), hits: 0)
+-  runtime IC 2192 -> Item 503: Statement (location: (source ID: 94, lines: 10..11, bytes: 259..277), hits: 0)
+-  runtime IC 1813 -> Item 383: Line (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19)
+-  runtime IC 1813 -> Item 384: Function "initialize" (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19)
+-  runtime IC 3853 -> Item 385: Line (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18)
+-  runtime IC 3853 -> Item 386: Statement (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18)
+-  runtime IC 3969 -> Item 387: Line (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18)
+-  runtime IC 3969 -> Item 388: Statement (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18)
+-  runtime IC 3977 -> Item 389: Line (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18)
+-  runtime IC 3977 -> Item 390: Statement (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18)
+-  runtime IC 3985 -> Item 391: Line (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18)
+-  runtime IC 3985 -> Item 392: Statement (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18)
+-  runtime IC 3993 -> Item 393: Line (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18)
+-  runtime IC 3993 -> Item 394: Statement (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18)
+-  runtime IC 4006 -> Item 395: Line (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18)
+-  runtime IC 4006 -> Item 396: Statement (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18)
+-  runtime IC 4049 -> Item 397: Line (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18)
+-  runtime IC 4049 -> Item 398: Statement (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18)
+-  runtime IC 4092 -> Item 399: Line (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18)
+-  runtime IC 4092 -> Item 400: Statement (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18)
+-  runtime IC 1319 -> Item 401: Line (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4)
+-  runtime IC 1319 -> Item 402: Function "pause" (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4)
+-  runtime IC 2910 -> Item 403: Line (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3)
+-  runtime IC 2910 -> Item 404: Statement (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3)
+-  runtime IC 963 -> Item 405: Line (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1)
+-  runtime IC 963 -> Item 406: Function "unpause" (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1)
+-  runtime IC 2546 -> Item 407: Line (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1)
+-  runtime IC 2546 -> Item 408: Statement (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1)
+-  runtime IC 985 -> Item 409: Line (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5)
+-  runtime IC 985 -> Item 410: Function "mint" (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5)
+-  runtime IC 2599 -> Item 411: Line (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4)
+-  runtime IC 2599 -> Item 412: Statement (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4)
+-  runtime IC 5940 -> Item 413: Line (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2)
+-  runtime IC 5940 -> Item 414: Function "_authorizeUpgrade" (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2)
+-  runtime IC 7105 -> Item 415: Line (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7)
+-  runtime IC 7105 -> Item 416: Function "_update" (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7)
+-  runtime IC 7106 -> Item 417: Line (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7)
+-  runtime IC 7106 -> Item 418: Statement (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7)
+
+Anchors for Contract "WBResources" (solc 0.8.30, source ID 90):
+- creation IC 56 -> Item 317: Line (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 25)
+- creation IC 56 -> Item 318: Function "constructor" (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 25)
+- creation IC 68 -> Item 319: Line (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 25)
+- creation IC 68 -> Item 320: Statement (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 25)
+-  runtime IC 1926 -> Item 321: Line (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 24)
+-  runtime IC 1926 -> Item 322: Function "initialize" (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 24)
+-  runtime IC 4534 -> Item 323: Line (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 23)
+-  runtime IC 4534 -> Item 324: Statement (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 23)
+-  runtime IC 4557 -> Item 325: Line (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 23)
+-  runtime IC 4557 -> Item 326: Statement (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 23)
+-  runtime IC 4565 -> Item 327: Line (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 23)
+-  runtime IC 4565 -> Item 328: Statement (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 23)
+-  runtime IC 4573 -> Item 329: Line (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 23)
+-  runtime IC 4573 -> Item 330: Statement (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 23)
+-  runtime IC 4581 -> Item 331: Line (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 23)
+-  runtime IC 4581 -> Item 332: Statement (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 23)
+-  runtime IC 4589 -> Item 333: Line (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 23)
+-  runtime IC 4589 -> Item 334: Statement (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 23)
+-  runtime IC 4602 -> Item 335: Line (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 23)
+-  runtime IC 4602 -> Item 336: Statement (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 23)
+-  runtime IC 4645 -> Item 337: Line (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 23)
+-  runtime IC 4645 -> Item 338: Statement (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 23)
+-  runtime IC 4688 -> Item 339: Line (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 23)
+-  runtime IC 4688 -> Item 340: Statement (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 23)
+-  runtime IC 4731 -> Item 341: Line (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 23)
+-  runtime IC 4731 -> Item 342: Statement (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 23)
+-  runtime IC 1336 -> Item 343: Line (location: (source ID: 90, lines: 51..54, bytes: 2226..2355), hits: 5)
+-  runtime IC 1336 -> Item 344: Function "setURI" (location: (source ID: 90, lines: 51..54, bytes: 2226..2355), hits: 5)
+-  runtime IC 3367 -> Item 345: Line (location: (source ID: 90, lines: 52..53, bytes: 2324..2348), hits: 3)
+-  runtime IC 3367 -> Item 346: Statement (location: (source ID: 90, lines: 52..53, bytes: 2324..2348), hits: 3)
+-  runtime IC 1314 -> Item 347: Line (location: (source ID: 90, lines: 55..58, bytes: 2361..2432), hits: 3)
+-  runtime IC 1314 -> Item 348: Function "pause" (location: (source ID: 90, lines: 55..58, bytes: 2361..2432), hits: 3)
+-  runtime IC 3314 -> Item 349: Line (location: (source ID: 90, lines: 56..57, bytes: 2417..2425), hits: 2)
+-  runtime IC 3314 -> Item 350: Statement (location: (source ID: 90, lines: 56..57, bytes: 2417..2425), hits: 2)
+-  runtime IC 616 -> Item 351: Line (location: (source ID: 90, lines: 59..62, bytes: 2438..2628), hits: 7)
+-  runtime IC 616 -> Item 352: Function "uri" (location: (source ID: 90, lines: 59..62, bytes: 2438..2628), hits: 7)
+-  runtime IC 2085 -> Item 353: Line (location: (source ID: 90, lines: 60..61, bytes: 2573..2621), hits: 10)
+-  runtime IC 2085 -> Item 354: Statement (location: (source ID: 90, lines: 60..61, bytes: 2573..2621), hits: 10)
+-  runtime IC 2085 -> Item 355: Statement (location: (source ID: 90, lines: 60..61, bytes: 2580..2621), hits: 10)
+-  runtime IC 938 -> Item 356: Line (location: (source ID: 90, lines: 63..66, bytes: 2634..2709), hits: 1)
+-  runtime IC 938 -> Item 357: Function "unpause" (location: (source ID: 90, lines: 63..66, bytes: 2634..2709), hits: 1)
+-  runtime IC 2593 -> Item 358: Line (location: (source ID: 90, lines: 64..65, bytes: 2692..2702), hits: 1)
+-  runtime IC 2593 -> Item 359: Statement (location: (source ID: 90, lines: 64..65, bytes: 2692..2702), hits: 1)
+-  runtime IC 1232 -> Item 360: Line (location: (source ID: 90, lines: 67..70, bytes: 2715..2871), hits: 5)
+-  runtime IC 1232 -> Item 361: Function "mint" (location: (source ID: 90, lines: 67..70, bytes: 2715..2871), hits: 5)
+-  runtime IC 3217 -> Item 362: Line (location: (source ID: 90, lines: 68..69, bytes: 2832..2864), hits: 4)
+-  runtime IC 3217 -> Item 363: Statement (location: (source ID: 90, lines: 68..69, bytes: 2832..2864), hits: 4)
+-  runtime IC 718 -> Item 364: Line (location: (source ID: 90, lines: 71..77, bytes: 2877..3075), hits: 2)
+-  runtime IC 718 -> Item 365: Function "mintBatch" (location: (source ID: 90, lines: 71..77, bytes: 2877..3075), hits: 2)
+-  runtime IC 2166 -> Item 366: Line (location: (source ID: 90, lines: 75..76, bytes: 3034..3068), hits: 1)
+-  runtime IC 2166 -> Item 367: Statement (location: (source ID: 90, lines: 75..76, bytes: 3034..3068), hits: 1)
+-  runtime IC 6626 -> Item 368: Line (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 2)
+-  runtime IC 6626 -> Item 369: Function "_authorizeUpgrade" (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 2)
+-  runtime IC 9808 -> Item 370: Line (location: (source ID: 90, lines: 82..88, bytes: 3253..3508), hits: 8)
+-  runtime IC 9808 -> Item 371: Function "_update" (location: (source ID: 90, lines: 82..88, bytes: 3253..3508), hits: 8)
+-  runtime IC 9809 -> Item 372: Line (location: (source ID: 90, lines: 86..87, bytes: 3465..3501), hits: 8)
+-  runtime IC 9809 -> Item 373: Statement (location: (source ID: 90, lines: 86..87, bytes: 3465..3501), hits: 8)
+-  runtime IC 556 -> Item 374: Line (location: (source ID: 90, lines: 89..97, bytes: 3514..3739), hits: 2)
+-  runtime IC 556 -> Item 375: Function "supportsInterface" (location: (source ID: 90, lines: 89..97, bytes: 3514..3739), hits: 2)
+-  runtime IC 2067 -> Item 376: Line (location: (source ID: 90, lines: 95..96, bytes: 3689..3732), hits: 2)
+-  runtime IC 2067 -> Item 377: Statement (location: (source ID: 90, lines: 95..96, bytes: 3689..3732), hits: 2)
+-  runtime IC 2067 -> Item 378: Statement (location: (source ID: 90, lines: 95..96, bytes: 3696..3732), hits: 2)
+
+Anchors for Contract "GameMarket" (solc 0.8.30, source ID 87):
+- creation IC 56 -> Item 72: Line (location: (source ID: 87, lines: 11..14, bytes: 575..628), hits: 0)
+- creation IC 56 -> Item 73: Function "constructor" (location: (source ID: 87, lines: 11..14, bytes: 575..628), hits: 0)
+- creation IC 68 -> Item 74: Line (location: (source ID: 87, lines: 12..13, bytes: 599..621), hits: 0)
+- creation IC 68 -> Item 75: Statement (location: (source ID: 87, lines: 12..13, bytes: 599..621), hits: 0)
+-  runtime IC 726 -> Item 76: Line (location: (source ID: 87, lines: 15..18, bytes: 634..751), hits: 0)
+-  runtime IC 726 -> Item 77: Function "initialize" (location: (source ID: 87, lines: 15..18, bytes: 634..751), hits: 0)
+-  runtime IC 2153 -> Item 78: Line (location: (source ID: 87, lines: 16..17, bytes: 687..744), hits: 0)
+-  runtime IC 2153 -> Item 79: Statement (location: (source ID: 87, lines: 16..17, bytes: 687..744), hits: 0)
+-  runtime IC 3723 -> Item 80: Line (location: (source ID: 87, lines: 19..20, bytes: 757..860), hits: 0)
+-  runtime IC 3723 -> Item 81: Function "_authorizeUpgrade" (location: (source ID: 87, lines: 19..20, bytes: 757..860), hits: 0)
+
+Anchors for Contract "WBResourcesV2Mock" (solc 0.8.30, source ID 95):
+- creation IC 72 -> Item 317: Line (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 25)
+- creation IC 72 -> Item 318: Function "constructor" (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 25)
+- creation IC 72 -> Item 319: Line (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 25)
+- creation IC 72 -> Item 320: Statement (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 25)
+-  runtime IC 740 -> Item 504: Line (location: (source ID: 95, lines: 9..12, bytes: 210..306), hits: 0)
+-  runtime IC 740 -> Item 505: Function "newFunction" (location: (source ID: 95, lines: 9..12, bytes: 210..306), hits: 0)
+-  runtime IC 2232 -> Item 506: Line (location: (source ID: 95, lines: 10..11, bytes: 281..299), hits: 0)
+-  runtime IC 2232 -> Item 507: Statement (location: (source ID: 95, lines: 10..11, bytes: 281..299), hits: 0)
+-  runtime IC 2032 -> Item 321: Line (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 24)
+-  runtime IC 2032 -> Item 322: Function "initialize" (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 24)
+-  runtime IC 4706 -> Item 323: Line (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 23)
+-  runtime IC 4706 -> Item 324: Statement (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 23)
+-  runtime IC 4729 -> Item 325: Line (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 23)
+-  runtime IC 4729 -> Item 326: Statement (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 23)
+-  runtime IC 4737 -> Item 327: Line (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 23)
+-  runtime IC 4737 -> Item 328: Statement (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 23)
+-  runtime IC 4745 -> Item 329: Line (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 23)
+-  runtime IC 4745 -> Item 330: Statement (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 23)
+-  runtime IC 4753 -> Item 331: Line (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 23)
+-  runtime IC 4753 -> Item 332: Statement (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 23)
+-  runtime IC 4761 -> Item 333: Line (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 23)
+-  runtime IC 4761 -> Item 334: Statement (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 23)
+-  runtime IC 4774 -> Item 335: Line (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 23)
+-  runtime IC 4774 -> Item 336: Statement (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 23)
+-  runtime IC 4817 -> Item 337: Line (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 23)
+-  runtime IC 4817 -> Item 338: Statement (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 23)
+-  runtime IC 4860 -> Item 339: Line (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 23)
+-  runtime IC 4860 -> Item 340: Statement (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 23)
+-  runtime IC 4903 -> Item 341: Line (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 23)
+-  runtime IC 4903 -> Item 342: Statement (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 23)
+-  runtime IC 1442 -> Item 343: Line (location: (source ID: 90, lines: 51..54, bytes: 2226..2355), hits: 5)
+-  runtime IC 1442 -> Item 344: Function "setURI" (location: (source ID: 90, lines: 51..54, bytes: 2226..2355), hits: 5)
+-  runtime IC 3539 -> Item 345: Line (location: (source ID: 90, lines: 52..53, bytes: 2324..2348), hits: 3)
+-  runtime IC 3539 -> Item 346: Statement (location: (source ID: 90, lines: 52..53, bytes: 2324..2348), hits: 3)
+-  runtime IC 1420 -> Item 347: Line (location: (source ID: 90, lines: 55..58, bytes: 2361..2432), hits: 3)
+-  runtime IC 1420 -> Item 348: Function "pause" (location: (source ID: 90, lines: 55..58, bytes: 2361..2432), hits: 3)
+-  runtime IC 3486 -> Item 349: Line (location: (source ID: 90, lines: 56..57, bytes: 2417..2425), hits: 2)
+-  runtime IC 3486 -> Item 350: Statement (location: (source ID: 90, lines: 56..57, bytes: 2417..2425), hits: 2)
+-  runtime IC 638 -> Item 351: Line (location: (source ID: 90, lines: 59..62, bytes: 2438..2628), hits: 7)
+-  runtime IC 638 -> Item 352: Function "uri" (location: (source ID: 90, lines: 59..62, bytes: 2438..2628), hits: 7)
+-  runtime IC 2191 -> Item 353: Line (location: (source ID: 90, lines: 60..61, bytes: 2573..2621), hits: 10)
+-  runtime IC 2191 -> Item 354: Statement (location: (source ID: 90, lines: 60..61, bytes: 2573..2621), hits: 10)
+-  runtime IC 2191 -> Item 355: Statement (location: (source ID: 90, lines: 60..61, bytes: 2580..2621), hits: 10)
+-  runtime IC 1002 -> Item 356: Line (location: (source ID: 90, lines: 63..66, bytes: 2634..2709), hits: 1)
+-  runtime IC 1002 -> Item 357: Function "unpause" (location: (source ID: 90, lines: 63..66, bytes: 2634..2709), hits: 1)
+-  runtime IC 2760 -> Item 358: Line (location: (source ID: 90, lines: 64..65, bytes: 2692..2702), hits: 1)
+-  runtime IC 2760 -> Item 359: Statement (location: (source ID: 90, lines: 64..65, bytes: 2692..2702), hits: 1)
+-  runtime IC 1338 -> Item 360: Line (location: (source ID: 90, lines: 67..70, bytes: 2715..2871), hits: 5)
+-  runtime IC 1338 -> Item 361: Function "mint" (location: (source ID: 90, lines: 67..70, bytes: 2715..2871), hits: 5)
+-  runtime IC 3389 -> Item 362: Line (location: (source ID: 90, lines: 68..69, bytes: 2832..2864), hits: 4)
+-  runtime IC 3389 -> Item 363: Statement (location: (source ID: 90, lines: 68..69, bytes: 2832..2864), hits: 4)
+-  runtime IC 782 -> Item 364: Line (location: (source ID: 90, lines: 71..77, bytes: 2877..3075), hits: 2)
+-  runtime IC 782 -> Item 365: Function "mintBatch" (location: (source ID: 90, lines: 71..77, bytes: 2877..3075), hits: 2)
+-  runtime IC 2333 -> Item 366: Line (location: (source ID: 90, lines: 75..76, bytes: 3034..3068), hits: 1)
+-  runtime IC 2333 -> Item 367: Statement (location: (source ID: 90, lines: 75..76, bytes: 3034..3068), hits: 1)
+-  runtime IC 6798 -> Item 368: Line (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 2)
+-  runtime IC 6798 -> Item 369: Function "_authorizeUpgrade" (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 2)
+-  runtime IC 9980 -> Item 370: Line (location: (source ID: 90, lines: 82..88, bytes: 3253..3508), hits: 8)
+-  runtime IC 9980 -> Item 371: Function "_update" (location: (source ID: 90, lines: 82..88, bytes: 3253..3508), hits: 8)
+-  runtime IC 9981 -> Item 372: Line (location: (source ID: 90, lines: 86..87, bytes: 3465..3501), hits: 8)
+-  runtime IC 9981 -> Item 373: Statement (location: (source ID: 90, lines: 86..87, bytes: 3465..3501), hits: 8)
+-  runtime IC 578 -> Item 374: Line (location: (source ID: 90, lines: 89..97, bytes: 3514..3739), hits: 2)
+-  runtime IC 578 -> Item 375: Function "supportsInterface" (location: (source ID: 90, lines: 89..97, bytes: 3514..3739), hits: 2)
+-  runtime IC 2173 -> Item 376: Line (location: (source ID: 90, lines: 95..96, bytes: 3689..3732), hits: 2)
+-  runtime IC 2173 -> Item 377: Statement (location: (source ID: 90, lines: 95..96, bytes: 3689..3732), hits: 2)
+-  runtime IC 2173 -> Item 378: Statement (location: (source ID: 90, lines: 95..96, bytes: 3696..3732), hits: 2)
+
+Anchors for Contract "DeployWBResources" (solc 0.8.30, source ID 86):
+-  runtime IC 97 -> Item 54: Line (location: (source ID: 86, lines: 9..12, bytes: 299..400), hits: 1)
+-  runtime IC 97 -> Item 55: Function "run" (location: (source ID: 86, lines: 9..12, bytes: 299..400), hits: 1)
+-  runtime IC 601 -> Item 56: Line (location: (source ID: 86, lines: 10..11, bytes: 366..393), hits: 1)
+-  runtime IC 601 -> Item 57: Statement (location: (source ID: 86, lines: 10..11, bytes: 366..393), hits: 1)
+-  runtime IC 67 -> Item 58: Line (location: (source ID: 86, lines: 13..23, bytes: 406..790), hits: 22)
+-  runtime IC 67 -> Item 59: Function "deploy" (location: (source ID: 86, lines: 13..23, bytes: 406..790), hits: 22)
+-  runtime IC 180 -> Item 60: Line (location: (source ID: 86, lines: 14..15, bytes: 459..478), hits: 23)
+-  runtime IC 180 -> Item 61: Statement (location: (source ID: 86, lines: 14..15, bytes: 459..478), hits: 23)
+-  runtime IC 270 -> Item 62: Line (location: (source ID: 86, lines: 15..16, bytes: 488..531), hits: 23)
+-  runtime IC 270 -> Item 63: Statement (location: (source ID: 86, lines: 15..16, bytes: 488..531), hits: 23)
+-  runtime IC 271 -> Item 64: Statement (location: (source ID: 86, lines: 15..16, bytes: 514..531), hits: 23)
+-  runtime IC 311 -> Item 65: Line (location: (source ID: 86, lines: 16..20, bytes: 541..724), hits: 23)
+-  runtime IC 311 -> Item 66: Statement (location: (source ID: 86, lines: 16..20, bytes: 541..724), hits: 23)
+-  runtime IC 312 -> Item 67: Statement (location: (source ID: 86, lines: 16..20, bytes: 562..724), hits: 23)
+-  runtime IC 502 -> Item 68: Line (location: (source ID: 86, lines: 20..21, bytes: 734..752), hits: 23)
+-  runtime IC 502 -> Item 69: Statement (location: (source ID: 86, lines: 20..21, bytes: 734..752), hits: 23)
+-  runtime IC 592 -> Item 70: Line (location: (source ID: 86, lines: 21..22, bytes: 762..783), hits: 23)
+-  runtime IC 592 -> Item 71: Statement (location: (source ID: 86, lines: 21..22, bytes: 762..783), hits: 23)
+
+Anchors for Contract "WBCharacterV2Mock" (solc 0.8.30, source ID 93):
+- creation IC 72 -> Item 419: Line (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 32)
+- creation IC 72 -> Item 420: Function "constructor" (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 32)
+- creation IC 72 -> Item 421: Line (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 32)
+- creation IC 72 -> Item 422: Statement (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 32)
+-  runtime IC 774 -> Item 496: Line (location: (source ID: 93, lines: 9..12, bytes: 209..305), hits: 0)
+-  runtime IC 774 -> Item 497: Function "newFunction" (location: (source ID: 93, lines: 9..12, bytes: 209..305), hits: 0)
+-  runtime IC 2418 -> Item 498: Line (location: (source ID: 93, lines: 10..11, bytes: 280..298), hits: 0)
+-  runtime IC 2418 -> Item 499: Statement (location: (source ID: 93, lines: 10..11, bytes: 280..298), hits: 0)
+-  runtime IC 2126 -> Item 423: Line (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 31)
+-  runtime IC 2126 -> Item 424: Function "initialize" (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 31)
+-  runtime IC 4826 -> Item 425: Line (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 30)
+-  runtime IC 4826 -> Item 426: Statement (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 30)
+-  runtime IC 4942 -> Item 427: Line (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 30)
+-  runtime IC 4942 -> Item 428: Statement (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 30)
+-  runtime IC 4950 -> Item 429: Line (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 30)
+-  runtime IC 4950 -> Item 430: Statement (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 30)
+-  runtime IC 4958 -> Item 431: Line (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 30)
+-  runtime IC 4958 -> Item 432: Statement (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 30)
+-  runtime IC 4966 -> Item 433: Line (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 30)
+-  runtime IC 4966 -> Item 434: Statement (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 30)
+-  runtime IC 4974 -> Item 435: Line (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 30)
+-  runtime IC 4974 -> Item 436: Statement (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 30)
+-  runtime IC 4982 -> Item 437: Line (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 30)
+-  runtime IC 4982 -> Item 438: Statement (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 30)
+-  runtime IC 4995 -> Item 439: Line (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 30)
+-  runtime IC 4995 -> Item 440: Statement (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 30)
+-  runtime IC 5038 -> Item 441: Line (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 30)
+-  runtime IC 5038 -> Item 442: Statement (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 30)
+-  runtime IC 5081 -> Item 443: Line (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 30)
+-  runtime IC 5081 -> Item 444: Statement (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 30)
+-  runtime IC 1492 -> Item 445: Line (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 6)
+-  runtime IC 1492 -> Item 446: Function "pause" (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 6)
+-  runtime IC 3716 -> Item 447: Line (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 5)
+-  runtime IC 3716 -> Item 448: Statement (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 5)
+-  runtime IC 1056 -> Item 449: Line (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 3)
+-  runtime IC 1056 -> Item 450: Function "unpause" (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 3)
+-  runtime IC 3150 -> Item 451: Line (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 2)
+-  runtime IC 3150 -> Item 452: Statement (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 2)
+-  runtime IC 1840 -> Item 453: Line (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 20)
+-  runtime IC 1840 -> Item 454: Function "safeMint" (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 20)
+-  runtime IC 4181 -> Item 455: Line (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 19)
+-  runtime IC 4181 -> Item 456: Statement (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 19)
+-  runtime IC 4182 -> Item 457: Statement (location: (source ID: 92, lines: 69..70, bytes: 2810..2834), hits: 19)
+-  runtime IC 4192 -> Item 458: Line (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 19)
+-  runtime IC 4192 -> Item 459: Statement (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 19)
+-  runtime IC 4193 -> Item 460: Statement (location: (source ID: 92, lines: 70..71, bytes: 2862..2878), hits: 19)
+-  runtime IC 4218 -> Item 461: Line (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 19)
+-  runtime IC 4218 -> Item 462: Statement (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 19)
+-  runtime IC 4228 -> Item 463: Line (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 19)
+-  runtime IC 4228 -> Item 464: Statement (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 19)
+-  runtime IC 4238 -> Item 465: Line (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 19)
+-  runtime IC 4238 -> Item 466: Statement (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 19)
+-  runtime IC 8271 -> Item 467: Line (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 19)
+-  runtime IC 8271 -> Item 468: Function "_getWBCharacterStorage" (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 19)
+-  runtime IC 8273 -> Item 469: Line (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 19)
+-  runtime IC 8273 -> Item 470: Statement (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 19)
+-  runtime IC 6569 -> Item 471: Line (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 2)
+-  runtime IC 6569 -> Item 472: Function "_authorizeUpgrade" (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 2)
+-  runtime IC 5653 -> Item 473: Line (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 27)
+-  runtime IC 5653 -> Item 474: Function "_update" (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 27)
+-  runtime IC 5655 -> Item 475: Line (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 27)
+-  runtime IC 5655 -> Item 476: Statement (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 27)
+-  runtime IC 5655 -> Item 477: Statement (location: (source ID: 92, lines: 91..92, bytes: 3551..3583), hits: 27)
+-  runtime IC 1780 -> Item 482: Line (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 5)
+-  runtime IC 1780 -> Item 483: Function "tokenURI" (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 5)
+-  runtime IC 4122 -> Item 484: Line (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 5)
+-  runtime IC 4122 -> Item 485: Statement (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 5)
+-  runtime IC 4122 -> Item 486: Statement (location: (source ID: 92, lines: 107..108, bytes: 3982..4005), hits: 5)
+-  runtime IC 530 -> Item 487: Line (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 4)
+-  runtime IC 530 -> Item 488: Function "supportsInterface" (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 4)
+-  runtime IC 2168 -> Item 489: Line (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 4)
+-  runtime IC 2168 -> Item 490: Statement (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 4)
+-  runtime IC 2168 -> Item 491: Statement (location: (source ID: 92, lines: 116..117, bytes: 4257..4293), hits: 4)
+-  runtime IC 9636 -> Item 492: Line (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 4)
+-  runtime IC 9636 -> Item 493: Function "_baseURI" (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 4)
+-  runtime IC 9639 -> Item 494: Line (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 4)
+-  runtime IC 9639 -> Item 495: Statement (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 4)
+
+Anchors for Contract "DeployGameRegestry" (solc 0.8.30, source ID 83):
+-  runtime IC 97 -> Item 0: Line (location: (source ID: 83, lines: 9..12, bytes: 287..390), hits: 0)
+-  runtime IC 97 -> Item 1: Function "run" (location: (source ID: 83, lines: 9..12, bytes: 287..390), hits: 0)
+-  runtime IC 911 -> Item 2: Line (location: (source ID: 83, lines: 10..11, bytes: 355..383), hits: 0)
+-  runtime IC 911 -> Item 3: Statement (location: (source ID: 83, lines: 10..11, bytes: 355..383), hits: 0)
+-  runtime IC 67 -> Item 4: Line (location: (source ID: 83, lines: 13..26, bytes: 396..863), hits: 14)
+-  runtime IC 67 -> Item 5: Function "deploy" (location: (source ID: 83, lines: 13..26, bytes: 396..863), hits: 14)
+-  runtime IC 180 -> Item 6: Line (location: (source ID: 83, lines: 14..15, bytes: 449..468), hits: 14)
+-  runtime IC 180 -> Item 7: Statement (location: (source ID: 83, lines: 14..15, bytes: 449..468), hits: 14)
+-  runtime IC 270 -> Item 8: Line (location: (source ID: 83, lines: 15..16, bytes: 478..524), hits: 14)
+-  runtime IC 270 -> Item 9: Statement (location: (source ID: 83, lines: 15..16, bytes: 478..524), hits: 14)
+-  runtime IC 271 -> Item 10: Statement (location: (source ID: 83, lines: 15..16, bytes: 506..524), hits: 14)
+-  runtime IC 311 -> Item 11: Line (location: (source ID: 83, lines: 16..23, bytes: 534..797), hits: 14)
+-  runtime IC 311 -> Item 12: Statement (location: (source ID: 83, lines: 16..23, bytes: 534..797), hits: 14)
+-  runtime IC 312 -> Item 13: Statement (location: (source ID: 83, lines: 16..23, bytes: 555..797), hits: 14)
+-  runtime IC 812 -> Item 14: Line (location: (source ID: 83, lines: 23..24, bytes: 807..825), hits: 14)
+-  runtime IC 812 -> Item 15: Statement (location: (source ID: 83, lines: 23..24, bytes: 807..825), hits: 14)
+-  runtime IC 902 -> Item 16: Line (location: (source ID: 83, lines: 24..25, bytes: 835..856), hits: 14)
+-  runtime IC 902 -> Item 17: Statement (location: (source ID: 83, lines: 24..25, bytes: 835..856), hits: 14)
 

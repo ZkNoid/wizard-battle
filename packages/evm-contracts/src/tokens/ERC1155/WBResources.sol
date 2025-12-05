@@ -48,6 +48,9 @@ contract WBResources is
         _grantRole(URI_SETTER_ROLE, defaultAdmin);
     }
 
+    /// get url should return a JSON ?
+    /// TODO: check specs!
+
     function setURI(uint256 tokenId, string memory newuri) public onlyRole(URI_SETTER_ROLE) {
         _setURI(tokenId, newuri);
     }
