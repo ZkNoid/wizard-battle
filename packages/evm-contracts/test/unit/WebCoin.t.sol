@@ -3,7 +3,7 @@ pragma solidity ^0.8.27;
 
 import {Test, console2} from "forge-std/Test.sol";
 import {WBCoin} from "../../src/tokens/ERC20/WBCoin.sol";
-import {DeployWBCoin} from "../../script/DeployWbCoin.s.sol";
+import {DeployWBCoin} from "../../script/DeployWBCoin.s.sol";
 import {WBCoinV2Mock} from "../mocks/WBCoinV2Mock.sol"; // We'll create this mock below
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";

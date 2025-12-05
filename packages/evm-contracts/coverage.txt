@@ -1,1 +1,1138 @@
 Compiling 98 files with Solc 0.8.30
+Solc 0.8.30 finished in 3.12s
+Compiler run successful!
+Analysing contracts...
+Running tests...
+
+Ran 1 test for test/unit/WBCharacter.t.sol:WBCharacterTest
+[PASS] test_setUp() (gas: 182)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 3.68ms (1.66ms CPU time)
+
+Ran 16 tests for test/unit/WebCoin.t.sol:WBCoinTest
+[PASS] test_AdminCanGrantAndRevokeRoles() (gas: 49190)
+[PASS] test_Burn() (gas: 80723)
+[PASS] test_DeployDeploy() (gas: 5671601)
+[PASS] test_DeployRun() (gas: 5671567)
+[PASS] test_Initialization() (gas: 63455)
+[PASS] test_InitializeCannotBeCalledTwice() (gas: 26183)
+[PASS] test_MintByMinter() (gas: 74278)
+[PASS] test_MintRevertsIfNotMinter() (gas: 24529)
+[PASS] test_NonAdminCannotGrantRoles() (gas: 26843)
+[PASS] test_PauseByPauser() (gas: 43594)
+[PASS] test_PauseRevertsIfNotPauser() (gas: 21596)
+[PASS] test_TransfersAllowedWhenUnpaused() (gas: 105877)
+[PASS] test_TransfersBlockedWhenPaused() (gas: 104570)
+[PASS] test_UnpauseByPauser() (gas: 34152)
+[PASS] test_UpgradeByUpgrader() (gas: 2454502)
+[PASS] test_UpgradeRevertsIfNotUpgrader() (gas: 2450014)
+Suite result: ok. 16 passed; 0 failed; 0 skipped; finished in 13.80ms (35.89ms CPU time)
+
+Ran 14 tests for test/unit/GameRegestry.t.sol:GameRegestryTest
+[PASS] test_addGameElement() (gas: 188)
+[PASS] test_commitResources() (gas: 211)
+[PASS] test_getCharactersList() (gas: 189)
+[PASS] test_getGameCoinsList() (gas: 209)
+[PASS] test_getGameElement() (gas: 189)
+[PASS] test_getResourcesList() (gas: 233)
+[PASS] test_getUniqueItemsList() (gas: 233)
+[PASS] test_grantAdminRole() (gas: 210)
+[PASS] test_grantRole() (gas: 212)
+[PASS] test_removeGameElement() (gas: 234)
+[PASS] test_renounceAdminRole() (gas: 231)
+[PASS] test_revokeAdminRole() (gas: 188)
+[PASS] test_revokeRole() (gas: 211)
+[PASS] test_setUp() (gas: 249)
+Suite result: ok. 14 passed; 0 failed; 0 skipped; finished in 13.89ms (16.51ms CPU time)
+
+Ran 19 tests for test/unit/WBRresources.t.sol:WBResourcesTest
+[PASS] test_BurnReducesSupply() (gas: 111175)
+[PASS] test_DeployDeploy() (gas: 8260980)
+[PASS] test_DeployRun() (gas: 8261057)
+[PASS] test_Initialization() (gas: 54506)
+[PASS] test_InitializeCannotBeCalledTwice() (gas: 17727)
+[PASS] test_MintBatchByMinter() (gas: 156487)
+[PASS] test_MintBatchRevertsIfNotMinter() (gas: 28406)
+[PASS] test_MintByMinter() (gas: 99414)
+[PASS] test_MintRevertsIfNotMinter() (gas: 25885)
+[PASS] test_PauseAndUnpause() (gas: 30940)
+[PASS] test_PauseRevertsIfNotPauser() (gas: 21664)
+[PASS] test_SetURIRevertsWithoutRole() (gas: 23052)
+[PASS] test_SetURIWithDifferentURIs() (gas: 82993)
+[PASS] test_SetURIWithRole() (gas: 60720)
+[PASS] test_SupportsInterface() (gas: 13550)
+[PASS] test_TransfersAllowedWhenUnpaused() (gas: 139720)
+[PASS] test_TransfersBlockedWhenPaused() (gas: 130463)
+[PASS] test_setURI() (gas: 51686)
+[PASS] test_setURIRevertsIfNotURISetter() (gas: 23075)
+Suite result: ok. 19 passed; 0 failed; 0 skipped; finished in 13.87ms (34.43ms CPU time)
+
+Ran 4 test suites in 361.26ms (45.23ms CPU time): 50 tests passed, 0 failed, 0 skipped (50 total tests)
+script/DeployGameRegestry.s.sol:
+- Line (location: (source ID: 83, lines: 9..12, bytes: 287..390), hits: 0) -> "function run() public returns (a...xyGameRegestry = deploy();\n    }"
+- Function "run" (location: (source ID: 83, lines: 9..12, bytes: 287..390), hits: 0) -> "function run() public returns (a...xyGameRegestry = deploy();\n    }"
+- Line (location: (source ID: 83, lines: 10..11, bytes: 355..383), hits: 0) -> "proxyGameRegestry = deploy()"
+- Statement (location: (source ID: 83, lines: 10..11, bytes: 355..383), hits: 0) -> "proxyGameRegestry = deploy()"
+- Line (location: (source ID: 83, lines: 13..26, bytes: 396..863), hits: 14) -> "function deploy() public returns...    return address(proxy);\n    }"
+- Function "deploy" (location: (source ID: 83, lines: 13..26, bytes: 396..863), hits: 14) -> "function deploy() public returns...    return address(proxy);\n    }"
+- Line (location: (source ID: 83, lines: 14..15, bytes: 449..468), hits: 14) -> "vm.startBroadcast()"
+- Statement (location: (source ID: 83, lines: 14..15, bytes: 449..468), hits: 14) -> "vm.startBroadcast()"
+- Line (location: (source ID: 83, lines: 15..16, bytes: 478..524), hits: 14) -> "GameRegestry gameRegestry = new GameRegestry()"
+- Statement (location: (source ID: 83, lines: 15..16, bytes: 478..524), hits: 14) -> "GameRegestry gameRegestry = new GameRegestry()"
+- Statement (location: (source ID: 83, lines: 15..16, bytes: 506..524), hits: 14) -> "new GameRegestry()"
+- Line (location: (source ID: 83, lines: 16..23, bytes: 534..797), hits: 14) -> "ERC1967Proxy proxy = new ERC1967....sender)\n            )\n        )"
+- Statement (location: (source ID: 83, lines: 16..23, bytes: 534..797), hits: 14) -> "ERC1967Proxy proxy = new ERC1967....sender)\n            )\n        )"
+- Statement (location: (source ID: 83, lines: 16..23, bytes: 555..797), hits: 14) -> "new ERC1967Proxy(\n            ad....sender)\n            )\n        )"
+- Line (location: (source ID: 83, lines: 23..24, bytes: 807..825), hits: 14) -> "vm.stopBroadcast()"
+- Statement (location: (source ID: 83, lines: 23..24, bytes: 807..825), hits: 14) -> "vm.stopBroadcast()"
+- Line (location: (source ID: 83, lines: 24..25, bytes: 835..856), hits: 14) -> "return address(proxy)"
+- Statement (location: (source ID: 83, lines: 24..25, bytes: 835..856), hits: 14) -> "return address(proxy)"
+
+script/DeployWBCharacter.s.sol:
+- Line (location: (source ID: 84, lines: 9..12, bytes: 298..399), hits: 0) -> "function run() public returns (a...oxyWbCharacter = deploy();\n    }"
+- Function "run" (location: (source ID: 84, lines: 9..12, bytes: 298..399), hits: 0) -> "function run() public returns (a...oxyWbCharacter = deploy();\n    }"
+- Line (location: (source ID: 84, lines: 10..11, bytes: 365..392), hits: 0) -> "proxyWbCharacter = deploy()"
+- Statement (location: (source ID: 84, lines: 10..11, bytes: 365..392), hits: 0) -> "proxyWbCharacter = deploy()"
+- Line (location: (source ID: 84, lines: 13..23, bytes: 405..789), hits: 1) -> "function deploy() public returns...    return address(proxy);\n    }"
+- Function "deploy" (location: (source ID: 84, lines: 13..23, bytes: 405..789), hits: 1) -> "function deploy() public returns...    return address(proxy);\n    }"
+- Line (location: (source ID: 84, lines: 14..15, bytes: 458..477), hits: 1) -> "vm.startBroadcast()"
+- Statement (location: (source ID: 84, lines: 14..15, bytes: 458..477), hits: 1) -> "vm.startBroadcast()"
+- Line (location: (source ID: 84, lines: 15..16, bytes: 487..530), hits: 1) -> "WBCharacter wbCharacter = new WBCharacter()"
+- Statement (location: (source ID: 84, lines: 15..16, bytes: 487..530), hits: 1) -> "WBCharacter wbCharacter = new WBCharacter()"
+- Statement (location: (source ID: 84, lines: 15..16, bytes: 513..530), hits: 1) -> "new WBCharacter()"
+- Line (location: (source ID: 84, lines: 16..20, bytes: 540..723), hits: 1) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
+- Statement (location: (source ID: 84, lines: 16..20, bytes: 540..723), hits: 1) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
+- Statement (location: (source ID: 84, lines: 16..20, bytes: 561..723), hits: 1) -> "new ERC1967Proxy(\n            ad...g.sender, msg.sender))\n        )"
+- Line (location: (source ID: 84, lines: 20..21, bytes: 733..751), hits: 1) -> "vm.stopBroadcast()"
+- Statement (location: (source ID: 84, lines: 20..21, bytes: 733..751), hits: 1) -> "vm.stopBroadcast()"
+- Line (location: (source ID: 84, lines: 21..22, bytes: 761..782), hits: 1) -> "return address(proxy)"
+- Statement (location: (source ID: 84, lines: 21..22, bytes: 761..782), hits: 1) -> "return address(proxy)"
+
+script/DeployWBCoin.s.sol:
+- Line (location: (source ID: 85, lines: 9..12, bytes: 282..375), hits: 1) -> "function run() public returns (a... (proxyWBCoin) = deploy();\n    }"
+- Function "run" (location: (source ID: 85, lines: 9..12, bytes: 282..375), hits: 1) -> "function run() public returns (a... (proxyWBCoin) = deploy();\n    }"
+- Line (location: (source ID: 85, lines: 10..11, bytes: 344..368), hits: 1) -> "(proxyWBCoin) = deploy()"
+- Statement (location: (source ID: 85, lines: 10..11, bytes: 344..368), hits: 1) -> "(proxyWBCoin) = deploy()"
+- Line (location: (source ID: 85, lines: 13..22, bytes: 381..730), hits: 17) -> "function deploy() public returns...  return (address(proxy));\n    }"
+- Function "deploy" (location: (source ID: 85, lines: 13..22, bytes: 381..730), hits: 17) -> "function deploy() public returns...  return (address(proxy));\n    }"
+- Line (location: (source ID: 85, lines: 14..15, bytes: 434..453), hits: 18) -> "vm.startBroadcast()"
+- Statement (location: (source ID: 85, lines: 14..15, bytes: 434..453), hits: 18) -> "vm.startBroadcast()"
+- Line (location: (source ID: 85, lines: 15..16, bytes: 463..491), hits: 18) -> "WBCoin wbCoin = new WBCoin()"
+- Statement (location: (source ID: 85, lines: 15..16, bytes: 463..491), hits: 18) -> "WBCoin wbCoin = new WBCoin()"
+- Statement (location: (source ID: 85, lines: 15..16, bytes: 479..491), hits: 18) -> "new WBCoin()"
+- Line (location: (source ID: 85, lines: 16..19, bytes: 501..662), hits: 18) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
+- Statement (location: (source ID: 85, lines: 16..19, bytes: 501..662), hits: 18) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
+- Statement (location: (source ID: 85, lines: 16..19, bytes: 522..662), hits: 18) -> "new ERC1967Proxy(\n            ad...g.sender, msg.sender))\n        )"
+- Line (location: (source ID: 85, lines: 19..20, bytes: 672..690), hits: 18) -> "vm.stopBroadcast()"
+- Statement (location: (source ID: 85, lines: 19..20, bytes: 672..690), hits: 18) -> "vm.stopBroadcast()"
+- Line (location: (source ID: 85, lines: 20..21, bytes: 700..723), hits: 18) -> "return (address(proxy))"
+- Statement (location: (source ID: 85, lines: 20..21, bytes: 700..723), hits: 18) -> "return (address(proxy))"
+
+script/DeployWBResources.s.sol:
+- Line (location: (source ID: 86, lines: 9..12, bytes: 299..400), hits: 1) -> "function run() public returns (a...oxyWbResources = deploy();\n    }"
+- Function "run" (location: (source ID: 86, lines: 9..12, bytes: 299..400), hits: 1) -> "function run() public returns (a...oxyWbResources = deploy();\n    }"
+- Line (location: (source ID: 86, lines: 10..11, bytes: 366..393), hits: 1) -> "proxyWbResources = deploy()"
+- Statement (location: (source ID: 86, lines: 10..11, bytes: 366..393), hits: 1) -> "proxyWbResources = deploy()"
+- Line (location: (source ID: 86, lines: 13..23, bytes: 406..790), hits: 20) -> "function deploy() public returns...    return address(proxy);\n    }"
+- Function "deploy" (location: (source ID: 86, lines: 13..23, bytes: 406..790), hits: 20) -> "function deploy() public returns...    return address(proxy);\n    }"
+- Line (location: (source ID: 86, lines: 14..15, bytes: 459..478), hits: 21) -> "vm.startBroadcast()"
+- Statement (location: (source ID: 86, lines: 14..15, bytes: 459..478), hits: 21) -> "vm.startBroadcast()"
+- Line (location: (source ID: 86, lines: 15..16, bytes: 488..531), hits: 21) -> "WBResources wbResources = new WBResources()"
+- Statement (location: (source ID: 86, lines: 15..16, bytes: 488..531), hits: 21) -> "WBResources wbResources = new WBResources()"
+- Statement (location: (source ID: 86, lines: 15..16, bytes: 514..531), hits: 21) -> "new WBResources()"
+- Line (location: (source ID: 86, lines: 16..20, bytes: 541..724), hits: 21) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
+- Statement (location: (source ID: 86, lines: 16..20, bytes: 541..724), hits: 21) -> "ERC1967Proxy proxy = new ERC1967...g.sender, msg.sender))\n        )"
+- Statement (location: (source ID: 86, lines: 16..20, bytes: 562..724), hits: 21) -> "new ERC1967Proxy(\n            ad...g.sender, msg.sender))\n        )"
+- Line (location: (source ID: 86, lines: 20..21, bytes: 734..752), hits: 21) -> "vm.stopBroadcast()"
+- Statement (location: (source ID: 86, lines: 20..21, bytes: 734..752), hits: 21) -> "vm.stopBroadcast()"
+- Line (location: (source ID: 86, lines: 21..22, bytes: 762..783), hits: 21) -> "return address(proxy)"
+- Statement (location: (source ID: 86, lines: 21..22, bytes: 762..783), hits: 21) -> "return address(proxy)"
+
+src/GameMarket.sol:
+- Line (location: (source ID: 87, lines: 11..14, bytes: 575..628), hits: 0) -> "constructor() {\n        _disableInitializers();\n    }"
+- Function "constructor" (location: (source ID: 87, lines: 11..14, bytes: 575..628), hits: 0) -> "constructor() {\n        _disableInitializers();\n    }"
+- Line (location: (source ID: 87, lines: 12..13, bytes: 599..621), hits: 0) -> "_disableInitializers()"
+- Statement (location: (source ID: 87, lines: 12..13, bytes: 599..621), hits: 0) -> "_disableInitializers()"
+- Line (location: (source ID: 87, lines: 15..18, bytes: 634..751), hits: 0) -> "function initialize() external i..._init(1 days, msg.sender);\n    }"
+- Function "initialize" (location: (source ID: 87, lines: 15..18, bytes: 634..751), hits: 0) -> "function initialize() external i..._init(1 days, msg.sender);\n    }"
+- Line (location: (source ID: 87, lines: 16..17, bytes: 687..744), hits: 0) -> "__AccessControlDefaultAdminRules_init(1 days, msg.sender)"
+- Statement (location: (source ID: 87, lines: 16..17, bytes: 687..744), hits: 0) -> "__AccessControlDefaultAdminRules_init(1 days, msg.sender)"
+- Line (location: (source ID: 87, lines: 19..20, bytes: 757..860), hits: 0) -> "function _authorizeUpgrade(addre... onlyRole(DEFAULT_ADMIN_ROLE) {}"
+- Function "_authorizeUpgrade" (location: (source ID: 87, lines: 19..20, bytes: 757..860), hits: 0) -> "function _authorizeUpgrade(addre... onlyRole(DEFAULT_ADMIN_ROLE) {}"
+
+src/GameRegestry.sol:
+- Line (location: (source ID: 88, lines: 142..148, bytes: 6573..6742), hits: 0) -> "modifier onlyGameSignerRole() {\n...le();\n        }\n        _;\n    }"
+- Function "onlyGameSignerRole" (location: (source ID: 88, lines: 142..148, bytes: 6573..6742), hits: 0) -> "modifier onlyGameSignerRole() {\n...le();\n        }\n        _;\n    }"
+- Line (location: (source ID: 88, lines: 143..144, bytes: 6617..6657), hits: 0) -> "!hasRole(GAME_SIGNER_ROLE, _msgSender())"
+- Statement (location: (source ID: 88, lines: 143..144, bytes: 6617..6657), hits: 0) -> "!hasRole(GAME_SIGNER_ROLE, _msgSender())"
+- Branch (branch: 0, path: 0) (location: (source ID: 88, lines: 143..146, bytes: 6659..6725), hits: 0) -> "{\n            revert GameRegestr..._OnlyGameSignerRole();\n        }"
+- Line (location: (source ID: 88, lines: 144..145, bytes: 6673..6714), hits: 0) -> "revert GameRegestry__OnlyGameSignerRole()"
+- Statement (location: (source ID: 88, lines: 144..145, bytes: 6673..6714), hits: 0) -> "revert GameRegestry__OnlyGameSignerRole()"
+- Line (location: (source ID: 88, lines: 152..158, bytes: 6851..7075), hits: 0) -> "modifier onlyGameSignerOrMarketR...le();\n        }\n        _;\n    }"
+- Function "onlyGameSignerOrMarketRole" (location: (source ID: 88, lines: 152..158, bytes: 6851..7075), hits: 0) -> "modifier onlyGameSignerOrMarketR...le();\n        }\n        _;\n    }"
+- Line (location: (source ID: 88, lines: 153..154, bytes: 6903..6943), hits: 0) -> "!hasRole(GAME_SIGNER_ROLE, _msgSender())"
+- Statement (location: (source ID: 88, lines: 153..154, bytes: 6903..6943), hits: 0) -> "!hasRole(GAME_SIGNER_ROLE, _msgSender())"
+- Statement (location: (source ID: 88, lines: 153..154, bytes: 6903..6982), hits: 0) -> "!hasRole(GAME_SIGNER_ROLE, _msgS...sRole(MARKET_ROLE, _msgSender())"
+- Statement (location: (source ID: 88, lines: 153..154, bytes: 6947..6982), hits: 0) -> "!hasRole(MARKET_ROLE, _msgSender())"
+- Branch (branch: 1, path: 0) (location: (source ID: 88, lines: 153..156, bytes: 6984..7058), hits: 0) -> "{\n            revert GameRegestr...eSignerOrMarketRole();\n        }"
+- Line (location: (source ID: 88, lines: 154..155, bytes: 6998..7047), hits: 0) -> "revert GameRegestry__OnlyGameSignerOrMarketRole()"
+- Statement (location: (source ID: 88, lines: 154..155, bytes: 6998..7047), hits: 0) -> "revert GameRegestry__OnlyGameSignerOrMarketRole()"
+- Line (location: (source ID: 88, lines: 160..163, bytes: 7134..7187), hits: 14) -> "constructor() {\n        _disableInitializers();\n    }"
+- Function "constructor" (location: (source ID: 88, lines: 160..163, bytes: 7134..7187), hits: 14) -> "constructor() {\n        _disableInitializers();\n    }"
+- Line (location: (source ID: 88, lines: 161..162, bytes: 7158..7180), hits: 14) -> "_disableInitializers()"
+- Statement (location: (source ID: 88, lines: 161..162, bytes: 7158..7180), hits: 14) -> "_disableInitializers()"
+- Line (location: (source ID: 88, lines: 176..196, bytes: 7766..8538), hits: 14) -> "function initialize(\n        str...SIGNER_ROLE, _gameSigner);\n    }"
+- Function "initialize" (location: (source ID: 88, lines: 176..196, bytes: 7766..8538), hits: 14) -> "function initialize(\n        str...SIGNER_ROLE, _gameSigner);\n    }"
+- Line (location: (source ID: 88, lines: 183..184, bytes: 7996..8030), hits: 14) -> "__EIP712_init(\"GameRegestry\", \"1\")"
+- Statement (location: (source ID: 88, lines: 183..184, bytes: 7996..8030), hits: 14) -> "__EIP712_init(\"GameRegestry\", \"1\")"
+- Line (location: (source ID: 88, lines: 184..185, bytes: 8040..8097), hits: 14) -> "__AccessControlDefaultAdminRules_init(1 days, msg.sender)"
+- Statement (location: (source ID: 88, lines: 184..185, bytes: 8040..8097), hits: 14) -> "__AccessControlDefaultAdminRules_init(1 days, msg.sender)"
+- Line (location: (source ID: 88, lines: 186..187, bytes: 8108..8159), hits: 14) -> "s_gameElementsByType[GameElementType.COIN] = _coins"
+- Statement (location: (source ID: 88, lines: 186..187, bytes: 8108..8159), hits: 14) -> "s_gameElementsByType[GameElementType.COIN] = _coins"
+- Line (location: (source ID: 88, lines: 187..188, bytes: 8169..8228), hits: 14) -> "s_gameElementsByType[GameElementType.RESOURCE] = _resources"
+- Statement (location: (source ID: 88, lines: 187..188, bytes: 8169..8228), hits: 14) -> "s_gameElementsByType[GameElementType.RESOURCE] = _resources"
+- Line (location: (source ID: 88, lines: 188..189, bytes: 8238..8299), hits: 14) -> "s_gameElementsByType[GameElementType.CHARACTER] = _characters"
+- Statement (location: (source ID: 88, lines: 188..189, bytes: 8238..8299), hits: 14) -> "s_gameElementsByType[GameElementType.CHARACTER] = _characters"
+- Line (location: (source ID: 88, lines: 189..190, bytes: 8309..8374), hits: 14) -> "s_gameElementsByType[GameElement...ype.UNIQUE_ITEM] = _uiniqueItems"
+- Statement (location: (source ID: 88, lines: 189..190, bytes: 8309..8374), hits: 14) -> "s_gameElementsByType[GameElement...ype.UNIQUE_ITEM] = _uiniqueItems"
+- Line (location: (source ID: 88, lines: 191..192, bytes: 8389..8414), hits: 14) -> "_gameSigner == address(0)"
+- Statement (location: (source ID: 88, lines: 191..192, bytes: 8389..8414), hits: 14) -> "_gameSigner == address(0)"
+- Branch (branch: 2, path: 0) (location: (source ID: 88, lines: 191..194, bytes: 8416..8481), hits: 0) -> "{\n            revert GameRegestr...__InvalidGameSigner();\n        }"
+- Line (location: (source ID: 88, lines: 192..193, bytes: 8430..8470), hits: 0) -> "revert GameRegestry__InvalidGameSigner()"
+- Statement (location: (source ID: 88, lines: 192..193, bytes: 8430..8470), hits: 0) -> "revert GameRegestry__InvalidGameSigner()"
+- Line (location: (source ID: 88, lines: 194..195, bytes: 8490..8531), hits: 14) -> "_grantRole(GAME_SIGNER_ROLE, _gameSigner)"
+- Statement (location: (source ID: 88, lines: 194..195, bytes: 8490..8531), hits: 14) -> "_grantRole(GAME_SIGNER_ROLE, _gameSigner)"
+- Line (location: (source ID: 88, lines: 204..228, bytes: 8844..9627), hits: 0) -> "function commitBatch(uint256 non...i;\n            }\n        }\n    }"
+- Function "commitBatch" (location: (source ID: 88, lines: 204..228, bytes: 8844..9627), hits: 0) -> "function commitBatch(uint256 non...i;\n            }\n        }\n    }"
+- Line (location: (source ID: 88, lines: 205..206, bytes: 8942..8952), hits: 0) -> "nonce == 0"
+- Statement (location: (source ID: 88, lines: 205..206, bytes: 8942..8952), hits: 0) -> "nonce == 0"
+- Branch (branch: 3, path: 0) (location: (source ID: 88, lines: 205..208, bytes: 8954..9014), hits: 0) -> "{\n            revert GameRegestry__InvalidNonce();\n        }"
+- Line (location: (source ID: 88, lines: 206..207, bytes: 8968..9003), hits: 0) -> "revert GameRegestry__InvalidNonce()"
+- Statement (location: (source ID: 88, lines: 206..207, bytes: 8968..9003), hits: 0) -> "revert GameRegestry__InvalidNonce()"
+- Line (location: (source ID: 88, lines: 208..209, bytes: 9027..9046), hits: 0) -> "commits.length == 0"
+- Statement (location: (source ID: 88, lines: 208..209, bytes: 9027..9046), hits: 0) -> "commits.length == 0"
+- Branch (branch: 4, path: 0) (location: (source ID: 88, lines: 208..211, bytes: 9048..9111), hits: 0) -> "{\n            revert GameRegestry__BatchLengthZero();\n        }"
+- Line (location: (source ID: 88, lines: 209..210, bytes: 9062..9100), hits: 0) -> "revert GameRegestry__BatchLengthZero()"
+- Statement (location: (source ID: 88, lines: 209..210, bytes: 9062..9100), hits: 0) -> "revert GameRegestry__BatchLengthZero()"
+- Line (location: (source ID: 88, lines: 211..212, bytes: 9124..9143), hits: 0) -> "commits.length > 10"
+- Statement (location: (source ID: 88, lines: 211..212, bytes: 9124..9143), hits: 0) -> "commits.length > 10"
+- Branch (branch: 5, path: 0) (location: (source ID: 88, lines: 211..214, bytes: 9145..9211), hits: 0) -> "{\n            revert GameRegestr..._BatchLengthTooLong();\n        }"
+- Line (location: (source ID: 88, lines: 212..213, bytes: 9159..9200), hits: 0) -> "revert GameRegestry__BatchLengthTooLong()"
+- Statement (location: (source ID: 88, lines: 212..213, bytes: 9159..9200), hits: 0) -> "revert GameRegestry__BatchLengthTooLong()"
+- Line (location: (source ID: 88, lines: 214..215, bytes: 9220..9246), hits: 0) -> "s_usedNonces[nonce] = true"
+- Statement (location: (source ID: 88, lines: 214..215, bytes: 9220..9246), hits: 0) -> "s_usedNonces[nonce] = true"
+- Line (location: (source ID: 88, lines: 216..217, bytes: 9257..9289), hits: 0) -> "emit CommitBatch(nonce, commits)"
+- Statement (location: (source ID: 88, lines: 216..217, bytes: 9257..9289), hits: 0) -> "emit CommitBatch(nonce, commits)"
+- Line (location: (source ID: 88, lines: 218..219, bytes: 9305..9318), hits: 0) -> "uint256 i = 0"
+- Statement (location: (source ID: 88, lines: 218..219, bytes: 9305..9318), hits: 0) -> "uint256 i = 0"
+- Statement (location: (source ID: 88, lines: 218..219, bytes: 9320..9338), hits: 0) -> "i < commits.length"
+- Line (location: (source ID: 88, lines: 219..221, bytes: 9355..9488), hits: 0) -> "(bytes32 resourceHash, bytes mem...its[i], (bytes32, bytes, bytes))"
+- Statement (location: (source ID: 88, lines: 219..221, bytes: 9355..9488), hits: 0) -> "(bytes32 resourceHash, bytes mem...its[i], (bytes32, bytes, bytes))"
+- Line (location: (source ID: 88, lines: 220..221, bytes: 9441..9488), hits: 0) -> "abi.decode(commits[i], (bytes32, bytes, bytes))"
+- Statement (location: (source ID: 88, lines: 220..221, bytes: 9441..9488), hits: 0) -> "abi.decode(commits[i], (bytes32, bytes, bytes))"
+- Line (location: (source ID: 88, lines: 221..222, bytes: 9502..9550), hits: 0) -> "_commitResource(resourceHash, commit, signature)"
+- Statement (location: (source ID: 88, lines: 221..222, bytes: 9502..9550), hits: 0) -> "_commitResource(resourceHash, commit, signature)"
+- Line (location: (source ID: 88, lines: 224..225, bytes: 9593..9596), hits: 0) -> "++i"
+- Statement (location: (source ID: 88, lines: 224..225, bytes: 9593..9596), hits: 0) -> "++i"
+- Line (location: (source ID: 88, lines: 236..239, bytes: 9916..10094), hits: 0) -> "function commitResource(bytes32 ...eHash, commit, signature);\n    }"
+- Function "commitResource" (location: (source ID: 88, lines: 236..239, bytes: 9916..10094), hits: 0) -> "function commitResource(bytes32 ...eHash, commit, signature);\n    }"
+- Line (location: (source ID: 88, lines: 237..238, bytes: 10039..10087), hits: 0) -> "_commitResource(resourceHash, commit, signature)"
+- Statement (location: (source ID: 88, lines: 237..238, bytes: 10039..10087), hits: 0) -> "_commitResource(resourceHash, commit, signature)"
+- Line (location: (source ID: 88, lines: 245..249, bytes: 10259..10469), hits: 0) -> "function addGameElement(GameElem...lement(name, elementType);\n    }"
+- Function "addGameElement" (location: (source ID: 88, lines: 245..249, bytes: 10259..10469), hits: 0) -> "function addGameElement(GameElem...lement(name, elementType);\n    }"
+- Line (location: (source ID: 88, lines: 246..247, bytes: 10370..10414), hits: 0) -> "s_gameElementsByType[elementType].push(name)"
+- Statement (location: (source ID: 88, lines: 246..247, bytes: 10370..10414), hits: 0) -> "s_gameElementsByType[elementType].push(name)"
+- Line (location: (source ID: 88, lines: 247..248, bytes: 10424..10462), hits: 0) -> "emit AddGameElement(name, elementType)"
+- Statement (location: (source ID: 88, lines: 247..248, bytes: 10424..10462), hits: 0) -> "emit AddGameElement(name, elementType)"
+- Line (location: (source ID: 88, lines: 255..259, bytes: 10641..10863), hits: 0) -> "function removeGameElement(GameE...ement(index, elementType);\n    }"
+- Function "removeGameElement" (location: (source ID: 88, lines: 255..259, bytes: 10641..10863), hits: 0) -> "function removeGameElement(GameE...ement(index, elementType);\n    }"
+- Line (location: (source ID: 88, lines: 256..257, bytes: 10750..10804), hits: 0) -> "s_gameElementsByType[elementType].removeByIndex(index)"
+- Statement (location: (source ID: 88, lines: 256..257, bytes: 10750..10804), hits: 0) -> "s_gameElementsByType[elementType].removeByIndex(index)"
+- Line (location: (source ID: 88, lines: 257..258, bytes: 10814..10856), hits: 0) -> "emit RemoveGameElement(index, elementType)"
+- Statement (location: (source ID: 88, lines: 257..258, bytes: 10814..10856), hits: 0) -> "emit RemoveGameElement(index, elementType)"
+- Line (location: (source ID: 88, lines: 267..275, bytes: 11167..11573), hits: 0) -> "function addGameElementStruct(by...tokenId, requiresTokenId);\n    }"
+- Function "addGameElementStruct" (location: (source ID: 88, lines: 267..275, bytes: 11167..11573), hits: 0) -> "function addGameElementStruct(by...tokenId, requiresTokenId);\n    }"
+- Line (location: (source ID: 88, lines: 271..273, bytes: 11334..11481), hits: 0) -> "s_resourceToGameElement[nameHash...quiresTokenId: requiresTokenId})"
+- Statement (location: (source ID: 88, lines: 271..273, bytes: 11334..11481), hits: 0) -> "s_resourceToGameElement[nameHash...quiresTokenId: requiresTokenId})"
+- Line (location: (source ID: 88, lines: 273..274, bytes: 11491..11566), hits: 0) -> "emit AddGameElementStruct(nameHa...dress, tokenId, requiresTokenId)"
+- Statement (location: (source ID: 88, lines: 273..274, bytes: 11491..11566), hits: 0) -> "emit AddGameElementStruct(nameHa...dress, tokenId, requiresTokenId)"
+- Line (location: (source ID: 88, lines: 290..303, bytes: 12144..12663), hits: 0) -> "function _commitResource(bytes32...;\n\n        _verifyAfter();\n    }"
+- Function "_commitResource" (location: (source ID: 88, lines: 290..303, bytes: 12144..12663), hits: 0) -> "function _commitResource(bytes32...;\n\n        _verifyAfter();\n    }"
+- Line (location: (source ID: 88, lines: 291..292, bytes: 12258..12284), hits: 0) -> "resourceHash == bytes32(0)"
+- Statement (location: (source ID: 88, lines: 291..292, bytes: 12258..12284), hits: 0) -> "resourceHash == bytes32(0)"
+- Statement (location: (source ID: 88, lines: 291..292, bytes: 12258..12331), hits: 0) -> "resourceHash == bytes32(0) || co...th == 0 || signature.length == 0"
+- Statement (location: (source ID: 88, lines: 291..292, bytes: 12288..12306), hits: 0) -> "commit.length == 0"
+- Statement (location: (source ID: 88, lines: 291..292, bytes: 12288..12331), hits: 0) -> "commit.length == 0 || signature.length == 0"
+- Statement (location: (source ID: 88, lines: 291..292, bytes: 12310..12331), hits: 0) -> "signature.length == 0"
+- Branch (branch: 6, path: 0) (location: (source ID: 88, lines: 291..294, bytes: 12333..12398), hits: 0) -> "{\n            revert GameRegestr...__InvalidCommitData();\n        }"
+- Line (location: (source ID: 88, lines: 292..293, bytes: 12347..12387), hits: 0) -> "revert GameRegestry__InvalidCommitData()"
+- Statement (location: (source ID: 88, lines: 292..293, bytes: 12347..12387), hits: 0) -> "revert GameRegestry__InvalidCommitData()"
+- Line (location: (source ID: 88, lines: 295..296, bytes: 12408..12511), hits: 0) -> "(uint256 nonce, address target, ...resourceHash, commit, signature)"
+- Statement (location: (source ID: 88, lines: 295..296, bytes: 12408..12511), hits: 0) -> "(uint256 nonce, address target, ...resourceHash, commit, signature)"
+- Statement (location: (source ID: 88, lines: 295..296, bytes: 12465..12511), hits: 0) -> "_verifyInputs(resourceHash, commit, signature)"
+- Line (location: (source ID: 88, lines: 297..298, bytes: 12522..12550), hits: 0) -> "emit CommitResources(commit)"
+- Statement (location: (source ID: 88, lines: 297..298, bytes: 12522..12550), hits: 0) -> "emit CommitResources(commit)"
+- Line (location: (source ID: 88, lines: 298..299, bytes: 12560..12586), hits: 0) -> "s_usedNonces[nonce] = true"
+- Statement (location: (source ID: 88, lines: 298..299, bytes: 12560..12586), hits: 0) -> "s_usedNonces[nonce] = true"
+- Line (location: (source ID: 88, lines: 299..300, bytes: 12596..12631), hits: 0) -> "_commitDispatcher(target, callData)"
+- Statement (location: (source ID: 88, lines: 299..300, bytes: 12596..12631), hits: 0) -> "_commitDispatcher(target, callData)"
+- Line (location: (source ID: 88, lines: 301..302, bytes: 12642..12656), hits: 0) -> "_verifyAfter()"
+- Statement (location: (source ID: 88, lines: 301..302, bytes: 12642..12656), hits: 0) -> "_verifyAfter()"
+- Line (location: (source ID: 88, lines: 309..319, bytes: 12800..13149), hits: 0) -> "function _commitDispatcher(addre..._CommitFailed();\n        }\n    }"
+- Function "_commitDispatcher" (location: (source ID: 88, lines: 309..319, bytes: 12800..13149), hits: 0) -> "function _commitDispatcher(addre..._CommitFailed();\n        }\n    }"
+- Line (location: (source ID: 88, lines: 310..311, bytes: 12888..12908), hits: 0) -> "target == address(0)"
+- Statement (location: (source ID: 88, lines: 310..311, bytes: 12888..12908), hits: 0) -> "target == address(0)"
+- Branch (branch: 7, path: 0) (location: (source ID: 88, lines: 310..313, bytes: 12910..12971), hits: 0) -> "{\n            revert GameRegestry__InvalidTarget();\n        }"
+- Line (location: (source ID: 88, lines: 311..312, bytes: 12924..12960), hits: 0) -> "revert GameRegestry__InvalidTarget()"
+- Statement (location: (source ID: 88, lines: 311..312, bytes: 12924..12960), hits: 0) -> "revert GameRegestry__InvalidTarget()"
+- Line (location: (source ID: 88, lines: 313..314, bytes: 12980..13010), hits: 0) -> "emit CommitConfirmed(callData)"
+- Statement (location: (source ID: 88, lines: 313..314, bytes: 12980..13010), hits: 0) -> "emit CommitConfirmed(callData)"
+- Line (location: (source ID: 88, lines: 314..315, bytes: 13020..13059), hits: 0) -> "(bool success,) = target.call(callData)"
+- Statement (location: (source ID: 88, lines: 314..315, bytes: 13020..13059), hits: 0) -> "(bool success,) = target.call(callData)"
+- Statement (location: (source ID: 88, lines: 314..315, bytes: 13038..13059), hits: 0) -> "target.call(callData)"
+- Line (location: (source ID: 88, lines: 315..316, bytes: 13073..13081), hits: 0) -> "!success"
+- Statement (location: (source ID: 88, lines: 315..316, bytes: 13073..13081), hits: 0) -> "!success"
+- Branch (branch: 8, path: 0) (location: (source ID: 88, lines: 315..318, bytes: 13083..13143), hits: 0) -> "{\n            revert GameRegestry__CommitFailed();\n        }"
+- Line (location: (source ID: 88, lines: 316..317, bytes: 13097..13132), hits: 0) -> "revert GameRegestry__CommitFailed()"
+- Statement (location: (source ID: 88, lines: 316..317, bytes: 13097..13132), hits: 0) -> "revert GameRegestry__CommitFailed()"
+- Line (location: (source ID: 88, lines: 321..327, bytes: 13227..13622), hits: 0) -> "function _verifyAfter() private ...ged by the expected amount\n    }"
+- Function "_verifyAfter" (location: (source ID: 88, lines: 321..327, bytes: 13227..13622), hits: 0) -> "function _verifyAfter() private ...ged by the expected amount\n    }"
+- Line (location: (source ID: 88, lines: 329..365, bytes: 13675..14996), hits: 0) -> "function _verifyInputs(bytes32 r...(nonce, target, callData);\n    }"
+- Function "_verifyInputs" (location: (source ID: 88, lines: 329..365, bytes: 13675..14996), hits: 0) -> "function _verifyInputs(bytes32 r...(nonce, target, callData);\n    }"
+- Line (location: (source ID: 88, lines: 334..335, bytes: 13879..13955), hits: 0) -> "GameElementStruct memory gameEle...ourceToGameElement[resourceHash]"
+- Statement (location: (source ID: 88, lines: 334..335, bytes: 13879..13955), hits: 0) -> "GameElementStruct memory gameEle...ourceToGameElement[resourceHash]"
+- Line (location: (source ID: 88, lines: 335..336, bytes: 13965..13980), hits: 0) -> "address account"
+- Statement (location: (source ID: 88, lines: 335..336, bytes: 13965..13980), hits: 0) -> "address account"
+- Line (location: (source ID: 88, lines: 336..337, bytes: 13990..14004), hits: 0) -> "address signer"
+- Statement (location: (source ID: 88, lines: 336..337, bytes: 13990..14004), hits: 0) -> "address signer"
+- Line (location: (source ID: 88, lines: 338..339, bytes: 14015..14123), hits: 0) -> "(target, account, signer, nonce,...dress, address, uint256, bytes))"
+- Statement (location: (source ID: 88, lines: 338..339, bytes: 14015..14123), hits: 0) -> "(target, account, signer, nonce,...dress, address, uint256, bytes))"
+- Line (location: (source ID: 88, lines: 340..343, bytes: 14159..14223), hits: 0) -> "{\n            revert GameRegestry__NonceAlreadyUsed();\n        }"
+- Branch (branch: 9, path: 0) (location: (source ID: 88, lines: 340..343, bytes: 14159..14223), hits: 0) -> "{\n            revert GameRegestry__NonceAlreadyUsed();\n        }"
+- Line (location: (source ID: 88, lines: 341..342, bytes: 14173..14212), hits: 0) -> "revert GameRegestry__NonceAlreadyUsed()"
+- Statement (location: (source ID: 88, lines: 341..342, bytes: 14173..14212), hits: 0) -> "revert GameRegestry__NonceAlreadyUsed()"
+- Line (location: (source ID: 88, lines: 343..344, bytes: 14236..14274), hits: 0) -> "gameElement.tokenAddress == address(0)"
+- Statement (location: (source ID: 88, lines: 343..344, bytes: 14236..14274), hits: 0) -> "gameElement.tokenAddress == address(0)"
+- Branch (branch: 10, path: 0) (location: (source ID: 88, lines: 343..346, bytes: 14276..14339), hits: 0) -> "{\n            revert GameRegestry__InvalidResource();\n        }"
+- Line (location: (source ID: 88, lines: 344..345, bytes: 14290..14328), hits: 0) -> "revert GameRegestry__InvalidResource()"
+- Statement (location: (source ID: 88, lines: 344..345, bytes: 14290..14328), hits: 0) -> "revert GameRegestry__InvalidResource()"
+- Line (location: (source ID: 88, lines: 346..347, bytes: 14352..14372), hits: 0) -> "target == address(0)"
+- Statement (location: (source ID: 88, lines: 346..347, bytes: 14352..14372), hits: 0) -> "target == address(0)"
+- Branch (branch: 11, path: 0) (location: (source ID: 88, lines: 346..349, bytes: 14374..14435), hits: 0) -> "{\n            revert GameRegestry__InvalidTarget();\n        }"
+- Line (location: (source ID: 88, lines: 347..348, bytes: 14388..14424), hits: 0) -> "revert GameRegestry__InvalidTarget()"
+- Statement (location: (source ID: 88, lines: 347..348, bytes: 14388..14424), hits: 0) -> "revert GameRegestry__InvalidTarget()"
+- Line (location: (source ID: 88, lines: 349..350, bytes: 14448..14469), hits: 0) -> "account == address(0)"
+- Statement (location: (source ID: 88, lines: 349..350, bytes: 14448..14469), hits: 0) -> "account == address(0)"
+- Branch (branch: 12, path: 0) (location: (source ID: 88, lines: 349..352, bytes: 14471..14532), hits: 0) -> "{\n            revert GameRegestry__InvalidPlayer();\n        }"
+- Line (location: (source ID: 88, lines: 350..351, bytes: 14485..14521), hits: 0) -> "revert GameRegestry__InvalidPlayer()"
+- Statement (location: (source ID: 88, lines: 350..351, bytes: 14485..14521), hits: 0) -> "revert GameRegestry__InvalidPlayer()"
+- Line (location: (source ID: 88, lines: 352..353, bytes: 14545..14579), hits: 0) -> "!hasRole(GAME_SIGNER_ROLE, signer)"
+- Statement (location: (source ID: 88, lines: 352..353, bytes: 14545..14579), hits: 0) -> "!hasRole(GAME_SIGNER_ROLE, signer)"
+- Branch (branch: 13, path: 0) (location: (source ID: 88, lines: 352..355, bytes: 14581..14642), hits: 0) -> "{\n            revert GameRegestry__InvalidSigner();\n        }"
+- Line (location: (source ID: 88, lines: 353..354, bytes: 14595..14631), hits: 0) -> "revert GameRegestry__InvalidSigner()"
+- Statement (location: (source ID: 88, lines: 353..354, bytes: 14595..14631), hits: 0) -> "revert GameRegestry__InvalidSigner()"
+- Line (location: (source ID: 88, lines: 356..357, bytes: 14656..14685), hits: 0) -> "hasRole(MARKET_ROLE, account)"
+- Statement (location: (source ID: 88, lines: 356..357, bytes: 14656..14685), hits: 0) -> "hasRole(MARKET_ROLE, account)"
+- Statement (location: (source ID: 88, lines: 356..357, bytes: 14656..14723), hits: 0) -> "hasRole(MARKET_ROLE, account) ||...sRole(GAME_SIGNER_ROLE, account)"
+- Statement (location: (source ID: 88, lines: 356..357, bytes: 14689..14723), hits: 0) -> "hasRole(GAME_SIGNER_ROLE, account)"
+- Branch (branch: 14, path: 0) (location: (source ID: 88, lines: 356..359, bytes: 14725..14791), hits: 0) -> "{\n            revert GameRegestr..._NotAllowedToCommit();\n        }"
+- Line (location: (source ID: 88, lines: 357..358, bytes: 14739..14780), hits: 0) -> "revert GameRegestry__NotAllowedToCommit()"
+- Statement (location: (source ID: 88, lines: 357..358, bytes: 14739..14780), hits: 0) -> "revert GameRegestry__NotAllowedToCommit()"
+- Line (location: (source ID: 88, lines: 359..360, bytes: 14804..14874), hits: 0) -> "!_verifySignature(target, accoun...ner, nonce, callData, signature)"
+- Statement (location: (source ID: 88, lines: 359..360, bytes: 14804..14874), hits: 0) -> "!_verifySignature(target, accoun...ner, nonce, callData, signature)"
+- Branch (branch: 15, path: 0) (location: (source ID: 88, lines: 359..362, bytes: 14876..14947), hits: 0) -> "{\n            revert GameRegestr...lidSignatureMessage();\n        }"
+- Line (location: (source ID: 88, lines: 360..361, bytes: 14890..14936), hits: 0) -> "revert GameRegestry__InvalidSignatureMessage()"
+- Statement (location: (source ID: 88, lines: 360..361, bytes: 14890..14936), hits: 0) -> "revert GameRegestry__InvalidSignatureMessage()"
+- Line (location: (source ID: 88, lines: 363..364, bytes: 14957..14989), hits: 0) -> "return (nonce, target, callData)"
+- Statement (location: (source ID: 88, lines: 363..364, bytes: 14957..14989), hits: 0) -> "return (nonce, target, callData)"
+- Line (location: (source ID: 88, lines: 379..391, bytes: 15459..15899), hits: 0) -> "function _verifySignature(\n     ...ER_ROLE, actualSignature);\n    }"
+- Function "_verifySignature" (location: (source ID: 88, lines: 379..391, bytes: 15459..15899), hits: 0) -> "function _verifySignature(\n     ...ER_ROLE, actualSignature);\n    }"
+- Line (location: (source ID: 88, lines: 387..388, bytes: 15688..15760), hits: 0) -> "bytes32 hash = _getMessageHash(t...ccount, signer, nonce, callData)"
+- Statement (location: (source ID: 88, lines: 387..388, bytes: 15688..15760), hits: 0) -> "bytes32 hash = _getMessageHash(t...ccount, signer, nonce, callData)"
+- Statement (location: (source ID: 88, lines: 387..388, bytes: 15703..15760), hits: 0) -> "_getMessageHash(target, account, signer, nonce, callData)"
+- Line (location: (source ID: 88, lines: 388..389, bytes: 15770..15833), hits: 0) -> "(address actualSignature,,) = ECDSA.tryRecover(hash, signature)"
+- Statement (location: (source ID: 88, lines: 388..389, bytes: 15770..15833), hits: 0) -> "(address actualSignature,,) = ECDSA.tryRecover(hash, signature)"
+- Statement (location: (source ID: 88, lines: 388..389, bytes: 15800..15833), hits: 0) -> "ECDSA.tryRecover(hash, signature)"
+- Line (location: (source ID: 88, lines: 389..390, bytes: 15843..15892), hits: 0) -> "return hasRole(GAME_SIGNER_ROLE, actualSignature)"
+- Statement (location: (source ID: 88, lines: 389..390, bytes: 15843..15892), hits: 0) -> "return hasRole(GAME_SIGNER_ROLE, actualSignature)"
+- Statement (location: (source ID: 88, lines: 389..390, bytes: 15850..15892), hits: 0) -> "hasRole(GAME_SIGNER_ROLE, actualSignature)"
+- Line (location: (source ID: 88, lines: 401..414, bytes: 16190..16658), hits: 0) -> "function _getMessageHash(address...shTypedDataV4(hashStruct);\n    }"
+- Function "_getMessageHash" (location: (source ID: 88, lines: 401..414, bytes: 16190..16658), hits: 0) -> "function _getMessageHash(address...shTypedDataV4(hashStruct);\n    }"
+- Line (location: (source ID: 88, lines: 406..412, bytes: 16378..16606), hits: 0) -> "bytes32 hashStruct = keccak256(\n...llData})\n            )\n        )"
+- Statement (location: (source ID: 88, lines: 406..412, bytes: 16378..16606), hits: 0) -> "bytes32 hashStruct = keccak256(\n...llData})\n            )\n        )"
+- Statement (location: (source ID: 88, lines: 406..412, bytes: 16399..16606), hits: 0) -> "keccak256(\n            abi.encod...llData})\n            )\n        )"
+- Line (location: (source ID: 88, lines: 412..413, bytes: 16616..16651), hits: 0) -> "return _hashTypedDataV4(hashStruct)"
+- Statement (location: (source ID: 88, lines: 412..413, bytes: 16616..16651), hits: 0) -> "return _hashTypedDataV4(hashStruct)"
+- Statement (location: (source ID: 88, lines: 412..413, bytes: 16623..16651), hits: 0) -> "_hashTypedDataV4(hashStruct)"
+- Line (location: (source ID: 88, lines: 423..426, bytes: 16928..17062), hits: 0) -> "function getGameCoinsList() exte...ype[GameElementType.COIN];\n    }"
+- Function "getGameCoinsList" (location: (source ID: 88, lines: 423..426, bytes: 16928..17062), hits: 0) -> "function getGameCoinsList() exte...ype[GameElementType.COIN];\n    }"
+- Line (location: (source ID: 88, lines: 424..425, bytes: 17006..17055), hits: 0) -> "return s_gameElementsByType[GameElementType.COIN]"
+- Statement (location: (source ID: 88, lines: 424..425, bytes: 17006..17055), hits: 0) -> "return s_gameElementsByType[GameElementType.COIN]"
+- Line (location: (source ID: 88, lines: 431..434, bytes: 17148..17286), hits: 0) -> "function getResourcesList() exte...GameElementType.RESOURCE];\n    }"
+- Function "getResourcesList" (location: (source ID: 88, lines: 431..434, bytes: 17148..17286), hits: 0) -> "function getResourcesList() exte...GameElementType.RESOURCE];\n    }"
+- Line (location: (source ID: 88, lines: 432..433, bytes: 17226..17279), hits: 0) -> "return s_gameElementsByType[GameElementType.RESOURCE]"
+- Statement (location: (source ID: 88, lines: 432..433, bytes: 17226..17279), hits: 0) -> "return s_gameElementsByType[GameElementType.RESOURCE]"
+- Line (location: (source ID: 88, lines: 439..442, bytes: 17374..17514), hits: 0) -> "function getCharactersList() ext...ameElementType.CHARACTER];\n    }"
+- Function "getCharactersList" (location: (source ID: 88, lines: 439..442, bytes: 17374..17514), hits: 0) -> "function getCharactersList() ext...ameElementType.CHARACTER];\n    }"
+- Line (location: (source ID: 88, lines: 440..441, bytes: 17453..17507), hits: 0) -> "return s_gameElementsByType[GameElementType.CHARACTER]"
+- Statement (location: (source ID: 88, lines: 440..441, bytes: 17453..17507), hits: 0) -> "return s_gameElementsByType[GameElementType.CHARACTER]"
+- Line (location: (source ID: 88, lines: 447..450, bytes: 17606..17749), hits: 0) -> "function getUniqueItemsList() ex...eElementType.UNIQUE_ITEM];\n    }"
+- Function "getUniqueItemsList" (location: (source ID: 88, lines: 447..450, bytes: 17606..17749), hits: 0) -> "function getUniqueItemsList() ex...eElementType.UNIQUE_ITEM];\n    }"
+- Line (location: (source ID: 88, lines: 448..449, bytes: 17686..17742), hits: 0) -> "return s_gameElementsByType[GameElementType.UNIQUE_ITEM]"
+- Statement (location: (source ID: 88, lines: 448..449, bytes: 17686..17742), hits: 0) -> "return s_gameElementsByType[GameElementType.UNIQUE_ITEM]"
+- Line (location: (source ID: 88, lines: 456..459, bytes: 17893..18049), hits: 0) -> "function getGameElement(bytes32 ...GameElement[resourceHash];\n    }"
+- Function "getGameElement" (location: (source ID: 88, lines: 456..459, bytes: 17893..18049), hits: 0) -> "function getGameElement(bytes32 ...GameElement[resourceHash];\n    }"
+- Line (location: (source ID: 88, lines: 457..458, bytes: 17998..18042), hits: 0) -> "return s_resourceToGameElement[resourceHash]"
+- Statement (location: (source ID: 88, lines: 457..458, bytes: 17998..18042), hits: 0) -> "return s_resourceToGameElement[resourceHash]"
+- Line (location: (source ID: 88, lines: 465..468, bytes: 18183..18294), hits: 0) -> "function getIsNonceUsed(uint256 ...eturn s_usedNonces[nonce];\n    }"
+- Function "getIsNonceUsed" (location: (source ID: 88, lines: 465..468, bytes: 18183..18294), hits: 0) -> "function getIsNonceUsed(uint256 ...eturn s_usedNonces[nonce];\n    }"
+- Line (location: (source ID: 88, lines: 466..467, bytes: 18261..18287), hits: 0) -> "return s_usedNonces[nonce]"
+- Statement (location: (source ID: 88, lines: 466..467, bytes: 18261..18287), hits: 0) -> "return s_usedNonces[nonce]"
+- Line (location: (source ID: 88, lines: 469..470, bytes: 18300..18403), hits: 0) -> "function _authorizeUpgrade(addre... onlyRole(DEFAULT_ADMIN_ROLE) {}"
+- Function "_authorizeUpgrade" (location: (source ID: 88, lines: 469..470, bytes: 18300..18403), hits: 0) -> "function _authorizeUpgrade(addre... onlyRole(DEFAULT_ADMIN_ROLE) {}"
+
+src/libraries/Array.sol:
+- Line (location: (source ID: 89, lines: 10..14, bytes: 174..321), hits: 0) -> "function removeByIndex(string[] ...- 1];\n        array.pop();\n    }"
+- Function "removeByIndex" (location: (source ID: 89, lines: 10..14, bytes: 174..321), hits: 0) -> "function removeByIndex(string[] ...- 1];\n        array.pop();\n    }"
+- Line (location: (source ID: 89, lines: 11..12, bytes: 255..293), hits: 0) -> "array[index] = array[array.length - 1]"
+- Statement (location: (source ID: 89, lines: 11..12, bytes: 255..293), hits: 0) -> "array[index] = array[array.length - 1]"
+- Line (location: (source ID: 89, lines: 12..13, bytes: 303..314), hits: 0) -> "array.pop()"
+- Statement (location: (source ID: 89, lines: 12..13, bytes: 303..314), hits: 0) -> "array.pop()"
+
+src/tokens/ERC1155/WBResources.sol:
+- Line (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 21) -> "constructor() {\n        _disableInitializers();\n    }"
+- Function "constructor" (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 21) -> "constructor() {\n        _disableInitializers();\n    }"
+- Line (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 21) -> "_disableInitializers()"
+- Statement (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 21) -> "_disableInitializers()"
+- Line (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 22) -> "function initialize(address defa...ETTER_ROLE, defaultAdmin);\n    }"
+- Function "initialize" (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 22) -> "function initialize(address defa...ETTER_ROLE, defaultAdmin);\n    }"
+- Line (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 21) -> "__ERC1155_init(\"\")"
+- Statement (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 21) -> "__ERC1155_init(\"\")"
+- Line (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 21) -> "__AccessControl_init()"
+- Statement (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 21) -> "__AccessControl_init()"
+- Line (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 21) -> "__ERC1155Pausable_init()"
+- Statement (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 21) -> "__ERC1155Pausable_init()"
+- Line (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 21) -> "__ERC1155Burnable_init()"
+- Statement (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 21) -> "__ERC1155Burnable_init()"
+- Line (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 21) -> "__ERC1155Supply_init()"
+- Statement (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 21) -> "__ERC1155Supply_init()"
+- Line (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 21) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
+- Statement (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 21) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
+- Line (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 21) -> "_grantRole(PAUSER_ROLE, pauser)"
+- Statement (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 21) -> "_grantRole(PAUSER_ROLE, pauser)"
+- Line (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 21) -> "_grantRole(MINTER_ROLE, minter)"
+- Statement (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 21) -> "_grantRole(MINTER_ROLE, minter)"
+- Line (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 21) -> "_grantRole(UPGRADER_ROLE, upgrader)"
+- Statement (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 21) -> "_grantRole(UPGRADER_ROLE, upgrader)"
+- Line (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 21) -> "_grantRole(URI_SETTER_ROLE, defaultAdmin)"
+- Statement (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 21) -> "_grantRole(URI_SETTER_ROLE, defaultAdmin)"
+- Line (location: (source ID: 90, lines: 51..54, bytes: 2226..2355), hits: 5) -> "function setURI(uint256 tokenId,... _setURI(tokenId, newuri);\n    }"
+- Function "setURI" (location: (source ID: 90, lines: 51..54, bytes: 2226..2355), hits: 5) -> "function setURI(uint256 tokenId,... _setURI(tokenId, newuri);\n    }"
+- Line (location: (source ID: 90, lines: 52..53, bytes: 2324..2348), hits: 3) -> "_setURI(tokenId, newuri)"
+- Statement (location: (source ID: 90, lines: 52..53, bytes: 2324..2348), hits: 3) -> "_setURI(tokenId, newuri)"
+- Line (location: (source ID: 90, lines: 55..58, bytes: 2361..2432), hits: 3) -> "function pause() public onlyRole..._ROLE) {\n        _pause();\n    }"
+- Function "pause" (location: (source ID: 90, lines: 55..58, bytes: 2361..2432), hits: 3) -> "function pause() public onlyRole..._ROLE) {\n        _pause();\n    }"
+- Line (location: (source ID: 90, lines: 56..57, bytes: 2417..2425), hits: 2) -> "_pause()"
+- Statement (location: (source ID: 90, lines: 56..57, bytes: 2417..2425), hits: 2) -> "_pause()"
+- Line (location: (source ID: 90, lines: 59..62, bytes: 2438..2628), hits: 7) -> "function uri(uint256 tokenId) pu...eUpgradeable.uri(tokenId);\n    }"
+- Function "uri" (location: (source ID: 90, lines: 59..62, bytes: 2438..2628), hits: 7) -> "function uri(uint256 tokenId) pu...eUpgradeable.uri(tokenId);\n    }"
+- Line (location: (source ID: 90, lines: 60..61, bytes: 2573..2621), hits: 10) -> "return ERC1155URIStorageUpgradeable.uri(tokenId)"
+- Statement (location: (source ID: 90, lines: 60..61, bytes: 2573..2621), hits: 10) -> "return ERC1155URIStorageUpgradeable.uri(tokenId)"
+- Statement (location: (source ID: 90, lines: 60..61, bytes: 2580..2621), hits: 10) -> "ERC1155URIStorageUpgradeable.uri(tokenId)"
+- Line (location: (source ID: 90, lines: 63..66, bytes: 2634..2709), hits: 1) -> "function unpause() public onlyRo...OLE) {\n        _unpause();\n    }"
+- Function "unpause" (location: (source ID: 90, lines: 63..66, bytes: 2634..2709), hits: 1) -> "function unpause() public onlyRo...OLE) {\n        _unpause();\n    }"
+- Line (location: (source ID: 90, lines: 64..65, bytes: 2692..2702), hits: 1) -> "_unpause()"
+- Statement (location: (source ID: 90, lines: 64..65, bytes: 2692..2702), hits: 1) -> "_unpause()"
+- Line (location: (source ID: 90, lines: 67..70, bytes: 2715..2871), hits: 5) -> "function mint(address account, u...ccount, id, amount, data);\n    }"
+- Function "mint" (location: (source ID: 90, lines: 67..70, bytes: 2715..2871), hits: 5) -> "function mint(address account, u...ccount, id, amount, data);\n    }"
+- Line (location: (source ID: 90, lines: 68..69, bytes: 2832..2864), hits: 4) -> "_mint(account, id, amount, data)"
+- Statement (location: (source ID: 90, lines: 68..69, bytes: 2832..2864), hits: 4) -> "_mint(account, id, amount, data)"
+- Line (location: (source ID: 90, lines: 71..77, bytes: 2877..3075), hits: 2) -> "function mintBatch(address to, u...h(to, ids, amounts, data);\n    }"
+- Function "mintBatch" (location: (source ID: 90, lines: 71..77, bytes: 2877..3075), hits: 2) -> "function mintBatch(address to, u...h(to, ids, amounts, data);\n    }"
+- Line (location: (source ID: 90, lines: 75..76, bytes: 3034..3068), hits: 1) -> "_mintBatch(to, ids, amounts, data)"
+- Statement (location: (source ID: 90, lines: 75..76, bytes: 3034..3068), hits: 1) -> "_mintBatch(to, ids, amounts, data)"
+- Line (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 0) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
+- Function "_authorizeUpgrade" (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 0) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
+- Line (location: (source ID: 90, lines: 82..88, bytes: 3253..3508), hits: 8) -> "function _update(address from, a...te(from, to, ids, values);\n    }"
+- Function "_update" (location: (source ID: 90, lines: 82..88, bytes: 3253..3508), hits: 8) -> "function _update(address from, a...te(from, to, ids, values);\n    }"
+- Line (location: (source ID: 90, lines: 86..87, bytes: 3465..3501), hits: 8) -> "super._update(from, to, ids, values)"
+- Statement (location: (source ID: 90, lines: 86..87, bytes: 3465..3501), hits: 8) -> "super._update(from, to, ids, values)"
+- Line (location: (source ID: 90, lines: 89..97, bytes: 3514..3739), hits: 2) -> "function supportsInterface(bytes...rtsInterface(interfaceId);\n    }"
+- Function "supportsInterface" (location: (source ID: 90, lines: 89..97, bytes: 3514..3739), hits: 2) -> "function supportsInterface(bytes...rtsInterface(interfaceId);\n    }"
+- Line (location: (source ID: 90, lines: 95..96, bytes: 3689..3732), hits: 2) -> "return super.supportsInterface(interfaceId)"
+- Statement (location: (source ID: 90, lines: 95..96, bytes: 3689..3732), hits: 2) -> "return super.supportsInterface(interfaceId)"
+- Statement (location: (source ID: 90, lines: 95..96, bytes: 3696..3732), hits: 2) -> "super.supportsInterface(interfaceId)"
+
+src/tokens/ERC20/WBCoin.sol:
+- Line (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20) -> "constructor() {\n        _disableInitializers();\n    }"
+- Function "constructor" (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20) -> "constructor() {\n        _disableInitializers();\n    }"
+- Line (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20) -> "_disableInitializers()"
+- Statement (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20) -> "_disableInitializers()"
+- Line (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19) -> "function initialize(address defa...(UPGRADER_ROLE, upgrader);\n    }"
+- Function "initialize" (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19) -> "function initialize(address defa...(UPGRADER_ROLE, upgrader);\n    }"
+- Line (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18) -> "__ERC20_init(\"WBCoin\", \"WBC\")"
+- Statement (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18) -> "__ERC20_init(\"WBCoin\", \"WBC\")"
+- Line (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18) -> "__ERC20Burnable_init()"
+- Statement (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18) -> "__ERC20Burnable_init()"
+- Line (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18) -> "__ERC20Pausable_init()"
+- Statement (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18) -> "__ERC20Pausable_init()"
+- Line (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18) -> "__AccessControl_init()"
+- Statement (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18) -> "__AccessControl_init()"
+- Line (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
+- Statement (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
+- Line (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18) -> "_grantRole(PAUSER_ROLE, pauser)"
+- Statement (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18) -> "_grantRole(PAUSER_ROLE, pauser)"
+- Line (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18) -> "_grantRole(MINTER_ROLE, minter)"
+- Statement (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18) -> "_grantRole(MINTER_ROLE, minter)"
+- Line (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18) -> "_grantRole(UPGRADER_ROLE, upgrader)"
+- Statement (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18) -> "_grantRole(UPGRADER_ROLE, upgrader)"
+- Line (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4) -> "function pause() public onlyRole..._ROLE) {\n        _pause();\n    }"
+- Function "pause" (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4) -> "function pause() public onlyRole..._ROLE) {\n        _pause();\n    }"
+- Line (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3) -> "_pause()"
+- Statement (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3) -> "_pause()"
+- Line (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1) -> "function unpause() public onlyRo...OLE) {\n        _unpause();\n    }"
+- Function "unpause" (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1) -> "function unpause() public onlyRo...OLE) {\n        _unpause();\n    }"
+- Line (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1) -> "_unpause()"
+- Statement (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1) -> "_unpause()"
+- Line (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5) -> "function mint(address to, uint25...        _mint(to, amount);\n    }"
+- Function "mint" (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5) -> "function mint(address to, uint25...        _mint(to, amount);\n    }"
+- Line (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4) -> "_mint(to, amount)"
+- Statement (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4) -> "_mint(to, amount)"
+- Line (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
+- Function "_authorizeUpgrade" (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
+- Line (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7) -> "function _update(address from, a...._update(from, to, value);\n    }"
+- Function "_update" (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7) -> "function _update(address from, a...._update(from, to, value);\n    }"
+- Line (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7) -> "super._update(from, to, value)"
+- Statement (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7) -> "super._update(from, to, value)"
+
+src/tokens/ERC721/WBCharacter.sol:
+- Line (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 1) -> "constructor() {\n        _disableInitializers();\n    }"
+- Function "constructor" (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 1) -> "constructor() {\n        _disableInitializers();\n    }"
+- Line (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 1) -> "_disableInitializers()"
+- Statement (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 1) -> "_disableInitializers()"
+- Line (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 1) -> "function initialize(address defa...(UPGRADER_ROLE, upgrader);\n    }"
+- Function "initialize" (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 1) -> "function initialize(address defa...(UPGRADER_ROLE, upgrader);\n    }"
+- Line (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 1) -> "__ERC721_init(\"WBCharacter\", \"WBCH\")"
+- Statement (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 1) -> "__ERC721_init(\"WBCharacter\", \"WBCH\")"
+- Line (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 1) -> "__ERC721Enumerable_init()"
+- Statement (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 1) -> "__ERC721Enumerable_init()"
+- Line (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 1) -> "__ERC721URIStorage_init()"
+- Statement (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 1) -> "__ERC721URIStorage_init()"
+- Line (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 1) -> "__ERC721Pausable_init()"
+- Statement (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 1) -> "__ERC721Pausable_init()"
+- Line (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 1) -> "__AccessControl_init()"
+- Statement (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 1) -> "__AccessControl_init()"
+- Line (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 1) -> "__ERC721Burnable_init()"
+- Statement (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 1) -> "__ERC721Burnable_init()"
+- Line (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 1) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
+- Statement (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 1) -> "_grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin)"
+- Line (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 1) -> "_grantRole(PAUSER_ROLE, pauser)"
+- Statement (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 1) -> "_grantRole(PAUSER_ROLE, pauser)"
+- Line (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 1) -> "_grantRole(MINTER_ROLE, minter)"
+- Statement (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 1) -> "_grantRole(MINTER_ROLE, minter)"
+- Line (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 1) -> "_grantRole(UPGRADER_ROLE, upgrader)"
+- Statement (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 1) -> "_grantRole(UPGRADER_ROLE, upgrader)"
+- Line (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 0) -> "function pause() public onlyRole..._ROLE) {\n        _pause();\n    }"
+- Function "pause" (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 0) -> "function pause() public onlyRole..._ROLE) {\n        _pause();\n    }"
+- Line (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 0) -> "_pause()"
+- Statement (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 0) -> "_pause()"
+- Line (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 0) -> "function unpause() public onlyRo...OLE) {\n        _unpause();\n    }"
+- Function "unpause" (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 0) -> "function unpause() public onlyRo...OLE) {\n        _unpause();\n    }"
+- Line (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 0) -> "_unpause()"
+- Statement (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 0) -> "_unpause()"
+- Line (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 0) -> "function safeMint(address to, st...);\n        return tokenId;\n    }"
+- Function "safeMint" (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 0) -> "function safeMint(address to, st...);\n        return tokenId;\n    }"
+- Line (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 0) -> "WBCharacterStorage storage $ = _getWBCharacterStorage()"
+- Statement (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 0) -> "WBCharacterStorage storage $ = _getWBCharacterStorage()"
+- Statement (location: (source ID: 92, lines: 69..70, bytes: 2810..2834), hits: 0) -> "_getWBCharacterStorage()"
+- Line (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 0) -> "uint256 tokenId = $._nextTokenId++"
+- Statement (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 0) -> "uint256 tokenId = $._nextTokenId++"
+- Statement (location: (source ID: 92, lines: 70..71, bytes: 2862..2878), hits: 0) -> "$._nextTokenId++"
+- Line (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 0) -> "_safeMint(to, tokenId)"
+- Statement (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 0) -> "_safeMint(to, tokenId)"
+- Line (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 0) -> "_setTokenURI(tokenId, uri)"
+- Statement (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 0) -> "_setTokenURI(tokenId, uri)"
+- Line (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 0) -> "return tokenId"
+- Statement (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 0) -> "return tokenId"
+- Line (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 0) -> "function _getWBCharacterStorage(...STORAGE_LOCATION\n        }\n    }"
+- Function "_getWBCharacterStorage" (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 0) -> "function _getWBCharacterStorage(...STORAGE_LOCATION\n        }\n    }"
+- Line (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 0) -> "$.slot := WB_CHARACTER_STORAGE_LOCATION"
+- Statement (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 0) -> "$.slot := WB_CHARACTER_STORAGE_LOCATION"
+- Line (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 0) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
+- Function "_authorizeUpgrade" (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 0) -> "function _authorizeUpgrade(addre...rride onlyRole(UPGRADER_ROLE) {}"
+- Line (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 0) -> "function _update(address to, uin...update(to, tokenId, auth);\n    }"
+- Function "_update" (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 0) -> "function _update(address to, uin...update(to, tokenId, auth);\n    }"
+- Line (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 0) -> "return super._update(to, tokenId, auth)"
+- Statement (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 0) -> "return super._update(to, tokenId, auth)"
+- Statement (location: (source ID: 92, lines: 91..92, bytes: 3551..3583), hits: 0) -> "super._update(to, tokenId, auth)"
+- Line (location: (source ID: 92, lines: 94..100, bytes: 3596..3795), hits: 0) -> "function _increaseBalance(addres...seBalance(account, value);\n    }"
+- Function "_increaseBalance" (location: (source ID: 92, lines: 94..100, bytes: 3596..3795), hits: 0) -> "function _increaseBalance(addres...seBalance(account, value);\n    }"
+- Line (location: (source ID: 92, lines: 98..99, bytes: 3750..3788), hits: 0) -> "super._increaseBalance(account, value)"
+- Statement (location: (source ID: 92, lines: 98..99, bytes: 3750..3788), hits: 0) -> "super._increaseBalance(account, value)"
+- Line (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 0) -> "function tokenURI(uint256 tokenI...n super.tokenURI(tokenId);\n    }"
+- Function "tokenURI" (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 0) -> "function tokenURI(uint256 tokenI...n super.tokenURI(tokenId);\n    }"
+- Line (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 0) -> "return super.tokenURI(tokenId)"
+- Statement (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 0) -> "return super.tokenURI(tokenId)"
+- Statement (location: (source ID: 92, lines: 107..108, bytes: 3982..4005), hits: 0) -> "super.tokenURI(tokenId)"
+- Line (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 0) -> "function supportsInterface(bytes...rtsInterface(interfaceId);\n    }"
+- Function "supportsInterface" (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 0) -> "function supportsInterface(bytes...rtsInterface(interfaceId);\n    }"
+- Line (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 0) -> "return super.supportsInterface(interfaceId)"
+- Statement (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 0) -> "return super.supportsInterface(interfaceId)"
+- Statement (location: (source ID: 92, lines: 116..117, bytes: 4257..4293), hits: 0) -> "super.supportsInterface(interfaceId)"
+- Line (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 0) -> "function _baseURI() internal pur...mory) {\n        return \"\";\n    }"
+- Function "_baseURI" (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 0) -> "function _baseURI() internal pur...mory) {\n        return \"\";\n    }"
+- Line (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 0) -> "return \"\""
+- Statement (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 0) -> "return \"\""
+
+test/mocks/WBCoinV2Mock.sol:
+- Line (location: (source ID: 93, lines: 9..12, bytes: 188..284), hits: 0) -> "function newFunction() external ...       return \"Upgraded!\";\n    }"
+- Function "newFunction" (location: (source ID: 93, lines: 9..12, bytes: 188..284), hits: 0) -> "function newFunction() external ...       return \"Upgraded!\";\n    }"
+- Line (location: (source ID: 93, lines: 10..11, bytes: 259..277), hits: 0) -> "return \"Upgraded!\""
+- Statement (location: (source ID: 93, lines: 10..11, bytes: 259..277), hits: 0) -> "return \"Upgraded!\""
+
+Anchors for Contract "GameMarket" (solc 0.8.30, source ID 87):
+- creation IC 56 -> Item 72: Line (location: (source ID: 87, lines: 11..14, bytes: 575..628), hits: 0)
+- creation IC 56 -> Item 73: Function "constructor" (location: (source ID: 87, lines: 11..14, bytes: 575..628), hits: 0)
+- creation IC 68 -> Item 74: Line (location: (source ID: 87, lines: 12..13, bytes: 599..621), hits: 0)
+- creation IC 68 -> Item 75: Statement (location: (source ID: 87, lines: 12..13, bytes: 599..621), hits: 0)
+-  runtime IC 726 -> Item 76: Line (location: (source ID: 87, lines: 15..18, bytes: 634..751), hits: 0)
+-  runtime IC 726 -> Item 77: Function "initialize" (location: (source ID: 87, lines: 15..18, bytes: 634..751), hits: 0)
+-  runtime IC 2153 -> Item 78: Line (location: (source ID: 87, lines: 16..17, bytes: 687..744), hits: 0)
+-  runtime IC 2153 -> Item 79: Statement (location: (source ID: 87, lines: 16..17, bytes: 687..744), hits: 0)
+-  runtime IC 3723 -> Item 80: Line (location: (source ID: 87, lines: 19..20, bytes: 757..860), hits: 0)
+-  runtime IC 3723 -> Item 81: Function "_authorizeUpgrade" (location: (source ID: 87, lines: 19..20, bytes: 757..860), hits: 0)
+
+Anchors for Contract "DeployGameRegestry" (solc 0.8.30, source ID 83):
+-  runtime IC 97 -> Item 0: Line (location: (source ID: 83, lines: 9..12, bytes: 287..390), hits: 0)
+-  runtime IC 97 -> Item 1: Function "run" (location: (source ID: 83, lines: 9..12, bytes: 287..390), hits: 0)
+-  runtime IC 911 -> Item 2: Line (location: (source ID: 83, lines: 10..11, bytes: 355..383), hits: 0)
+-  runtime IC 911 -> Item 3: Statement (location: (source ID: 83, lines: 10..11, bytes: 355..383), hits: 0)
+-  runtime IC 67 -> Item 4: Line (location: (source ID: 83, lines: 13..26, bytes: 396..863), hits: 14)
+-  runtime IC 67 -> Item 5: Function "deploy" (location: (source ID: 83, lines: 13..26, bytes: 396..863), hits: 14)
+-  runtime IC 180 -> Item 6: Line (location: (source ID: 83, lines: 14..15, bytes: 449..468), hits: 14)
+-  runtime IC 180 -> Item 7: Statement (location: (source ID: 83, lines: 14..15, bytes: 449..468), hits: 14)
+-  runtime IC 270 -> Item 8: Line (location: (source ID: 83, lines: 15..16, bytes: 478..524), hits: 14)
+-  runtime IC 270 -> Item 9: Statement (location: (source ID: 83, lines: 15..16, bytes: 478..524), hits: 14)
+-  runtime IC 271 -> Item 10: Statement (location: (source ID: 83, lines: 15..16, bytes: 506..524), hits: 14)
+-  runtime IC 311 -> Item 11: Line (location: (source ID: 83, lines: 16..23, bytes: 534..797), hits: 14)
+-  runtime IC 311 -> Item 12: Statement (location: (source ID: 83, lines: 16..23, bytes: 534..797), hits: 14)
+-  runtime IC 312 -> Item 13: Statement (location: (source ID: 83, lines: 16..23, bytes: 555..797), hits: 14)
+-  runtime IC 812 -> Item 14: Line (location: (source ID: 83, lines: 23..24, bytes: 807..825), hits: 14)
+-  runtime IC 812 -> Item 15: Statement (location: (source ID: 83, lines: 23..24, bytes: 807..825), hits: 14)
+-  runtime IC 902 -> Item 16: Line (location: (source ID: 83, lines: 24..25, bytes: 835..856), hits: 14)
+-  runtime IC 902 -> Item 17: Statement (location: (source ID: 83, lines: 24..25, bytes: 835..856), hits: 14)
+
+Anchors for Contract "WBCharacter" (solc 0.8.30, source ID 92):
+- creation IC 56 -> Item 419: Line (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 1)
+- creation IC 56 -> Item 420: Function "constructor" (location: (source ID: 92, lines: 42..45, bytes: 1936..1989), hits: 1)
+- creation IC 68 -> Item 421: Line (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 1)
+- creation IC 68 -> Item 422: Statement (location: (source ID: 92, lines: 43..44, bytes: 1960..1982), hits: 1)
+-  runtime IC 2020 -> Item 423: Line (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 1)
+-  runtime IC 2020 -> Item 424: Function "initialize" (location: (source ID: 92, lines: 46..59, bytes: 1995..2509), hits: 1)
+-  runtime IC 4654 -> Item 425: Line (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 1)
+-  runtime IC 4654 -> Item 426: Statement (location: (source ID: 92, lines: 47..48, bytes: 2116..2152), hits: 1)
+-  runtime IC 4770 -> Item 427: Line (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 1)
+-  runtime IC 4770 -> Item 428: Statement (location: (source ID: 92, lines: 48..49, bytes: 2162..2187), hits: 1)
+-  runtime IC 4778 -> Item 429: Line (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 1)
+-  runtime IC 4778 -> Item 430: Statement (location: (source ID: 92, lines: 49..50, bytes: 2197..2222), hits: 1)
+-  runtime IC 4786 -> Item 431: Line (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 1)
+-  runtime IC 4786 -> Item 432: Statement (location: (source ID: 92, lines: 50..51, bytes: 2232..2255), hits: 1)
+-  runtime IC 4794 -> Item 433: Line (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 1)
+-  runtime IC 4794 -> Item 434: Statement (location: (source ID: 92, lines: 51..52, bytes: 2265..2287), hits: 1)
+-  runtime IC 4802 -> Item 435: Line (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 1)
+-  runtime IC 4802 -> Item 436: Statement (location: (source ID: 92, lines: 52..53, bytes: 2297..2320), hits: 1)
+-  runtime IC 4810 -> Item 437: Line (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 1)
+-  runtime IC 4810 -> Item 438: Statement (location: (source ID: 92, lines: 54..55, bytes: 2331..2375), hits: 1)
+-  runtime IC 4823 -> Item 439: Line (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 1)
+-  runtime IC 4823 -> Item 440: Statement (location: (source ID: 92, lines: 55..56, bytes: 2385..2416), hits: 1)
+-  runtime IC 4866 -> Item 441: Line (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 1)
+-  runtime IC 4866 -> Item 442: Statement (location: (source ID: 92, lines: 56..57, bytes: 2426..2457), hits: 1)
+-  runtime IC 4909 -> Item 443: Line (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 1)
+-  runtime IC 4909 -> Item 444: Statement (location: (source ID: 92, lines: 57..58, bytes: 2467..2502), hits: 1)
+-  runtime IC 1386 -> Item 445: Line (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 0)
+-  runtime IC 1386 -> Item 446: Function "pause" (location: (source ID: 92, lines: 60..63, bytes: 2515..2586), hits: 0)
+-  runtime IC 3544 -> Item 447: Line (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 0)
+-  runtime IC 3544 -> Item 448: Statement (location: (source ID: 92, lines: 61..62, bytes: 2571..2579), hits: 0)
+-  runtime IC 992 -> Item 449: Line (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 0)
+-  runtime IC 992 -> Item 450: Function "unpause" (location: (source ID: 92, lines: 64..67, bytes: 2592..2667), hits: 0)
+-  runtime IC 2983 -> Item 451: Line (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 0)
+-  runtime IC 2983 -> Item 452: Statement (location: (source ID: 92, lines: 65..66, bytes: 2650..2660), hits: 0)
+-  runtime IC 1734 -> Item 453: Line (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 0)
+-  runtime IC 1734 -> Item 454: Function "safeMint" (location: (source ID: 92, lines: 68..75, bytes: 2673..2977), hits: 0)
+-  runtime IC 4009 -> Item 455: Line (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 0)
+-  runtime IC 4009 -> Item 456: Statement (location: (source ID: 92, lines: 69..70, bytes: 2779..2834), hits: 0)
+-  runtime IC 4010 -> Item 457: Statement (location: (source ID: 92, lines: 69..70, bytes: 2810..2834), hits: 0)
+-  runtime IC 4020 -> Item 458: Line (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 0)
+-  runtime IC 4020 -> Item 459: Statement (location: (source ID: 92, lines: 70..71, bytes: 2844..2878), hits: 0)
+-  runtime IC 4021 -> Item 460: Statement (location: (source ID: 92, lines: 70..71, bytes: 2862..2878), hits: 0)
+-  runtime IC 4046 -> Item 461: Line (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 0)
+-  runtime IC 4046 -> Item 462: Statement (location: (source ID: 92, lines: 71..72, bytes: 2888..2910), hits: 0)
+-  runtime IC 4056 -> Item 463: Line (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 0)
+-  runtime IC 4056 -> Item 464: Statement (location: (source ID: 92, lines: 72..73, bytes: 2920..2946), hits: 0)
+-  runtime IC 4066 -> Item 465: Line (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 0)
+-  runtime IC 4066 -> Item 466: Statement (location: (source ID: 92, lines: 73..74, bytes: 2956..2970), hits: 0)
+-  runtime IC 8099 -> Item 467: Line (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 0)
+-  runtime IC 8099 -> Item 468: Function "_getWBCharacterStorage" (location: (source ID: 92, lines: 76..81, bytes: 2983..3157), hits: 0)
+-  runtime IC 8101 -> Item 469: Line (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 0)
+-  runtime IC 8101 -> Item 470: Statement (location: (source ID: 92, lines: 78..79, bytes: 3102..3141), hits: 0)
+-  runtime IC 6397 -> Item 471: Line (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 0)
+-  runtime IC 6397 -> Item 472: Function "_authorizeUpgrade" (location: (source ID: 92, lines: 82..83, bytes: 3163..3261), hits: 0)
+-  runtime IC 5481 -> Item 473: Line (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 0)
+-  runtime IC 5481 -> Item 474: Function "_update" (location: (source ID: 92, lines: 86..93, bytes: 3335..3590), hits: 0)
+-  runtime IC 5483 -> Item 475: Line (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 0)
+-  runtime IC 5483 -> Item 476: Statement (location: (source ID: 92, lines: 91..92, bytes: 3544..3583), hits: 0)
+-  runtime IC 5483 -> Item 477: Statement (location: (source ID: 92, lines: 91..92, bytes: 3551..3583), hits: 0)
+-  runtime IC 1674 -> Item 482: Line (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 0)
+-  runtime IC 1674 -> Item 483: Function "tokenURI" (location: (source ID: 92, lines: 101..109, bytes: 3801..4012), hits: 0)
+-  runtime IC 3950 -> Item 484: Line (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 0)
+-  runtime IC 3950 -> Item 485: Statement (location: (source ID: 92, lines: 107..108, bytes: 3975..4005), hits: 0)
+-  runtime IC 3950 -> Item 486: Statement (location: (source ID: 92, lines: 107..108, bytes: 3982..4005), hits: 0)
+-  runtime IC 508 -> Item 487: Line (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 0)
+-  runtime IC 508 -> Item 488: Function "supportsInterface" (location: (source ID: 92, lines: 110..118, bytes: 4018..4300), hits: 0)
+-  runtime IC 2062 -> Item 489: Line (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 0)
+-  runtime IC 2062 -> Item 490: Statement (location: (source ID: 92, lines: 116..117, bytes: 4250..4293), hits: 0)
+-  runtime IC 2062 -> Item 491: Statement (location: (source ID: 92, lines: 116..117, bytes: 4257..4293), hits: 0)
+-  runtime IC 9464 -> Item 492: Line (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 0)
+-  runtime IC 9464 -> Item 493: Function "_baseURI" (location: (source ID: 92, lines: 120..123, bytes: 4350..4443), hits: 0)
+-  runtime IC 9467 -> Item 494: Line (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 0)
+-  runtime IC 9467 -> Item 495: Statement (location: (source ID: 92, lines: 121..122, bytes: 4427..4436), hits: 0)
+
+Anchors for Contract "DeployWBCoin" (solc 0.8.30, source ID 85):
+-  runtime IC 97 -> Item 36: Line (location: (source ID: 85, lines: 9..12, bytes: 282..375), hits: 1)
+-  runtime IC 97 -> Item 37: Function "run" (location: (source ID: 85, lines: 9..12, bytes: 282..375), hits: 1)
+-  runtime IC 601 -> Item 38: Line (location: (source ID: 85, lines: 10..11, bytes: 344..368), hits: 1)
+-  runtime IC 601 -> Item 39: Statement (location: (source ID: 85, lines: 10..11, bytes: 344..368), hits: 1)
+-  runtime IC 67 -> Item 40: Line (location: (source ID: 85, lines: 13..22, bytes: 381..730), hits: 17)
+-  runtime IC 67 -> Item 41: Function "deploy" (location: (source ID: 85, lines: 13..22, bytes: 381..730), hits: 17)
+-  runtime IC 180 -> Item 42: Line (location: (source ID: 85, lines: 14..15, bytes: 434..453), hits: 18)
+-  runtime IC 180 -> Item 43: Statement (location: (source ID: 85, lines: 14..15, bytes: 434..453), hits: 18)
+-  runtime IC 270 -> Item 44: Line (location: (source ID: 85, lines: 15..16, bytes: 463..491), hits: 18)
+-  runtime IC 270 -> Item 45: Statement (location: (source ID: 85, lines: 15..16, bytes: 463..491), hits: 18)
+-  runtime IC 271 -> Item 46: Statement (location: (source ID: 85, lines: 15..16, bytes: 479..491), hits: 18)
+-  runtime IC 311 -> Item 47: Line (location: (source ID: 85, lines: 16..19, bytes: 501..662), hits: 18)
+-  runtime IC 311 -> Item 48: Statement (location: (source ID: 85, lines: 16..19, bytes: 501..662), hits: 18)
+-  runtime IC 312 -> Item 49: Statement (location: (source ID: 85, lines: 16..19, bytes: 522..662), hits: 18)
+-  runtime IC 502 -> Item 50: Line (location: (source ID: 85, lines: 19..20, bytes: 672..690), hits: 18)
+-  runtime IC 502 -> Item 51: Statement (location: (source ID: 85, lines: 19..20, bytes: 672..690), hits: 18)
+-  runtime IC 592 -> Item 52: Line (location: (source ID: 85, lines: 20..21, bytes: 700..723), hits: 18)
+-  runtime IC 592 -> Item 53: Statement (location: (source ID: 85, lines: 20..21, bytes: 700..723), hits: 18)
+
+Anchors for Contract "WBCoinV2Mock" (solc 0.8.30, source ID 93):
+- creation IC 72 -> Item 379: Line (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20)
+- creation IC 72 -> Item 380: Function "constructor" (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20)
+- creation IC 72 -> Item 381: Line (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20)
+- creation IC 72 -> Item 382: Statement (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20)
+-  runtime IC 679 -> Item 496: Line (location: (source ID: 93, lines: 9..12, bytes: 188..284), hits: 0)
+-  runtime IC 679 -> Item 497: Function "newFunction" (location: (source ID: 93, lines: 9..12, bytes: 188..284), hits: 0)
+-  runtime IC 2192 -> Item 498: Line (location: (source ID: 93, lines: 10..11, bytes: 259..277), hits: 0)
+-  runtime IC 2192 -> Item 499: Statement (location: (source ID: 93, lines: 10..11, bytes: 259..277), hits: 0)
+-  runtime IC 1813 -> Item 383: Line (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19)
+-  runtime IC 1813 -> Item 384: Function "initialize" (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19)
+-  runtime IC 3853 -> Item 385: Line (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18)
+-  runtime IC 3853 -> Item 386: Statement (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18)
+-  runtime IC 3969 -> Item 387: Line (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18)
+-  runtime IC 3969 -> Item 388: Statement (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18)
+-  runtime IC 3977 -> Item 389: Line (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18)
+-  runtime IC 3977 -> Item 390: Statement (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18)
+-  runtime IC 3985 -> Item 391: Line (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18)
+-  runtime IC 3985 -> Item 392: Statement (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18)
+-  runtime IC 3993 -> Item 393: Line (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18)
+-  runtime IC 3993 -> Item 394: Statement (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18)
+-  runtime IC 4006 -> Item 395: Line (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18)
+-  runtime IC 4006 -> Item 396: Statement (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18)
+-  runtime IC 4049 -> Item 397: Line (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18)
+-  runtime IC 4049 -> Item 398: Statement (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18)
+-  runtime IC 4092 -> Item 399: Line (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18)
+-  runtime IC 4092 -> Item 400: Statement (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18)
+-  runtime IC 1319 -> Item 401: Line (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4)
+-  runtime IC 1319 -> Item 402: Function "pause" (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4)
+-  runtime IC 2910 -> Item 403: Line (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3)
+-  runtime IC 2910 -> Item 404: Statement (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3)
+-  runtime IC 963 -> Item 405: Line (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1)
+-  runtime IC 963 -> Item 406: Function "unpause" (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1)
+-  runtime IC 2546 -> Item 407: Line (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1)
+-  runtime IC 2546 -> Item 408: Statement (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1)
+-  runtime IC 985 -> Item 409: Line (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5)
+-  runtime IC 985 -> Item 410: Function "mint" (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5)
+-  runtime IC 2599 -> Item 411: Line (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4)
+-  runtime IC 2599 -> Item 412: Statement (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4)
+-  runtime IC 5940 -> Item 413: Line (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2)
+-  runtime IC 5940 -> Item 414: Function "_authorizeUpgrade" (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2)
+-  runtime IC 7105 -> Item 415: Line (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7)
+-  runtime IC 7105 -> Item 416: Function "_update" (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7)
+-  runtime IC 7106 -> Item 417: Line (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7)
+-  runtime IC 7106 -> Item 418: Statement (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7)
+
+Anchors for Contract "WBCoin" (solc 0.8.30, source ID 91):
+- creation IC 56 -> Item 379: Line (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20)
+- creation IC 56 -> Item 380: Function "constructor" (location: (source ID: 91, lines: 27..30, bytes: 1205..1258), hits: 20)
+- creation IC 68 -> Item 381: Line (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20)
+- creation IC 68 -> Item 382: Statement (location: (source ID: 91, lines: 28..29, bytes: 1229..1251), hits: 20)
+-  runtime IC 1707 -> Item 383: Line (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19)
+-  runtime IC 1707 -> Item 384: Function "initialize" (location: (source ID: 91, lines: 31..42, bytes: 1264..1699), hits: 19)
+-  runtime IC 3681 -> Item 385: Line (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18)
+-  runtime IC 3681 -> Item 386: Statement (location: (source ID: 91, lines: 32..33, bytes: 1385..1414), hits: 18)
+-  runtime IC 3797 -> Item 387: Line (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18)
+-  runtime IC 3797 -> Item 388: Statement (location: (source ID: 91, lines: 33..34, bytes: 1424..1446), hits: 18)
+-  runtime IC 3805 -> Item 389: Line (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18)
+-  runtime IC 3805 -> Item 390: Statement (location: (source ID: 91, lines: 34..35, bytes: 1456..1478), hits: 18)
+-  runtime IC 3813 -> Item 391: Line (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18)
+-  runtime IC 3813 -> Item 392: Statement (location: (source ID: 91, lines: 35..36, bytes: 1488..1510), hits: 18)
+-  runtime IC 3821 -> Item 393: Line (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18)
+-  runtime IC 3821 -> Item 394: Statement (location: (source ID: 91, lines: 37..38, bytes: 1521..1565), hits: 18)
+-  runtime IC 3834 -> Item 395: Line (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18)
+-  runtime IC 3834 -> Item 396: Statement (location: (source ID: 91, lines: 38..39, bytes: 1575..1606), hits: 18)
+-  runtime IC 3877 -> Item 397: Line (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18)
+-  runtime IC 3877 -> Item 398: Statement (location: (source ID: 91, lines: 39..40, bytes: 1616..1647), hits: 18)
+-  runtime IC 3920 -> Item 399: Line (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18)
+-  runtime IC 3920 -> Item 400: Statement (location: (source ID: 91, lines: 40..41, bytes: 1657..1692), hits: 18)
+-  runtime IC 1213 -> Item 401: Line (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4)
+-  runtime IC 1213 -> Item 402: Function "pause" (location: (source ID: 91, lines: 43..46, bytes: 1705..1776), hits: 4)
+-  runtime IC 2738 -> Item 403: Line (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3)
+-  runtime IC 2738 -> Item 404: Statement (location: (source ID: 91, lines: 44..45, bytes: 1761..1769), hits: 3)
+-  runtime IC 899 -> Item 405: Line (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1)
+-  runtime IC 899 -> Item 406: Function "unpause" (location: (source ID: 91, lines: 47..50, bytes: 1782..1857), hits: 1)
+-  runtime IC 2379 -> Item 407: Line (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1)
+-  runtime IC 2379 -> Item 408: Statement (location: (source ID: 91, lines: 48..49, bytes: 1840..1850), hits: 1)
+-  runtime IC 921 -> Item 409: Line (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5)
+-  runtime IC 921 -> Item 410: Function "mint" (location: (source ID: 91, lines: 51..54, bytes: 1863..1968), hits: 5)
+-  runtime IC 2432 -> Item 411: Line (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4)
+-  runtime IC 2432 -> Item 412: Statement (location: (source ID: 91, lines: 52..53, bytes: 1944..1961), hits: 4)
+-  runtime IC 5768 -> Item 413: Line (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2)
+-  runtime IC 5768 -> Item 414: Function "_authorizeUpgrade" (location: (source ID: 91, lines: 55..56, bytes: 1974..2072), hits: 2)
+-  runtime IC 6933 -> Item 415: Line (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7)
+-  runtime IC 6933 -> Item 416: Function "_update" (location: (source ID: 91, lines: 59..65, bytes: 2146..2333), hits: 7)
+-  runtime IC 6934 -> Item 417: Line (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7)
+-  runtime IC 6934 -> Item 418: Statement (location: (source ID: 91, lines: 63..64, bytes: 2296..2326), hits: 7)
+
+Anchors for Contract "WBResources" (solc 0.8.30, source ID 90):
+- creation IC 56 -> Item 317: Line (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 21)
+- creation IC 56 -> Item 318: Function "constructor" (location: (source ID: 90, lines: 33..36, bytes: 1650..1703), hits: 21)
+- creation IC 68 -> Item 319: Line (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 21)
+- creation IC 68 -> Item 320: Statement (location: (source ID: 90, lines: 34..35, bytes: 1674..1696), hits: 21)
+-  runtime IC 1926 -> Item 321: Line (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 22)
+-  runtime IC 1926 -> Item 322: Function "initialize" (location: (source ID: 90, lines: 37..50, bytes: 1709..2220), hits: 22)
+-  runtime IC 4534 -> Item 323: Line (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 21)
+-  runtime IC 4534 -> Item 324: Statement (location: (source ID: 90, lines: 38..39, bytes: 1830..1848), hits: 21)
+-  runtime IC 4557 -> Item 325: Line (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 21)
+-  runtime IC 4557 -> Item 326: Statement (location: (source ID: 90, lines: 39..40, bytes: 1858..1880), hits: 21)
+-  runtime IC 4565 -> Item 327: Line (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 21)
+-  runtime IC 4565 -> Item 328: Statement (location: (source ID: 90, lines: 40..41, bytes: 1890..1914), hits: 21)
+-  runtime IC 4573 -> Item 329: Line (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 21)
+-  runtime IC 4573 -> Item 330: Statement (location: (source ID: 90, lines: 41..42, bytes: 1924..1948), hits: 21)
+-  runtime IC 4581 -> Item 331: Line (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 21)
+-  runtime IC 4581 -> Item 332: Statement (location: (source ID: 90, lines: 42..43, bytes: 1958..1980), hits: 21)
+-  runtime IC 4589 -> Item 333: Line (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 21)
+-  runtime IC 4589 -> Item 334: Statement (location: (source ID: 90, lines: 44..45, bytes: 1991..2035), hits: 21)
+-  runtime IC 4602 -> Item 335: Line (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 21)
+-  runtime IC 4602 -> Item 336: Statement (location: (source ID: 90, lines: 45..46, bytes: 2045..2076), hits: 21)
+-  runtime IC 4645 -> Item 337: Line (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 21)
+-  runtime IC 4645 -> Item 338: Statement (location: (source ID: 90, lines: 46..47, bytes: 2086..2117), hits: 21)
+-  runtime IC 4688 -> Item 339: Line (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 21)
+-  runtime IC 4688 -> Item 340: Statement (location: (source ID: 90, lines: 47..48, bytes: 2127..2162), hits: 21)
+-  runtime IC 4731 -> Item 341: Line (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 21)
+-  runtime IC 4731 -> Item 342: Statement (location: (source ID: 90, lines: 48..49, bytes: 2172..2213), hits: 21)
+-  runtime IC 1336 -> Item 343: Line (location: (source ID: 90, lines: 51..54, bytes: 2226..2355), hits: 5)
+-  runtime IC 1336 -> Item 344: Function "setURI" (location: (source ID: 90, lines: 51..54, bytes: 2226..2355), hits: 5)
+-  runtime IC 3367 -> Item 345: Line (location: (source ID: 90, lines: 52..53, bytes: 2324..2348), hits: 3)
+-  runtime IC 3367 -> Item 346: Statement (location: (source ID: 90, lines: 52..53, bytes: 2324..2348), hits: 3)
+-  runtime IC 1314 -> Item 347: Line (location: (source ID: 90, lines: 55..58, bytes: 2361..2432), hits: 3)
+-  runtime IC 1314 -> Item 348: Function "pause" (location: (source ID: 90, lines: 55..58, bytes: 2361..2432), hits: 3)
+-  runtime IC 3314 -> Item 349: Line (location: (source ID: 90, lines: 56..57, bytes: 2417..2425), hits: 2)
+-  runtime IC 3314 -> Item 350: Statement (location: (source ID: 90, lines: 56..57, bytes: 2417..2425), hits: 2)
+-  runtime IC 616 -> Item 351: Line (location: (source ID: 90, lines: 59..62, bytes: 2438..2628), hits: 7)
+-  runtime IC 616 -> Item 352: Function "uri" (location: (source ID: 90, lines: 59..62, bytes: 2438..2628), hits: 7)
+-  runtime IC 2085 -> Item 353: Line (location: (source ID: 90, lines: 60..61, bytes: 2573..2621), hits: 10)
+-  runtime IC 2085 -> Item 354: Statement (location: (source ID: 90, lines: 60..61, bytes: 2573..2621), hits: 10)
+-  runtime IC 2085 -> Item 355: Statement (location: (source ID: 90, lines: 60..61, bytes: 2580..2621), hits: 10)
+-  runtime IC 938 -> Item 356: Line (location: (source ID: 90, lines: 63..66, bytes: 2634..2709), hits: 1)
+-  runtime IC 938 -> Item 357: Function "unpause" (location: (source ID: 90, lines: 63..66, bytes: 2634..2709), hits: 1)
+-  runtime IC 2593 -> Item 358: Line (location: (source ID: 90, lines: 64..65, bytes: 2692..2702), hits: 1)
+-  runtime IC 2593 -> Item 359: Statement (location: (source ID: 90, lines: 64..65, bytes: 2692..2702), hits: 1)
+-  runtime IC 1232 -> Item 360: Line (location: (source ID: 90, lines: 67..70, bytes: 2715..2871), hits: 5)
+-  runtime IC 1232 -> Item 361: Function "mint" (location: (source ID: 90, lines: 67..70, bytes: 2715..2871), hits: 5)
+-  runtime IC 3217 -> Item 362: Line (location: (source ID: 90, lines: 68..69, bytes: 2832..2864), hits: 4)
+-  runtime IC 3217 -> Item 363: Statement (location: (source ID: 90, lines: 68..69, bytes: 2832..2864), hits: 4)
+-  runtime IC 718 -> Item 364: Line (location: (source ID: 90, lines: 71..77, bytes: 2877..3075), hits: 2)
+-  runtime IC 718 -> Item 365: Function "mintBatch" (location: (source ID: 90, lines: 71..77, bytes: 2877..3075), hits: 2)
+-  runtime IC 2166 -> Item 366: Line (location: (source ID: 90, lines: 75..76, bytes: 3034..3068), hits: 1)
+-  runtime IC 2166 -> Item 367: Statement (location: (source ID: 90, lines: 75..76, bytes: 3034..3068), hits: 1)
+-  runtime IC 6626 -> Item 368: Line (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 0)
+-  runtime IC 6626 -> Item 369: Function "_authorizeUpgrade" (location: (source ID: 90, lines: 78..79, bytes: 3081..3179), hits: 0)
+-  runtime IC 9808 -> Item 370: Line (location: (source ID: 90, lines: 82..88, bytes: 3253..3508), hits: 8)
+-  runtime IC 9808 -> Item 371: Function "_update" (location: (source ID: 90, lines: 82..88, bytes: 3253..3508), hits: 8)
+-  runtime IC 9809 -> Item 372: Line (location: (source ID: 90, lines: 86..87, bytes: 3465..3501), hits: 8)
+-  runtime IC 9809 -> Item 373: Statement (location: (source ID: 90, lines: 86..87, bytes: 3465..3501), hits: 8)
+-  runtime IC 556 -> Item 374: Line (location: (source ID: 90, lines: 89..97, bytes: 3514..3739), hits: 2)
+-  runtime IC 556 -> Item 375: Function "supportsInterface" (location: (source ID: 90, lines: 89..97, bytes: 3514..3739), hits: 2)
+-  runtime IC 2067 -> Item 376: Line (location: (source ID: 90, lines: 95..96, bytes: 3689..3732), hits: 2)
+-  runtime IC 2067 -> Item 377: Statement (location: (source ID: 90, lines: 95..96, bytes: 3689..3732), hits: 2)
+-  runtime IC 2067 -> Item 378: Statement (location: (source ID: 90, lines: 95..96, bytes: 3696..3732), hits: 2)
+
+Anchors for Contract "DeployWBCharacter" (solc 0.8.30, source ID 84):
+-  runtime IC 97 -> Item 18: Line (location: (source ID: 84, lines: 9..12, bytes: 298..399), hits: 0)
+-  runtime IC 97 -> Item 19: Function "run" (location: (source ID: 84, lines: 9..12, bytes: 298..399), hits: 0)
+-  runtime IC 601 -> Item 20: Line (location: (source ID: 84, lines: 10..11, bytes: 365..392), hits: 0)
+-  runtime IC 601 -> Item 21: Statement (location: (source ID: 84, lines: 10..11, bytes: 365..392), hits: 0)
+-  runtime IC 67 -> Item 22: Line (location: (source ID: 84, lines: 13..23, bytes: 405..789), hits: 1)
+-  runtime IC 67 -> Item 23: Function "deploy" (location: (source ID: 84, lines: 13..23, bytes: 405..789), hits: 1)
+-  runtime IC 180 -> Item 24: Line (location: (source ID: 84, lines: 14..15, bytes: 458..477), hits: 1)
+-  runtime IC 180 -> Item 25: Statement (location: (source ID: 84, lines: 14..15, bytes: 458..477), hits: 1)
+-  runtime IC 270 -> Item 26: Line (location: (source ID: 84, lines: 15..16, bytes: 487..530), hits: 1)
+-  runtime IC 270 -> Item 27: Statement (location: (source ID: 84, lines: 15..16, bytes: 487..530), hits: 1)
+-  runtime IC 271 -> Item 28: Statement (location: (source ID: 84, lines: 15..16, bytes: 513..530), hits: 1)
+-  runtime IC 311 -> Item 29: Line (location: (source ID: 84, lines: 16..20, bytes: 540..723), hits: 1)
+-  runtime IC 311 -> Item 30: Statement (location: (source ID: 84, lines: 16..20, bytes: 540..723), hits: 1)
+-  runtime IC 312 -> Item 31: Statement (location: (source ID: 84, lines: 16..20, bytes: 561..723), hits: 1)
+-  runtime IC 502 -> Item 32: Line (location: (source ID: 84, lines: 20..21, bytes: 733..751), hits: 1)
+-  runtime IC 502 -> Item 33: Statement (location: (source ID: 84, lines: 20..21, bytes: 733..751), hits: 1)
+-  runtime IC 592 -> Item 34: Line (location: (source ID: 84, lines: 21..22, bytes: 761..782), hits: 1)
+-  runtime IC 592 -> Item 35: Statement (location: (source ID: 84, lines: 21..22, bytes: 761..782), hits: 1)
+
+Anchors for Contract "DeployWBResources" (solc 0.8.30, source ID 86):
+-  runtime IC 97 -> Item 54: Line (location: (source ID: 86, lines: 9..12, bytes: 299..400), hits: 1)
+-  runtime IC 97 -> Item 55: Function "run" (location: (source ID: 86, lines: 9..12, bytes: 299..400), hits: 1)
+-  runtime IC 601 -> Item 56: Line (location: (source ID: 86, lines: 10..11, bytes: 366..393), hits: 1)
+-  runtime IC 601 -> Item 57: Statement (location: (source ID: 86, lines: 10..11, bytes: 366..393), hits: 1)
+-  runtime IC 67 -> Item 58: Line (location: (source ID: 86, lines: 13..23, bytes: 406..790), hits: 20)
+-  runtime IC 67 -> Item 59: Function "deploy" (location: (source ID: 86, lines: 13..23, bytes: 406..790), hits: 20)
+-  runtime IC 180 -> Item 60: Line (location: (source ID: 86, lines: 14..15, bytes: 459..478), hits: 21)
+-  runtime IC 180 -> Item 61: Statement (location: (source ID: 86, lines: 14..15, bytes: 459..478), hits: 21)
+-  runtime IC 270 -> Item 62: Line (location: (source ID: 86, lines: 15..16, bytes: 488..531), hits: 21)
+-  runtime IC 270 -> Item 63: Statement (location: (source ID: 86, lines: 15..16, bytes: 488..531), hits: 21)
+-  runtime IC 271 -> Item 64: Statement (location: (source ID: 86, lines: 15..16, bytes: 514..531), hits: 21)
+-  runtime IC 311 -> Item 65: Line (location: (source ID: 86, lines: 16..20, bytes: 541..724), hits: 21)
+-  runtime IC 311 -> Item 66: Statement (location: (source ID: 86, lines: 16..20, bytes: 541..724), hits: 21)
+-  runtime IC 312 -> Item 67: Statement (location: (source ID: 86, lines: 16..20, bytes: 562..724), hits: 21)
+-  runtime IC 502 -> Item 68: Line (location: (source ID: 86, lines: 20..21, bytes: 734..752), hits: 21)
+-  runtime IC 502 -> Item 69: Statement (location: (source ID: 86, lines: 20..21, bytes: 734..752), hits: 21)
+-  runtime IC 592 -> Item 70: Line (location: (source ID: 86, lines: 21..22, bytes: 762..783), hits: 21)
+-  runtime IC 592 -> Item 71: Statement (location: (source ID: 86, lines: 21..22, bytes: 762..783), hits: 21)
+
+Anchors for Contract "GameRegestry" (solc 0.8.30, source ID 88):
+- creation IC 56 -> Item 98: Line (location: (source ID: 88, lines: 160..163, bytes: 7134..7187), hits: 14)
+- creation IC 56 -> Item 99: Function "constructor" (location: (source ID: 88, lines: 160..163, bytes: 7134..7187), hits: 14)
+- creation IC 75 -> Item 100: Line (location: (source ID: 88, lines: 161..162, bytes: 7158..7180), hits: 14)
+- creation IC 75 -> Item 101: Statement (location: (source ID: 88, lines: 161..162, bytes: 7158..7180), hits: 14)
+-  runtime IC 4431 -> Item 82: Line (location: (source ID: 88, lines: 142..148, bytes: 6573..6742), hits: 0)
+-  runtime IC 4431 -> Item 83: Function "onlyGameSignerRole" (location: (source ID: 88, lines: 142..148, bytes: 6573..6742), hits: 0)
+-  runtime IC 4431 -> Item 84: Line (location: (source ID: 88, lines: 143..144, bytes: 6617..6657), hits: 0)
+-  runtime IC 4431 -> Item 85: Statement (location: (source ID: 88, lines: 143..144, bytes: 6617..6657), hits: 0)
+-  runtime IC 4484 -> Item 86: Branch (branch: 0, path: 0) (location: (source ID: 88, lines: 143..146, bytes: 6659..6725), hits: 0)
+-  runtime IC 4484 -> Item 87: Line (location: (source ID: 88, lines: 144..145, bytes: 6673..6714), hits: 0)
+-  runtime IC 4484 -> Item 88: Statement (location: (source ID: 88, lines: 144..145, bytes: 6673..6714), hits: 0)
+-  runtime IC 798 -> Item 102: Line (location: (source ID: 88, lines: 176..196, bytes: 7766..8538), hits: 14)
+-  runtime IC 798 -> Item 103: Function "initialize" (location: (source ID: 88, lines: 176..196, bytes: 7766..8538), hits: 14)
+-  runtime IC 3193 -> Item 104: Line (location: (source ID: 88, lines: 183..184, bytes: 7996..8030), hits: 14)
+-  runtime IC 3193 -> Item 105: Statement (location: (source ID: 88, lines: 183..184, bytes: 7996..8030), hits: 14)
+-  runtime IC 3309 -> Item 106: Line (location: (source ID: 88, lines: 184..185, bytes: 8040..8097), hits: 14)
+-  runtime IC 3309 -> Item 107: Statement (location: (source ID: 88, lines: 184..185, bytes: 8040..8097), hits: 14)
+-  runtime IC 3322 -> Item 108: Line (location: (source ID: 88, lines: 186..187, bytes: 8108..8159), hits: 14)
+-  runtime IC 3322 -> Item 109: Statement (location: (source ID: 88, lines: 186..187, bytes: 8108..8159), hits: 14)
+-  runtime IC 3396 -> Item 110: Line (location: (source ID: 88, lines: 187..188, bytes: 8169..8228), hits: 14)
+-  runtime IC 3396 -> Item 111: Statement (location: (source ID: 88, lines: 187..188, bytes: 8169..8228), hits: 14)
+-  runtime IC 3471 -> Item 112: Line (location: (source ID: 88, lines: 188..189, bytes: 8238..8299), hits: 14)
+-  runtime IC 3471 -> Item 113: Statement (location: (source ID: 88, lines: 188..189, bytes: 8238..8299), hits: 14)
+-  runtime IC 3546 -> Item 114: Line (location: (source ID: 88, lines: 189..190, bytes: 8309..8374), hits: 14)
+-  runtime IC 3546 -> Item 115: Statement (location: (source ID: 88, lines: 189..190, bytes: 8309..8374), hits: 14)
+-  runtime IC 3620 -> Item 116: Line (location: (source ID: 88, lines: 191..192, bytes: 8389..8414), hits: 14)
+-  runtime IC 3620 -> Item 117: Statement (location: (source ID: 88, lines: 191..192, bytes: 8389..8414), hits: 14)
+-  runtime IC 3671 -> Item 118: Branch (branch: 2, path: 0) (location: (source ID: 88, lines: 191..194, bytes: 8416..8481), hits: 0)
+-  runtime IC 3671 -> Item 119: Line (location: (source ID: 88, lines: 192..193, bytes: 8430..8470), hits: 0)
+-  runtime IC 3671 -> Item 120: Statement (location: (source ID: 88, lines: 192..193, bytes: 8430..8470), hits: 0)
+-  runtime IC 3721 -> Item 121: Line (location: (source ID: 88, lines: 194..195, bytes: 8490..8531), hits: 14)
+-  runtime IC 3721 -> Item 122: Statement (location: (source ID: 88, lines: 194..195, bytes: 8490..8531), hits: 14)
+-  runtime IC 1228 -> Item 123: Line (location: (source ID: 88, lines: 204..228, bytes: 8844..9627), hits: 0)
+-  runtime IC 1228 -> Item 124: Function "commitBatch" (location: (source ID: 88, lines: 204..228, bytes: 8844..9627), hits: 0)
+-  runtime IC 4938 -> Item 125: Line (location: (source ID: 88, lines: 205..206, bytes: 8942..8952), hits: 0)
+-  runtime IC 4938 -> Item 126: Statement (location: (source ID: 88, lines: 205..206, bytes: 8942..8952), hits: 0)
+-  runtime IC 4945 -> Item 127: Branch (branch: 3, path: 0) (location: (source ID: 88, lines: 205..208, bytes: 8954..9014), hits: 0)
+-  runtime IC 4945 -> Item 128: Line (location: (source ID: 88, lines: 206..207, bytes: 8968..9003), hits: 0)
+-  runtime IC 4945 -> Item 129: Statement (location: (source ID: 88, lines: 206..207, bytes: 8968..9003), hits: 0)
+-  runtime IC 4995 -> Item 130: Line (location: (source ID: 88, lines: 208..209, bytes: 9027..9046), hits: 0)
+-  runtime IC 4995 -> Item 131: Statement (location: (source ID: 88, lines: 208..209, bytes: 9027..9046), hits: 0)
+-  runtime IC 5005 -> Item 132: Branch (branch: 4, path: 0) (location: (source ID: 88, lines: 208..211, bytes: 9048..9111), hits: 0)
+-  runtime IC 5005 -> Item 133: Line (location: (source ID: 88, lines: 209..210, bytes: 9062..9100), hits: 0)
+-  runtime IC 5005 -> Item 134: Statement (location: (source ID: 88, lines: 209..210, bytes: 9062..9100), hits: 0)
+-  runtime IC 5055 -> Item 135: Line (location: (source ID: 88, lines: 211..212, bytes: 9124..9143), hits: 0)
+-  runtime IC 5055 -> Item 136: Statement (location: (source ID: 88, lines: 211..212, bytes: 9124..9143), hits: 0)
+-  runtime IC 5067 -> Item 137: Branch (branch: 5, path: 0) (location: (source ID: 88, lines: 211..214, bytes: 9145..9211), hits: 0)
+-  runtime IC 5067 -> Item 138: Line (location: (source ID: 88, lines: 212..213, bytes: 9159..9200), hits: 0)
+-  runtime IC 5067 -> Item 139: Statement (location: (source ID: 88, lines: 212..213, bytes: 9159..9200), hits: 0)
+-  runtime IC 5117 -> Item 140: Line (location: (source ID: 88, lines: 214..215, bytes: 9220..9246), hits: 0)
+-  runtime IC 5117 -> Item 141: Statement (location: (source ID: 88, lines: 214..215, bytes: 9220..9246), hits: 0)
+-  runtime IC 5158 -> Item 142: Line (location: (source ID: 88, lines: 216..217, bytes: 9257..9289), hits: 0)
+-  runtime IC 5158 -> Item 143: Statement (location: (source ID: 88, lines: 216..217, bytes: 9257..9289), hits: 0)
+-  runtime IC 5227 -> Item 144: Line (location: (source ID: 88, lines: 218..219, bytes: 9305..9318), hits: 0)
+-  runtime IC 5227 -> Item 145: Statement (location: (source ID: 88, lines: 218..219, bytes: 9305..9318), hits: 0)
+-  runtime IC 5232 -> Item 146: Statement (location: (source ID: 88, lines: 218..219, bytes: 9320..9338), hits: 0)
+-  runtime IC 5243 -> Item 147: Line (location: (source ID: 88, lines: 219..221, bytes: 9355..9488), hits: 0)
+-  runtime IC 5243 -> Item 148: Statement (location: (source ID: 88, lines: 219..221, bytes: 9355..9488), hits: 0)
+-  runtime IC 5246 -> Item 149: Line (location: (source ID: 88, lines: 220..221, bytes: 9441..9488), hits: 0)
+-  runtime IC 5246 -> Item 150: Statement (location: (source ID: 88, lines: 220..221, bytes: 9441..9488), hits: 0)
+-  runtime IC 5302 -> Item 151: Line (location: (source ID: 88, lines: 221..222, bytes: 9502..9550), hits: 0)
+-  runtime IC 5302 -> Item 152: Statement (location: (source ID: 88, lines: 221..222, bytes: 9502..9550), hits: 0)
+-  runtime IC 5313 -> Item 153: Line (location: (source ID: 88, lines: 224..225, bytes: 9593..9596), hits: 0)
+-  runtime IC 5313 -> Item 154: Statement (location: (source ID: 88, lines: 224..225, bytes: 9593..9596), hits: 0)
+-  runtime IC 674 -> Item 155: Line (location: (source ID: 88, lines: 236..239, bytes: 9916..10094), hits: 0)
+-  runtime IC 674 -> Item 156: Function "commitResource" (location: (source ID: 88, lines: 236..239, bytes: 9916..10094), hits: 0)
+-  runtime IC 2364 -> Item 157: Line (location: (source ID: 88, lines: 237..238, bytes: 10039..10087), hits: 0)
+-  runtime IC 2364 -> Item 158: Statement (location: (source ID: 88, lines: 237..238, bytes: 10039..10087), hits: 0)
+-  runtime IC 1460 -> Item 159: Line (location: (source ID: 88, lines: 245..249, bytes: 10259..10469), hits: 0)
+-  runtime IC 1460 -> Item 160: Function "addGameElement" (location: (source ID: 88, lines: 245..249, bytes: 10259..10469), hits: 0)
+-  runtime IC 5890 -> Item 161: Line (location: (source ID: 88, lines: 246..247, bytes: 10370..10414), hits: 0)
+-  runtime IC 5890 -> Item 162: Statement (location: (source ID: 88, lines: 246..247, bytes: 10370..10414), hits: 0)
+-  runtime IC 5991 -> Item 163: Line (location: (source ID: 88, lines: 247..248, bytes: 10424..10462), hits: 0)
+-  runtime IC 5991 -> Item 164: Statement (location: (source ID: 88, lines: 247..248, bytes: 10424..10462), hits: 0)
+-  runtime IC 1856 -> Item 165: Line (location: (source ID: 88, lines: 255..259, bytes: 10641..10863), hits: 0)
+-  runtime IC 1856 -> Item 166: Function "removeGameElement" (location: (source ID: 88, lines: 255..259, bytes: 10641..10863), hits: 0)
+-  runtime IC 6836 -> Item 167: Line (location: (source ID: 88, lines: 256..257, bytes: 10750..10804), hits: 0)
+-  runtime IC 6836 -> Item 168: Statement (location: (source ID: 88, lines: 256..257, bytes: 10750..10804), hits: 0)
+-  runtime IC 6907 -> Item 169: Line (location: (source ID: 88, lines: 257..258, bytes: 10814..10856), hits: 0)
+-  runtime IC 6907 -> Item 170: Statement (location: (source ID: 88, lines: 257..258, bytes: 10814..10856), hits: 0)
+-  runtime IC 1038 -> Item 171: Line (location: (source ID: 88, lines: 267..275, bytes: 11167..11573), hits: 0)
+-  runtime IC 1038 -> Item 172: Function "addGameElementStruct" (location: (source ID: 88, lines: 267..275, bytes: 11167..11573), hits: 0)
+-  runtime IC 4534 -> Item 173: Line (location: (source ID: 88, lines: 271..273, bytes: 11334..11481), hits: 0)
+-  runtime IC 4534 -> Item 174: Statement (location: (source ID: 88, lines: 271..273, bytes: 11334..11481), hits: 0)
+-  runtime IC 4714 -> Item 175: Line (location: (source ID: 88, lines: 273..274, bytes: 11491..11566), hits: 0)
+-  runtime IC 4714 -> Item 176: Statement (location: (source ID: 88, lines: 273..274, bytes: 11491..11566), hits: 0)
+-  runtime IC 7451 -> Item 177: Line (location: (source ID: 88, lines: 290..303, bytes: 12144..12663), hits: 0)
+-  runtime IC 7451 -> Item 178: Function "_commitResource" (location: (source ID: 88, lines: 290..303, bytes: 12144..12663), hits: 0)
+-  runtime IC 7452 -> Item 179: Line (location: (source ID: 88, lines: 291..292, bytes: 12258..12284), hits: 0)
+-  runtime IC 7452 -> Item 180: Statement (location: (source ID: 88, lines: 291..292, bytes: 12258..12284), hits: 0)
+-  runtime IC 7452 -> Item 181: Statement (location: (source ID: 88, lines: 291..292, bytes: 12258..12331), hits: 0)
+-  runtime IC 7463 -> Item 182: Statement (location: (source ID: 88, lines: 291..292, bytes: 12288..12306), hits: 0)
+-  runtime IC 7463 -> Item 183: Statement (location: (source ID: 88, lines: 291..292, bytes: 12288..12331), hits: 0)
+-  runtime IC 7474 -> Item 184: Statement (location: (source ID: 88, lines: 291..292, bytes: 12310..12331), hits: 0)
+-  runtime IC 7484 -> Item 185: Branch (branch: 6, path: 0) (location: (source ID: 88, lines: 291..294, bytes: 12333..12398), hits: 0)
+-  runtime IC 7484 -> Item 186: Line (location: (source ID: 88, lines: 292..293, bytes: 12347..12387), hits: 0)
+-  runtime IC 7484 -> Item 187: Statement (location: (source ID: 88, lines: 292..293, bytes: 12347..12387), hits: 0)
+-  runtime IC 7534 -> Item 188: Line (location: (source ID: 88, lines: 295..296, bytes: 12408..12511), hits: 0)
+-  runtime IC 7534 -> Item 189: Statement (location: (source ID: 88, lines: 295..296, bytes: 12408..12511), hits: 0)
+-  runtime IC 7537 -> Item 190: Statement (location: (source ID: 88, lines: 295..296, bytes: 12465..12511), hits: 0)
+-  runtime IC 7554 -> Item 191: Line (location: (source ID: 88, lines: 297..298, bytes: 12522..12550), hits: 0)
+-  runtime IC 7554 -> Item 192: Statement (location: (source ID: 88, lines: 297..298, bytes: 12522..12550), hits: 0)
+-  runtime IC 7620 -> Item 193: Line (location: (source ID: 88, lines: 298..299, bytes: 12560..12586), hits: 0)
+-  runtime IC 7620 -> Item 194: Statement (location: (source ID: 88, lines: 298..299, bytes: 12560..12586), hits: 0)
+-  runtime IC 7661 -> Item 195: Line (location: (source ID: 88, lines: 299..300, bytes: 12596..12631), hits: 0)
+-  runtime IC 7661 -> Item 196: Statement (location: (source ID: 88, lines: 299..300, bytes: 12596..12631), hits: 0)
+-  runtime IC 7671 -> Item 197: Line (location: (source ID: 88, lines: 301..302, bytes: 12642..12656), hits: 0)
+-  runtime IC 7671 -> Item 198: Statement (location: (source ID: 88, lines: 301..302, bytes: 12642..12656), hits: 0)
+-  runtime IC 11250 -> Item 199: Line (location: (source ID: 88, lines: 309..319, bytes: 12800..13149), hits: 0)
+-  runtime IC 11250 -> Item 200: Function "_commitDispatcher" (location: (source ID: 88, lines: 309..319, bytes: 12800..13149), hits: 0)
+-  runtime IC 11251 -> Item 201: Line (location: (source ID: 88, lines: 310..311, bytes: 12888..12908), hits: 0)
+-  runtime IC 11251 -> Item 202: Statement (location: (source ID: 88, lines: 310..311, bytes: 12888..12908), hits: 0)
+-  runtime IC 11302 -> Item 203: Branch (branch: 7, path: 0) (location: (source ID: 88, lines: 310..313, bytes: 12910..12971), hits: 0)
+-  runtime IC 11302 -> Item 204: Line (location: (source ID: 88, lines: 311..312, bytes: 12924..12960), hits: 0)
+-  runtime IC 11302 -> Item 205: Statement (location: (source ID: 88, lines: 311..312, bytes: 12924..12960), hits: 0)
+-  runtime IC 11352 -> Item 206: Line (location: (source ID: 88, lines: 313..314, bytes: 12980..13010), hits: 0)
+-  runtime IC 11352 -> Item 207: Statement (location: (source ID: 88, lines: 313..314, bytes: 12980..13010), hits: 0)
+-  runtime IC 11418 -> Item 208: Line (location: (source ID: 88, lines: 314..315, bytes: 13020..13059), hits: 0)
+-  runtime IC 11418 -> Item 209: Statement (location: (source ID: 88, lines: 314..315, bytes: 13020..13059), hits: 0)
+-  runtime IC 11419 -> Item 210: Statement (location: (source ID: 88, lines: 314..315, bytes: 13038..13059), hits: 0)
+-  runtime IC 11522 -> Item 211: Line (location: (source ID: 88, lines: 315..316, bytes: 13073..13081), hits: 0)
+-  runtime IC 11522 -> Item 212: Statement (location: (source ID: 88, lines: 315..316, bytes: 13073..13081), hits: 0)
+-  runtime IC 11527 -> Item 213: Branch (branch: 8, path: 0) (location: (source ID: 88, lines: 315..318, bytes: 13083..13143), hits: 0)
+-  runtime IC 11527 -> Item 214: Line (location: (source ID: 88, lines: 316..317, bytes: 13097..13132), hits: 0)
+-  runtime IC 11527 -> Item 215: Statement (location: (source ID: 88, lines: 316..317, bytes: 13097..13132), hits: 0)
+-  runtime IC 11581 -> Item 216: Line (location: (source ID: 88, lines: 321..327, bytes: 13227..13622), hits: 0)
+-  runtime IC 11581 -> Item 217: Function "_verifyAfter" (location: (source ID: 88, lines: 321..327, bytes: 13227..13622), hits: 0)
+-  runtime IC 10340 -> Item 218: Line (location: (source ID: 88, lines: 329..365, bytes: 13675..14996), hits: 0)
+-  runtime IC 10340 -> Item 219: Function "_verifyInputs" (location: (source ID: 88, lines: 329..365, bytes: 13675..14996), hits: 0)
+-  runtime IC 10345 -> Item 220: Line (location: (source ID: 88, lines: 334..335, bytes: 13879..13955), hits: 0)
+-  runtime IC 10345 -> Item 221: Statement (location: (source ID: 88, lines: 334..335, bytes: 13879..13955), hits: 0)
+-  runtime IC 10496 -> Item 222: Line (location: (source ID: 88, lines: 335..336, bytes: 13965..13980), hits: 0)
+-  runtime IC 10496 -> Item 223: Statement (location: (source ID: 88, lines: 335..336, bytes: 13965..13980), hits: 0)
+-  runtime IC 10497 -> Item 224: Line (location: (source ID: 88, lines: 336..337, bytes: 13990..14004), hits: 0)
+-  runtime IC 10497 -> Item 225: Statement (location: (source ID: 88, lines: 336..337, bytes: 13990..14004), hits: 0)
+-  runtime IC 10498 -> Item 226: Line (location: (source ID: 88, lines: 338..339, bytes: 14015..14123), hits: 0)
+-  runtime IC 10498 -> Item 227: Statement (location: (source ID: 88, lines: 338..339, bytes: 14015..14123), hits: 0)
+-  runtime IC 10573 -> Item 228: Line (location: (source ID: 88, lines: 340..343, bytes: 14159..14223), hits: 0)
+-  runtime IC 10573 -> Item 229: Branch (branch: 9, path: 0) (location: (source ID: 88, lines: 340..343, bytes: 14159..14223), hits: 0)
+-  runtime IC 10573 -> Item 230: Line (location: (source ID: 88, lines: 341..342, bytes: 14173..14212), hits: 0)
+-  runtime IC 10573 -> Item 231: Statement (location: (source ID: 88, lines: 341..342, bytes: 14173..14212), hits: 0)
+-  runtime IC 10623 -> Item 232: Line (location: (source ID: 88, lines: 343..344, bytes: 14236..14274), hits: 0)
+-  runtime IC 10623 -> Item 233: Statement (location: (source ID: 88, lines: 343..344, bytes: 14236..14274), hits: 0)
+-  runtime IC 10677 -> Item 234: Branch (branch: 10, path: 0) (location: (source ID: 88, lines: 343..346, bytes: 14276..14339), hits: 0)
+-  runtime IC 10677 -> Item 235: Line (location: (source ID: 88, lines: 344..345, bytes: 14290..14328), hits: 0)
+-  runtime IC 10677 -> Item 236: Statement (location: (source ID: 88, lines: 344..345, bytes: 14290..14328), hits: 0)
+-  runtime IC 10727 -> Item 237: Line (location: (source ID: 88, lines: 346..347, bytes: 14352..14372), hits: 0)
+-  runtime IC 10727 -> Item 238: Statement (location: (source ID: 88, lines: 346..347, bytes: 14352..14372), hits: 0)
+-  runtime IC 10778 -> Item 239: Branch (branch: 11, path: 0) (location: (source ID: 88, lines: 346..349, bytes: 14374..14435), hits: 0)
+-  runtime IC 10778 -> Item 240: Line (location: (source ID: 88, lines: 347..348, bytes: 14388..14424), hits: 0)
+-  runtime IC 10778 -> Item 241: Statement (location: (source ID: 88, lines: 347..348, bytes: 14388..14424), hits: 0)
+-  runtime IC 10828 -> Item 242: Line (location: (source ID: 88, lines: 349..350, bytes: 14448..14469), hits: 0)
+-  runtime IC 10828 -> Item 243: Statement (location: (source ID: 88, lines: 349..350, bytes: 14448..14469), hits: 0)
+-  runtime IC 10879 -> Item 244: Branch (branch: 12, path: 0) (location: (source ID: 88, lines: 349..352, bytes: 14471..14532), hits: 0)
+-  runtime IC 10879 -> Item 245: Line (location: (source ID: 88, lines: 350..351, bytes: 14485..14521), hits: 0)
+-  runtime IC 10879 -> Item 246: Statement (location: (source ID: 88, lines: 350..351, bytes: 14485..14521), hits: 0)
+-  runtime IC 10929 -> Item 247: Line (location: (source ID: 88, lines: 352..353, bytes: 14545..14579), hits: 0)
+-  runtime IC 10929 -> Item 248: Statement (location: (source ID: 88, lines: 352..353, bytes: 14545..14579), hits: 0)
+-  runtime IC 10975 -> Item 249: Branch (branch: 13, path: 0) (location: (source ID: 88, lines: 352..355, bytes: 14581..14642), hits: 0)
+-  runtime IC 10975 -> Item 250: Line (location: (source ID: 88, lines: 353..354, bytes: 14595..14631), hits: 0)
+-  runtime IC 10975 -> Item 251: Statement (location: (source ID: 88, lines: 353..354, bytes: 14595..14631), hits: 0)
+-  runtime IC 11025 -> Item 252: Line (location: (source ID: 88, lines: 356..357, bytes: 14656..14685), hits: 0)
+-  runtime IC 11025 -> Item 253: Statement (location: (source ID: 88, lines: 356..357, bytes: 14656..14685), hits: 0)
+-  runtime IC 11025 -> Item 254: Statement (location: (source ID: 88, lines: 356..357, bytes: 14656..14723), hits: 0)
+-  runtime IC 11073 -> Item 255: Statement (location: (source ID: 88, lines: 356..357, bytes: 14689..14723), hits: 0)
+-  runtime IC 11121 -> Item 256: Branch (branch: 14, path: 0) (location: (source ID: 88, lines: 356..359, bytes: 14725..14791), hits: 0)
+-  runtime IC 11121 -> Item 257: Line (location: (source ID: 88, lines: 357..358, bytes: 14739..14780), hits: 0)
+-  runtime IC 11121 -> Item 258: Statement (location: (source ID: 88, lines: 357..358, bytes: 14739..14780), hits: 0)
+-  runtime IC 11171 -> Item 259: Line (location: (source ID: 88, lines: 359..360, bytes: 14804..14874), hits: 0)
+-  runtime IC 11171 -> Item 260: Statement (location: (source ID: 88, lines: 359..360, bytes: 14804..14874), hits: 0)
+-  runtime IC 11189 -> Item 261: Branch (branch: 15, path: 0) (location: (source ID: 88, lines: 359..362, bytes: 14876..14947), hits: 0)
+-  runtime IC 11189 -> Item 262: Line (location: (source ID: 88, lines: 360..361, bytes: 14890..14936), hits: 0)
+-  runtime IC 11189 -> Item 263: Statement (location: (source ID: 88, lines: 360..361, bytes: 14890..14936), hits: 0)
+-  runtime IC 11239 -> Item 264: Line (location: (source ID: 88, lines: 363..364, bytes: 14957..14989), hits: 0)
+-  runtime IC 11239 -> Item 265: Statement (location: (source ID: 88, lines: 363..364, bytes: 14957..14989), hits: 0)
+-  runtime IC 12917 -> Item 266: Line (location: (source ID: 88, lines: 379..391, bytes: 15459..15899), hits: 0)
+-  runtime IC 12917 -> Item 267: Function "_verifySignature" (location: (source ID: 88, lines: 379..391, bytes: 15459..15899), hits: 0)
+-  runtime IC 12919 -> Item 268: Line (location: (source ID: 88, lines: 387..388, bytes: 15688..15760), hits: 0)
+-  runtime IC 12919 -> Item 269: Statement (location: (source ID: 88, lines: 387..388, bytes: 15688..15760), hits: 0)
+-  runtime IC 12920 -> Item 270: Statement (location: (source ID: 88, lines: 387..388, bytes: 15703..15760), hits: 0)
+-  runtime IC 12935 -> Item 271: Line (location: (source ID: 88, lines: 388..389, bytes: 15770..15833), hits: 0)
+-  runtime IC 12935 -> Item 272: Statement (location: (source ID: 88, lines: 388..389, bytes: 15770..15833), hits: 0)
+-  runtime IC 12936 -> Item 273: Statement (location: (source ID: 88, lines: 388..389, bytes: 15800..15833), hits: 0)
+-  runtime IC 12950 -> Item 274: Line (location: (source ID: 88, lines: 389..390, bytes: 15843..15892), hits: 0)
+-  runtime IC 12950 -> Item 275: Statement (location: (source ID: 88, lines: 389..390, bytes: 15843..15892), hits: 0)
+-  runtime IC 12950 -> Item 276: Statement (location: (source ID: 88, lines: 389..390, bytes: 15850..15892), hits: 0)
+-  runtime IC 13703 -> Item 277: Line (location: (source ID: 88, lines: 401..414, bytes: 16190..16658), hits: 0)
+-  runtime IC 13703 -> Item 278: Function "_getMessageHash" (location: (source ID: 88, lines: 401..414, bytes: 16190..16658), hits: 0)
+-  runtime IC 13705 -> Item 279: Line (location: (source ID: 88, lines: 406..412, bytes: 16378..16606), hits: 0)
+-  runtime IC 13705 -> Item 280: Statement (location: (source ID: 88, lines: 406..412, bytes: 16378..16606), hits: 0)
+-  runtime IC 13739 -> Item 281: Statement (location: (source ID: 88, lines: 406..412, bytes: 16399..16606), hits: 0)
+-  runtime IC 13885 -> Item 282: Line (location: (source ID: 88, lines: 412..413, bytes: 16616..16651), hits: 0)
+-  runtime IC 13885 -> Item 283: Statement (location: (source ID: 88, lines: 412..413, bytes: 16616..16651), hits: 0)
+-  runtime IC 13885 -> Item 284: Statement (location: (source ID: 88, lines: 412..413, bytes: 16623..16651), hits: 0)
+-  runtime IC 714 -> Item 285: Line (location: (source ID: 88, lines: 423..426, bytes: 16928..17062), hits: 0)
+-  runtime IC 714 -> Item 286: Function "getGameCoinsList" (location: (source ID: 88, lines: 423..426, bytes: 16928..17062), hits: 0)
+-  runtime IC 2390 -> Item 287: Line (location: (source ID: 88, lines: 424..425, bytes: 17006..17055), hits: 0)
+-  runtime IC 2390 -> Item 288: Statement (location: (source ID: 88, lines: 424..425, bytes: 17006..17055), hits: 0)
+-  runtime IC 756 -> Item 289: Line (location: (source ID: 88, lines: 431..434, bytes: 17148..17286), hits: 0)
+-  runtime IC 756 -> Item 290: Function "getResourcesList" (location: (source ID: 88, lines: 431..434, bytes: 17148..17286), hits: 0)
+-  runtime IC 2653 -> Item 291: Line (location: (source ID: 88, lines: 432..433, bytes: 17226..17279), hits: 0)
+-  runtime IC 2653 -> Item 292: Statement (location: (source ID: 88, lines: 432..433, bytes: 17226..17279), hits: 0)
+-  runtime IC 1896 -> Item 293: Line (location: (source ID: 88, lines: 439..442, bytes: 17374..17514), hits: 0)
+-  runtime IC 1896 -> Item 294: Function "getCharactersList" (location: (source ID: 88, lines: 439..442, bytes: 17374..17514), hits: 0)
+-  runtime IC 6969 -> Item 295: Line (location: (source ID: 88, lines: 440..441, bytes: 17453..17507), hits: 0)
+-  runtime IC 6969 -> Item 296: Statement (location: (source ID: 88, lines: 440..441, bytes: 17453..17507), hits: 0)
+-  runtime IC 632 -> Item 297: Line (location: (source ID: 88, lines: 447..450, bytes: 17606..17749), hits: 0)
+-  runtime IC 632 -> Item 298: Function "getUniqueItemsList" (location: (source ID: 88, lines: 447..450, bytes: 17606..17749), hits: 0)
+-  runtime IC 2095 -> Item 299: Line (location: (source ID: 88, lines: 448..449, bytes: 17686..17742), hits: 0)
+-  runtime IC 2095 -> Item 300: Statement (location: (source ID: 88, lines: 448..449, bytes: 17686..17742), hits: 0)
+-  runtime IC 938 -> Item 301: Line (location: (source ID: 88, lines: 456..459, bytes: 17893..18049), hits: 0)
+-  runtime IC 938 -> Item 302: Function "getGameElement" (location: (source ID: 88, lines: 456..459, bytes: 17893..18049), hits: 0)
+-  runtime IC 3989 -> Item 303: Line (location: (source ID: 88, lines: 457..458, bytes: 17998..18042), hits: 0)
+-  runtime IC 3989 -> Item 304: Statement (location: (source ID: 88, lines: 457..458, bytes: 17998..18042), hits: 0)
+-  runtime IC 1627 -> Item 305: Line (location: (source ID: 88, lines: 465..468, bytes: 18183..18294), hits: 0)
+-  runtime IC 1627 -> Item 306: Function "getIsNonceUsed" (location: (source ID: 88, lines: 465..468, bytes: 18183..18294), hits: 0)
+-  runtime IC 6246 -> Item 307: Line (location: (source ID: 88, lines: 466..467, bytes: 18261..18287), hits: 0)
+-  runtime IC 6246 -> Item 308: Statement (location: (source ID: 88, lines: 466..467, bytes: 18261..18287), hits: 0)
+-  runtime IC 8484 -> Item 309: Line (location: (source ID: 88, lines: 469..470, bytes: 18300..18403), hits: 0)
+-  runtime IC 8484 -> Item 310: Function "_authorizeUpgrade" (location: (source ID: 88, lines: 469..470, bytes: 18300..18403), hits: 0)
+-  runtime IC 9763 -> Item 311: Line (location: (source ID: 89, lines: 10..14, bytes: 174..321), hits: 0)
+-  runtime IC 9763 -> Item 312: Function "removeByIndex" (location: (source ID: 89, lines: 10..14, bytes: 174..321), hits: 0)
+-  runtime IC 9764 -> Item 313: Line (location: (source ID: 89, lines: 11..12, bytes: 255..293), hits: 0)
+-  runtime IC 9764 -> Item 314: Statement (location: (source ID: 89, lines: 11..12, bytes: 255..293), hits: 0)
+-  runtime IC 9847 -> Item 315: Line (location: (source ID: 89, lines: 12..13, bytes: 303..314), hits: 0)
+-  runtime IC 9847 -> Item 316: Statement (location: (source ID: 89, lines: 12..13, bytes: 303..314), hits: 0)
+

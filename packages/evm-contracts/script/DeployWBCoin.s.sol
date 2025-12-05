@@ -6,8 +6,8 @@ import {WBCoin} from "../src/tokens/ERC20/WBCoin.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployWBCoin is Script {
-    function run() public returns (address proxyWbCoin) {
-        (proxyWbCoin) = deploy();
+    function run() public returns (address proxyWBCoin) {
+        (proxyWBCoin) = deploy();
     }
 
     function deploy() public returns (address) {
