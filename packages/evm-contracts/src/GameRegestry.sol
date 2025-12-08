@@ -35,10 +35,10 @@ import {Array} from "./libraries/Array.sol";
  */
 contract GameRegestry is
     Initializable,
-    UUPSUpgradeable,
     AccessControlDefaultAdminRulesUpgradeable,
     EIP712Upgradeable,
-    ReentrancyGuard // Ownable, Controll Access (Owner access is limited to revoke / grant ADMIN_ROLE)
+    ReentrancyGuard,
+    UUPSUpgradeable
 {
     using Array for string[];
 
@@ -64,6 +64,10 @@ contract GameRegestry is
     error GameRegestry__BatchLengthZero();
     error GameRegestry__BatchLengthTooLong();
     error GameRegestry__InvalidNonce();
+    error GameRegestry__GameElementExists();
+    error GameRegestry__GameElementIndexOuntOfRange();
+    error GameRegestry__AddressZero();
+    error GameRegestry__GameElementNameIsEmpty();
     /*//////////////////////////////////////////////////////////////
                                ENUMS
     //////////////////////////////////////////////////////////////*/
@@ -101,14 +105,14 @@ contract GameRegestry is
     /// @notice these arrays are informational, to provide list of available game elements to the game client / market
     /// @dev must be restricted for updating, only GAME_SIGNER_ROLE can add / remove game elements to the list
     mapping(GameElementType => string[]) private s_gameElementsByType; // game elements by type
-    mapping(bytes32 => GameElementStruct) private s_resourceToGameElement; // client would call a specific function to get GameElementStruct in order to build a commit data
+    mapping(bytes32 => GameElementStruct) private s_resourceHashToGameElement; // client would call a specific function to get GameElementStruct in order to build a commit data
     mapping(uint256 => bool) private s_usedNonces; // nonce is used to prevent replay attacks
 
     /*//////////////////////////////////////////////////////////////
                                CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    bytes32 private constant MARKET_ROLE = keccak256("MARKET_ROLE");
+    bytes32 private constant MARKET_ROLE = keccak256("MARKET_ROLE"); // NOT sure anymore that is needed
     bytes32 private constant GAME_SIGNER_ROLE = keccak256("GAME_SIGNER_ROLE");
     bytes32 private constant MESSAGE_TYPEHASH =
         keccak256("CommitStruct(address target,address account,address signer,uint256 nonce,bytes callData)");
@@ -122,15 +126,14 @@ contract GameRegestry is
 
     event CommitResources(bytes indexed commit);
     event CommitBatch(uint256 indexed nonce, bytes[] indexed commits);
-    event RemoveGameElement(uint256 indexed index, GameElementType elementType);
-    event AddGameElement(string indexed name, GameElementType elementType);
     event RevokeAdminRole(address indexed account);
     event GrantAdminRole(address indexed account);
     event CommitConfirmed(bytes indexed commit);
     event CommitRejected(bytes indexed commit);
-    event AddGameElementStruct(
+    event AddGameElement(
         bytes32 indexed nameHash, address indexed tokenAddress, uint256 indexed tokenId, bool requiresTokenId
     );
+    event RemoveGameElement( bytes32 indexed nameHash);
 
     /*//////////////////////////////////////////////////////////////
                                MODIFIERS
@@ -238,48 +241,67 @@ contract GameRegestry is
     }
 
     /**
-     * @notice Add game element to the regestry
-     * @param elementType type of the game element
-     * @param name name of the game element
-     */
-    function addGameElement(GameElementType elementType, string memory name) external onlyGameSignerRole {
-        s_gameElementsByType[elementType].push(name);
-        emit AddGameElement(name, elementType);
-    }
-
-    /**
      * @notice Remove game element from the regestry
      * @param elementType type of the game element
      * @param index index of the game element
      */
     function removeGameElement(GameElementType elementType, uint256 index) external onlyGameSignerRole {
+
+        string[] memory elementsNames  = s_gameElementsByType[elementType];
+
+        if (index > elementsNames.length - 1 ) {
+            revert GameRegestry__GameElementIndexOuntOfRange();
+        }
+
+        string memory elementName = elementsNames[index];
+        bytes32 elementNameHash = _hashString(elementName);
+    
         s_gameElementsByType[elementType].removeByIndex(index);
-        emit RemoveGameElement(index, elementType);
+
+        delete s_resourceHashToGameElement[elementNameHash];
+
+        emit RemoveGameElement(elementNameHash);
     }
+
 
     /**
-     * @notice Add game element struct to the regestry
-     * @param nameHash hash of the game element name
-     * @param tokenAddress address of the token
-     * @param tokenId token id
-     * @param requiresTokenId if true, then tokenId is required to be added to the commit data
+     * This contract regesters game elements on chain for further of-chain reference. Game server is going to use this data for commits generation.
      */
-    function addGameElementStruct(bytes32 nameHash, address tokenAddress, uint256 tokenId, bool requiresTokenId)
-        external
-        onlyGameSignerRole
-    {
-        s_resourceToGameElement[nameHash] =
-            GameElementStruct({tokenAddress: tokenAddress, tokenId: tokenId, requiresTokenId: requiresTokenId});
-        emit AddGameElementStruct(nameHash, tokenAddress, tokenId, requiresTokenId);
+    function addGameElement(GameElementType elementType, string memory name, address elementTokenAddress, uint256 elementTokenId, bool elementHasTokenId) external onlyGameSignerRole{
+        if (elementTokenAddress == address(0)){
+            revert GameRegestry__AddressZero();
+        }
+
+        if (_hashString(name) == _hashString('') ){
+            revert GameRegestry__GameElementNameIsEmpty();
+        }
+
+        // convert name to bytes32 hash
+        bytes32 nameHash = _hashString(name);
+
+        // reads the element struct
+        GameElementStruct memory elementStruct = s_resourceHashToGameElement[nameHash];
+
+        // check already exists
+        if (elementStruct.tokenAddress != address(0)){
+            revert GameRegestry__GameElementExists();
+        }
+
+        // regestr element name in the specified type array for external reference
+        s_gameElementsByType[elementType].push(name);
+
+        // updates or add element structure to s_resourceHashToGameElement
+        s_resourceHashToGameElement[nameHash] =
+            GameElementStruct({tokenAddress: elementTokenAddress, tokenId: elementTokenId, requiresTokenId: elementHasTokenId});
+
+        emit AddGameElement(nameHash,elementTokenAddress,elementTokenId,elementHasTokenId);
     }
 
-    /*//////////////////////////////////////////////////////////////
-                            PUBLIC FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
 
     /*//////////////////////////////////////////////////////////////
                            PRIVATE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+
 
     /**
      * @notice Commit resource to the regestry
@@ -331,7 +353,7 @@ contract GameRegestry is
         view
         returns (uint256 nonce, address target, bytes memory callData)
     {
-        GameElementStruct memory gameElement = s_resourceToGameElement[resourceHash];
+        GameElementStruct memory gameElement = s_resourceHashToGameElement[resourceHash];
         address account;
         address signer;
 
@@ -454,7 +476,7 @@ contract GameRegestry is
      * @return game element struct
      */
     function getGameElement(bytes32 resourceHash) external view returns (GameElementStruct memory) {
-        return s_resourceToGameElement[resourceHash];
+        return s_resourceHashToGameElement[resourceHash];
     }
 
     /**
@@ -466,7 +488,12 @@ contract GameRegestry is
         return s_usedNonces[nonce];
     }
 
+
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
+
+    function _hashString(string memory _str) internal pure returns (bytes32) {
+        return keccak256(bytes(_str));
+    }
 }
 
 // Layout of Contract:
