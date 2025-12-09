@@ -326,11 +326,7 @@ contract WBCharacterTest is Test {
         vm.startPrank(user1);
         bytes32 role = wbCharacter.DEFAULT_ADMIN_ROLE();
         vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
-                user1,
-                role
-            )
+            abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), user1, role)
         );
         wbCharacter.grantRole(role, user2);
         vm.stopPrank();
@@ -378,22 +374,21 @@ contract WBCharacterTest is Test {
     function test_IncreaseBalance() public {
         // Deploy test helper implementation
         WBCharacterTestHelper implementation = new WBCharacterTestHelper();
-        
+
         // Create proxy and initialize it
         ERC1967Proxy helperProxy = new ERC1967Proxy(
-            address(implementation),
-            abi.encodeCall(WBCharacter.initialize, (admin, pauser, minter, upgrader))
+            address(implementation), abi.encodeCall(WBCharacter.initialize, (admin, pauser, minter, upgrader))
         );
-        
+
         WBCharacterTestHelper helper = WBCharacterTestHelper(address(helperProxy));
-        
+
         // Get initial balance
         uint256 initialBalance = helper.balanceOf(user1);
-        
+
         // Call _increaseBalance with amount 0 (this is what ERC721Enumerable allows)
         // This will trigger WBCharacter's _increaseBalance override through ERC721Enumerable
         helper.exposeIncreaseBalance(user1, 0);
-        
+
         // Verify the balance wasn't changed (since amount was 0)
         // This test ensures the _increaseBalance function is executed
         assertEq(helper.balanceOf(user1), initialBalance);

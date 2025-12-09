@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-import {AccessControlDefaultAdminRulesUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlDefaultAdminRulesUpgradeable.sol";
+import {
+    AccessControlDefaultAdminRulesUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlDefaultAdminRulesUpgradeable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -135,7 +136,7 @@ contract GameRegestry is
     event AddGameElement(
         bytes32 indexed nameHash, address indexed tokenAddress, uint256 indexed tokenId, bool requiresTokenId
     );
-    event RemoveGameElement( bytes32 indexed nameHash);
+    event RemoveGameElement(bytes32 indexed nameHash);
 
     /*//////////////////////////////////////////////////////////////
                                MODIFIERS
@@ -248,16 +249,15 @@ contract GameRegestry is
      * @param index index of the game element
      */
     function removeGameElement(GameElementType elementType, uint256 index) external onlyGameSignerRole {
+        string[] memory elementsNames = s_gameElementsByType[elementType];
 
-        string[] memory elementsNames  = s_gameElementsByType[elementType];
-
-        if (index > elementsNames.length - 1 ) {
+        if (index > elementsNames.length - 1) {
             revert GameRegestry__GameElementIndexOuntOfRange();
         }
 
         string memory elementName = elementsNames[index];
         bytes32 elementNameHash = _hashString(elementName);
-    
+
         s_gameElementsByType[elementType].removeByIndex(index);
 
         delete s_resourceHashToGameElement[elementNameHash];
@@ -265,16 +265,21 @@ contract GameRegestry is
         emit RemoveGameElement(elementNameHash);
     }
 
-
     /**
      * This contract regesters game elements on chain for further of-chain reference. Game server is going to use this data for commits generation.
      */
-    function addGameElement(GameElementType elementType, string memory name, address elementTokenAddress, uint256 elementTokenId, bool elementHasTokenId) external onlyGameSignerRole{
-        if (elementTokenAddress == address(0)){
+    function addGameElement(
+        GameElementType elementType,
+        string memory name,
+        address elementTokenAddress,
+        uint256 elementTokenId,
+        bool elementHasTokenId
+    ) external onlyGameSignerRole {
+        if (elementTokenAddress == address(0)) {
             revert GameRegestry__AddressZero();
         }
 
-        if (_hashString(name) == _hashString('') ){
+        if (_hashString(name) == _hashString("")) {
             revert GameRegestry__GameElementNameIsEmpty();
         }
 
@@ -285,7 +290,7 @@ contract GameRegestry is
         GameElementStruct memory elementStruct = s_resourceHashToGameElement[nameHash];
 
         // check already exists
-        if (elementStruct.tokenAddress != address(0)){
+        if (elementStruct.tokenAddress != address(0)) {
             revert GameRegestry__GameElementExists();
         }
 
@@ -293,17 +298,16 @@ contract GameRegestry is
         s_gameElementsByType[elementType].push(name);
 
         // updates or add element structure to s_resourceHashToGameElement
-        s_resourceHashToGameElement[nameHash] =
-            GameElementStruct({tokenAddress: elementTokenAddress, tokenId: elementTokenId, requiresTokenId: elementHasTokenId});
+        s_resourceHashToGameElement[nameHash] = GameElementStruct({
+            tokenAddress: elementTokenAddress, tokenId: elementTokenId, requiresTokenId: elementHasTokenId
+        });
 
-        emit AddGameElement(nameHash,elementTokenAddress,elementTokenId,elementHasTokenId);
+        emit AddGameElement(nameHash, elementTokenAddress, elementTokenId, elementHasTokenId);
     }
-
 
     /*//////////////////////////////////////////////////////////////
                            PRIVATE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-
 
     /**
      * @notice Commit resource to the regestry
@@ -495,7 +499,6 @@ contract GameRegestry is
     function getIsNonceUsed(uint256 nonce) external view returns (bool) {
         return s_usedNonces[nonce];
     }
-
 
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 

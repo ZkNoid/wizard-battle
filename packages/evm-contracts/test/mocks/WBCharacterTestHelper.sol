@@ -2,7 +2,9 @@
 pragma solidity ^0.8.27;
 
 import {WBCharacter} from "../../src/tokens/ERC721/WBCharacter.sol";
-import {ERC721EnumerableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import {
+    ERC721EnumerableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 
 // This contract is used to test internal functions
 // It inherits from WBCharacter and exposes _increaseBalance for testing

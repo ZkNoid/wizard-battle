@@ -4,15 +4,20 @@ pragma solidity ^0.8.27;
 
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ERC1155Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import {ERC1155BurnableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol";
-import {ERC1155PausableUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155PausableUpgradeable.sol";
-import {ERC1155SupplyUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
+import {
+    ERC1155BurnableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol";
+import {
+    ERC1155PausableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155PausableUpgradeable.sol";
+import {
+    ERC1155SupplyUpgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
-import {ERC1155URIStorageUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
+import {
+    ERC1155URIStorageUpgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
 
 contract WBResources is
     Initializable,
@@ -59,7 +64,12 @@ contract WBResources is
         _pause();
     }
 
-    function uri(uint256 tokenId) public view override(ERC1155URIStorageUpgradeable, ERC1155Upgradeable) returns (string memory) {
+    function uri(uint256 tokenId)
+        public
+        view
+        override(ERC1155URIStorageUpgradeable, ERC1155Upgradeable)
+        returns (string memory)
+    {
         return ERC1155URIStorageUpgradeable.uri(tokenId);
     }
 

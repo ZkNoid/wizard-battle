@@ -35,18 +35,16 @@ contract WBCoinTest is Test {
     }
 
     function test_DeployDeploy() public {
-      DeployWBCoin deployer = new DeployWBCoin();
-      address deploy = deployer.deploy();
-      assertNotEq(deploy, address(0));
+        DeployWBCoin deployer = new DeployWBCoin();
+        address deploy = deployer.deploy();
+        assertNotEq(deploy, address(0));
     }
-
 
     function test_DeployRun() public {
-      DeployWBCoin deployer = new DeployWBCoin();
-      address run = deployer.run();
-      assertNotEq(run, address(0));
+        DeployWBCoin deployer = new DeployWBCoin();
+        address run = deployer.run();
+        assertNotEq(run, address(0));
     }
-
 
     function test_Initialization() public view {
         assertEq(wbCoin.name(), "WBCoin");

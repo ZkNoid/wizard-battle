@@ -5,8 +5,7 @@ import {Test, console2} from "forge-std/Test.sol";
 import {WBResources} from "../../src/tokens/ERC1155/WBResources.sol";
 import {DeployWBResources} from "../../script/DeployWBResources.s.sol";
 import {WBResourcesV2Mock} from "../mocks/WBResourcesV2Mock.sol";
-import {AccessControlUpgradeable} from
-    "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ERC1155Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
@@ -22,33 +21,37 @@ contract WBResourcesTest is Test {
         wbResources = WBResources(wbResourcesAddress);
     }
 
-
     function test_DeployDeploy() public {
-      DeployWBResources deployer = new DeployWBResources();
-      address deploy = deployer.deploy();
-      assertNotEq(deploy, address(0));
+        DeployWBResources deployer = new DeployWBResources();
+        address deploy = deployer.deploy();
+        assertNotEq(deploy, address(0));
     }
 
-
     function test_DeployRun() public {
-      DeployWBResources deployer = new DeployWBResources();
-      address run = deployer.run();
-      assertNotEq(run, address(0));
+        DeployWBResources deployer = new DeployWBResources();
+        address run = deployer.run();
+        assertNotEq(run, address(0));
     }
 
     function test_setURI() public {
-      wbResources.setURI(0, "ipfs://base/{id}");
-      assertEq(wbResources.uri(0), "ipfs://base/{id}");
+        wbResources.setURI(0, "ipfs://base/{id}");
+        assertEq(wbResources.uri(0), "ipfs://base/{id}");
     }
 
     function test_setURIRevertsIfNotURISetter() public {
-      vm.startPrank(attacker);
-      vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbResources.URI_SETTER_ROLE()));
-      wbResources.setURI(0, "ipfs://forbidden/{id}");
-      vm.stopPrank();
+        vm.startPrank(attacker);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
+                attacker,
+                wbResources.URI_SETTER_ROLE()
+            )
+        );
+        wbResources.setURI(0, "ipfs://forbidden/{id}");
+        vm.stopPrank();
     }
 
-    function test_Initialization() public  view {
+    function test_Initialization() public view {
         assertTrue(wbResources.hasRole(wbResources.DEFAULT_ADMIN_ROLE(), address(this)));
         assertTrue(wbResources.hasRole(wbResources.PAUSER_ROLE(), address(this)));
         assertTrue(wbResources.hasRole(wbResources.MINTER_ROLE(), address(this)));
@@ -187,7 +190,6 @@ contract WBResourcesTest is Test {
         console2.log("uri1", wbResources.uri(1));
         assertNotEq(wbResources.uri(0), wbResources.uri(1));
     }
-
 
     function test_SetURIRevertsWithoutRole() public {
         vm.startPrank(attacker);
