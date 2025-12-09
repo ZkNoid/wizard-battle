@@ -16,11 +16,10 @@ library Array {
             revert Array__ArrayIsEmpty();
         }
 
-        if(array.length == 1){
-            delete array[index];
-        }else {
+        if(array.length > 1){
             array[index] = array[array.length - 1];
-            array.pop();
-        }
+        }   
+        array.pop();
+        
     }
 }

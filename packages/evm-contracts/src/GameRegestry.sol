@@ -68,6 +68,8 @@ contract GameRegestry is
     error GameRegestry__GameElementIndexOuntOfRange();
     error GameRegestry__AddressZero();
     error GameRegestry__GameElementNameIsEmpty();
+    error GameRegestry__UnknownTargetAddress();
+    error GameRegestry__NotSigner();
     /*//////////////////////////////////////////////////////////////
                                ENUMS
     //////////////////////////////////////////////////////////////*/
@@ -202,25 +204,25 @@ contract GameRegestry is
     //////////////////////////////////////////////////////////////*/
     /**
      * @notice Commit batch of resources to the regestry
-     * @param commits array of commit data
+     * @param batch array of commit data
      */
-    function commitBatch(uint256 nonce, bytes[] calldata commits) external nonReentrant {
+    function commitBatch(uint256 nonce, bytes[] calldata batch) external nonReentrant {
         if (nonce == 0) {
             revert GameRegestry__InvalidNonce();
         }
-        if (commits.length == 0) {
+        if (batch.length == 0) {
             revert GameRegestry__BatchLengthZero();
         }
-        if (commits.length > 10) {
+        if (batch.length > 10) {
             revert GameRegestry__BatchLengthTooLong();
         }
         s_usedNonces[nonce] = true;
 
-        emit CommitBatch(nonce, commits);
+        emit CommitBatch(nonce, batch);
 
-        for (uint256 i = 0; i < commits.length;) {
+        for (uint256 i = 0; i < batch.length;) {
             (bytes32 resourceHash, bytes memory commit, bytes memory signature) =
-                abi.decode(commits[i], (bytes32, bytes, bytes));
+                abi.decode(batch[i], (bytes32, bytes, bytes));
             _commitResource(resourceHash, commit, signature);
 
             unchecked {
@@ -368,6 +370,9 @@ contract GameRegestry is
         if (target == address(0)) {
             revert GameRegestry__InvalidTarget();
         }
+        if (target != gameElement.tokenAddress) {
+            revert GameRegestry__UnknownTargetAddress();
+        }
         if (account == address(0)) {
             revert GameRegestry__InvalidPlayer();
         }
@@ -391,9 +396,9 @@ contract GameRegestry is
 
     /**
      * @notice Verify signature of the commit data
-     * @param target target address
-     * @param account account address
-     * @param signer signer address
+     * @param target target address of the token contract
+     * @param account account address of the player, owner of the resources
+     * @param signer signer address game signer address
      * @param nonce nonce
      * @param callData call data
      * @param signature signature
@@ -407,8 +412,11 @@ contract GameRegestry is
         bytes memory signature
     ) private view returns (bool) {
         bytes32 hash = _getMessageHash(target, account, signer, nonce, callData);
-        (address actualSignature,,) = ECDSA.tryRecover(hash, signature);
-        return hasRole(GAME_SIGNER_ROLE, actualSignature);
+        (address actualSigner,,) = ECDSA.tryRecover(hash, signature);
+        if (signer != actualSigner) {
+            revert GameRegestry__NotSigner();
+        }
+        return hasRole(GAME_SIGNER_ROLE, actualSigner);
     }
 
     /**
@@ -421,7 +429,7 @@ contract GameRegestry is
      */
     // q maybe make it public, for server to call -> mmegapot alike
     function _getMessageHash(address target, address account, address signer, uint256 nonce, bytes memory callData)
-        private
+        public
         view
         returns (bytes32 digest)
     {
