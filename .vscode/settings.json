@@ -17,5 +17,18 @@
   },
   "[css]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "[solidity]": {
+    "editor.defaultFormatter": "NomicFoundation.hardhat-solidity",
+    "editor.formatOnSave": true
+  },
+  "solidity.formatter": "forge",
+  "solidity.defaultCompiler": "localNodeModule",
+  "solidity.compileUsingRemoteVersion": "",
+  "solidity.packageDefaultDependenciesContractsDirectory": "src",
+  "solidity.packageDefaultDependenciesDirectory": "lib",
+  "solidity.remappingsUnix": [
+    "@openzeppelin/contracts/=packages/evm-contracts/lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/contracts-upgradeable/=packages/evm-contracts/lib/openzeppelin-contracts-upgradeable/contracts/"
+  ]
 }

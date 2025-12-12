@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {GameRegestry} from "src/GameRegestry.sol";
 import {DeployGameRegestry} from "script/DeployGameRegestry.s.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract GameRegestryTest is Test {
     event CommitResources(bytes indexed commit);
@@ -210,6 +211,25 @@ contract GameRegestryTest is Test {
         gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
     }
 
+    function test_commitBatchZeroNonce() public {
+        bytes[] memory batch = new bytes[](0);
+        vm.expectRevert(GameRegestry.GameRegestry__InvalidNonce.selector);
+        gameRegestry.commitBatch(0, batch);
+    }
+
+    function test_commitBatchZeroLength() public {
+        bytes[] memory batch = new bytes[](0);
+        vm.expectRevert(GameRegestry.GameRegestry__BatchLengthZero.selector);
+        gameRegestry.commitBatch(1, batch);
+    }
+
+    function test_commitBatchLengthExcidesMaxLength() public {
+        uint256 batchLengthMax = gameRegestry.getBatchMaxLength();
+        bytes[] memory batch = new bytes[](batchLengthMax + 1);
+        vm.expectRevert(GameRegestry.GameRegestry__BatchLengthTooLong.selector);
+        gameRegestry.commitBatch(1, batch);
+    }
+
     function test_commitBatch() public addGameElement {
         uint256 nonce = 0;
         bytes[] memory batch = new bytes[](2);
@@ -333,7 +353,13 @@ contract GameRegestryTest is Test {
                             HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function getMessageHash(address target, address account, address signer, uint256 nonce, bytes memory callData)
+    function getMessageHash(
+        address target,
+        address account,
+        address signer,
+        uint256 nonce,
+        bytes memory callData
+    )
         public
         view
         returns (bytes32 digest)
@@ -361,7 +387,10 @@ contract GameRegestryTest is Test {
         return MessageHashUtils.toTypedDataHash(domainSeparatorV4, hashStruct);
     }
 
-    function getSignedMessage(uint256 nonce, bytes memory callData)
+    function getSignedMessage(
+        uint256 nonce,
+        bytes memory callData
+    )
         public
         returns (bytes32, bytes memory, bytes memory)
     {
@@ -380,5 +409,271 @@ contract GameRegestryTest is Test {
         bytes memory signature = abi.encodePacked(r, s, v);
 
         return (resourceHash, commit, signature);
+    }
+
+    function test_initializeWithZeroAddressGameSigner() public {
+        // Deploy a new proxy without initialization
+        GameRegestry implementation = new GameRegestry();
+
+        string[] memory coins = new string[](1);
+        coins[0] = "gold";
+
+        vm.expectRevert(GameRegestry.GameRegestry__InvalidGameSigner.selector);
+
+        bytes memory initData = abi.encodeCall(GameRegestry.initialize, (coins, coins, coins, coins, address(0)));
+
+        new ERC1967Proxy(address(implementation), initData);
+    }
+
+    function test_addGameElementWithZeroAddress() public {
+        vm.prank(GAME_SIGNER);
+        vm.expectRevert(GameRegestry.GameRegestry__AddressZero.selector);
+        gameRegestry.addGameElement({
+            elementType: GameRegestry.GameElementType.RESOURCE,
+            name: "iron",
+            elementTokenAddress: address(0),
+            elementTokenId: 0,
+            elementHasTokenId: false
+        });
+    }
+
+    function test_addGameElementWithEmptyName() public {
+        vm.prank(GAME_SIGNER);
+        vm.expectRevert(GameRegestry.GameRegestry__GameElementNameIsEmpty.selector);
+        gameRegestry.addGameElement({
+            elementType: GameRegestry.GameElementType.RESOURCE,
+            name: "",
+            elementTokenAddress: address(gameRegestry),
+            elementTokenId: 0,
+            elementHasTokenId: false
+        });
+    }
+
+    function test_addGameElementThatAlreadyExists() public addGameElement {
+        address tokenAddress = address(gameRegestry);
+
+        vm.prank(GAME_SIGNER);
+        vm.expectRevert(GameRegestry.GameRegestry__GameElementExists.selector);
+        gameRegestry.addGameElement({
+            elementType: GameRegestry.GameElementType.RESOURCE,
+            name: ELEMENT_NAME, // Same name as in modifier
+            elementTokenAddress: tokenAddress,
+            elementTokenId: 0,
+            elementHasTokenId: false
+        });
+    }
+
+    function test_removeGameElementIndexOutOfRange() public addGameElement {
+        vm.prank(GAME_SIGNER);
+        vm.expectRevert(GameRegestry.GameRegestry__GameElementIndexOuntOfRange.selector);
+        gameRegestry.removeGameElement(GameRegestry.GameElementType.RESOURCE, 999);
+    }
+
+    function test_commitResourceWithZeroResourceHash() public addGameElement {
+        bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
+        (, bytes memory commit, bytes memory signature) = getSignedMessage(0, callData);
+
+        vm.expectRevert(GameRegestry.GameRegestry__InvalidCommitData.selector);
+        gameRegestry.commitResource({resourceHash: bytes32(0), commit: commit, signature: signature});
+    }
+
+    function test_commitResourceWithEmptyCommit() public addGameElement {
+        bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
+        bytes memory emptyCommit = "";
+        bytes memory signature = "0x123456";
+
+        vm.expectRevert(GameRegestry.GameRegestry__InvalidCommitData.selector);
+        gameRegestry.commitResource({resourceHash: resourceHash, commit: emptyCommit, signature: signature});
+    }
+
+    function test_commitResourceWithEmptySignature() public addGameElement {
+        bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
+        (bytes32 resourceHash, bytes memory commit,) = getSignedMessage(0, callData);
+        bytes memory emptySignature = "";
+
+        vm.expectRevert(GameRegestry.GameRegestry__InvalidCommitData.selector);
+        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: emptySignature});
+    }
+
+    function test_commitResourceWithInvalidTarget() public addGameElement {
+        bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
+        bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
+
+        address target = address(0); // Invalid target
+        address account = makeAddr("player");
+        address signer = GAME_SIGNER;
+        uint256 nonce = 1;
+
+        bytes memory commit = abi.encode(target, account, signer, nonce, callData);
+        bytes32 digest = getMessageHash(target, account, signer, nonce, callData);
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(GAME_SIGNER_PRIV_KEY, digest);
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        vm.expectRevert(GameRegestry.GameRegestry__InvalidTarget.selector);
+        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+    }
+
+    function test_commitResourceWhenCallFails() public addGameElement {
+        bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
+
+        // Create callData that will fail (invalid function signature)
+        bytes memory callData = abi.encodeWithSignature("nonExistentFunction()");
+
+        address target = address(gameRegestry);
+        address account = makeAddr("player");
+        address signer = GAME_SIGNER;
+        uint256 nonce = 1;
+
+        bytes memory commit = abi.encode(target, account, signer, nonce, callData);
+        bytes32 digest = getMessageHash(target, account, signer, nonce, callData);
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(GAME_SIGNER_PRIV_KEY, digest);
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        vm.expectRevert(GameRegestry.GameRegestry__CommitFailed.selector);
+        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+    }
+
+    function test_commitResourceWithUsedNonce() public addGameElement {
+        bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
+        (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage(5, callData);
+
+        // First commit - should succeed
+        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+
+        // Second commit with same nonce - should fail
+        vm.expectRevert(GameRegestry.GameRegestry__NonceAlreadyUsed.selector);
+        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+    }
+
+    function test_commitResourceWithNonExistentResource() public {
+        bytes32 nonExistentResourceHash = keccak256(bytes("nonexistent"));
+        bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
+
+        address target = address(gameRegestry);
+        address account = makeAddr("player");
+        address signer = GAME_SIGNER;
+        uint256 nonce = 1;
+
+        bytes memory commit = abi.encode(target, account, signer, nonce, callData);
+        bytes32 digest = getMessageHash(target, account, signer, nonce, callData);
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(GAME_SIGNER_PRIV_KEY, digest);
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        vm.expectRevert(GameRegestry.GameRegestry__InvalidResource.selector);
+        gameRegestry.commitResource({resourceHash: nonExistentResourceHash, commit: commit, signature: signature});
+    }
+
+    function test_commitResourceWithMismatchedTarget() public addGameElement {
+        bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
+        bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
+
+        address target = makeAddr("wrongTarget"); // Different from gameElement.tokenAddress
+        address account = makeAddr("player");
+        address signer = GAME_SIGNER;
+        uint256 nonce = 1;
+
+        bytes memory commit = abi.encode(target, account, signer, nonce, callData);
+        bytes32 digest = getMessageHash(target, account, signer, nonce, callData);
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(GAME_SIGNER_PRIV_KEY, digest);
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        vm.expectRevert(GameRegestry.GameRegestry__UnknownTargetAddress.selector);
+        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+    }
+
+    function test_commitResourceWithZeroAccount() public addGameElement {
+        bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
+        bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
+
+        address target = address(gameRegestry);
+        address account = address(0); // Invalid account
+        address signer = GAME_SIGNER;
+        uint256 nonce = 1;
+
+        bytes memory commit = abi.encode(target, account, signer, nonce, callData);
+        bytes32 digest = getMessageHash(target, account, signer, nonce, callData);
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(GAME_SIGNER_PRIV_KEY, digest);
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        vm.expectRevert(GameRegestry.GameRegestry__InvalidPlayer.selector);
+        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+    }
+
+    function test_commitResourceWithInvalidSigner() public addGameElement {
+        bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
+        bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
+
+        address target = address(gameRegestry);
+        address account = makeAddr("player");
+        address invalidSigner = makeAddr("invalidSigner"); // Not GAME_SIGNER_ROLE
+        uint256 nonce = 1;
+
+        bytes memory commit = abi.encode(target, account, invalidSigner, nonce, callData);
+
+        // Sign with different key
+        (address randomSigner, uint256 randomKey) = makeAddrAndKey("random");
+        bytes32 digest = getMessageHash(target, account, randomSigner, nonce, callData);
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(randomKey, digest);
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        vm.expectRevert(GameRegestry.GameRegestry__InvalidSigner.selector);
+        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+    }
+
+    function test_commitResourceWithInvalidSignature() public addGameElement {
+        bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
+        (bytes32 resourceHash, bytes memory commit,) = getSignedMessage(0, callData);
+
+        // Create a fake/invalid signature
+        bytes memory invalidSignature = abi.encodePacked(bytes32(uint256(1)), bytes32(uint256(2)), bytes1(uint8(27)));
+
+        vm.expectRevert(GameRegestry.GameRegestry__NotSigner.selector);
+        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: invalidSignature});
+    }
+
+    function test_commitResourceSignerMismatch() public addGameElement {
+        bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
+        bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
+
+        address target = address(gameRegestry);
+        address account = GAME_SIGNER; // Account has role
+        address signer = GAME_SIGNER;
+        uint256 nonce = 1;
+
+        bytes memory commit = abi.encode(target, account, signer, nonce, callData);
+
+        // Sign with different private key
+        (, uint256 wrongKey) = makeAddrAndKey("wrong");
+        bytes32 digest = getMessageHash(target, account, signer, nonce, callData);
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(wrongKey, digest);
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        vm.expectRevert(GameRegestry.GameRegestry__NotAllowedToCommit.selector);
+        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+    }
+
+    function test_authorizeUpgrade() public {
+        address newImplementation = address(new GameRegestry());
+
+        // Should fail for non-admin
+        vm.expectRevert();
+        gameRegestry.upgradeToAndCall(newImplementation, "");
+
+        // Should succeed for admin
+        vm.prank(ADMIN);
+        gameRegestry.upgradeToAndCall(newImplementation, "");
+    }
+
+    function test_getMessageHashDirectCall() public {
+        bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
+        bytes32 hash = getMessageHash(address(gameRegestry), makeAddr("player"), GAME_SIGNER, 1, callData);
+        assertTrue(hash != bytes32(0), "Hash should not be zero");
     }
 }

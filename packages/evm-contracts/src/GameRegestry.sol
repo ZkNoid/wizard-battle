@@ -12,7 +12,8 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 import {Array} from "./libraries/Array.sol";
 
 /**
- * Need to apply for CEI principles: Check, Effect, Interaction or PRE-PI-CHECK (Pre-post interaction check) principles: Check, Effect, Interaction
+ * Need to apply for CEI principles: Check, Effect, Interaction or PRE-PI-CHECK (Pre-post interaction check) principles:
+ * Check, Effect, Interaction
  */
 
 /**
@@ -91,7 +92,7 @@ contract GameRegestry is
         address tokenAddress;
         uint256 tokenId;
         bool requiresTokenId; // if true, then tokenId is required to be added to the commit data
-    }
+    } //
 
     struct CommitStruct {
         address target;
@@ -108,7 +109,8 @@ contract GameRegestry is
     /// @notice these arrays are informational, to provide list of available game elements to the game client / market
     /// @dev must be restricted for updating, only GAME_SIGNER_ROLE can add / remove game elements to the list
     mapping(GameElementType => string[]) private s_gameElementsByType; // game elements by type
-    mapping(bytes32 => GameElementStruct) private s_resourceHashToGameElement; // client would call a specific function to get GameElementStruct in order to build a commit data
+    mapping(bytes32 => GameElementStruct) private s_resourceHashToGameElement; // client would call a specific function
+    // to get GameElementStruct in order to build a commit data
     mapping(uint256 => bool) private s_usedNonces; // nonce is used to prevent replay attacks
 
     /*//////////////////////////////////////////////////////////////
@@ -119,7 +121,7 @@ contract GameRegestry is
     bytes32 private constant GAME_SIGNER_ROLE = keccak256("GAME_SIGNER_ROLE");
     bytes32 private constant MESSAGE_TYPEHASH =
         keccak256("CommitStruct(address target,address account,address signer,uint256 nonce,bytes callData)");
-
+    uint256 private constant BATCH_LENGTH_MAX = 100; // max length of the commit batch
     //address private s_market; // use hasRole MARKET_ROLE to commit marketplace transactions
     //address private s_gameSigner; // use hasRole GAME_SIGNER_ROLE to verify signature of the message from a player
 
@@ -152,15 +154,6 @@ contract GameRegestry is
         _;
     }
 
-    /**
-     * @notice Modifier to check if the caller has the GAME_SIGNER_ROLE or MARKET_ROLE
-     */
-    modifier onlyGameSignerOrMarketRole() {
-        if (!hasRole(GAME_SIGNER_ROLE, _msgSender()) && !hasRole(MARKET_ROLE, _msgSender())) {
-            revert GameRegestry__OnlyGameSignerOrMarketRole();
-        }
-        _;
-    }
     /// @custom:oz-upgrades-unsafe-allow constructor
 
     constructor() {
@@ -185,7 +178,10 @@ contract GameRegestry is
         string[] memory _characters,
         string[] memory _uiniqueItems,
         address _gameSigner
-    ) external initializer {
+    )
+        external
+        initializer
+    {
         __EIP712_init("GameRegestry", "1");
         __AccessControlDefaultAdminRules_init(1 days, msg.sender);
 
@@ -214,7 +210,7 @@ contract GameRegestry is
         if (batch.length == 0) {
             revert GameRegestry__BatchLengthZero();
         }
-        if (batch.length > 10) {
+        if (batch.length > BATCH_LENGTH_MAX) {
             revert GameRegestry__BatchLengthTooLong();
         }
         s_usedNonces[nonce] = true;
@@ -266,7 +262,8 @@ contract GameRegestry is
     }
 
     /**
-     * This contract regesters game elements on chain for further of-chain reference. Game server is going to use this data for commits generation.
+     * This contract regesters game elements on chain for further of-chain reference. Game server is going to use this
+     * data for commits generation.
      */
     function addGameElement(
         GameElementType elementType,
@@ -274,7 +271,10 @@ contract GameRegestry is
         address elementTokenAddress,
         uint256 elementTokenId,
         bool elementHasTokenId
-    ) external onlyGameSignerRole {
+    )
+        external
+        onlyGameSignerRole
+    {
         if (elementTokenAddress == address(0)) {
             revert GameRegestry__AddressZero();
         }
@@ -354,7 +354,11 @@ contract GameRegestry is
     }
 
     /// TODO: verify inputs of the commit data
-    function _verifyInputs(bytes32 resourceHash, bytes memory commit, bytes memory signature)
+    function _verifyInputs(
+        bytes32 resourceHash,
+        bytes memory commit,
+        bytes memory signature
+    )
         private
         view
         returns (uint256 nonce, address target, bytes memory callData)
@@ -414,7 +418,11 @@ contract GameRegestry is
         uint256 nonce,
         bytes memory callData,
         bytes memory signature
-    ) private view returns (bool) {
+    )
+        private
+        view
+        returns (bool)
+    {
         bytes32 hash = _getMessageHash(target, account, signer, nonce, callData);
         (address actualSigner,,) = ECDSA.tryRecover(hash, signature);
         if (signer != actualSigner) {
@@ -432,7 +440,13 @@ contract GameRegestry is
      * @param callData call data
      */
     // q maybe make it public, for server to call -> mmegapot alike
-    function _getMessageHash(address target, address account, address signer, uint256 nonce, bytes memory callData)
+    function _getMessageHash(
+        address target,
+        address account,
+        address signer,
+        uint256 nonce,
+        bytes memory callData
+    )
         public
         view
         returns (bytes32 digest)
@@ -504,6 +518,10 @@ contract GameRegestry is
 
     function _hashString(string memory _str) internal pure returns (bytes32) {
         return keccak256(bytes(_str));
+    }
+
+    function getBatchMaxLength() external pure returns (uint256) {
+        return BATCH_LENGTH_MAX;
     }
 }
 
