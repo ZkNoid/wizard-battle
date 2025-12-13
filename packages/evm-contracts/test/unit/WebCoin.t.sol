@@ -203,9 +203,7 @@ contract WBCoinTest is Test {
     function test_NonAdminCannotGrantRoles() public {
         vm.startPrank(user1);
         bytes32 role = wbCoin.DEFAULT_ADMIN_ROLE();
-        vm.expectRevert(
-            abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), user1, role)
-        );
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlEnforcedDefaultAdminRules()"))));
         wbCoin.grantRole(role, user2);
         vm.stopPrank();
     }

@@ -268,6 +268,12 @@ contract GameRegestryTest is Test {
         assertEq(maxLength, 100, "Batch max length should be 100");
     }
 
+    function test_getMessageHashDirectCall() public {
+        bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
+        bytes32 hash = getMessageHash(address(gameRegestry), makeAddr("player"), GAME_SIGNER, 1, callData);
+        assertTrue(hash != bytes32(0), "Hash should not be zero");
+    }
+
     /*//////////////////////////////////////////////////////////////
                        ADD GAME ELEMENT - SUCCESS
     //////////////////////////////////////////////////////////////*/

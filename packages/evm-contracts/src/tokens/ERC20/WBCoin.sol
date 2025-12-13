@@ -2,7 +2,14 @@
 // Compatible with OpenZeppelin Contracts ^5.5.0
 pragma solidity ^0.8.27;
 
+import {
+    AccessControlDefaultAdminRulesUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlDefaultAdminRulesUpgradeable.sol";
+import {
+    AccessControlEnumerableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {
     ERC20BurnableUpgradeable
@@ -18,7 +25,8 @@ contract WBCoin is
     ERC20Upgradeable,
     ERC20BurnableUpgradeable,
     ERC20PausableUpgradeable,
-    AccessControlUpgradeable,
+    AccessControlEnumerableUpgradeable,
+    AccessControlDefaultAdminRulesUpgradeable,
     UUPSUpgradeable
 {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -34,9 +42,9 @@ contract WBCoin is
         __ERC20_init("WBCoin", "WBC");
         __ERC20Burnable_init();
         __ERC20Pausable_init();
-        __AccessControl_init();
+        __AccessControlDefaultAdminRules_init(0, defaultAdmin);
+        __AccessControlEnumerable_init();
 
-        _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
         _grantRole(PAUSER_ROLE, pauser);
         _grantRole(MINTER_ROLE, minter);
         _grantRole(UPGRADER_ROLE, upgrader);
@@ -58,10 +66,93 @@ contract WBCoin is
 
     // The following functions are overrides required by Solidity.
 
-    function _update(address from, address to, uint256 value)
+    function _update(
+        address from,
+        address to,
+        uint256 value
+    )
         internal
         override(ERC20Upgradeable, ERC20PausableUpgradeable)
     {
         super._update(from, to, value);
+    }
+
+    function _grantRole(
+        bytes32 role,
+        address account
+    )
+        internal
+        virtual
+        override(AccessControlEnumerableUpgradeable, AccessControlDefaultAdminRulesUpgradeable)
+        returns (bool)
+    {
+        return AccessControlDefaultAdminRulesUpgradeable._grantRole(role, account);
+    }
+
+    function _revokeRole(
+        bytes32 role,
+        address account
+    )
+        internal
+        virtual
+        override(AccessControlEnumerableUpgradeable, AccessControlDefaultAdminRulesUpgradeable)
+        returns (bool)
+    {
+        return AccessControlDefaultAdminRulesUpgradeable._revokeRole(role, account);
+    }
+
+    function _setRoleAdmin(
+        bytes32 role,
+        bytes32 adminRole
+    )
+        internal
+        virtual
+        override(AccessControlUpgradeable, AccessControlDefaultAdminRulesUpgradeable)
+    {
+        AccessControlDefaultAdminRulesUpgradeable._setRoleAdmin(role, adminRole);
+    }
+
+    function grantRole(
+        bytes32 role,
+        address account
+    )
+        public
+        virtual
+        override(AccessControlUpgradeable, IAccessControl, AccessControlDefaultAdminRulesUpgradeable)
+    {
+        AccessControlDefaultAdminRulesUpgradeable.grantRole(role, account);
+    }
+
+    function revokeRole(
+        bytes32 role,
+        address account
+    )
+        public
+        virtual
+        override(AccessControlUpgradeable, IAccessControl, AccessControlDefaultAdminRulesUpgradeable)
+    {
+        AccessControlDefaultAdminRulesUpgradeable.revokeRole(role, account);
+    }
+
+    function renounceRole(
+        bytes32 role,
+        address account
+    )
+        public
+        virtual
+        override(AccessControlUpgradeable, IAccessControl, AccessControlDefaultAdminRulesUpgradeable)
+    {
+        AccessControlDefaultAdminRulesUpgradeable.renounceRole(role, account);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(AccessControlEnumerableUpgradeable, AccessControlDefaultAdminRulesUpgradeable)
+        returns (bool)
+    {
+        return AccessControlEnumerableUpgradeable.supportsInterface(interfaceId)
+            || AccessControlDefaultAdminRulesUpgradeable.supportsInterface(interfaceId);
     }
 }

@@ -2,7 +2,14 @@
 // Compatible with OpenZeppelin Contracts ^5.5.0
 pragma solidity ^0.8.27;
 
+import {
+    AccessControlDefaultAdminRulesUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlDefaultAdminRulesUpgradeable.sol";
+import {
+    AccessControlEnumerableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {ERC1155Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import {
     ERC1155BurnableUpgradeable
@@ -51,6 +58,8 @@ contract WBResources is
         _grantRole(MINTER_ROLE, minter);
         _grantRole(UPGRADER_ROLE, upgrader);
         _grantRole(URI_SETTER_ROLE, defaultAdmin);
+
+        _mint(address(this), 0, 1, ""); // reserver id 0 by owner
     }
 
     /// get url should return a JSON ?
@@ -81,7 +90,12 @@ contract WBResources is
         _mint(account, id, amount, data);
     }
 
-    function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data)
+    function mintBatch(
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    )
         public
         onlyRole(MINTER_ROLE)
     {
@@ -92,7 +106,12 @@ contract WBResources is
 
     // The following functions are overrides required by Solidity.
 
-    function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
+    function _update(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values
+    )
         internal
         override(ERC1155Upgradeable, ERC1155PausableUpgradeable, ERC1155SupplyUpgradeable)
     {
@@ -102,9 +121,11 @@ contract WBResources is
     function supportsInterface(bytes4 interfaceId)
         public
         view
+        virtual
         override(ERC1155Upgradeable, AccessControlUpgradeable)
         returns (bool)
     {
-        return super.supportsInterface(interfaceId);
+        return ERC1155Upgradeable.supportsInterface(interfaceId)
+            || AccessControlUpgradeable.supportsInterface(interfaceId);
     }
 }
