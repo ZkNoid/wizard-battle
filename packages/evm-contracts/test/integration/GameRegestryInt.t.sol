@@ -207,6 +207,7 @@ contract GameRegestryIntTest is Test {
         bytes memory callData
     )
         public
+        view
         returns (bytes32, bytes memory, bytes memory)
     {
         bytes32 resourceHash = keccak256(bytes(elementName));
