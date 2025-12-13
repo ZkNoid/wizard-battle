@@ -5,9 +5,11 @@ import {Test, console} from "forge-std/Test.sol";
 import {GameRegestry} from "src/GameRegestry.sol";
 import {WBResources} from "src/tokens/ERC1155/WBResources.sol";
 import {WBCoin} from "src/tokens/ERC20/WBCoin.sol";
+import {WBCharacter} from "src/tokens/ERC721/WBCharacter.sol";
 import {DeployGameRegestry} from "script/DeployGameRegestry.s.sol";
 import {DeployWBResources} from "script/DeployWBResources.s.sol";
 import {DeployWBCoin} from "script/DeployWBCoin.s.sol";
+import {DeployWBCharacter} from "script/DeployWBCharacter.s.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 contract GameRegestryIntTest is Test {
@@ -25,10 +27,12 @@ contract GameRegestryIntTest is Test {
     GameRegestry public gameRegestry;
     WBResources public wbResources;
     WBCoin public wBCoin;
+    WBCharacter public wbCharacter;
 
     bytes32 private constant GAME_SIGNER_ROLE = keccak256("GAME_SIGNER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 private constant DEFAULT_ADMIN_ROLE = 0x00;
+    string public constant TOKEN_URI = "ipfs://QmToken1";
 
     address public GAME_SIGNER;
     address public ADMIN;
@@ -61,6 +65,10 @@ contract GameRegestryIntTest is Test {
         wbResources = WBResources(new DeployWBResources().deploy());
         wbResources.grantRole(MINTER_ROLE, gameRegestryAddress);
         wbResources.grantRole(MINTER_ROLE, GAME_SIGNER);
+
+        wbCharacter = WBCharacter(new DeployWBCharacter().deploy());
+        wbCharacter.grantRole(MINTER_ROLE, gameRegestryAddress);
+        wbCharacter.grantRole(MINTER_ROLE, GAME_SIGNER);
     }
 
     modifier addCoinResourceType() {
@@ -72,6 +80,12 @@ contract GameRegestryIntTest is Test {
     modifier addResourceType() {
         vm.prank(GAME_SIGNER);
         gameRegestry.addGameElement(GameRegestry.GameElementType.RESOURCE, "Wood", address(wbResources), 1, true);
+        _;
+    }
+
+    modifier addCharacterType() {
+        vm.prank(GAME_SIGNER);
+        gameRegestry.addGameElement(GameRegestry.GameElementType.CHARACTER, "Wizard", address(wbCharacter), 0, false);
         _;
     }
 
@@ -124,6 +138,28 @@ contract GameRegestryIntTest is Test {
 
         console.log("WBResources total supply:", wbResources.totalSupply(1));
         console.log("PLAYER's WBResources balance:", playerWBCResourcelance);
+    }
+
+    function test_mintWBCharacterToPlayer() public addCharacterType {
+        // vm.assume(player != address(0));
+        // vm.assume(amount > 0 && amount < 1e24);
+
+        console.log("Minting wizard to player:", PLAYER);
+        console.log("Game signer:", GAME_SIGNER);
+
+        bytes memory callData = abi.encodeWithSignature("mint(address,string)", PLAYER, TOKEN_URI);
+        (bytes32 resourceHash, bytes memory commit, bytes memory signature) =
+            getSignedMessage("Wizard", address(wbCharacter), 0, callData);
+
+        vm.expectEmit(true, false, false, true);
+        emit CommitConfirmed(callData);
+        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+
+        uint256 playerWBCCharacterBalance = wbCharacter.balanceOf(PLAYER);
+        assertEq(playerWBCCharacterBalance, 1);
+
+        console.log("WBCharacter total supply:", wbCharacter.totalSupply());
+        console.log("PLAYER's WBCharacter balance:", playerWBCCharacterBalance);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -2,6 +2,12 @@
 // Compatible with OpenZeppelin Contracts ^5.5.0
 pragma solidity ^0.8.27;
 
+import {
+    AccessControlDefaultAdminRulesUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlDefaultAdminRulesUpgradeable.sol";
+import {
+    AccessControlEnumerableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import {
@@ -69,7 +75,7 @@ contract WBCharacter is
         _unpause();
     }
 
-    function safeMint(address to, string memory uri) public onlyRole(MINTER_ROLE) returns (uint256) {
+    function mint(address to, string memory uri) public onlyRole(MINTER_ROLE) returns (uint256) {
         WBCharacterStorage storage $ = _getWBCharacterStorage();
         uint256 tokenId = $._nextTokenId++;
         _safeMint(to, tokenId);
@@ -87,7 +93,11 @@ contract WBCharacter is
 
     // The following functions are overrides required by Solidity.
 
-    function _update(address to, uint256 tokenId, address auth)
+    function _update(
+        address to,
+        uint256 tokenId,
+        address auth
+    )
         internal
         override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721PausableUpgradeable)
         returns (address)
@@ -95,7 +105,10 @@ contract WBCharacter is
         return super._update(to, tokenId, auth);
     }
 
-    function _increaseBalance(address account, uint128 value)
+    function _increaseBalance(
+        address account,
+        uint128 value
+    )
         internal
         override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
     {

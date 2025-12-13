@@ -67,9 +67,9 @@ contract WBCharacterTest is Test {
         wbCharacter.initialize(admin, pauser, minter, upgrader);
     }
 
-    function test_SafeMintByMinter() public {
+    function test_mintByMinter() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacter.safeMint(user1, TOKEN_URI_1);
+        uint256 tokenId = wbCharacter.mint(user1, TOKEN_URI_1);
 
         assertEq(tokenId, 0);
         assertEq(wbCharacter.ownerOf(tokenId), user1);
@@ -78,10 +78,10 @@ contract WBCharacterTest is Test {
         assertEq(wbCharacter.tokenURI(tokenId), TOKEN_URI_1);
     }
 
-    function test_SafeMintMultipleTokens() public {
+    function test_mintMultipleTokens() public {
         vm.startPrank(minter);
-        uint256 tokenId1 = wbCharacter.safeMint(user1, TOKEN_URI_1);
-        uint256 tokenId2 = wbCharacter.safeMint(user2, TOKEN_URI_2);
+        uint256 tokenId1 = wbCharacter.mint(user1, TOKEN_URI_1);
+        uint256 tokenId2 = wbCharacter.mint(user2, TOKEN_URI_2);
         vm.stopPrank();
 
         assertEq(tokenId1, 0);
@@ -93,7 +93,7 @@ contract WBCharacterTest is Test {
         assertEq(wbCharacter.tokenURI(tokenId2), TOKEN_URI_2);
     }
 
-    function test_SafeMintRevertsIfNotMinter() public {
+    function test_mintRevertsIfNotMinter() public {
         vm.startPrank(attacker);
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -102,7 +102,7 @@ contract WBCharacterTest is Test {
                 wbCharacter.MINTER_ROLE()
             )
         );
-        wbCharacter.safeMint(user1, TOKEN_URI_1);
+        wbCharacter.mint(user1, TOKEN_URI_1);
         vm.stopPrank();
     }
 
@@ -154,7 +154,7 @@ contract WBCharacterTest is Test {
 
     function test_TransfersBlockedWhenPaused() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacter.safeMint(user1, TOKEN_URI_1);
+        uint256 tokenId = wbCharacter.mint(user1, TOKEN_URI_1);
 
         vm.prank(pauser);
         wbCharacter.pause();
@@ -166,7 +166,7 @@ contract WBCharacterTest is Test {
 
     function test_TransfersAllowedWhenUnpaused() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacter.safeMint(user1, TOKEN_URI_1);
+        uint256 tokenId = wbCharacter.mint(user1, TOKEN_URI_1);
 
         vm.prank(pauser);
         wbCharacter.pause();
@@ -184,7 +184,7 @@ contract WBCharacterTest is Test {
 
     function test_TokenURI() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacter.safeMint(user1, TOKEN_URI_1);
+        uint256 tokenId = wbCharacter.mint(user1, TOKEN_URI_1);
 
         assertEq(wbCharacter.tokenURI(tokenId), TOKEN_URI_1);
     }
@@ -196,7 +196,7 @@ contract WBCharacterTest is Test {
 
     function test_Burn() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacter.safeMint(user1, TOKEN_URI_1);
+        uint256 tokenId = wbCharacter.mint(user1, TOKEN_URI_1);
 
         vm.prank(user1);
         wbCharacter.burn(tokenId);
@@ -209,7 +209,7 @@ contract WBCharacterTest is Test {
 
     function test_BurnRevertsIfNotOwner() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacter.safeMint(user1, TOKEN_URI_1);
+        uint256 tokenId = wbCharacter.mint(user1, TOKEN_URI_1);
 
         vm.startPrank(attacker);
         vm.expectRevert();
@@ -219,9 +219,9 @@ contract WBCharacterTest is Test {
 
     function test_EnumerableFunctions() public {
         vm.startPrank(minter);
-        uint256 tokenId1 = wbCharacter.safeMint(user1, TOKEN_URI_1);
-        uint256 tokenId2 = wbCharacter.safeMint(user1, TOKEN_URI_2);
-        uint256 tokenId3 = wbCharacter.safeMint(user2, TOKEN_URI_1);
+        uint256 tokenId1 = wbCharacter.mint(user1, TOKEN_URI_1);
+        uint256 tokenId2 = wbCharacter.mint(user1, TOKEN_URI_2);
+        uint256 tokenId3 = wbCharacter.mint(user2, TOKEN_URI_1);
         vm.stopPrank();
 
         assertEq(wbCharacter.totalSupply(), 3);
@@ -239,8 +239,8 @@ contract WBCharacterTest is Test {
 
     function test_EnumerableAfterTransfer() public {
         vm.prank(minter);
-        uint256 tokenId1 = wbCharacter.safeMint(user1, TOKEN_URI_1);
-        uint256 tokenId2 = wbCharacter.safeMint(user1, TOKEN_URI_2);
+        uint256 tokenId1 = wbCharacter.mint(user1, TOKEN_URI_1);
+        uint256 tokenId2 = wbCharacter.mint(user1, TOKEN_URI_2);
 
         vm.prank(user1);
         wbCharacter.transferFrom(user1, user2, tokenId1);
@@ -254,8 +254,8 @@ contract WBCharacterTest is Test {
 
     function test_EnumerableAfterBurn() public {
         vm.startPrank(minter);
-        uint256 tokenId1 = wbCharacter.safeMint(user1, TOKEN_URI_1);
-        uint256 tokenId2 = wbCharacter.safeMint(user1, TOKEN_URI_2);
+        uint256 tokenId1 = wbCharacter.mint(user1, TOKEN_URI_1);
+        uint256 tokenId2 = wbCharacter.mint(user1, TOKEN_URI_2);
         vm.stopPrank();
 
         vm.prank(user1);
@@ -334,7 +334,7 @@ contract WBCharacterTest is Test {
 
     function test_SafeTransferFrom() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacter.safeMint(user1, TOKEN_URI_1);
+        uint256 tokenId = wbCharacter.mint(user1, TOKEN_URI_1);
 
         vm.prank(user1);
         wbCharacter.safeTransferFrom(user1, user2, tokenId);
@@ -346,7 +346,7 @@ contract WBCharacterTest is Test {
 
     function test_Approve() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacter.safeMint(user1, TOKEN_URI_1);
+        uint256 tokenId = wbCharacter.mint(user1, TOKEN_URI_1);
 
         vm.prank(user1);
         wbCharacter.approve(user2, tokenId);
@@ -356,8 +356,8 @@ contract WBCharacterTest is Test {
 
     function test_SetApprovalForAll() public {
         vm.startPrank(minter);
-        uint256 tokenId1 = wbCharacter.safeMint(user1, TOKEN_URI_1);
-        wbCharacter.safeMint(user1, TOKEN_URI_2);
+        uint256 tokenId1 = wbCharacter.mint(user1, TOKEN_URI_1);
+        wbCharacter.mint(user1, TOKEN_URI_2);
         vm.stopPrank();
 
         vm.prank(user1);
