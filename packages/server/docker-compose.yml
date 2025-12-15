@@ -44,7 +44,7 @@ services:
       PGDATABASE: ${POSTGRES_DB}
       BACKUP_DIR: /backups
       BACKUP_KEEP_DAYS: 7 # keep last 7 daily backups
-      BACKUP_TIME: '03:00' # time of day to run backup (UTC!)
+      BACKUP_TIME: '0 3 * * *' # time of day to run backup (UTC!)
     volumes:
       - ./backups:/backups # host folder where backups will be stored
     command: |
@@ -60,7 +60,7 @@ services:
         chmod +x /backups/backup.sh
 
         # Schedule it (minute hour day month weekday)
-        echo "$BACKUP_TIME /backups/backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
+        echo "${BACKUP_TIME} /backups/backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
 
         # Create log file so tail works immediately
         touch /var/log/backup.log
