@@ -6,6 +6,10 @@ import {GameRegestry} from "../src/GameRegestry.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployGameRegestry is Script {
+    string[] coins;
+    string[] characters;
+    string[] resources;
+
     function run() public returns (address proxyGameRegestry) {
         proxyGameRegestry = deploy();
     }
@@ -14,11 +18,7 @@ contract DeployGameRegestry is Script {
         vm.startBroadcast();
         GameRegestry gameRegestry = new GameRegestry();
         ERC1967Proxy proxy = new ERC1967Proxy(
-            address(gameRegestry),
-            abi.encodeCall(
-                gameRegestry.initialize,
-                (new string[](0), new string[](0), new string[](0), new string[](0), msg.sender)
-            )
+            address(gameRegestry), abi.encodeCall(gameRegestry.initialize, (new string[](0), new string[](0), new string[](0), new string[](0), msg.sender))
         );
         vm.stopBroadcast();
         return address(proxy);

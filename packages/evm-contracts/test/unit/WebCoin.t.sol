@@ -34,6 +34,10 @@ contract WBCoinTest is Test {
         upgrader = address(this);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                          DEPLOYMENT TESTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_DeployDeploy() public {
         DeployWBCoin deployer = new DeployWBCoin();
         address deploy = deployer.deploy();
@@ -45,6 +49,10 @@ contract WBCoinTest is Test {
         address run = deployer.run();
         assertNotEq(run, address(0));
     }
+
+    /*//////////////////////////////////////////////////////////////
+                        INITIALIZATION TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_Initialization() public view {
         assertEq(wbCoin.name(), "WBCoin");
@@ -58,10 +66,18 @@ contract WBCoinTest is Test {
         assertTrue(wbCoin.hasRole(wbCoin.UPGRADER_ROLE(), upgrader));
     }
 
+    /*//////////////////////////////////////////////////////////////
+                    INITIALIZATION - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_InitializeCannotBeCalledTwice() public {
         vm.expectRevert();
         wbCoin.initialize(admin, pauser, minter, upgrader);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           MINTING TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_MintByMinter() public {
         vm.prank(minter);
@@ -71,16 +87,20 @@ contract WBCoinTest is Test {
         assertEq(wbCoin.totalSupply(), MINT_AMOUNT);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                         MINTING - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_MintRevertsIfNotMinter() public {
         vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCoin.MINTER_ROLE()
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCoin.MINTER_ROLE()));
         wbCoin.mint(user1, MINT_AMOUNT);
         vm.stopPrank();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           BURNING TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_Burn() public {
         vm.startPrank(admin);
@@ -93,6 +113,10 @@ contract WBCoinTest is Test {
         assertEq(wbCoin.balanceOf(user1), MINT_AMOUNT / 2);
         assertEq(wbCoin.totalSupply(), MINT_AMOUNT / 2);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                         PAUSE/UNPAUSE TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_PauseByPauser() public {
         vm.prank(pauser);
@@ -111,16 +135,20 @@ contract WBCoinTest is Test {
         assertFalse(wbCoin.paused());
     }
 
+    /*//////////////////////////////////////////////////////////////
+                       PAUSE/UNPAUSE - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_PauseRevertsIfNotPauser() public {
         vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCoin.PAUSER_ROLE()
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCoin.PAUSER_ROLE()));
         wbCoin.pause();
         vm.stopPrank();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           TRANSFER TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_TransfersBlockedWhenPaused() public {
         // Mint first
@@ -148,13 +176,16 @@ contract WBCoinTest is Test {
         assertEq(wbCoin.balanceOf(user1), 500 ether);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                           UPGRADE TESTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_UpgradeByUpgrader() public {
         WBCoinV2Mock v2 = new WBCoinV2Mock();
 
         vm.startPrank(upgrader);
 
-        bytes32 IMPLEMENTATION_SLOT =
-            bytes32(uint256(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc));
+        bytes32 IMPLEMENTATION_SLOT = bytes32(uint256(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc));
 
         // 2. Read current implementation address
         address currentImpl = address(uint160(uint256(vm.load(address(wbCoin), IMPLEMENTATION_SLOT))));
@@ -163,8 +194,7 @@ contract WBCoinTest is Test {
 
         wbCoin.upgradeToAndCall(address(v2), "");
 
-        bytes32 IMPLEMENTATION_SLOT_UPGRADED =
-            bytes32(uint256(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc));
+        bytes32 IMPLEMENTATION_SLOT_UPGRADED = bytes32(uint256(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc));
 
         // 2. Read current implementation address
         address currentImplUpgraded = address(uint160(uint256(vm.load(address(wbCoin), IMPLEMENTATION_SLOT_UPGRADED))));
@@ -175,18 +205,22 @@ contract WBCoinTest is Test {
         assertNotEq(currentImpl, currentImplUpgraded);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                         UPGRADE - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_UpgradeRevertsIfNotUpgrader() public {
         WBCoinV2Mock v2 = new WBCoinV2Mock();
 
         vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCoin.UPGRADER_ROLE()
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCoin.UPGRADER_ROLE()));
         wbCoin.upgradeToAndCall(address(v2), "");
         vm.stopPrank();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                      ACCESS CONTROL TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_AdminCanGrantAndRevokeRoles() public {
         vm.prank(admin);
@@ -199,6 +233,10 @@ contract WBCoinTest is Test {
 
         assertFalse(wbCoin.hasRole(wbCoin.MINTER_ROLE(), user1));
     }
+
+    /*//////////////////////////////////////////////////////////////
+                    ACCESS CONTROL - REVERTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_NonAdminCannotGrantRoles() public {
         vm.startPrank(user1);

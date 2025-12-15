@@ -38,6 +38,10 @@ contract WBCharacterTest is Test {
         upgrader = address(this);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                          DEPLOYMENT TESTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_DeployDeploy() public {
         DeployWBCharacter deployer = new DeployWBCharacter();
         address deploy = deployer.deploy();
@@ -49,6 +53,10 @@ contract WBCharacterTest is Test {
         address run = deployer.run();
         assertNotEq(run, address(0));
     }
+
+    /*//////////////////////////////////////////////////////////////
+                        INITIALIZATION TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_Initialization() public view {
         assertEq(wbCharacter.name(), "WBCharacter");
@@ -62,10 +70,18 @@ contract WBCharacterTest is Test {
         assertTrue(wbCharacter.hasRole(wbCharacter.UPGRADER_ROLE(), upgrader));
     }
 
+    /*//////////////////////////////////////////////////////////////
+                    INITIALIZATION - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_InitializeCannotBeCalledTwice() public {
         vm.expectRevert();
         wbCharacter.initialize(admin, pauser, minter, upgrader);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           MINTING TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_mintByMinter() public {
         vm.prank(minter);
@@ -96,18 +112,20 @@ contract WBCharacterTest is Test {
         // assertEq(wbCharacter.tokenURI(tokenId2), TOKEN_URI_2);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                         MINTING - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_mintRevertsIfNotMinter() public {
         vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
-                attacker,
-                wbCharacter.MINTER_ROLE()
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCharacter.MINTER_ROLE()));
         wbCharacter.mint(user1);
         vm.stopPrank();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                         PAUSE/UNPAUSE TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_PauseByPauser() public {
         vm.prank(pauser);
@@ -126,15 +144,13 @@ contract WBCharacterTest is Test {
         assertFalse(wbCharacter.paused());
     }
 
+    /*//////////////////////////////////////////////////////////////
+                       PAUSE/UNPAUSE - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_PauseRevertsIfNotPauser() public {
         vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
-                attacker,
-                wbCharacter.PAUSER_ROLE()
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCharacter.PAUSER_ROLE()));
         wbCharacter.pause();
         vm.stopPrank();
     }
@@ -144,16 +160,14 @@ contract WBCharacterTest is Test {
         wbCharacter.pause();
 
         vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
-                attacker,
-                wbCharacter.PAUSER_ROLE()
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCharacter.PAUSER_ROLE()));
         wbCharacter.unpause();
         vm.stopPrank();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           TRANSFER TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_TransfersBlockedWhenPaused() public {
         vm.prank(minter);
@@ -185,6 +199,22 @@ contract WBCharacterTest is Test {
         assertEq(wbCharacter.balanceOf(user2), 1);
     }
 
+    function test_SafeTransferFrom() public {
+        vm.prank(minter);
+        uint256 tokenId = wbCharacter.mint(user1);
+
+        vm.prank(user1);
+        wbCharacter.safeTransferFrom(user1, user2, tokenId);
+
+        assertEq(wbCharacter.ownerOf(tokenId), user2);
+        assertEq(wbCharacter.balanceOf(user1), 0);
+        assertEq(wbCharacter.balanceOf(user2), 1);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           BURNING TESTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_Burn() public {
         vm.prank(minter);
         uint256 tokenId = wbCharacter.mint(user1);
@@ -198,6 +228,10 @@ contract WBCharacterTest is Test {
         wbCharacter.ownerOf(tokenId);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                         BURNING - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_BurnRevertsIfNotOwner() public {
         vm.prank(minter);
         uint256 tokenId = wbCharacter.mint(user1);
@@ -207,6 +241,10 @@ contract WBCharacterTest is Test {
         wbCharacter.burn(tokenId);
         vm.stopPrank();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                         ENUMERABLE TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_EnumerableFunctions() public {
         vm.startPrank(minter);
@@ -258,6 +296,10 @@ contract WBCharacterTest is Test {
         assertEq(wbCharacter.tokenOfOwnerByIndex(user1, 0), tokenId2);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                      INTERFACE SUPPORT TESTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_SupportsInterface() public view {
         assertTrue(wbCharacter.supportsInterface(type(IERC721).interfaceId));
         assertTrue(wbCharacter.supportsInterface(type(IERC721Metadata).interfaceId));
@@ -265,11 +307,14 @@ contract WBCharacterTest is Test {
         assertTrue(wbCharacter.supportsInterface(type(IAccessControl).interfaceId));
     }
 
+    /*//////////////////////////////////////////////////////////////
+                           UPGRADE TESTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_UpgradeByUpgrader() public {
         WBCharacterV2Mock v2 = new WBCharacterV2Mock();
 
-        bytes32 IMPLEMENTATION_SLOT =
-            bytes32(uint256(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc));
+        bytes32 IMPLEMENTATION_SLOT = bytes32(uint256(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc));
 
         address currentImpl = address(uint160(uint256(vm.load(address(wbCharacter), IMPLEMENTATION_SLOT))));
 
@@ -286,20 +331,22 @@ contract WBCharacterTest is Test {
         assertEq(currentImplUpgraded, address(v2));
     }
 
+    /*//////////////////////////////////////////////////////////////
+                         UPGRADE - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_UpgradeRevertsIfNotUpgrader() public {
         WBCharacterV2Mock v2 = new WBCharacterV2Mock();
 
         vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
-                attacker,
-                wbCharacter.UPGRADER_ROLE()
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCharacter.UPGRADER_ROLE()));
         wbCharacter.upgradeToAndCall(address(v2), "");
         vm.stopPrank();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                      ACCESS CONTROL TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_AdminCanGrantAndRevokeRoles() public {
         vm.prank(admin);
@@ -313,27 +360,21 @@ contract WBCharacterTest is Test {
         assertFalse(wbCharacter.hasRole(wbCharacter.MINTER_ROLE(), user1));
     }
 
+    /*//////////////////////////////////////////////////////////////
+                    ACCESS CONTROL - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_NonAdminCannotGrantRoles() public {
         vm.startPrank(user1);
         bytes32 role = wbCharacter.DEFAULT_ADMIN_ROLE();
-        vm.expectRevert(
-            abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), user1, role)
-        );
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), user1, role));
         wbCharacter.grantRole(role, user2);
         vm.stopPrank();
     }
 
-    function test_SafeTransferFrom() public {
-        vm.prank(minter);
-        uint256 tokenId = wbCharacter.mint(user1);
-
-        vm.prank(user1);
-        wbCharacter.safeTransferFrom(user1, user2, tokenId);
-
-        assertEq(wbCharacter.ownerOf(tokenId), user2);
-        assertEq(wbCharacter.balanceOf(user1), 0);
-        assertEq(wbCharacter.balanceOf(user2), 1);
-    }
+    /*//////////////////////////////////////////////////////////////
+                         APPROVAL TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_Approve() public {
         vm.prank(minter);
@@ -362,14 +403,16 @@ contract WBCharacterTest is Test {
         assertEq(wbCharacter.ownerOf(tokenId1), user2);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                       INTERNAL FUNCTION TESTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_IncreaseBalance() public {
         // Deploy test helper implementation
         WBCharacterTestHelper implementation = new WBCharacterTestHelper();
 
         // Create proxy and initialize it
-        ERC1967Proxy helperProxy = new ERC1967Proxy(
-            address(implementation), abi.encodeCall(WBCharacter.initialize, (admin, pauser, minter, upgrader))
-        );
+        ERC1967Proxy helperProxy = new ERC1967Proxy(address(implementation), abi.encodeCall(WBCharacter.initialize, (admin, pauser, minter, upgrader)));
 
         WBCharacterTestHelper helper = WBCharacterTestHelper(address(helperProxy));
 

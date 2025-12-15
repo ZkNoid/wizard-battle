@@ -11,7 +11,7 @@ remappings = [
 
 # Formatter settings
 [fmt]
-line_length = 120
+line_length = 160
 tab_width = 4
 bracket_spacing = false
 int_types = "long"

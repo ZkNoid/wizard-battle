@@ -21,6 +21,10 @@ contract WBResourcesTest is Test {
         wbResources = WBResources(wbResourcesAddress);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                          DEPLOYMENT TESTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_DeployDeploy() public {
         DeployWBResources deployer = new DeployWBResources();
         address deploy = deployer.deploy();
@@ -33,6 +37,10 @@ contract WBResourcesTest is Test {
         assertNotEq(run, address(0));
     }
 
+    /*//////////////////////////////////////////////////////////////
+                        INITIALIZATION TESTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_Initialization() public view {
         assertTrue(wbResources.hasRole(wbResources.DEFAULT_ADMIN_ROLE(), address(this)));
         assertTrue(wbResources.hasRole(wbResources.PAUSER_ROLE(), address(this)));
@@ -44,29 +52,24 @@ contract WBResourcesTest is Test {
         assertFalse(wbResources.paused());
     }
 
+    /*//////////////////////////////////////////////////////////////
+                    INITIALIZATION - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_InitializeCannotBeCalledTwice() public {
         vm.expectRevert();
         wbResources.initialize(address(this), address(this), address(this), address(this));
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           MINTING TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_MintByMinter() public {
         wbResources.mint(user1, 1, 5, "");
 
         assertEq(wbResources.balanceOf(user1, 1), 5);
         assertEq(wbResources.totalSupply(1), 5);
-    }
-
-    function test_MintRevertsIfNotMinter() public {
-        vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
-                attacker,
-                wbResources.MINTER_ROLE()
-            )
-        );
-        wbResources.mint(user1, 1, 1, "");
-        vm.stopPrank();
     }
 
     function test_MintBatchByMinter() public {
@@ -85,6 +88,17 @@ contract WBResourcesTest is Test {
         assertEq(wbResources.totalSupply(2), 4);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                         MINTING - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
+    function test_MintRevertsIfNotMinter() public {
+        vm.startPrank(attacker);
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbResources.MINTER_ROLE()));
+        wbResources.mint(user1, 1, 1, "");
+        vm.stopPrank();
+    }
+
     function test_MintBatchRevertsIfNotMinter() public {
         uint256[] memory ids = new uint256[](1);
         uint256[] memory amounts = new uint256[](1);
@@ -92,16 +106,14 @@ contract WBResourcesTest is Test {
         amounts[0] = 1;
 
         vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
-                attacker,
-                wbResources.MINTER_ROLE()
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbResources.MINTER_ROLE()));
         wbResources.mintBatch(user1, ids, amounts, "");
         vm.stopPrank();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           BURNING TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_BurnReducesSupply() public {
         wbResources.mint(user1, 1, 5, "");
@@ -113,6 +125,10 @@ contract WBResourcesTest is Test {
         assertEq(wbResources.totalSupply(1), 3);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                         PAUSE/UNPAUSE TESTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_PauseAndUnpause() public {
         wbResources.pause();
         assertTrue(wbResources.paused());
@@ -121,18 +137,20 @@ contract WBResourcesTest is Test {
         assertFalse(wbResources.paused());
     }
 
+    /*//////////////////////////////////////////////////////////////
+                       PAUSE/UNPAUSE - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_PauseRevertsIfNotPauser() public {
         vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
-                attacker,
-                wbResources.PAUSER_ROLE()
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbResources.PAUSER_ROLE()));
         wbResources.pause();
         vm.stopPrank();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           TRANSFER TESTS
+    //////////////////////////////////////////////////////////////*/
 
     function test_TransfersBlockedWhenPaused() public {
         wbResources.mint(user1, 1, 5, "");
@@ -154,16 +172,23 @@ contract WBResourcesTest is Test {
         assertEq(wbResources.balanceOf(user2, 1), 2);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                      INTERFACE SUPPORT TESTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_SupportsInterface() public view {
         assertTrue(wbResources.supportsInterface(type(IERC1155).interfaceId));
         assertTrue(wbResources.supportsInterface(type(IAccessControl).interfaceId));
     }
 
+    /*//////////////////////////////////////////////////////////////
+                           UPGRADE TESTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_UpgradeByUpgrader() public {
         WBResourcesV2Mock v2 = new WBResourcesV2Mock();
 
-        bytes32 IMPLEMENTATION_SLOT =
-            bytes32(uint256(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc));
+        bytes32 IMPLEMENTATION_SLOT = bytes32(uint256(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc));
 
         // Read current implementation address
         address currentImpl = address(uint160(uint256(vm.load(address(wbResources), IMPLEMENTATION_SLOT))));
@@ -181,17 +206,15 @@ contract WBResourcesTest is Test {
         assertEq(currentImplUpgraded, address(v2));
     }
 
+    /*//////////////////////////////////////////////////////////////
+                         UPGRADE - REVERTS
+    //////////////////////////////////////////////////////////////*/
+
     function test_UpgradeRevertsIfNotUpgrader() public {
         WBResourcesV2Mock v2 = new WBResourcesV2Mock();
 
         vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
-                attacker,
-                wbResources.UPGRADER_ROLE()
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbResources.UPGRADER_ROLE()));
         wbResources.upgradeToAndCall(address(v2), "");
         vm.stopPrank();
     }
