@@ -33,24 +33,6 @@ contract WBResourcesTest is Test {
         assertNotEq(run, address(0));
     }
 
-    function test_setURI() public {
-        wbResources.setURI(0, "ipfs://base/{id}");
-        assertEq(wbResources.uri(0), "ipfs://base/{id}");
-    }
-
-    function test_setURIRevertsIfNotURISetter() public {
-        vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
-                attacker,
-                wbResources.URI_SETTER_ROLE()
-            )
-        );
-        wbResources.setURI(0, "ipfs://forbidden/{id}");
-        vm.stopPrank();
-    }
-
     function test_Initialization() public view {
         assertTrue(wbResources.hasRole(wbResources.DEFAULT_ADMIN_ROLE(), address(this)));
         assertTrue(wbResources.hasRole(wbResources.PAUSER_ROLE(), address(this)));
@@ -170,38 +152,6 @@ contract WBResourcesTest is Test {
 
         assertEq(wbResources.balanceOf(user1, 1), 3);
         assertEq(wbResources.balanceOf(user2, 1), 2);
-    }
-
-    function test_SetURIWithRole() public {
-        wbResources.grantRole(wbResources.URI_SETTER_ROLE(), address(this));
-        string memory newUri = "ipfs://base/{id}";
-
-        wbResources.setURI(0, newUri);
-
-        assertEq(wbResources.uri(0), newUri);
-    }
-
-    function test_SetURIWithDifferentURIs() public {
-        wbResources.grantRole(wbResources.URI_SETTER_ROLE(), address(this));
-        string memory newUri = "ipfs://base/{id}";
-
-        wbResources.setURI(0, newUri);
-        console2.log("uri0", wbResources.uri(0));
-        console2.log("uri1", wbResources.uri(1));
-        assertNotEq(wbResources.uri(0), wbResources.uri(1));
-    }
-
-    function test_SetURIRevertsWithoutRole() public {
-        vm.startPrank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")),
-                attacker,
-                wbResources.URI_SETTER_ROLE()
-            )
-        );
-        wbResources.setURI(0, "ipfs://forbidden/{id}");
-        vm.stopPrank();
     }
 
     function test_SupportsInterface() public view {

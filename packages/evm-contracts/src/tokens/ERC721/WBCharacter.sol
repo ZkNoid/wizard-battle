@@ -19,9 +19,6 @@ import {
 import {
     ERC721PausableUpgradeable
 } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721PausableUpgradeable.sol";
-import {
-    ERC721URIStorageUpgradeable
-} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
@@ -29,7 +26,6 @@ contract WBCharacter is
     Initializable,
     ERC721Upgradeable,
     ERC721EnumerableUpgradeable,
-    ERC721URIStorageUpgradeable,
     ERC721PausableUpgradeable,
     AccessControlUpgradeable,
     ERC721BurnableUpgradeable,
@@ -56,7 +52,6 @@ contract WBCharacter is
     function initialize(address defaultAdmin, address pauser, address minter, address upgrader) public initializer {
         __ERC721_init("WBCharacter", "WBCH");
         __ERC721Enumerable_init();
-        __ERC721URIStorage_init();
         __ERC721Pausable_init();
         __AccessControl_init();
         __ERC721Burnable_init();
@@ -75,11 +70,10 @@ contract WBCharacter is
         _unpause();
     }
 
-    function mint(address to, string memory uri) public onlyRole(MINTER_ROLE) returns (uint256) {
+    function mint(address to) public onlyRole(MINTER_ROLE) returns (uint256) {
         WBCharacterStorage storage $ = _getWBCharacterStorage();
         uint256 tokenId = $._nextTokenId++;
         _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
         return tokenId;
     }
 
@@ -115,19 +109,14 @@ contract WBCharacter is
         super._increaseBalance(account, value);
     }
 
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
-        returns (string memory)
-    {
+    function tokenURI(uint256 tokenId) public view override(ERC721Upgradeable) returns (string memory) {
         return super.tokenURI(tokenId);
     }
 
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, AccessControlUpgradeable)
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);

@@ -22,9 +22,6 @@ import {
 } from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
-import {
-    ERC1155URIStorageUpgradeable
-} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
 
 contract WBResources is
     Initializable,
@@ -33,7 +30,6 @@ contract WBResources is
     ERC1155PausableUpgradeable,
     ERC1155BurnableUpgradeable,
     ERC1155SupplyUpgradeable,
-    ERC1155URIStorageUpgradeable,
     UUPSUpgradeable
 {
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
@@ -57,29 +53,18 @@ contract WBResources is
         _grantRole(PAUSER_ROLE, pauser);
         _grantRole(MINTER_ROLE, minter);
         _grantRole(UPGRADER_ROLE, upgrader);
-        _grantRole(URI_SETTER_ROLE, defaultAdmin);
 
         _mint(address(this), 0, 1, ""); // reserver id 0 by owner
     }
 
     /// get url should return a JSON ?
     /// TODO: check specs!
-
-    function setURI(uint256 tokenId, string memory newuri) public onlyRole(URI_SETTER_ROLE) {
-        _setURI(tokenId, newuri);
-    }
-
     function pause() public onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
-    function uri(uint256 tokenId)
-        public
-        view
-        override(ERC1155URIStorageUpgradeable, ERC1155Upgradeable)
-        returns (string memory)
-    {
-        return ERC1155URIStorageUpgradeable.uri(tokenId);
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        return super.uri(tokenId);
     }
 
     function unpause() public onlyRole(PAUSER_ROLE) {

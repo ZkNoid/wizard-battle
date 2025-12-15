@@ -147,7 +147,7 @@ contract GameRegestryIntTest is Test {
         console.log("Minting wizard to player:", PLAYER);
         console.log("Game signer:", GAME_SIGNER);
 
-        bytes memory callData = abi.encodeWithSignature("mint(address,string)", PLAYER, TOKEN_URI);
+        bytes memory callData = abi.encodeWithSignature("mint(address)", PLAYER);
         (bytes32 resourceHash, bytes memory commit, bytes memory signature) =
             getSignedMessage("Wizard", address(wbCharacter), 0, callData);
 
