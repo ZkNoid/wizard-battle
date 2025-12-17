@@ -12,10 +12,8 @@ contract DeployWBCoin is Script {
 
     function deploy() public returns (address) {
         vm.startBroadcast();
-        WBCoin wbCoin = new WBCoin();
-        ERC1967Proxy proxy = new ERC1967Proxy(
-            address(wbCoin), abi.encodeCall(wbCoin.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))
-        );
+        WBCoin wBCoin = new WBCoin();
+        ERC1967Proxy proxy = new ERC1967Proxy(address(wBCoin), abi.encodeCall(wBCoin.initialize, (msg.sender, msg.sender, msg.sender, msg.sender)));
         vm.stopBroadcast();
         return (address(proxy));
     }

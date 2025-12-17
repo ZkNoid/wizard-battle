@@ -13,10 +13,7 @@ contract DeployWBCharacter is Script {
     function deploy() public returns (address) {
         vm.startBroadcast();
         WBCharacter wbCharacter = new WBCharacter();
-        ERC1967Proxy proxy = new ERC1967Proxy(
-            address(wbCharacter),
-            abi.encodeCall(wbCharacter.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))
-        );
+        ERC1967Proxy proxy = new ERC1967Proxy(address(wbCharacter), abi.encodeCall(wbCharacter.initialize, (msg.sender, msg.sender, msg.sender, msg.sender)));
         vm.stopBroadcast();
         return address(proxy);
     }

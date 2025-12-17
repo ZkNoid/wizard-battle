@@ -6,17 +6,14 @@ import {WBResources} from "../src/tokens/ERC1155/WBResources.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployWBResources is Script {
-    function run() public returns (address proxyWbResources) {
+    function run(address gameRegestry) public returns (address proxyWbResources) {
         proxyWbResources = deploy();
     }
 
     function deploy() public returns (address) {
         vm.startBroadcast();
         WBResources wbResources = new WBResources();
-        ERC1967Proxy proxy = new ERC1967Proxy(
-            address(wbResources),
-            abi.encodeCall(wbResources.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))
-        );
+        ERC1967Proxy proxy = new ERC1967Proxy(address(wbResources), abi.encodeCall(wbResources.initialize, (msg.sender, msg.sender, msg.sender, msg.sender)));
         vm.stopBroadcast();
         return address(proxy);
     }

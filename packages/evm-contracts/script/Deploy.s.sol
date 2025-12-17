@@ -10,37 +10,39 @@ import {DeployWBCharacter} from "./DeployWBCharacter.s.sol";
 import {DeployWBResources} from "./DeployWBResources.s.sol";
 import {DeployGameRegestry} from "./DeployGameRegestry.s.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract Deploy is Script {
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    address public constant GAME_SIGNER = 0x1234567890123456789012345678901234567890; // replace with actual game signer address
+    DeployWBCoin wbCoinDeployer;
+    DeployWBCharacter wbCharacterDeployer;
+    DeployWBResources wbResourcesDeployer;
+    DeployGameRegestry gameRegestryDeployer;
+    HelperConfig helperConfig;
 
     function run() public {
         deploy();
     }
 
     function deploy() public {
-        vm.startBroadcast(msg.sender);
+        helperConfig = new HelperConfig();
+        wbCoinDeployer = new DeployWBCoin();
+        wbCharacterDeployer = new DeployWBCharacter();
+        wbResourcesDeployer = new DeployWBResources();
+        gameRegestryDeployer = new DeployGameRegestry();
 
-        DeployWBCoin wbCoinDeployer = new DeployWBCoin();
-        DeployWBCharacter wbCharacterDeployer = new DeployWBCharacter();
-        DeployWBResources wbResourcesDeployer = new DeployWBResources();
-        DeployGameRegestry gameRegestryDeployer = new DeployGameRegestry();
+        HelperConfig.NetworkConfig memory networkConfig = helperConfig.getConfig();
 
+        address gameRegestry = gameRegestryDeployer.deploy();
         address wBCoin = wbCoinDeployer.deploy();
         address wbCharacter = wbCharacterDeployer.deploy();
         address wbResources = wbResourcesDeployer.deploy();
-        address gameRegestry = gameRegestryDeployer.deploy();
 
-        WBCoin(wBCoin).grantRole(MINTER_ROLE, gameRegestry);
-        WBCoin(wBCoin).grantRole(MINTER_ROLE, GAME_SIGNER);
+        WBCoin(wBCoin).grantRole(networkConfig.minterRole, gameRegestry);
+        WBCoin(wBCoin).grantRole(networkConfig.minterRole, networkConfig.gameSigner);
 
-        WBResources(wbResources).grantRole(MINTER_ROLE, gameRegestry);
-        WBResources(wbResources).grantRole(MINTER_ROLE, GAME_SIGNER);
-
-        WBCharacter(wbCharacter).grantRole(MINTER_ROLE, gameRegestry);
-        WBCharacter(wbCharacter).grantRole(MINTER_ROLE, GAME_SIGNER);
-
-        vm.stopBroadcast();
+        WBResources(wbResources).grantRole(networkConfig.minterRole, gameRegestry);
+        WBResources(wbResources).grantRole(networkConfig.minterRole, networkConfig.gameSigner);
+        WBCharacter(wbCharacter).grantRole(networkConfig.minterRole, gameRegestry);
+        WBCharacter(wbCharacter).grantRole(networkConfig.minterRole, networkConfig.gameSigner);
     }
 }
