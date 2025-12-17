@@ -16,24 +16,44 @@ export class LightningBoldData extends Struct({
   position: Position,
 }) {}
 
+export class LightningBoldSpellCast
+  extends Struct({
+    caster: Field,
+    spellId: Field,
+    target: Field,
+    additionalData: LightningBoldData,
+  })
+  implements SpellCast<LightningBoldData>
+{
+  hash(): Field {
+    return Poseidon.hash([
+      this.caster,
+      this.spellId,
+      this.target,
+      this.additionalData.position.hash(),
+    ]);
+  }
+}
+
 export const LightningBoldCast = (
   state: State,
   caster: Field,
   target: Field,
   position: Position
-): SpellCast<LightningBoldData> => {
-  return {
+): LightningBoldSpellCast => {
+  return new LightningBoldSpellCast({
     spellId: CircuitString.fromString('LightningBold').hash(),
     caster,
     target,
     additionalData: {
       position,
     },
-  };
+  });
 };
+
 export const LightningBoldModifyer = (
   state: State,
-  spellCast: SpellCast<LightningBoldData>
+  spellCast: LightningBoldSpellCast
 ) => {
   const selfPosition = state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
@@ -89,20 +109,39 @@ export class FireBallData extends Struct({
   position: Position,
 }) {}
 
+export class FireBallSpellCast
+  extends Struct({
+    caster: Field,
+    spellId: Field,
+    target: Field,
+    additionalData: FireBallData,
+  })
+  implements SpellCast<FireBallData>
+{
+  hash(): Field {
+    return Poseidon.hash([
+      this.caster,
+      this.spellId,
+      this.target,
+      this.additionalData.position.hash(),
+    ]);
+  }
+}
+
 export const FireBallCast = (
   state: State,
   caster: Field,
   target: Field,
   position: Position
 ): SpellCast<FireBallData> => {
-  return {
+  return new FireBallSpellCast({
     spellId: CircuitString.fromString('FireBall').hash(),
     caster,
     target,
     additionalData: {
       position,
     },
-  };
+  });
 };
 
 export const FireBallModifyer = (
@@ -169,20 +208,39 @@ export class LaserData extends Struct({
   position: Position,
 }) {}
 
+export class LaserSpellCast
+  extends Struct({
+    caster: Field,
+    spellId: Field,
+    target: Field,
+    additionalData: LaserData,
+  })
+  implements SpellCast<LaserData>
+{
+  hash(): Field {
+    return Poseidon.hash([
+      this.caster,
+      this.spellId,
+      this.target,
+      this.additionalData.position.hash(),
+    ]);
+  }
+}
+
 export const LaserCast = (
   state: State,
   caster: Field,
   target: Field,
   position: Position
 ): SpellCast<LaserData> => {
-  return {
+  return new LaserSpellCast({
     spellId: CircuitString.fromString('Laser').hash(),
     caster,
     target,
     additionalData: {
       position,
     },
-  };
+  });
 };
 
 export const LaserModifyer = (
@@ -243,20 +301,39 @@ export class TeleportData extends Struct({
   position: Position,
 }) {}
 
+export class TeleportSpellCast
+  extends Struct({
+    caster: Field,
+    spellId: Field,
+    target: Field,
+    additionalData: TeleportData,
+  })
+  implements SpellCast<TeleportData>
+{
+  hash(): Field {
+    return Poseidon.hash([
+      this.caster,
+      this.spellId,
+      this.target,
+      this.additionalData.position.hash(),
+    ]);
+  }
+}
+
 export const TeleportCast = (
   state: State,
   caster: Field,
   target: Field,
   position: Position
 ): SpellCast<TeleportData> => {
-  return {
+  return new TeleportSpellCast({
     spellId: CircuitString.fromString('Teleport').hash(),
     caster,
     target,
     additionalData: {
       position,
     },
-  };
+  });
 };
 
 export const TeleportModifyer = (
@@ -271,17 +348,31 @@ export const TeleportModifyer = (
 
 export class HealData extends Struct({}) {}
 
+export class HealSpellCast
+  extends Struct({
+    caster: Field,
+    spellId: Field,
+    target: Field,
+    additionalData: HealData,
+  })
+  implements SpellCast<HealData>
+{
+  hash(): Field {
+    return Poseidon.hash([this.caster, this.spellId, this.target]);
+  }
+}
+
 export const HealCast = (
   state: State,
   caster: Field,
   target: Field
 ): SpellCast<HealData> => {
-  return {
+  return new HealSpellCast({
     spellId: CircuitString.fromString('Heal').hash(),
     caster,
     target,
     additionalData: {},
-  };
+  });
 };
 
 export const HealModifyer = (state: State, spellCast: SpellCast<HealData>) => {
@@ -304,6 +395,7 @@ export const mageSpells: ISpell<any>[] = [
     image: '/wizards/skills/lightning.png',
     modifyerData: LightningBoldData,
     modifyer: LightningBoldModifyer,
+    spellCast: LightningBoldSpellCast,
     cast: LightningBoldCast,
     sceneEffect: LightningBoldSceneEffect,
     target: 'enemy',
@@ -322,6 +414,7 @@ export const mageSpells: ISpell<any>[] = [
     image: '/wizards/skills/fireball.png',
     modifyerData: FireBallData,
     modifyer: FireBallModifyer,
+    spellCast: FireBallSpellCast,
     cast: FireBallCast,
     sceneEffect: FireBallSceneEffect,
     target: 'enemy',
@@ -340,6 +433,7 @@ export const mageSpells: ISpell<any>[] = [
     image: '/wizards/skills/teleport.png',
     modifyerData: TeleportData,
     modifyer: TeleportModifyer,
+    spellCast: TeleportSpellCast,
     cast: TeleportCast,
     target: 'ally',
     priority: 1,
@@ -358,6 +452,7 @@ export const mageSpells: ISpell<any>[] = [
     image: '/wizards/skills/heal.png',
     modifyerData: HealData,
     modifyer: HealModifyer,
+    spellCast: HealSpellCast,
     cast: HealCast,
     target: 'ally',
     priority: 1,
@@ -376,6 +471,7 @@ export const mageSpells: ISpell<any>[] = [
     image: '/wizards/skills/laser.png',
     modifyerData: LaserData,
     modifyer: LaserModifyer,
+    spellCast: LaserSpellCast,
     cast: LaserCast,
     target: 'enemy',
     sceneEffect: LaserSceneEffect,

@@ -1,4 +1,4 @@
-import { CircuitString, Field, Int64, Struct } from 'o1js';
+import { CircuitString, Field, Int64, Poseidon, Struct } from 'o1js';
 import { Position, PositionOption, type SpellCast } from '../structs';
 import { State } from '../state';
 import { WizardId } from '../../wizards';
@@ -8,23 +8,42 @@ export class MoveData extends Struct({
   position: Position,
 }) {}
 
+export class MoveSpellCast
+  extends Struct({
+    caster: Field,
+    spellId: Field,
+    target: Field,
+    additionalData: MoveData,
+  })
+  implements SpellCast<MoveData>
+{
+  hash(): Field {
+    return Poseidon.hash([
+      this.caster,
+      this.spellId,
+      this.target,
+      this.additionalData.position.hash(),
+    ]);
+  }
+}
+
 export const MoveCast = (
   state: State,
   caster: Field,
   target: Field,
   position: Position
-): SpellCast<MoveData> => {
-  return {
+): MoveSpellCast => {
+  return new MoveSpellCast({
     spellId: CircuitString.fromString('Move').hash(),
     caster,
     target,
     additionalData: {
       position,
     },
-  };
+  });
 };
 
-export const MoveModifyer = (state: State, spellCast: SpellCast<MoveData>) => {
+export const MoveModifyer = (state: State, spellCast: MoveSpellCast) => {
   console.log('MoveModifyer', state, spellCast);
 
   // Fix rehydration
@@ -46,6 +65,7 @@ export const allCommonSpells: ISpell<any>[] = [
     image: '/wizards/skills/1.svg',
     modifyerData: MoveData,
     modifyer: MoveModifyer,
+    spellCast: MoveSpellCast,
     cast: MoveCast,
     target: 'ally',
     priority: 1,

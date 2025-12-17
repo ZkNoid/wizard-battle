@@ -12,82 +12,67 @@ services:
     networks:
       - bridge
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: orbitrium-postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - '5432:5432'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    networks:
-      - orbitrium_net
-    restart: unless-stopped
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: orbitrium-postgres
+  #   environment:
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #   ports:
+  #     - '5432:5432'
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 10s
+  #   networks:
+  #     - orbitrium_net
+  #   restart: unless-stopped
 
-  # Daily backup container
-  postgres-backup:
-    image: postgres:16-alpine
-    container_name: orbitrium-postgres-backup
-    environment:
-      PGHOST: postgres # connects to the postgres service above
-      PGUSER: ${POSTGRES_USER}
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-      PGDATABASE: ${POSTGRES_DB}
-      BACKUP_DIR: /backups
-      BACKUP_KEEP_DAYS: 7 # keep last 7 daily backups
-      BACKUP_TIME: '03:00' # time of day to run backup (UTC!)
-    volumes:
-      - ./backups:/backups # host folder where backups will be stored
-    command: |
-      sh -c '
-        apk add --no-cache bash curl
-        echo "Creating backup directory..."
-        mkdir -p $BACKUP_DIR
-        
-        # Simple backup script
-        cat > /backup.sh <<'EOF'
-      #!/bin/bash
-      set -e
+  # # Daily backup container
+  # postgres-backup:
+  #   image: postgres:16-alpine
+  #   container_name: orbitrium-postgres-backup
+  #   environment:
+  #     PGHOST: postgres # connects to the postgres service above
+  #     PGUSER: ${POSTGRES_USER}
+  #     PGPASSWORD: ${POSTGRES_PASSWORD}
+  #     PGDATABASE: ${POSTGRES_DB}
+  #     BACKUP_DIR: /backups
+  #     BACKUP_KEEP_DAYS: 7 # keep last 7 daily backups
+  #   volumes:
+  #     - ./backups:/backups # host folder where backups will be stored
+  #   command: |
+  #     sh -c '
+  #       # Install only what we really need
+  #       apk add --no-cache bash dcron curl
 
-      TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-      BACKUP_FILE="$BACKUP_DIR/orbitrium_db_$TIMESTAMP.sql.gz"
+  #       # Make sure the script from the host is executable
+  #       if [ ! -f /backups/backup.sh ]; then
+  #         echo "ERROR: /backups/backup.sh not found on host!" >&2
+  #         exit 1
+  #       fi
+  #       chmod +x /backups/backup.sh
 
-      echo "[$(date)] Starting backup..."
-      pg_dump -h $PGHOST -U $PGUSER -d $PGDATABASE --clean --if-exists | gzip > "$BACKUP_FILE"
+  #       # Schedule it (minute hour day month weekday)
+  #       echo "0 3 * * * /backups/backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
 
-      echo "[$(date)] Backup created: $BACKUP_FILE"
+  #       # Create log file so tail works immediately
+  #       touch /var/log/backup.log
 
-      # Cleanup old backups
-      if [ -n "$BACKUP_KEEP_DAYS" ]; then
-        find "$BACKUP_DIR" -name "orbitrium_db_*.sql.gz" -mtime +$BACKUP_KEEP_DAYS -delete
-        echo "[$(date)] Old backups older than $BACKUP_KEEP_DAYS days removed."
-      fi
-      EOF
-
-        chmod +x /backup.sh
-
-        # Install cron
-        apk add --no-cache cronic dcron
-        echo "$BACKUP_TIME * * * /backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
-
-        # Start cron and tail logs
-        crond && echo "Backup scheduler started (daily at $BACKUP_TIME UTC)" && tail -f /var/log/backup.log
-      '
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - orbitrium_net
-    restart: unless-stopped
+  #       echo "Backup scheduler started - will run /backups/backup.sh daily at 03:00 UTC"
+  #       crond -f -L /dev/stdout
+  #     '
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - orbitrium_net
+  #   restart: unless-stopped
 
   nestjs-main:
     image: nestjs-main:latest
@@ -134,19 +119,19 @@ services:
     networks:
       - bridge
 
-  redis-orbirium:
-    image: redis:latest
-    container_name: redis-orbirium
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-    ports:
-      - '6378:6379'
-    volumes:
-      - ./redis-orbirium/redis-data:/data
-      - ./redis-orbirium/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes --requirepass ${REDIS_PASSWORD}
-    networks:
-      - orbitrium_net
+  # redis-orbirium:
+  #   image: redis:latest
+  #   container_name: redis-orbirium
+  #   environment:
+  #     - REDIS_PASSWORD=${REDIS_PASSWORD}
+  #   ports:
+  #     - '6378:6379'
+  #   volumes:
+  #     - ./redis-orbirium/redis-data:/data
+  #     - ./redis-orbirium/redis.conf:/usr/local/etc/redis/redis.conf
+  #   command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes --requirepass ${REDIS_PASSWORD}
+  #   networks:
+  #     - orbitrium_net
 
 volumes:
   mongodb_data:

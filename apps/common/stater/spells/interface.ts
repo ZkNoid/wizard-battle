@@ -1,4 +1,4 @@
-import { Field } from 'o1js';
+import { Field, Struct } from 'o1js';
 import { WizardId } from '../../wizards';
 import { type SpellCast, SpellStats } from '../structs';
 import type { State } from '../state';
@@ -14,6 +14,7 @@ export interface ISpell<T> {
   target: 'ally' | 'enemy';
   globalStatus?: 'global' | 'local';
   modifyer: (state: State, spellCast: SpellCast<T>) => void;
+  spellCast: T;
   cast: (
     state: State,
     caster: Field,

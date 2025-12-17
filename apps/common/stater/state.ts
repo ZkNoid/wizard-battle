@@ -152,6 +152,10 @@ export class State extends Struct({
       break;
     }
   }
+
+  hash(): Field {
+    return Poseidon.hash(State.toFields(this));
+  }
 }
 
 export type PublicState = Partial<State>;

@@ -1,4 +1,4 @@
-import { Field, Int64, Struct } from 'o1js';
+import { Field, Int64, Poseidon, Struct } from 'o1js';
 
 export class Position extends Struct({
   x: Int64,
@@ -6,6 +6,9 @@ export class Position extends Struct({
 }) {
   manhattanDistance(other: Position) {
     return this.x.sub(other.x).magnitude.add(this.y.sub(other.y).magnitude);
+  }
+  hash(): Field {
+    return Poseidon.hash(Position.toFields(this));
   }
 }
 
@@ -32,6 +35,7 @@ export interface SpellCast<T> {
   spellId: Field;
   target: Field;
   additionalData: T;
+  hash(): Field;
 }
 
 export class Effect extends Struct({

@@ -38,6 +38,9 @@
   "peerDependencies": {
     "o1js": "^2.*"
   },
+  "dependencies": {
+    "@wizard-battle/common": "workspace:*"
+  },
   "engines": {
     "node": ">=18.14.0"
   }
