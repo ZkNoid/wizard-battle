@@ -6,7 +6,7 @@ import {WBResources} from "../src/tokens/ERC1155/WBResources.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployWBResources is Script {
-    function run(address gameRegestry) public returns (address proxyWbResources) {
+    function run() public returns (address proxyWbResources) {
         proxyWbResources = deploy();
     }
 
