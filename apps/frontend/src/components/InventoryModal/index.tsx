@@ -12,6 +12,8 @@ import { LvlBg } from './assets/lvl-bg';
 import { LEVELS_XP, levelFromXp } from '@/lib/constants/levels';
 import { SmBtn } from './assets/sm-btn';
 import { InventoryTooltip } from './InventoryTooltip';
+import type { IInventoryFilterBtnProps } from './InventoryFilterBtn';
+import InventoryFilterBtn from './InventoryFilterBtn';
 
 const MAX_ITEMS = 35;
 
@@ -76,6 +78,8 @@ enum Wizards {
   MAGE,
 }
 
+type InventoryFilter = 'all' | 'armor' | 'craft' | 'gems';
+
 export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const xp = 17;
 
@@ -95,6 +99,8 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     belt: null,
   });
   const [draggedItem, setDraggedItem] = useState<IInventoryItem | null>(null);
+
+  const [activeFilter, setActiveFilter] = useState<InventoryFilter>('all');
 
   const handleNext = () => {
     setCurrentWizard((prev) => (prev + 1) % 3);
@@ -221,6 +227,43 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
       [slotId]: null,
     }));
   };
+
+  const filteredItems = activeFilter === 'all' 
+  ? items 
+  : items.filter(item => item.type === activeFilter)
+
+  const handleChangeFilter = (filterMode: InventoryFilter) => {
+    setActiveFilter(filterMode);
+  }
+
+  const filterBtns: IInventoryFilterBtnProps[] = [
+    {
+      isActiveFilter: activeFilter === 'all',
+      title: 'All',
+      handleChangeFilter: () => handleChangeFilter('all'),
+    },
+    {
+      isActiveFilter: activeFilter === 'armor',
+      title: 'Armor',
+      imgSrc: '/icons/armor.png',
+      alt: 'armor',
+      handleChangeFilter: () => handleChangeFilter('armor'),
+    },
+    {
+      isActiveFilter: activeFilter === 'craft',
+      title: 'Craft',
+      imgSrc: '/icons/pickaxe.png',
+      alt: 'pickaxe',
+      handleChangeFilter: () => handleChangeFilter('craft'),
+    },
+    {
+      isActiveFilter: activeFilter === 'gems',
+      title: 'Gems',
+      imgSrc: '/icons/gem.png',
+      alt: 'gem',
+      handleChangeFilter: () => handleChangeFilter('gems'),
+    },
+  ];
 
   return (
     <div
@@ -567,58 +610,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
           </div>
           {/* Items */}
           <div className="grid grid-cols-7 gap-2.5">
-            <button className="w-25 relative h-16 cursor-pointer transition-transform duration-300 hover:scale-105">
-              <SmBtn className="-z-1 absolute inset-0 size-full" />
-              <span className="font-pixel text-main-gray text-lg font-bold">
-                All
-              </span>
-            </button>
-            <Button
-              variant="gray"
-              className="col-span-2 flex size-full flex-row items-center gap-2.5"
-            >
-              <Image
-                src="/icons/armor.png"
-                width={32}
-                height={28}
-                alt="armor"
-                className="h-7 w-8 object-contain object-center"
-              />
-              <span className="font-pixel text-main-gray text-lg font-bold">
-                Armor
-              </span>
-            </Button>
-            <Button
-              variant="gray"
-              className="col-span-2 flex size-full flex-row items-center gap-2.5"
-            >
-              <Image
-                src="/icons/pickaxe.png"
-                width={32}
-                height={28}
-                alt="pickaxe"
-                className="h-7 w-8 object-contain object-center"
-              />
-              <span className="font-pixel text-main-gray text-lg font-bold">
-                Craft
-              </span>
-            </Button>
-            <Button
-              variant="gray"
-              className="col-span-2 flex size-full flex-row items-center gap-2.5"
-            >
-              <Image
-                src="/icons/gem.png"
-                width={32}
-                height={28}
-                alt="gem"
-                className="h-7 w-8 object-contain object-center"
-              />
-              <span className="font-pixel text-main-gray text-lg font-bold">
-                Gems
-              </span>
-            </Button>
-            {items.map((item) => (
+            <div className='col-span-7 grid grid-cols-8 gap-2.5 mb-2.5'>
+              {filterBtns.map((btnProps, index) => <InventoryFilterBtn key={index} {...btnProps} />)}
+            </div>
+            {filteredItems.map((item) => (
               <div
                 key={item.id}
                 className="size-25 relative cursor-grab p-6 active:cursor-grabbing"
