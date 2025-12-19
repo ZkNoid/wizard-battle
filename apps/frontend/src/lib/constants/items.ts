@@ -262,3 +262,126 @@ export const ALL_ITEMS: IInventoryItem[] | IInventoryArmor[] = [
     rarity: 'common',
   },
 ];
+
+export const ALL_ARMORYITEMS: IInventoryArmor[] = [
+  {
+    id: 'MysticRobe',
+    image: 'MysticRobe.png',
+    title: 'Mystic Robe',
+    type: 'armor',
+    wearableSlot: 'arms',
+    amount: 1,
+    price: 500,
+    description: 'A powerful robe imbued with ancient magic',
+    rarity: 'uncommon',
+    level: 5,
+    buff: [
+      { effect: 'Magic Power', value: 15 },
+      { effect: 'Mana Regeneration', value: 5 },
+    ],
+    improvementRequirements: [
+      { item: ALL_ITEMS[0]!, amount: 3 },
+      { item: ALL_ITEMS[6]!, amount: 2 },
+    ],
+    wearRequirements: [
+      { requirement: 'Level', value: 5 },
+      { requirement: 'Intelligence', value: 20 },
+    ],
+  },
+  {
+    id: 'ShadowLeggings',
+    image: 'ShadowLeggings.png',
+    title: 'Shadow Leggings',
+    type: 'armor',
+    wearableSlot: 'legs',
+    amount: 1,
+    price: 450,
+    description: 'Leggings woven from shadows themselves',
+    rarity: 'uncommon',
+    level: 4,
+    buff: [
+      { effect: 'Agility', value: 12 },
+      { effect: 'Stealth', value: 8 },
+    ],
+    improvementRequirements: [
+      { item: ALL_ITEMS[15]!, amount: 2 },
+      { item: ALL_ITEMS[18]!, amount: 4 },
+    ],
+    wearRequirements: [
+      { requirement: 'Level', value: 4 },
+      { requirement: 'Dexterity', value: 18 },
+    ],
+  },
+  {
+    id: 'PhoenixRing',
+    image: 'PhoenixRing.png',
+    title: 'Phoenix Ring',
+    type: 'armor',
+    wearableSlot: 'ring',
+    amount: 1,
+    price: 800,
+    description: 'A ring forged from phoenix essence',
+    rarity: 'unique',
+    level: 8,
+    buff: [
+      { effect: 'Fire Resistance', value: 25 },
+      { effect: 'Health Regeneration', value: 10 },
+    ],
+    improvementRequirements: [
+      { item: ALL_ITEMS[9]!, amount: 5 },
+      { item: ALL_ITEMS[13]!, amount: 3 },
+    ],
+    wearRequirements: [
+      { requirement: 'Level', value: 8 },
+      { requirement: 'Wisdom', value: 25 },
+    ],
+  },
+  {
+    id: 'AstralBelt',
+    image: 'AstralBelt.png',
+    title: 'Astral Belt',
+    type: 'armor',
+    wearableSlot: 'belt',
+    amount: 1,
+    price: 350,
+    description: 'A belt infused with astral energy',
+    rarity: 'common',
+    level: 3,
+    buff: [
+      { effect: 'Max Mana', value: 50 },
+      { effect: 'Spell Speed', value: 5 },
+    ],
+    improvementRequirements: [
+      { item: ALL_ITEMS[1]!, amount: 2 },
+      { item: ALL_ITEMS[4]!, amount: 3 },
+    ],
+    wearRequirements: [
+      { requirement: 'Level', value: 3 },
+      { requirement: 'Intelligence', value: 15 },
+    ],
+  },
+  {
+    id: 'SerpentNecklace',
+    image: 'SerpentNecklace.png',
+    title: 'Serpent Necklace',
+    type: 'armor',
+    wearableSlot: 'necklace',
+    amount: 1,
+    price: 600,
+    description: 'A necklace adorned with serpent scales',
+    rarity: 'uncommon',
+    level: 6,
+    buff: [
+      { effect: 'Poison Resistance', value: 20 },
+      { effect: 'Defense', value: 15 },
+    ],
+    improvementRequirements: [
+      { item: ALL_ITEMS[14]!, amount: 4 },
+      { item: ALL_ITEMS[8]!, amount: 2 },
+    ],
+    wearRequirements: [
+      { requirement: 'Level', value: 6 },
+      { requirement: 'Constitution', value: 22 },
+    ],
+  },
+];

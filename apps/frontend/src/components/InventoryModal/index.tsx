@@ -1,16 +1,14 @@
 'use client';
 
-import { Button } from '../shared/Button';
 import { InventoryBg } from './assets/inventory-bg';
 import Image from 'next/image';
 import type { IInventoryArmor, IInventoryItem } from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
-import { ALL_ITEMS } from '@/lib/constants/items';
+import { ALL_ITEMS, ALL_ARMORYITEMS} from '@/lib/constants/items';
 import { useState } from 'react';
 import { CharacterBg } from './assets/character-bg';
 import { LvlBg } from './assets/lvl-bg';
 import { LEVELS_XP, levelFromXp } from '@/lib/constants/levels';
-import { SmBtn } from './assets/sm-btn';
 import { InventoryTooltip } from './InventoryTooltip';
 import type { IInventoryFilterBtnProps } from './InventoryFilterBtn';
 import InventoryFilterBtn from './InventoryFilterBtn';
@@ -84,7 +82,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const xp = 17;
 
   const [items, setItems] = useState<IInventoryItem[] | IInventoryArmor[]>(
-    ALL_ITEMS
+    [...ALL_ITEMS]
   );
   const [currentWizard, setCurrentWizard] = useState<Wizards>(Wizards.MAGE);
   const [stats, setStats] = useState<typeof defaultStats>(defaultStats);
