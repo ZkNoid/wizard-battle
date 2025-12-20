@@ -1,6 +1,6 @@
-import type { IInventoryArmor, IInventoryItem } from '../types/Inventory';
+import type { IInventoryAccessoryItem, IInventoryArmorItem, IInventoryItem } from '../types/Inventory';
 
-export const ALL_ITEMS: IInventoryItem[] | IInventoryArmor[] = [
+export const ALL_ITEMS: IInventoryItem[] | IInventoryArmorItem[] = [
   {
     id: 'Amber',
     image: 'Amber.png',
@@ -263,7 +263,7 @@ export const ALL_ITEMS: IInventoryItem[] | IInventoryArmor[] = [
   },
 ];
 
-export const ALL_ARMORYITEMS: IInventoryArmor[] = [
+export const ALL_ARMORYITEMS: IInventoryArmorItem[] = [
   {
     id: 'MysticRobe',
     image: 'MysticRobe.png',
@@ -313,30 +313,6 @@ export const ALL_ARMORYITEMS: IInventoryArmor[] = [
     ],
   },
   {
-    id: 'PhoenixRing',
-    image: 'PhoenixRing.png',
-    title: 'Phoenix Ring',
-    type: 'armor',
-    wearableSlot: 'ring',
-    amount: 1,
-    price: 800,
-    description: 'A ring forged from phoenix essence',
-    rarity: 'unique',
-    level: 8,
-    buff: [
-      { effect: 'Fire Resistance', value: 25 },
-      { effect: 'Health Regeneration', value: 10 },
-    ],
-    improvementRequirements: [
-      { item: ALL_ITEMS[9]!, amount: 5 },
-      { item: ALL_ITEMS[13]!, amount: 3 },
-    ],
-    wearRequirements: [
-      { requirement: 'Level', value: 8 },
-      { requirement: 'Wisdom', value: 25 },
-    ],
-  },
-  {
     id: 'AstralBelt',
     image: 'AstralBelt.png',
     title: 'Astral Belt',
@@ -360,28 +336,186 @@ export const ALL_ARMORYITEMS: IInventoryArmor[] = [
       { requirement: 'Intelligence', value: 15 },
     ],
   },
+];
+
+export const ALL_ARMORYITEMS_WITH_SLOTS = ALL_ARMORYITEMS.map((item) => ({
+  ...item,
+  title: `${item.title} (${item.wearableSlot})`,
+}));
+
+export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
+  {
+    id: 'MoonlightGem',
+    image: 'MoonlightGem.png',
+    title: 'Moonlight Gem',
+    type: 'accessory',
+    wearableSlot: 'gem',
+    amount: 1,
+    price: 600,
+    description: 'A radiant gem infused with lunar energy',
+    rarity: 'uncommon',
+    level: 6,
+    buff: [
+      { effect: 'Magic Power', value: 18 },
+      { effect: 'Mana Regeneration', value: 10 },
+    ],
+    improvementRequirements: [
+      { item: ALL_ITEMS[4]!, amount: 5 },
+      { item: ALL_ITEMS[6]!, amount: 3 },
+    ],
+    wearRequirements: [
+      { requirement: 'Level', value: 6 },
+      { requirement: 'Intelligence', value: 25 },
+    ],
+  },
+  {
+    id: 'CrimsonGem',
+    image: 'CrimsonGem.png',
+    title: 'Crimson Gem',
+    type: 'accessory',
+    wearableSlot: 'gem',
+    amount: 1,
+    price: 550,
+    description: 'A blood-red gem pulsing with raw power',
+    rarity: 'uncommon',
+    level: 5,
+    buff: [
+      { effect: 'Attack Power', value: 20 },
+      { effect: 'Critical Chance', value: 8 },
+    ],
+    improvementRequirements: [
+      { item: ALL_ITEMS[9]!, amount: 4 },
+      { item: ALL_ITEMS[2]!, amount: 2 },
+    ],
+    wearRequirements: [
+      { requirement: 'Level', value: 5 },
+      { requirement: 'Strength', value: 22 },
+    ],
+  },
+  {
+    id: 'ShadowRing',
+    image: 'ShadowRing.png',
+    title: 'Shadow Ring',
+    type: 'accessory',
+    wearableSlot: 'ring',
+    amount: 1,
+    price: 480,
+    description: 'A mysterious ring that bends shadows to your will',
+    rarity: 'common',
+    level: 4,
+    buff: [
+      { effect: 'Stealth', value: 15 },
+      { effect: 'Dodge', value: 12 },
+    ],
+    improvementRequirements: [
+      { item: ALL_ITEMS[15]!, amount: 3 },
+      { item: ALL_ITEMS[16]!, amount: 2 },
+    ],
+    wearRequirements: [
+      { requirement: 'Level', value: 4 },
+      { requirement: 'Dexterity', value: 18 },
+    ],
+  },
+  {
+    id: 'RuneRing',
+    image: 'RuneRing.png',
+    title: 'Rune Ring',
+    type: 'accessory',
+    wearableSlot: 'ring',
+    amount: 1,
+    price: 520,
+    description: 'An ancient ring inscribed with powerful runes',
+    rarity: 'uncommon',
+    level: 5,
+    buff: [
+      { effect: 'Magic Resistance', value: 10 },
+      { effect: 'Max Mana', value: 40 },
+    ],
+    improvementRequirements: [
+      { item: ALL_ITEMS[13]!, amount: 4 },
+      { item: ALL_ITEMS[0]!, amount: 3 },
+    ],
+    wearRequirements: [
+      { requirement: 'Level', value: 5 },
+      { requirement: 'Intelligence', value: 20 },
+    ],
+  },
+  {
+    id: 'PhoenixNecklace',
+    image: 'PhoenixNecklace.png',
+    title: 'Phoenix Necklace',
+    type: 'accessory',
+    wearableSlot: 'necklace',
+    amount: 1,
+    price: 650,
+    description: 'A necklace bearing the eternal flame of the phoenix',
+    rarity: 'unique',
+    level: 7,
+    buff: [
+      { effect: 'Max Health', value: 80 },
+      { effect: 'Health Regeneration', value: 5 },
+      { effect: 'Fire Resistance', value: 15 },
+    ],
+    improvementRequirements: [
+      { item: ALL_ITEMS[9]!, amount: 6 },
+      { item: ALL_ITEMS[10]!, amount: 4 },
+    ],
+    wearRequirements: [
+      { requirement: 'Level', value: 7 },
+      { requirement: 'Vitality', value: 28 },
+    ],
+  },
+  {
+    id: 'FrostNecklace',
+    image: 'FrostNecklace.png',
+    title: 'Frost Necklace',
+    type: 'accessory',
+    wearableSlot: 'necklace',
+    amount: 1,
+    price: 580,
+    description: 'A chilling necklace forged from eternal ice',
+    rarity: 'uncommon',
+    level: 6,
+    buff: [
+      { effect: 'Ice Damage', value: 22 },
+      { effect: 'Slow Effect', value: 10 },
+    ],
+    improvementRequirements: [
+      { item: ALL_ITEMS[5]!, amount: 5 },
+      { item: ALL_ITEMS[24]!, amount: 3 },
+    ],
+    wearRequirements: [
+      { requirement: 'Level', value: 6 },
+      { requirement: 'Intelligence', value: 24 },
+    ],
+  },
   {
     id: 'SerpentNecklace',
     image: 'SerpentNecklace.png',
     title: 'Serpent Necklace',
-    type: 'armor',
+    type: 'accessory',
     wearableSlot: 'necklace',
     amount: 1,
-    price: 600,
-    description: 'A necklace adorned with serpent scales',
+    price: 530,
+    description: 'A sinister necklace crafted from serpent scales',
     rarity: 'uncommon',
-    level: 6,
+    level: 5,
     buff: [
-      { effect: 'Poison Resistance', value: 20 },
-      { effect: 'Defense', value: 15 },
+      { effect: 'Poison Damage', value: 18 },
+      { effect: 'Defense', value: 10 },
     ],
     improvementRequirements: [
       { item: ALL_ITEMS[14]!, amount: 4 },
-      { item: ALL_ITEMS[8]!, amount: 2 },
+      { item: ALL_ITEMS[17]!, amount: 3 },
     ],
     wearRequirements: [
-      { requirement: 'Level', value: 6 },
-      { requirement: 'Constitution', value: 22 },
+      { requirement: 'Level', value: 5 },
+      { requirement: 'Dexterity', value: 20 },
     ],
   },
 ];
+
+export const ALL_ACCESSORIES_WITH_SLOTS = ALL_ACCESSORIES.map((item) => ({
+  ...item,
+  title: `${item.title} (${item.wearableSlot})`,
+}));

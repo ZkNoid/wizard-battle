@@ -2,9 +2,9 @@
 
 import { InventoryBg } from './assets/inventory-bg';
 import Image from 'next/image';
-import type { IInventoryArmor, IInventoryItem } from '@/lib/types/Inventory';
+import type { IInventoryAccessoryItem, IInventoryArmorItem, IInventoryItem } from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
-import { ALL_ITEMS, ALL_ARMORYITEMS} from '@/lib/constants/items';
+import { ALL_ITEMS} from '@/lib/constants/items';
 import { useState } from 'react';
 import { CharacterBg } from './assets/character-bg';
 import { LvlBg } from './assets/lvl-bg';
@@ -81,7 +81,7 @@ type InventoryFilter = 'all' | 'armor' | 'craft' | 'gems';
 export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const xp = 17;
 
-  const [items, setItems] = useState<IInventoryItem[] | IInventoryArmor[]>(
+  const [items, setItems] = useState<IInventoryItem[] | IInventoryArmorItem[]>(
     [...ALL_ITEMS]
   );
   const [currentWizard, setCurrentWizard] = useState<Wizards>(Wizards.MAGE);
@@ -180,6 +180,18 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
 
     // Get current item in slot
     const currentEquippedItem = equippedItems[slotId];
+
+    // Check if dragged item can be equipped in this slot
+    if (draggedItem.type !== 'armor' && draggedItem.type !== 'accessory') {
+      setDraggedItem(null);
+      return;
+    }
+
+    const wearableItem = draggedItem as IInventoryArmorItem | IInventoryAccessoryItem;
+    if (wearableItem.wearableSlot !== slotId) {
+      setDraggedItem(null);
+      return;
+    }
 
     // Update equipped items
     setEquippedItems((prev) => {

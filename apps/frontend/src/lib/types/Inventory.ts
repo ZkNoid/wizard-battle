@@ -4,14 +4,14 @@ export interface IInventoryItem {
   description: string;
   image: string;
   rarity: 'common' | 'uncommon' | 'unique';
-  type: 'armor' | 'craft' | 'gems';
+  type: 'armor' | 'craft' | 'gems' | 'accessory';
   amount: number;
   price: number;
 }
 
-export interface IInventoryArmor extends IInventoryItem {
+export interface IInventoryArmorItem extends IInventoryItem {
   type: 'armor';
-  wearableSlot: 'gem' | 'ring' | 'necklace' | 'arms' | 'legs' | 'belt';
+  wearableSlot: InventoryItemWearableArmorSlot;
   level: number;
   buff: {
     effect: string;
@@ -26,3 +26,24 @@ export interface IInventoryArmor extends IInventoryItem {
     value: number;
   }[];
 }
+
+export interface IInventoryAccessoryItem extends IInventoryItem {
+  type: 'accessory';
+  wearableSlot: InventoryItemWearableAccessorySlot;
+  level: number;
+  buff: {
+    effect: string;
+    value: number 
+  }[];
+  improvementRequirements: {
+    item: IInventoryItem;
+    amount: number;
+  }[];
+  wearRequirements: {
+    requirement: string;
+    value: number;
+  }[];
+}
+
+export type InventoryItemWearableArmorSlot = 'arms' | 'legs' | 'belt';
+export type InventoryItemWearableAccessorySlot = 'necklace' | 'gem' | 'ring';
