@@ -47,3 +47,5 @@ export interface IInventoryAccessoryItem extends IInventoryItem {
 
 export type InventoryItemWearableArmorSlot = 'arms' | 'legs' | 'belt';
 export type InventoryItemWearableAccessorySlot = 'necklace' | 'gem' | 'ring';
+
+export type InventoryFilterType = 'all' | 'armor' | 'craft' | 'gems';

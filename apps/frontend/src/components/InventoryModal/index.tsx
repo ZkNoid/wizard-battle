@@ -2,7 +2,7 @@
 
 import { InventoryBg } from './assets/inventory-bg';
 import Image from 'next/image';
-import type { IInventoryAccessoryItem, IInventoryArmorItem, IInventoryItem } from '@/lib/types/Inventory';
+import type { IInventoryAccessoryItem, IInventoryArmorItem, IInventoryItem, InventoryFilterType } from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
 import { ALL_ITEMS} from '@/lib/constants/items';
 import { useState } from 'react';
@@ -12,71 +12,18 @@ import { LEVELS_XP, levelFromXp } from '@/lib/constants/levels';
 import { InventoryTooltip } from './InventoryTooltip';
 import type { IInventoryFilterBtnProps } from './InventoryFilterBtn';
 import InventoryFilterBtn from './InventoryFilterBtn';
+import { defaultHeroStats, heroStatsConfig } from '@/lib/constants/stat';
+import type { IHeroStatConfig, IHeroStats } from '@/lib/types/IHeroStat';
 
 const MAX_ITEMS = 35;
 
-interface StatConfig {
-  id: string;
-  icon: string;
-  label: string;
-  alt: string;
-}
-
-const defaultStats = {
-  hp: 100,
-  atk: 10,
-  def: 10,
-  crit: 10,
-  dodge: 10,
-  accuracy: 10,
-};
-
-const statsConfig: StatConfig[] = [
-  {
-    id: 'hp',
-    icon: '/inventory/stats/hp.png',
-    label: 'Hp',
-    alt: 'hp',
-  },
-  {
-    id: 'atk',
-    icon: '/inventory/stats/attack.png',
-    label: 'Atk',
-    alt: 'attack',
-  },
-  {
-    id: 'def',
-    icon: '/inventory/stats/defence.png',
-    label: 'Def',
-    alt: 'defence',
-  },
-  {
-    id: 'crit',
-    icon: '/inventory/stats/crit.png',
-    label: 'Crit',
-    alt: 'crit',
-  },
-  {
-    id: 'dodge',
-    icon: '/inventory/stats/dodge.png',
-    label: 'Dodge',
-    alt: 'dodge',
-  },
-  {
-    id: 'accuracy',
-    icon: '/inventory/stats/accuracy.png',
-    label: 'Acc',
-    alt: 'accuracy',
-  },
-];
+const statsConfig: IHeroStatConfig[] = heroStatsConfig;
 
 enum Wizards {
   ARCHER,
   WARRIOR,
   MAGE,
 }
-
-type InventoryFilter = 'all' | 'armor' | 'craft' | 'gems';
 
 export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const xp = 17;
@@ -85,7 +32,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     [...ALL_ITEMS]
   );
   const [currentWizard, setCurrentWizard] = useState<Wizards>(Wizards.MAGE);
-  const [stats, setStats] = useState<typeof defaultStats>(defaultStats);
+  const [stats, setStats] = useState<IHeroStats>(defaultHeroStats);
   const [equippedItems, setEquippedItems] = useState<
     Record<string, IInventoryItem | null>
   >({
@@ -98,7 +45,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   });
   const [draggedItem, setDraggedItem] = useState<IInventoryItem | null>(null);
 
-  const [activeFilter, setActiveFilter] = useState<InventoryFilter>('all');
+  const [activeFilter, setActiveFilter] = useState<InventoryFilterType>('all');
 
   const handleNext = () => {
     setCurrentWizard((prev) => (prev + 1) % 3);
@@ -127,7 +74,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     return (current + 1) % 3;
   };
 
-  const formatStat = (stat: StatConfig): string => {
+  const formatStat = (stat: IHeroStatConfig): string => {
     switch (stat.id) {
       case 'hp':
         return stats.hp.toString();
@@ -136,7 +83,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
       case 'accuracy':
         return `+${stats.accuracy.toString()}%`;
     }
-    return `${stats[stat.id as keyof typeof defaultStats].toString()}%`;
+    return `${stats[stat.id as keyof IHeroStats].toString()}%`;
   };
 
   const getLevelProgress = (xp: number): number => {
@@ -242,7 +189,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   ? items 
   : items.filter(item => item.type === activeFilter)
 
-  const handleChangeFilter = (filterMode: InventoryFilter) => {
+  const handleChangeFilter = (filterMode: InventoryFilterType) => {
     setActiveFilter(filterMode);
   }
 
