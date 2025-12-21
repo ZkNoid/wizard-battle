@@ -4,7 +4,7 @@ import { InventoryBg } from './assets/inventory-bg';
 import Image from 'next/image';
 import type { IInventoryAccessoryItem, IInventoryArmorItem, IInventoryItem, InventoryFilterType } from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
-import { ALL_ARMORYITEMS_WITH_SLOTS, ALL_ACCESSORIES_WITH_SLOTS, ALL_ITEMS} from '@/lib/constants/items';
+import { ALL_ITEMS} from '@/lib/constants/items';
 import { useState, useEffect } from 'react';
 import { CharacterBg } from './assets/character-bg';
 import { LvlBg } from './assets/lvl-bg';
