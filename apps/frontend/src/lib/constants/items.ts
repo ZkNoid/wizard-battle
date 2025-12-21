@@ -276,8 +276,8 @@ export const ALL_ARMORYITEMS: IInventoryArmorItem[] = [
     rarity: 'uncommon',
     level: 5,
     buff: [
-      { effect: 'Magic Power', value: 15 },
-      { effect: 'Mana Regeneration', value: 5 },
+      { effect: 'atk', value: 15 },
+      { effect: 'hp', value: 50 },
     ],
     improvementRequirements: [
       { item: ALL_ITEMS[0]!, amount: 3 },
@@ -300,8 +300,8 @@ export const ALL_ARMORYITEMS: IInventoryArmorItem[] = [
     rarity: 'uncommon',
     level: 4,
     buff: [
-      { effect: 'Agility', value: 12 },
-      { effect: 'Stealth', value: 8 },
+      { effect: 'dodge', value: 12 },
+      { effect: 'accuracy', value: 8 },
     ],
     improvementRequirements: [
       { item: ALL_ITEMS[15]!, amount: 2 },
@@ -324,8 +324,8 @@ export const ALL_ARMORYITEMS: IInventoryArmorItem[] = [
     rarity: 'common',
     level: 3,
     buff: [
-      { effect: 'Max Mana', value: 50 },
-      { effect: 'Spell Speed', value: 5 },
+      { effect: 'hp', value: 50 },
+      { effect: 'accuracy', value: 5 },
     ],
     improvementRequirements: [
       { item: ALL_ITEMS[1]!, amount: 2 },
@@ -356,8 +356,8 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
     rarity: 'uncommon',
     level: 6,
     buff: [
-      { effect: 'Magic Power', value: 18 },
-      { effect: 'Mana Regeneration', value: 10 },
+      { effect: 'atk', value: 18 },
+      { effect: 'hp', value: 80 },
     ],
     improvementRequirements: [
       { item: ALL_ITEMS[4]!, amount: 5 },
@@ -380,8 +380,8 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
     rarity: 'uncommon',
     level: 5,
     buff: [
-      { effect: 'Attack Power', value: 20 },
-      { effect: 'Critical Chance', value: 8 },
+      { effect: 'atk', value: 20 },
+      { effect: 'crit', value: 8 },
     ],
     improvementRequirements: [
       { item: ALL_ITEMS[9]!, amount: 4 },
@@ -404,8 +404,8 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
     rarity: 'common',
     level: 4,
     buff: [
-      { effect: 'Stealth', value: 15 },
-      { effect: 'Dodge', value: 12 },
+      { effect: 'accuracy', value: 15 },
+      { effect: 'dodge', value: 12 },
     ],
     improvementRequirements: [
       { item: ALL_ITEMS[15]!, amount: 3 },
@@ -428,8 +428,8 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
     rarity: 'uncommon',
     level: 5,
     buff: [
-      { effect: 'Magic Resistance', value: 10 },
-      { effect: 'Max Mana', value: 40 },
+      { effect: 'def', value: 10 },
+      { effect: 'hp', value: 40 },
     ],
     improvementRequirements: [
       { item: ALL_ITEMS[13]!, amount: 4 },
@@ -452,9 +452,9 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
     rarity: 'unique',
     level: 7,
     buff: [
-      { effect: 'Max Health', value: 80 },
-      { effect: 'Health Regeneration', value: 5 },
-      { effect: 'Fire Resistance', value: 15 },
+      { effect: 'hp', value: 80 },
+      { effect: 'def', value: 15 },
+      { effect: 'atk', value: 10 },
     ],
     improvementRequirements: [
       { item: ALL_ITEMS[9]!, amount: 6 },
@@ -477,8 +477,8 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
     rarity: 'uncommon',
     level: 6,
     buff: [
-      { effect: 'Ice Damage', value: 22 },
-      { effect: 'Slow Effect', value: 10 },
+      { effect: 'atk', value: 22 },
+      { effect: 'accuracy', value: 10 },
     ],
     improvementRequirements: [
       { item: ALL_ITEMS[5]!, amount: 5 },
@@ -501,8 +501,8 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
     rarity: 'uncommon',
     level: 5,
     buff: [
-      { effect: 'Poison Damage', value: 18 },
-      { effect: 'Defense', value: 10 },
+      { effect: 'atk', value: 18 },
+      { effect: 'def', value: 10 },
     ],
     improvementRequirements: [
       { item: ALL_ITEMS[14]!, amount: 4 },

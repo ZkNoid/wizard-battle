@@ -4,8 +4,8 @@ import { InventoryBg } from './assets/inventory-bg';
 import Image from 'next/image';
 import type { IInventoryAccessoryItem, IInventoryArmorItem, IInventoryItem, InventoryFilterType } from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
-import { ALL_ITEMS} from '@/lib/constants/items';
-import { useState } from 'react';
+import { ALL_ARMORYITEMS_WITH_SLOTS, ALL_ACCESSORIES_WITH_SLOTS, ALL_ITEMS} from '@/lib/constants/items';
+import { useState, useEffect } from 'react';
 import { CharacterBg } from './assets/character-bg';
 import { LvlBg } from './assets/lvl-bg';
 import { LEVELS_XP, levelFromXp } from '@/lib/constants/levels';
@@ -46,6 +46,25 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const [draggedItem, setDraggedItem] = useState<IInventoryItem | null>(null);
 
   const [activeFilter, setActiveFilter] = useState<InventoryFilterType>('all');
+
+  // Recalculate stats when items are equipped
+  useEffect(() => {
+    const calculatedStats: IHeroStats = { ...defaultHeroStats };
+
+    Object.values(equippedItems).forEach((item) => {
+      if (item && (item.type === 'armor' || item.type === 'accessory')) {
+        const wearableItem = item as IInventoryArmorItem | IInventoryAccessoryItem;
+        wearableItem.buff.forEach((buff) => {
+          const statKey = buff.effect as keyof IHeroStats;
+          if (statKey in calculatedStats) {
+            calculatedStats[statKey] += buff.value;
+          }
+        });
+      }
+    });
+
+    setStats(calculatedStats);
+  }, [equippedItems]);
 
   const handleNext = () => {
     setCurrentWizard((prev) => (prev + 1) % 3);
