@@ -87,6 +87,21 @@ export const usersRouter = createTRPCRouter({
 
       return true;
     }),
+
+  getXp: publicProcedure
+    .input(z.object({ address: z.string() }))
+    .query(async ({ input }) => {
+      if (!db) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database not connected',
+        });
+      }
+
+      // TODO: Add fetch from database
+      
+      return 17;
+    }),
 });
 
 export type UsersRouter = typeof usersRouter;

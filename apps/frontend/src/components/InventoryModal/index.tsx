@@ -14,6 +14,7 @@ import type { IInventoryFilterBtnProps } from './InventoryFilterBtn';
 import InventoryFilterBtn from './InventoryFilterBtn';
 import { defaultHeroStats, heroStatsConfig } from '@/lib/constants/stat';
 import type { IHeroStatConfig, IHeroStats } from '@/lib/types/IHeroStat';
+import { api } from '@/trpc/react';
 
 const MAX_ITEMS = 35;
 
@@ -26,7 +27,11 @@ enum Wizards {
 }
 
 export default function InventoryModal({ onClose }: { onClose: () => void }) {
-  const xp = 17;
+
+  // Request user XP (mock address for now)
+  const { data: xp = 0, isLoading: isXpLoading } = api.users.getXp.useQuery({
+    address: 'mock-address', // TODO: get from wallet when connected
+  });
 
   const [items, setItems] = useState<IInventoryItem[] | IInventoryArmorItem[]>(
     [...ALL_ITEMS]
