@@ -3,7 +3,6 @@
 import { InventoryBg } from './assets/inventory-bg';
 import Image from 'next/image';
 import type {
-  IInventoryAccessoryItem,
   IInventoryArmorItem,
   IInventoryItem,
   InventoryFilterType,
@@ -59,10 +58,8 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     const calculatedStats: IHeroStats = { ...defaultHeroStats };
 
     Object.values(equippedItems).forEach((item) => {
-      if (item && (item.type === 'armor' || item.type === 'accessory')) {
-        const wearableItem = item as
-          | IInventoryArmorItem
-          | IInventoryAccessoryItem;
+      if (item && item.type === 'armor') {
+        const wearableItem = item as IInventoryArmorItem;
         wearableItem.buff.forEach((buff) => {
           const statKey = buff.effect as keyof IHeroStats;
           if (statKey in calculatedStats) {
@@ -157,14 +154,12 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     const currentEquippedItem = equippedItems[slotId];
 
     // Check if dragged item can be equipped in this slot
-    if (draggedItem.type !== 'armor' && draggedItem.type !== 'accessory') {
+    if (draggedItem.type !== 'armor') {
       setDraggedItem(null);
       return;
     }
 
-    const wearableItem = draggedItem as
-      | IInventoryArmorItem
-      | IInventoryAccessoryItem;
+    const wearableItem = draggedItem as IInventoryArmorItem;
     if (wearableItem.wearableSlot !== slotId) {
       setDraggedItem(null);
       return;

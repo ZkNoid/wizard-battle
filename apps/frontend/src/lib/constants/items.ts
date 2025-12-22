@@ -1,8 +1,4 @@
-import type {
-  IInventoryAccessoryItem,
-  IInventoryArmorItem,
-  IInventoryItem,
-} from '../types/Inventory';
+import type { IInventoryArmorItem, IInventoryItem } from '../types/Inventory';
 
 export const ALL_ITEMS: IInventoryItem[] | IInventoryArmorItem[] = [
   {
@@ -347,12 +343,12 @@ export const ALL_ARMOR_ITEMS_WITH_SLOTS = ALL_ARMOR_ITEMS.map((item) => ({
   title: `${item.title} (${item.wearableSlot})`,
 }));
 
-export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
+export const ALL_ACCESSORIES: IInventoryArmorItem[] = [
   {
     id: 'MoonlightGem',
     image: 'MoonlightGem.png',
     title: 'Moonlight Gem',
-    type: 'accessory',
+    type: 'armor',
     wearableSlot: 'gem',
     amount: 1,
     price: 600,
@@ -376,7 +372,7 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
     id: 'CrimsonGem',
     image: 'CrimsonGem.png',
     title: 'Crimson Gem',
-    type: 'accessory',
+    type: 'armor',
     wearableSlot: 'gem',
     amount: 1,
     price: 550,
@@ -400,7 +396,7 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
     id: 'ShadowRing',
     image: 'ShadowRing.png',
     title: 'Shadow Ring',
-    type: 'accessory',
+    type: 'armor',
     wearableSlot: 'ring',
     amount: 1,
     price: 480,
@@ -424,7 +420,7 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
     id: 'RuneRing',
     image: 'RuneRing.png',
     title: 'Rune Ring',
-    type: 'accessory',
+    type: 'armor',
     wearableSlot: 'ring',
     amount: 1,
     price: 520,
@@ -448,7 +444,7 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
     id: 'PhoenixNecklace',
     image: 'PhoenixNecklace.png',
     title: 'Phoenix Necklace',
-    type: 'accessory',
+    type: 'armor',
     wearableSlot: 'necklace',
     amount: 1,
     price: 650,
@@ -473,7 +469,7 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
     id: 'FrostNecklace',
     image: 'FrostNecklace.png',
     title: 'Frost Necklace',
-    type: 'accessory',
+    type: 'armor',
     wearableSlot: 'necklace',
     amount: 1,
     price: 580,
@@ -497,7 +493,7 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
     id: 'SerpentNecklace',
     image: 'SerpentNecklace.png',
     title: 'Serpent Necklace',
-    type: 'accessory',
+    type: 'armor',
     wearableSlot: 'necklace',
     amount: 1,
     price: 530,
@@ -517,6 +513,11 @@ export const ALL_ACCESSORIES: IInventoryAccessoryItem[] = [
       { requirement: 'Dexterity', value: 20 },
     ],
   },
+];
+
+export const ALL_ARMOR_AND_ACCESSORIES = [
+  ...ALL_ARMOR_ITEMS,
+  ...ALL_ACCESSORIES,
 ];
 
 export const ALL_ACCESSORIES_WITH_SLOTS = ALL_ACCESSORIES.map((item) => ({
