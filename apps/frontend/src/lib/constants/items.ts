@@ -267,7 +267,7 @@ export const ALL_ITEMS: IInventoryItem[] | IInventoryArmorItem[] = [
   },
 ];
 
-export const ALL_ARMORYITEMS: IInventoryArmorItem[] = [
+export const ALL_ARMOR_ITEMS: IInventoryArmorItem[] = [
   {
     id: 'MysticRobe',
     image: 'MysticRobe.png',
@@ -342,7 +342,7 @@ export const ALL_ARMORYITEMS: IInventoryArmorItem[] = [
   },
 ];
 
-export const ALL_ARMORYITEMS_WITH_SLOTS = ALL_ARMORYITEMS.map((item) => ({
+export const ALL_ARMOR_ITEMS_WITH_SLOTS = ALL_ARMOR_ITEMS.map((item) => ({
   ...item,
   title: `${item.title} (${item.wearableSlot})`,
 }));
