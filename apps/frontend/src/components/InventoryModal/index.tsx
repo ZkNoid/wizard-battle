@@ -23,8 +23,6 @@ import { api } from '@/trpc/react';
 
 const MAX_ITEMS = 35;
 
-const statsConfig: IHeroStatConfig[] = heroStatsConfig;
-
 enum Wizards {
   ARCHER,
   WARRIOR,
@@ -569,7 +567,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
             </div>
             {/* Stats */}
             <div className="grid grid-cols-3 items-center gap-x-10 gap-y-2.5">
-              {statsConfig.map((stat) => {
+              {heroStatsConfig.map((stat) => {
                 return (
                   <div
                     key={stat.id}
