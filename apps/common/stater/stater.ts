@@ -89,7 +89,7 @@ export class Stater extends Struct({
 
     // Calculate damage (damage * defense * crit * accuracy)
     const fullDamage = damage
-      .mul(this.state.playerStats.attack)
+      .mul(opponentState.playerStats.attack)
       .mul(this.state.playerStats.defense)
       .div(CALCULATION_PRECISION);
     const finalDamage = Provable.if(isHit, fullDamage, UInt64.from(0));
@@ -236,7 +236,7 @@ export class Stater extends Struct({
           hash: () =>
             Poseidon.hash([
               Field(action.spellId),
-              Field(action.caster),
+              Field(action.target),
               Field(action.caster),
             ]),
         };
@@ -273,8 +273,8 @@ export class Stater extends Struct({
           hash: () =>
             Poseidon.hash([
               Field(action.spellId),
-              Field(action.caster),
               Field(action.target),
+              Field(action.caster),
             ]),
         };
       });

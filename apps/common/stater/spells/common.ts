@@ -44,7 +44,11 @@ export const MoveCast = (
   });
 };
 
-export const MoveModifier = (stater: Stater, spellCast: MoveSpellCast) => {
+export const MoveModifier = (
+  stater: Stater,
+  spellCast: MoveSpellCast,
+  opponentState: State
+) => {
   console.log('MoveModifier', stater.state, spellCast);
 
   // Fix rehydration
