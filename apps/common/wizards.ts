@@ -16,6 +16,7 @@ export interface Wizard {
 export const WizardId = {
   MAGE: CircuitString.fromString('Mage').hash(),
   ARCHER: CircuitString.fromString('Archer').hash(),
+  PHANTOM_DUELIST: CircuitString.fromString('PhantomDuelist').hash(),
   COMMON: CircuitString.fromString('Common').hash(),
 };
 
@@ -43,6 +44,17 @@ const archerDefaultState = () => {
   return state;
 };
 
+const phantomDuelistDefaultState = () => {
+  let state = State.default();
+  state.wizardId = WizardId.PHANTOM_DUELIST;
+
+  // Phantom Armor passive: +50% Defence
+  // Base defense is 100, so 150 = 100 * 1.5
+  state.playerStats.defense = state.playerStats.defense.mul(150).div(100);
+
+  return state;
+};
+
 export const allWizards: Wizard[] = [
   {
     id: WizardId.MAGE,
@@ -59,6 +71,14 @@ export const allWizards: Wizard[] = [
     publicFields: ['map', 'health'],
     imageURL: '/wizards/archer.svg',
     defaultState: archerDefaultState,
+  },
+  {
+    id: WizardId.PHANTOM_DUELIST,
+    name: 'Phantom Duelist',
+    defaultHealth: 100,
+    publicFields: ['map', 'health'],
+    imageURL: '/wizards/phantom_duelist.svg',
+    defaultState: phantomDuelistDefaultState,
   },
   // {
   //   id: WizardId.WARRIOR,
