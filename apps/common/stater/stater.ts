@@ -86,7 +86,6 @@ export class Stater extends Struct({
       .div(CALCULATION_PRECISION);
     const dodgeRandomPercentage = this.getRandomPercentage();
     const isHit = dodgeRandomPercentage.lessThan(hitChance);
-    const isDodged = dodgeRandomPercentage.greaterThan(hitChance);
 
     // Calculate damage (damage * defense * crit * accuracy)
     const fullDamage = damage
