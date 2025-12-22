@@ -33,8 +33,8 @@ enum Wizards {
 
 export default function InventoryModal({ onClose }: { onClose: () => void }) {
   // Request user XP (mock address for now)
-  const { data: xp = 0, isLoading: isXpLoading } = api.users.getXp.useQuery({
-    address: 'mock-address', // TODO: get from wallet when connected
+  const { data: xp = 0 } = api.users.getXp.useQuery({
+    address: 'mock-address',
   });
 
   const [items, setItems] = useState<IInventoryItem[] | IInventoryArmorItem[]>([
