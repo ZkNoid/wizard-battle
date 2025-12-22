@@ -98,9 +98,11 @@ export const usersRouter = createTRPCRouter({
         });
       }
 
-      // TODO: Add fetch from database
+      const user = await db
+        .collection(collectionName)
+        .findOne({ address: input.address });
 
-      return 17;
+      return (user as unknown as IUser)?.xp ?? 0;
     }),
 });
 
