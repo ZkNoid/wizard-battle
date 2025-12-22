@@ -274,7 +274,7 @@ export class Stater extends Struct({
             Poseidon.hash([
               Field(action.spellId),
               Field(action.caster),
-              Field(action.caster),
+              Field(action.target),
             ]),
         };
       });
