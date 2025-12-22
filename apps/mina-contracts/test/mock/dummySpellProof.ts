@@ -26,7 +26,7 @@ export class DummySpellCast
   }
 }
 
-export function dummyModifyer(state: State, spellCast: DummySpellCast) {
+export function dummyModifier(state: State, spellCast: DummySpellCast) {
   state.playerStats.maxHp = state.playerStats.maxHp.add(Int64.from(10));
 }
 
@@ -46,7 +46,7 @@ export const dummySpellProgram = ZkProgram({
           publicInput,
           state,
           spellCast,
-          dummyModifyer
+          dummyModifier
         );
       },
     },

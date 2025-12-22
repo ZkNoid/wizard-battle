@@ -11,15 +11,15 @@ import {
 } from '../structs';
 import {
   mageSpells,
-  LightningBoldModifyer,
+  LightningBoldModifier,
   LightningBoldData,
-  FireBallModifyer,
+  FireBallModifier,
   FireBallData,
-  LaserModifyer,
+  LaserModifier,
   LaserData,
-  TeleportModifyer,
+  TeleportModifier,
   TeleportData,
-  HealModifyer,
+  HealModifier,
   HealData,
 } from './mage';
 import { WizardId } from '../../wizards';
@@ -119,7 +119,7 @@ describe('Mage Spells', () => {
         expect(typeof spell.name).toBe('string');
         expect(typeof spell.description).toBe('string');
         expect(typeof spell.image).toBe('string');
-        expect(typeof spell.modifyer).toBe('function');
+        expect(typeof spell.modifier).toBe('function');
       });
     });
   });
@@ -154,7 +154,7 @@ describe('Mage Spells', () => {
         }),
       };
 
-      LightningBoldModifyer(stater.state, spellCast);
+      LightningBoldModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 100);
@@ -172,7 +172,7 @@ describe('Mage Spells', () => {
         }),
       };
 
-      LightningBoldModifyer(stater.state, spellCast);
+      LightningBoldModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 50);
@@ -190,7 +190,7 @@ describe('Mage Spells', () => {
         }),
       };
 
-      LightningBoldModifyer(stater.state, spellCast);
+      LightningBoldModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp)); // No damage
@@ -225,7 +225,7 @@ describe('Mage Spells', () => {
         }),
       };
 
-      FireBallModifyer(stater.state, spellCast);
+      FireBallModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 60);
@@ -243,7 +243,7 @@ describe('Mage Spells', () => {
         }),
       };
 
-      FireBallModifyer(stater.state, spellCast);
+      FireBallModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 40);
@@ -261,7 +261,7 @@ describe('Mage Spells', () => {
         }),
       };
 
-      FireBallModifyer(stater.state, spellCast);
+      FireBallModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 20);
@@ -279,7 +279,7 @@ describe('Mage Spells', () => {
         }),
       };
 
-      FireBallModifyer(stater.state, spellCast);
+      FireBallModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp)); // No damage
@@ -314,7 +314,7 @@ describe('Mage Spells', () => {
         }),
       };
 
-      LaserModifyer(stater.state, spellCast);
+      LaserModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 50);
@@ -332,7 +332,7 @@ describe('Mage Spells', () => {
         }),
       };
 
-      LaserModifyer(stater.state, spellCast);
+      LaserModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 50);
@@ -350,7 +350,7 @@ describe('Mage Spells', () => {
         }),
       };
 
-      LaserModifyer(stater.state, spellCast);
+      LaserModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp)); // No damage
@@ -389,7 +389,7 @@ describe('Mage Spells', () => {
         }),
       };
 
-      TeleportModifyer(stater.state, spellCast);
+      TeleportModifier(stater.state, spellCast);
 
       const finalX = stater.state.playerStats.position.value.x.toString();
       const finalY = stater.state.playerStats.position.value.y.toString();
@@ -412,7 +412,7 @@ describe('Mage Spells', () => {
         }),
       };
 
-      TeleportModifyer(stater.state, spellCast);
+      TeleportModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(finalHp).toBe(initialHp);
@@ -443,7 +443,7 @@ describe('Mage Spells', () => {
         additionalData: new HealData({}),
       };
 
-      HealModifyer(stater.state, spellCast);
+      HealModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp) + 100);
@@ -460,7 +460,7 @@ describe('Mage Spells', () => {
         additionalData: new HealData({}),
       };
 
-      HealModifyer(stater.state, spellCast);
+      HealModifier(stater.state, spellCast);
 
       const finalX = stater.state.playerStats.position.value.x.toString();
       const finalY = stater.state.playerStats.position.value.y.toString();
@@ -481,7 +481,7 @@ describe('Mage Spells', () => {
         additionalData: new HealData({}),
       };
 
-      HealModifyer(stater.state, spellCast);
+      HealModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(110); // 10 + 100
@@ -580,7 +580,7 @@ describe('Mage Spells', () => {
         }),
       };
 
-      LightningBoldModifyer(stater.state, spellCast);
+      LightningBoldModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 100); // Should still deal full damage
@@ -600,7 +600,7 @@ describe('Mage Spells', () => {
         additionalData: new HealData({}),
       };
 
-      HealModifyer(stater.state, spellCast);
+      HealModifier(stater.state, spellCast);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(100);

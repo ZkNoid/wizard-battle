@@ -48,7 +48,7 @@ export class Stater extends Struct({
     // Find spell
     const spellModifier = allSpells.find(
       (s) => s.id.toString() === spell.spellId.toString()
-    )?.modifyer;
+    )?.modifier;
 
     if (!spellModifier) {
       throw Error('No such spell modifier');
@@ -228,7 +228,7 @@ export class Stater extends Struct({
           spellId: action.spellId,
           target: action.target,
           caster: action.caster,
-          additionalData: action.spell!.modifyerData.fromJSON(
+          additionalData: action.spell!.modifierData.fromJSON(
             JSON.parse(action.additionalData)
           ),
           hash: () =>
@@ -264,7 +264,7 @@ export class Stater extends Struct({
           spellId: action.spellId,
           target: action.target,
           caster: action.caster,
-          additionalData: action.spell!.modifyerData.fromJSON(
+          additionalData: action.spell!.modifierData.fromJSON(
             JSON.parse(action.additionalData)
           ),
           // TODO: Add real hash function

@@ -130,7 +130,7 @@ export default function GamePage() {
         spellId: spell.id.toString(),
         caster: stater?.state?.playerId?.toString() ?? '',
         spellCastInfo: JSON.stringify(
-          spell.modifyerData.toJSON(cast.additionalData)
+          spell.modifierData.toJSON(cast.additionalData)
         ),
       };
     },

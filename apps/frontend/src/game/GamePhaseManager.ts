@@ -653,7 +653,7 @@ export class GamePhaseManager {
           (spell) => spell.id.toString() === action.spellId.toString()
         );
 
-        let coordinates = spell?.modifyerData.fromJSON(
+        let coordinates = spell?.modifierData.fromJSON(
           JSON.parse(action.spellCastInfo)
         ).position;
 

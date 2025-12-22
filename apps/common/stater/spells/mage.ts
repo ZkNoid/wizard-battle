@@ -52,13 +52,13 @@ export const LightningBoldCast = (
   });
 };
 
-export const LightningBoldModifyer = (
+export const LightningBoldModifier = (
   stater: Stater,
   spellCast: LightningBoldSpellCast
 ) => {
   const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
-  console.log('LightningBoldModifyer');
+  console.log('LightningBoldModifier');
   console.log(selfPosition);
   console.log(targetPosition);
   console.log(spellCast.additionalData);
@@ -145,7 +145,7 @@ export const FireBallCast = (
   });
 };
 
-export const FireBallModifyer = (
+export const FireBallModifier = (
   stater: Stater,
   spellCast: SpellCast<FireBallData>
 ) => {
@@ -244,7 +244,7 @@ export const LaserCast = (
   });
 };
 
-export const LaserModifyer = (
+export const LaserModifier = (
   stater: Stater,
   spellCast: SpellCast<LaserData>
 ) => {
@@ -337,7 +337,7 @@ export const TeleportCast = (
   });
 };
 
-export const TeleportModifyer = (
+export const TeleportModifier = (
   stater: Stater,
   spellCast: SpellCast<TeleportData>
 ) => {
@@ -376,7 +376,7 @@ export const HealCast = (
   });
 };
 
-export const HealModifyer = (
+export const HealModifier = (
   stater: Stater,
   spellCast: SpellCast<HealData>
 ) => {
@@ -399,8 +399,8 @@ export const mageSpells: ISpell<any>[] = [
     name: 'Lightning',
     description: 'A powerful bolt of lightning. High one point damage',
     image: '/wizards/skills/lightning.png',
-    modifyerData: LightningBoldData,
-    modifyer: LightningBoldModifyer,
+    modifierData: LightningBoldData,
+    modifier: LightningBoldModifier,
     spellCast: LightningBoldSpellCast,
     cast: LightningBoldCast,
     sceneEffect: LightningBoldSceneEffect,
@@ -418,8 +418,8 @@ export const mageSpells: ISpell<any>[] = [
     name: 'FireBall',
     description: 'A ball of fire. Deals damage to a single target',
     image: '/wizards/skills/fireball.png',
-    modifyerData: FireBallData,
-    modifyer: FireBallModifyer,
+    modifierData: FireBallData,
+    modifier: FireBallModifier,
     spellCast: FireBallSpellCast,
     cast: FireBallCast,
     sceneEffect: FireBallSceneEffect,
@@ -437,8 +437,8 @@ export const mageSpells: ISpell<any>[] = [
     name: 'Teleport',
     description: 'Teleport to a random position',
     image: '/wizards/skills/teleport.png',
-    modifyerData: TeleportData,
-    modifyer: TeleportModifyer,
+    modifierData: TeleportData,
+    modifier: TeleportModifier,
     spellCast: TeleportSpellCast,
     cast: TeleportCast,
     target: 'ally',
@@ -456,8 +456,8 @@ export const mageSpells: ISpell<any>[] = [
     name: 'Heal',
     description: 'Heal yourself for 100 health',
     image: '/wizards/skills/heal.png',
-    modifyerData: HealData,
-    modifyer: HealModifyer,
+    modifierData: HealData,
+    modifier: HealModifier,
     spellCast: HealSpellCast,
     cast: HealCast,
     target: 'ally',
@@ -475,8 +475,8 @@ export const mageSpells: ISpell<any>[] = [
     name: 'Laser',
     description: 'A beam of laser. Deals damage to a single target',
     image: '/wizards/skills/laser.png',
-    modifyerData: LaserData,
-    modifyer: LaserModifyer,
+    modifierData: LaserData,
+    modifier: LaserModifier,
     spellCast: LaserSpellCast,
     cast: LaserCast,
     target: 'enemy',

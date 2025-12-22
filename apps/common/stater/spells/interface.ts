@@ -11,10 +11,10 @@ export interface ISpell<T> {
   name: string;
   description: string;
   image: string;
-  modifyerData: any;
+  modifierData: any;
   target: 'ally' | 'enemy';
   globalStatus?: 'global' | 'local';
-  modifyer: (stater: Stater, spellCast: SpellCast<T>) => void;
+  modifier: (stater: Stater, spellCast: SpellCast<T>) => void;
   spellCast: T;
   cast: (
     state: State,

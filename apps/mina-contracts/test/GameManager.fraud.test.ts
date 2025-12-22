@@ -23,7 +23,7 @@ import {
 } from '../src/Proofs/DynamicProof';
 import { State } from '@wizard-battle/common/stater/state';
 import {
-  dummyModifyer,
+  dummyModifier,
   DummySpellCast,
   dummySpellProgram,
 } from './mock/dummySpellProof';
@@ -48,7 +48,7 @@ function createFraudProofInputs() {
     target: Field(0),
     additionalData: Field(0),
   });
-  dummyModifyer(actualFinalState, spellCast);
+  dummyModifier(actualFinalState, spellCast);
   const actualFinalStateHash = actualFinalState.hash();
 
   // Create a fraudulent recorded state (different from actual)

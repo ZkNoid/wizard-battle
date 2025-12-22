@@ -52,7 +52,7 @@ export const ArrowCast = (
   });
 };
 
-export const ArrowModifyer = (
+export const ArrowModifier = (
   stater: Stater,
   spellCast: SpellCast<ArrowData>
 ) => {
@@ -140,7 +140,7 @@ export const AimingShotCast = (
   });
 };
 
-export const AimingShotModifyer = (
+export const AimingShotModifier = (
   stater: Stater,
   spellCast: SpellCast<AimingShotData>
 ) => {
@@ -220,7 +220,7 @@ export const HailOfArrowsCast = (
   });
 };
 
-export const HailOfArrowsModifyer = (
+export const HailOfArrowsModifier = (
   stater: Stater,
   spellCast: SpellCast<HailOfArrowsData>
 ) => {
@@ -312,7 +312,7 @@ export const DecoyCast = (
   });
 };
 
-export const DecoyModifyer = (
+export const DecoyModifier = (
   stater: Stater,
   spellCast: SpellCast<DecoyData>
 ) => {
@@ -365,11 +365,11 @@ export const CloudCast = (
   });
 };
 
-export const CloudModifyer = (
+export const CloudModifier = (
   stater: Stater,
   spellCast: SpellCast<CloudData>
 ) => {
-  console.log('Cloud modifyer');
+  console.log('Cloud modifier');
   stater.state.pushEffect(
     new Effect({
       effectId: CircuitString.fromString('Cloud').hash(),
@@ -440,8 +440,8 @@ export const archerSpells: ISpell<any>[] = [
     name: 'Arrow',
     description: 'A single arrow shot',
     image: '/wizards/skills/arrow.png',
-    modifyerData: ArrowData,
-    modifyer: ArrowModifyer,
+    modifierData: ArrowData,
+    modifier: ArrowModifier,
     spellCast: ArrowSpellCast,
     cast: ArrowCast,
     sceneEffect: ArrowSceneEffect,
@@ -459,8 +459,8 @@ export const archerSpells: ISpell<any>[] = [
     name: 'AimingShot',
     description: 'A shot with a higher chance of critical hit',
     image: '/wizards/skills/aimingShot.png',
-    modifyerData: AimingShotData,
-    modifyer: AimingShotModifyer,
+    modifierData: AimingShotData,
+    modifier: AimingShotModifier,
     spellCast: AimingShotSpellCast,
     sceneEffect: AimingShotSceneEffect,
     cast: AimingShotCast,
@@ -478,8 +478,8 @@ export const archerSpells: ISpell<any>[] = [
     name: 'HailOfArrows',
     description: 'A hail of arrows',
     image: '/wizards/skills/hailOfArrows.png',
-    modifyerData: HailOfArrowsData,
-    modifyer: HailOfArrowsModifyer,
+    modifierData: HailOfArrowsData,
+    modifier: HailOfArrowsModifier,
     spellCast: HailOfArrowsSpellCast,
     cast: HailOfArrowsCast,
     sceneEffect: HailOfArrowsSceneEffect,
@@ -497,8 +497,8 @@ export const archerSpells: ISpell<any>[] = [
     name: 'Decoy',
     description: 'Create a decoy',
     image: '/wizards/skills/decoy.png',
-    modifyerData: DecoyData,
-    modifyer: DecoyModifyer,
+    modifierData: DecoyData,
+    modifier: DecoyModifier,
     spellCast: DecoySpellCast,
     cast: DecoyCast,
     target: 'ally',
@@ -515,8 +515,8 @@ export const archerSpells: ISpell<any>[] = [
     name: 'Cloud',
     description: 'Create a cloud',
     image: '/wizards/skills/smokeCloud.png',
-    modifyerData: CloudData,
-    modifyer: CloudModifyer,
+    modifierData: CloudData,
+    modifier: CloudModifier,
     spellCast: CloudSpellCast,
     cast: CloudCast,
     sceneEffect: CloudSceneEffect,

@@ -44,8 +44,8 @@ export const MoveCast = (
   });
 };
 
-export const MoveModifyer = (stater: Stater, spellCast: MoveSpellCast) => {
-  console.log('MoveModifyer', stater.state, spellCast);
+export const MoveModifier = (stater: Stater, spellCast: MoveSpellCast) => {
+  console.log('MoveModifier', stater.state, spellCast);
 
   // Fix rehydration
   console.log(stater.state.playerStats.position.value.x);
@@ -64,8 +64,8 @@ export const allCommonSpells: ISpell<any>[] = [
     name: 'Move',
     description: 'Move to a new position',
     image: '/wizards/skills/1.svg',
-    modifyerData: MoveData,
-    modifyer: MoveModifyer,
+    modifierData: MoveData,
+    modifier: MoveModifier,
     spellCast: MoveSpellCast,
     cast: MoveCast,
     target: 'ally',

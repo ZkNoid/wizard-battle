@@ -373,7 +373,7 @@ export class BotService {
     let targetMap = '';
 
     // Generate appropriate spell cast info based on spell type
-    // The frontend expects spellCastInfo to be JSON that can be parsed by spell.modifyerData.fromJSON()
+    // The frontend expects spellCastInfo to be JSON that can be parsed by spell.modifierData.fromJSON()
     if (hasTeleport && spellId === TELEPORT_ID) {
       // Teleport spell - needs position data in Field format
       // For teleport, bot should target its own map (self-teleport)
