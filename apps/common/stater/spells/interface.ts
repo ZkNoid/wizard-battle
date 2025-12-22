@@ -14,7 +14,11 @@ export interface ISpell<T> {
   modifierData: any;
   target: 'ally' | 'enemy';
   globalStatus?: 'global' | 'local';
-  modifier: (stater: Stater, spellCast: SpellCast<T>) => void;
+  modifier: (
+    stater: Stater,
+    spellCast: SpellCast<T>,
+    opponentState: State
+  ) => void;
   spellCast: T;
   cast: (
     state: State,

@@ -3,11 +3,11 @@ import { Effect, Position, type SpellCast } from '../structs';
 import {
   CircuitString,
   Field,
-  Int64,
   Poseidon,
   Provable,
   Struct,
   UInt64,
+  Int64,
 } from 'o1js';
 import { type ISpell } from './interface';
 import { WizardId } from '../../wizards';
@@ -54,7 +54,8 @@ export const ArrowCast = (
 
 export const ArrowModifier = (
   stater: Stater,
-  spellCast: SpellCast<ArrowData>
+  spellCast: SpellCast<ArrowData>,
+  opponentState: State
 ) => {
   const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
@@ -62,11 +63,11 @@ export const ArrowModifier = (
   const directHit = distance.equals(UInt64.from(0));
 
   // Damage
-  const damage = Int64.from(30);
+  const damage = UInt64.from(30);
 
-  const damageToApply = Provable.if(directHit, damage, Int64.from(0));
+  const damageToApply = Provable.if(directHit, damage, UInt64.from(0));
 
-  stater.state.playerStats.hp = stater.state.playerStats.hp.sub(damageToApply);
+  stater.applyDamage(damageToApply, opponentState);
 
   // #TODO make provable
   // Bleeding effect
@@ -142,16 +143,17 @@ export const AimingShotCast = (
 
 export const AimingShotModifier = (
   stater: Stater,
-  spellCast: SpellCast<AimingShotData>
+  spellCast: SpellCast<AimingShotData>,
+  opponentState: State
 ) => {
   const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
   const distance = selfPosition.manhattanDistance(targetPosition);
   const directHit = distance.equals(UInt64.from(0));
 
-  const damage = Int64.from(100);
+  const damage = UInt64.from(100);
 
-  let damageToApply = Provable.if(directHit, damage, Int64.from(0));
+  let damageToApply = Provable.if(directHit, damage, UInt64.from(0));
 
   // #TODO make provable
   // Critical hit
@@ -160,10 +162,10 @@ export const AimingShotModifier = (
   const isCritical = randomValue.lessThan(UInt64.from(10));
 
   if (isCritical.toBoolean()) {
-    damageToApply = damageToApply.mul(Int64.from(2));
+    damageToApply = damageToApply.mul(UInt64.from(2));
   }
 
-  stater.state.playerStats.hp = stater.state.playerStats.hp.sub(damageToApply);
+  stater.applyDamage(damageToApply, opponentState);
 };
 
 const AimingShotSceneEffect = (
@@ -222,15 +224,16 @@ export const HailOfArrowsCast = (
 
 export const HailOfArrowsModifier = (
   stater: Stater,
-  spellCast: SpellCast<HailOfArrowsData>
+  spellCast: SpellCast<HailOfArrowsData>,
+  opponentState: State
 ) => {
   const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
   const distance = selfPosition.manhattanDistance(targetPosition);
   const hasDamage = distance.lessThanOrEqual(UInt64.from(3));
-  const damageToApply = Provable.if(hasDamage, Int64.from(50), Int64.from(0));
+  const damageToApply = Provable.if(hasDamage, UInt64.from(50), UInt64.from(0));
 
-  stater.state.playerStats.hp = stater.state.playerStats.hp.sub(damageToApply);
+  stater.applyDamage(damageToApply, opponentState);
 
   // #TODO make provable
   // Slowing effect
@@ -314,7 +317,8 @@ export const DecoyCast = (
 
 export const DecoyModifier = (
   stater: Stater,
-  spellCast: SpellCast<DecoyData>
+  spellCast: SpellCast<DecoyData>,
+  opponentState: State
 ) => {
   stater.state.pushEffect(
     new Effect({
@@ -367,7 +371,8 @@ export const CloudCast = (
 
 export const CloudModifier = (
   stater: Stater,
-  spellCast: SpellCast<CloudData>
+  spellCast: SpellCast<CloudData>,
+  opponentState: State
 ) => {
   console.log('Cloud modifier');
   stater.state.pushEffect(

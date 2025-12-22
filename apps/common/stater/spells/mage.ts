@@ -10,7 +10,7 @@ import {
 import { Position, PositionOption, type SpellCast } from '../structs';
 import { WizardId } from '../../wizards';
 import { type ISpell } from './interface';
-import type { State } from '../state';
+import { State } from '../state';
 import { Stater } from '../stater';
 
 export class LightningBoldData extends Struct({
@@ -54,7 +54,8 @@ export const LightningBoldCast = (
 
 export const LightningBoldModifier = (
   stater: Stater,
-  spellCast: LightningBoldSpellCast
+  spellCast: LightningBoldSpellCast,
+  opponentState: State
 ) => {
   const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
@@ -65,8 +66,8 @@ export const LightningBoldModifier = (
 
   const distance = selfPosition.manhattanDistance(targetPosition);
 
-  const damage = Int64.from(80);
-  const damage2 = Int64.from(40);
+  const damage = UInt64.from(80);
+  const damage2 = UInt64.from(40);
 
   const directHit = distance.equals(UInt64.from(0));
   const nearbyHit = distance.equals(UInt64.from(1));
@@ -74,11 +75,11 @@ export const LightningBoldModifier = (
 
   const damageToApply = Provable.switch(
     [directHit, nearbyHit, distantHit],
-    Int64,
-    [damage, damage2, Int64.from(0)]
+    UInt64,
+    [damage, damage2, UInt64.from(0)]
   );
 
-  stater.state.playerStats.hp = stater.state.playerStats.hp.sub(damageToApply);
+  stater.applyDamage(damageToApply, opponentState);
 };
 
 const LightningBoldSceneEffect = (
@@ -147,16 +148,17 @@ export const FireBallCast = (
 
 export const FireBallModifier = (
   stater: Stater,
-  spellCast: SpellCast<FireBallData>
+  spellCast: SpellCast<FireBallData>,
+  opponentState: State
 ) => {
   const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
 
   const distance = selfPosition.manhattanDistance(targetPosition);
 
-  const damage = Int64.from(50);
-  const damage2 = Int64.from(25);
-  const damage3 = Int64.from(15);
+  const damage = UInt64.from(50);
+  const damage2 = UInt64.from(25);
+  const damage3 = UInt64.from(15);
 
   const directHit = distance.equals(UInt64.from(0));
   const nearbyHit = distance.equals(UInt64.from(1));
@@ -165,11 +167,11 @@ export const FireBallModifier = (
 
   const damageToApply = Provable.switch(
     [directHit, nearbyHit, farHit, distantHit],
-    Int64,
-    [damage, damage2, damage3, Int64.from(0)]
+    UInt64,
+    [damage, damage2, damage3, UInt64.from(0)]
   );
 
-  stater.state.playerStats.hp = stater.state.playerStats.hp.sub(damageToApply);
+  stater.applyDamage(damageToApply, opponentState);
 };
 
 const FireBallSceneEffect = (
@@ -246,7 +248,8 @@ export const LaserCast = (
 
 export const LaserModifier = (
   stater: Stater,
-  spellCast: SpellCast<LaserData>
+  spellCast: SpellCast<LaserData>,
+  opponentState: State
 ) => {
   const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
@@ -255,11 +258,11 @@ export const LaserModifier = (
   const sameColumn = selfPosition.y.equals(targetPosition.y);
   const hit = sameRow.or(sameColumn);
 
-  const damage = Int64.from(50);
+  const damage = UInt64.from(50);
 
-  const damageToApply = Provable.if(hit, damage, Int64.from(0));
+  const damageToApply = Provable.if(hit, damage, UInt64.from(0));
 
-  stater.state.playerStats.hp = stater.state.playerStats.hp.sub(damageToApply);
+  stater.applyDamage(damageToApply, opponentState);
 };
 
 const LaserSceneEffect = (
@@ -339,7 +342,8 @@ export const TeleportCast = (
 
 export const TeleportModifier = (
   stater: Stater,
-  spellCast: SpellCast<TeleportData>
+  spellCast: SpellCast<TeleportData>,
+  opponentState: State
 ) => {
   stater.state.playerStats.position = new PositionOption({
     value: spellCast.additionalData.position,
@@ -378,7 +382,8 @@ export const HealCast = (
 
 export const HealModifier = (
   stater: Stater,
-  spellCast: SpellCast<HealData>
+  spellCast: SpellCast<HealData>,
+  opponentState: State
 ) => {
   stater.state.playerStats.hp = stater.state.playerStats.hp.add(Int64.from(50));
   // If the player has more health than the max health, set the health to the max health

@@ -32,7 +32,7 @@ export class Stater extends Struct({
     });
   }
 
-  applySpellCast(spell: SpellCast<any>) {
+  applySpellCast(spell: SpellCast<any>, opponentState: State) {
     if (spell.caster.toString() === this.state.playerId.toString()) {
       const spellStats = this.state.spellStats.find(
         (s) => s.spellId.toString() === spell.spellId.toString()
@@ -54,7 +54,7 @@ export class Stater extends Struct({
       throw Error('No such spell modifier');
     }
 
-    spellModifier(this, spell);
+    spellModifier(this, spell, opponentState);
     // Apply it to the
   }
 
@@ -134,13 +134,16 @@ export class Stater extends Struct({
     }
   }
 
-  applySpellCastsLocally(spellCasts: SpellCast<any>[]) {
+  applySpellCastsLocally(spellCasts: SpellCast<any>[], opponentState: State) {
     for (const spell of spellCasts) {
-      this.applySpellCast(spell);
+      this.applySpellCast(spell, opponentState);
     }
   }
 
-  apply(spellCasts: SpellCast<any>[]): {
+  apply(
+    spellCasts: SpellCast<any>[],
+    opponentState: State
+  ): {
     stateCommit: Field;
     publicState: State;
   } {
@@ -153,7 +156,7 @@ export class Stater extends Struct({
     // Apply spells
     for (const spell of spellCasts) {
       console.log('apply spell', spell);
-      this.applySpellCast(spell);
+      this.applySpellCast(spell, opponentState);
     }
 
     // Apply end of round effects
@@ -200,7 +203,7 @@ export class Stater extends Struct({
    * - Ensures deterministic state transitions
    * - Maintains cryptographic integrity throughout
    */
-  applyActions(userActions: IUserActions): State {
+  applyActions(userActions: IUserActions, opponentState: State): State {
     // Convert IUserActions to internal format
     const spellCasts: SpellCast<any>[] = userActions.actions
       .map((action: IUserAction) => ({
@@ -240,11 +243,11 @@ export class Stater extends Struct({
         };
       });
 
-    const result = this.apply(spellCasts);
+    const result = this.apply(spellCasts, opponentState);
     return result.publicState;
   }
 
-  applyActionsLocally(userActions: IUserActions) {
+  applyActionsLocally(userActions: IUserActions, opponentState: State) {
     // Convert IUserActions to internal format
     const spellCasts: SpellCast<any>[] = userActions.actions
       .map((action: IUserAction) => ({
@@ -277,7 +280,7 @@ export class Stater extends Struct({
         };
       });
 
-    this.applySpellCastsLocally(spellCasts);
+    this.applySpellCastsLocally(spellCasts, opponentState);
   }
 
   /**
@@ -304,9 +307,10 @@ export class Stater extends Struct({
    */
   generateTrustedState(
     playerId: string,
-    userActions: IUserActions
+    userActions: IUserActions,
+    opponentState: State
   ): ITrustedState {
-    const result = this.applyActions(userActions);
+    const result = this.applyActions(userActions, opponentState);
 
     // Use crypto.randomUUID() for truly unique state commits
     // This prevents the same stateCommit issue when testing with multiple tabs
