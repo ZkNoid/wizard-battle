@@ -3,6 +3,7 @@ import { Position, PositionOption, type SpellCast } from '../structs';
 import { State } from '../state';
 import { WizardId } from '../../wizards';
 import { type ISpell } from './interface';
+import { Stater } from '../stater';
 
 export class MoveData extends Struct({
   position: Position,
@@ -43,16 +44,20 @@ export const MoveCast = (
   });
 };
 
-export const MoveModifyer = (state: State, spellCast: MoveSpellCast) => {
-  console.log('MoveModifyer', state, spellCast);
+export const MoveModifier = (
+  stater: Stater,
+  spellCast: MoveSpellCast,
+  opponentState: State
+) => {
+  console.log('MoveModifier', stater.state, spellCast);
 
   // Fix rehydration
-  console.log(state.playerStats.position.value.x);
-  state.playerStats.position = new PositionOption({
+  console.log(stater.state.playerStats.position.value.x);
+  stater.state.playerStats.position = new PositionOption({
     value: spellCast.additionalData.position,
     isSome: Field(1),
   });
-  console.log(state.playerStats.position.value.x);
+  console.log(stater.state.playerStats.position.value.x);
 };
 
 export const allCommonSpells: ISpell<any>[] = [
@@ -63,8 +68,8 @@ export const allCommonSpells: ISpell<any>[] = [
     name: 'Move',
     description: 'Move to a new position',
     image: '/wizards/skills/1.svg',
-    modifyerData: MoveData,
-    modifyer: MoveModifyer,
+    modifierData: MoveData,
+    modifier: MoveModifier,
     spellCast: MoveSpellCast,
     cast: MoveCast,
     target: 'ally',

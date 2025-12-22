@@ -130,7 +130,7 @@ export default function GamePage() {
         spellId: spell.id.toString(),
         caster: stater?.state?.playerId?.toString() ?? '',
         spellCastInfo: JSON.stringify(
-          spell.modifyerData.toJSON(cast.additionalData)
+          spell.modifierData.toJSON(cast.additionalData)
         ),
       };
     },
@@ -245,7 +245,10 @@ export default function GamePage() {
       );
       if (userAction.playerId === stater?.state?.playerId?.toString()) {
         console.log('Apply actions locally');
-        stater.applyActionsLocally({ actions: [userAction], signature: '' });
+        stater.applyActionsLocally(
+          { actions: [userAction], signature: '' },
+          opponentState!
+        );
         syncState();
         if (spell.globalStatus !== 'global') {
           userAction = null;

@@ -3,14 +3,15 @@ import { Effect, Position, type SpellCast } from '../structs';
 import {
   CircuitString,
   Field,
-  Int64,
   Poseidon,
   Provable,
   Struct,
   UInt64,
+  Int64,
 } from 'o1js';
 import { type ISpell } from './interface';
 import { WizardId } from '../../wizards';
+import { Stater } from '../stater';
 
 export class ArrowData extends Struct({
   position: Position,
@@ -51,30 +52,31 @@ export const ArrowCast = (
   });
 };
 
-export const ArrowModifyer = (
-  state: State,
-  spellCast: SpellCast<ArrowData>
+export const ArrowModifier = (
+  stater: Stater,
+  spellCast: SpellCast<ArrowData>,
+  opponentState: State
 ) => {
-  const selfPosition = state.playerStats.position.value;
+  const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
   const distance = selfPosition.manhattanDistance(targetPosition);
   const directHit = distance.equals(UInt64.from(0));
 
   // Damage
-  const damage = Int64.from(30);
+  const damage = UInt64.from(30);
 
-  const damageToApply = Provable.if(directHit, damage, Int64.from(0));
+  const damageToApply = Provable.if(directHit, damage, UInt64.from(0));
 
-  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+  stater.applyDamage(damageToApply, opponentState);
 
   // #TODO make provable
   // Bleeding effect
 
-  const chance = Poseidon.hash([state.randomSeed]).toBigInt() % 2n;
-  const isBleeding = directHit.toBoolean() && chance === 1n;
+  const chance = stater.getRandomPercentage();
+  const isBleeding = directHit.and(chance.lessThan(UInt64.from(50)));
 
-  if (isBleeding) {
-    state.pushEffect(
+  if (isBleeding.toBoolean()) {
+    stater.state.pushEffect(
       new Effect({
         effectId: CircuitString.fromString('Bleeding').hash(),
         duration: Field.from(3),
@@ -139,30 +141,31 @@ export const AimingShotCast = (
   });
 };
 
-export const AimingShotModifyer = (
-  state: State,
-  spellCast: SpellCast<AimingShotData>
+export const AimingShotModifier = (
+  stater: Stater,
+  spellCast: SpellCast<AimingShotData>,
+  opponentState: State
 ) => {
-  const selfPosition = state.playerStats.position.value;
+  const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
   const distance = selfPosition.manhattanDistance(targetPosition);
   const directHit = distance.equals(UInt64.from(0));
 
-  const damage = Int64.from(100);
+  const damage = UInt64.from(100);
 
-  let damageToApply = Provable.if(directHit, damage, Int64.from(0));
+  let damageToApply = Provable.if(directHit, damage, UInt64.from(0));
 
   // #TODO make provable
   // Critical hit
 
-  let randomValue = Poseidon.hash([state.randomSeed]).toBigInt() % 100n;
-  const isCritical = randomValue < 10n;
+  let randomValue = stater.getRandomPercentage();
+  const isCritical = randomValue.lessThan(UInt64.from(10));
 
-  if (isCritical) {
-    damageToApply = damageToApply.mul(Int64.from(2));
+  if (isCritical.toBoolean()) {
+    damageToApply = damageToApply.mul(UInt64.from(2));
   }
 
-  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+  stater.applyDamage(damageToApply, opponentState);
 };
 
 const AimingShotSceneEffect = (
@@ -219,26 +222,27 @@ export const HailOfArrowsCast = (
   });
 };
 
-export const HailOfArrowsModifyer = (
-  state: State,
-  spellCast: SpellCast<HailOfArrowsData>
+export const HailOfArrowsModifier = (
+  stater: Stater,
+  spellCast: SpellCast<HailOfArrowsData>,
+  opponentState: State
 ) => {
-  const selfPosition = state.playerStats.position.value;
+  const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
   const distance = selfPosition.manhattanDistance(targetPosition);
   const hasDamage = distance.lessThanOrEqual(UInt64.from(3));
-  const damageToApply = Provable.if(hasDamage, Int64.from(50), Int64.from(0));
+  const damageToApply = Provable.if(hasDamage, UInt64.from(50), UInt64.from(0));
 
-  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+  stater.applyDamage(damageToApply, opponentState);
 
   // #TODO make provable
   // Slowing effect
 
-  const chance = Poseidon.hash([state.randomSeed]).toBigInt() % 10n;
-  const isSlowing = hasDamage.toBoolean() && chance <= 2n;
+  const chance = stater.getRandomPercentage();
+  const isSlowing = hasDamage.and(chance.lessThan(UInt64.from(20)));
 
-  if (isSlowing) {
-    state.pushEffect(
+  if (isSlowing.toBoolean()) {
+    stater.state.pushEffect(
       new Effect({
         effectId: CircuitString.fromString('SlowingRestoration').hash(),
         duration: Field.from(3),
@@ -246,7 +250,7 @@ export const HailOfArrowsModifyer = (
       }),
       'endOfRound'
     );
-    state.pushEffect(
+    stater.state.pushEffect(
       new Effect({
         effectId: CircuitString.fromString('Slowing').hash(),
         duration: Field.from(2),
@@ -311,11 +315,12 @@ export const DecoyCast = (
   });
 };
 
-export const DecoyModifyer = (
-  state: State,
-  spellCast: SpellCast<DecoyData>
+export const DecoyModifier = (
+  stater: Stater,
+  spellCast: SpellCast<DecoyData>,
+  opponentState: State
 ) => {
-  state.pushEffect(
+  stater.state.pushEffect(
     new Effect({
       effectId: CircuitString.fromString('Decoy').hash(),
       duration: Field.from(2),
@@ -364,12 +369,13 @@ export const CloudCast = (
   });
 };
 
-export const CloudModifyer = (
-  state: State,
-  spellCast: SpellCast<CloudData>
+export const CloudModifier = (
+  stater: Stater,
+  spellCast: SpellCast<CloudData>,
+  opponentState: State
 ) => {
-  console.log('Cloud modifyer');
-  state.pushEffect(
+  console.log('Cloud modifier');
+  stater.state.pushEffect(
     new Effect({
       effectId: CircuitString.fromString('Cloud').hash(),
       duration: Field.from(3),
@@ -439,8 +445,8 @@ export const archerSpells: ISpell<any>[] = [
     name: 'Arrow',
     description: 'A single arrow shot',
     image: '/wizards/skills/arrow.png',
-    modifyerData: ArrowData,
-    modifyer: ArrowModifyer,
+    modifierData: ArrowData,
+    modifier: ArrowModifier,
     spellCast: ArrowSpellCast,
     cast: ArrowCast,
     sceneEffect: ArrowSceneEffect,
@@ -458,8 +464,8 @@ export const archerSpells: ISpell<any>[] = [
     name: 'AimingShot',
     description: 'A shot with a higher chance of critical hit',
     image: '/wizards/skills/aimingShot.png',
-    modifyerData: AimingShotData,
-    modifyer: AimingShotModifyer,
+    modifierData: AimingShotData,
+    modifier: AimingShotModifier,
     spellCast: AimingShotSpellCast,
     sceneEffect: AimingShotSceneEffect,
     cast: AimingShotCast,
@@ -477,8 +483,8 @@ export const archerSpells: ISpell<any>[] = [
     name: 'HailOfArrows',
     description: 'A hail of arrows',
     image: '/wizards/skills/hailOfArrows.png',
-    modifyerData: HailOfArrowsData,
-    modifyer: HailOfArrowsModifyer,
+    modifierData: HailOfArrowsData,
+    modifier: HailOfArrowsModifier,
     spellCast: HailOfArrowsSpellCast,
     cast: HailOfArrowsCast,
     sceneEffect: HailOfArrowsSceneEffect,
@@ -496,8 +502,8 @@ export const archerSpells: ISpell<any>[] = [
     name: 'Decoy',
     description: 'Create a decoy',
     image: '/wizards/skills/decoy.png',
-    modifyerData: DecoyData,
-    modifyer: DecoyModifyer,
+    modifierData: DecoyData,
+    modifier: DecoyModifier,
     spellCast: DecoySpellCast,
     cast: DecoyCast,
     target: 'ally',
@@ -514,8 +520,8 @@ export const archerSpells: ISpell<any>[] = [
     name: 'Cloud',
     description: 'Create a cloud',
     image: '/wizards/skills/smokeCloud.png',
-    modifyerData: CloudData,
-    modifyer: CloudModifyer,
+    modifierData: CloudData,
+    modifier: CloudModifier,
     spellCast: CloudSpellCast,
     cast: CloudCast,
     sceneEffect: CloudSceneEffect,

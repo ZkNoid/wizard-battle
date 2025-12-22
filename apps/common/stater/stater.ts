@@ -1,10 +1,12 @@
-import { Field, Int64, Poseidon, Provable, Struct } from 'o1js';
+import { Field, Int64, Poseidon, Provable, Struct, UInt64 } from 'o1js';
 import { Effect, type SpellCast } from './structs';
 import { allSpells } from './spells';
 import { allEffectsInfo } from './effects/effects';
 import { State } from './state';
 import { type IUserActions, type ITrustedState } from '../types/gameplay.types';
 import { type IUserAction } from '../types/gameplay.types';
+
+const CALCULATION_PRECISION = 100;
 
 /**
  * @title ZK-Provable Game State Manager
@@ -30,7 +32,7 @@ export class Stater extends Struct({
     });
   }
 
-  applySpellCast(spell: SpellCast<any>) {
+  applySpellCast(spell: SpellCast<any>, opponentState: State) {
     if (spell.caster.toString() === this.state.playerId.toString()) {
       const spellStats = this.state.spellStats.find(
         (s) => s.spellId.toString() === spell.spellId.toString()
@@ -46,13 +48,13 @@ export class Stater extends Struct({
     // Find spell
     const spellModifier = allSpells.find(
       (s) => s.id.toString() === spell.spellId.toString()
-    )?.modifyer;
+    )?.modifier;
 
     if (!spellModifier) {
       throw Error('No such spell modifier');
     }
 
-    spellModifier(this.state, spell);
+    spellModifier(this, spell, opponentState);
     // Apply it to the
   }
 
@@ -66,6 +68,33 @@ export class Stater extends Struct({
 
   generateStateCommit() {
     return this.state.getCommit();
+  }
+
+  getRandomPercentage() {
+    const bitsLength = 10;
+    const bigRandomValue = Poseidon.hash([this.state.randomSeed]);
+    const bits = bigRandomValue.toBits();
+    const value = UInt64.from(0);
+    value.value = Field.fromBits(bits.slice(0, bitsLength));
+    return value.mod(UInt64.from(100));
+  }
+
+  applyDamage(damage: UInt64, opponentState: State) {
+    // Check dodge and accuracy
+    const hitChance = opponentState.playerStats.accuracy
+      .mul(this.state.playerStats.dodgeChance)
+      .div(CALCULATION_PRECISION);
+    const dodgeRandomPercentage = this.getRandomPercentage();
+    const isHit = dodgeRandomPercentage.lessThan(hitChance);
+
+    // Calculate damage (damage * defense * crit * accuracy)
+    const fullDamage = damage
+      .mul(opponentState.playerStats.attack)
+      .mul(this.state.playerStats.defense)
+      .div(CALCULATION_PRECISION);
+    const finalDamage = Provable.if(isHit, fullDamage, UInt64.from(0));
+
+    this.state.playerStats.hp = this.state.playerStats.hp.sub(finalDamage);
   }
 
   applyEffect(publicState: State, effect: Effect) {
@@ -104,13 +133,16 @@ export class Stater extends Struct({
     }
   }
 
-  applySpellCastsLocally(spellCasts: SpellCast<any>[]) {
+  applySpellCastsLocally(spellCasts: SpellCast<any>[], opponentState: State) {
     for (const spell of spellCasts) {
-      this.applySpellCast(spell);
+      this.applySpellCast(spell, opponentState);
     }
   }
 
-  apply(spellCasts: SpellCast<any>[]): {
+  apply(
+    spellCasts: SpellCast<any>[],
+    opponentState: State
+  ): {
     stateCommit: Field;
     publicState: State;
   } {
@@ -123,7 +155,7 @@ export class Stater extends Struct({
     // Apply spells
     for (const spell of spellCasts) {
       console.log('apply spell', spell);
-      this.applySpellCast(spell);
+      this.applySpellCast(spell, opponentState);
     }
 
     // Apply end of round effects
@@ -170,7 +202,7 @@ export class Stater extends Struct({
    * - Ensures deterministic state transitions
    * - Maintains cryptographic integrity throughout
    */
-  applyActions(userActions: IUserActions): State {
+  applyActions(userActions: IUserActions, opponentState: State): State {
     // Convert IUserActions to internal format
     const spellCasts: SpellCast<any>[] = userActions.actions
       .map((action: IUserAction) => ({
@@ -181,6 +213,14 @@ export class Stater extends Struct({
         caster: Field(action.caster),
         target: Field(action.playerId), // or however you want to map this
         additionalData: action.spellCastInfo,
+        // TODO: Add real hash function
+        hash: () =>
+          Poseidon.hash([
+            Field(action.spellId),
+            Field(action.caster),
+            Field(action.playerId),
+            Field(action.spellCastInfo),
+          ]),
       }))
       .sort((a, b) => {
         return (b.spell?.priority ?? 0) - (a.spell?.priority ?? 0);
@@ -190,17 +230,23 @@ export class Stater extends Struct({
           spellId: action.spellId,
           target: action.target,
           caster: action.caster,
-          additionalData: action.spell!.modifyerData.fromJSON(
+          additionalData: action.spell!.modifierData.fromJSON(
             JSON.parse(action.additionalData)
           ),
+          hash: () =>
+            Poseidon.hash([
+              Field(action.spellId),
+              Field(action.target),
+              Field(action.caster),
+            ]),
         };
       });
 
-    const result = this.apply(spellCasts);
+    const result = this.apply(spellCasts, opponentState);
     return result.publicState;
   }
 
-  applyActionsLocally(userActions: IUserActions) {
+  applyActionsLocally(userActions: IUserActions, opponentState: State) {
     // Convert IUserActions to internal format
     const spellCasts: SpellCast<any>[] = userActions.actions
       .map((action: IUserAction) => ({
@@ -220,13 +266,20 @@ export class Stater extends Struct({
           spellId: action.spellId,
           target: action.target,
           caster: action.caster,
-          additionalData: action.spell!.modifyerData.fromJSON(
+          additionalData: action.spell!.modifierData.fromJSON(
             JSON.parse(action.additionalData)
           ),
+          // TODO: Add real hash function
+          hash: () =>
+            Poseidon.hash([
+              Field(action.spellId),
+              Field(action.target),
+              Field(action.caster),
+            ]),
         };
       });
 
-    this.applySpellCastsLocally(spellCasts);
+    this.applySpellCastsLocally(spellCasts, opponentState);
   }
 
   /**
@@ -253,9 +306,10 @@ export class Stater extends Struct({
    */
   generateTrustedState(
     playerId: string,
-    userActions: IUserActions
+    userActions: IUserActions,
+    opponentState: State
   ): ITrustedState {
-    const result = this.applyActions(userActions);
+    const result = this.applyActions(userActions, opponentState);
 
     // Use crypto.randomUUID() for truly unique state commits
     // This prevents the same stateCommit issue when testing with multiple tabs

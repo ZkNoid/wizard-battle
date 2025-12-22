@@ -1,4 +1,4 @@
-import { Field, Int64, CircuitString } from 'o1js';
+import { Field, Int64, UInt64 } from 'o1js';
 import { Stater } from '../stater';
 import { State } from '../state';
 import {
@@ -11,25 +11,34 @@ import {
 } from '../structs';
 import {
   mageSpells,
-  LightningBoldModifyer,
+  LightningBoldModifier,
   LightningBoldData,
-  FireBallModifyer,
+  LightningBoldSpellCast,
+  FireBallModifier,
   FireBallData,
-  LaserModifyer,
+  FireBallSpellCast,
+  LaserModifier,
   LaserData,
-  TeleportModifyer,
+  LaserSpellCast,
+  TeleportModifier,
   TeleportData,
-  HealModifyer,
+  TeleportSpellCast,
+  HealModifier,
   HealData,
+  HealSpellCast,
 } from './mage';
 import { WizardId } from '../../wizards';
 
 describe('Mage Spells', () => {
   let initialState: State;
   let stater: Stater;
+  let opponentState: State;
 
   beforeEach(() => {
     // Create initial state with a player at position (5, 5) with 100 HP
+    // Note: For damage calculation to work correctly:
+    // - dodgeChance=100 and accuracy=100 ensures hitChance = 100 (always hits)
+    // - attack=10 and defense=10 ensures fullDamage = damage * 10 * 10 / 100 = damage
     const playerStats = new PlayerStats({
       hp: Int64.from(100),
       maxHp: Int64.from(100),
@@ -41,6 +50,11 @@ describe('Mage Spells', () => {
         isSome: Field(1),
       }),
       speed: Int64.from(1),
+      attack: UInt64.from(10),
+      defense: UInt64.from(10),
+      critChance: UInt64.from(0),
+      dodgeChance: UInt64.from(100),
+      accuracy: UInt64.from(100),
     });
 
     const spellStats = Array(5)
@@ -92,6 +106,62 @@ describe('Mage Spells', () => {
     stater = new Stater({
       state: initialState,
     });
+
+    // Create opponent state for modifier calls
+    opponentState = new State({
+      playerId: Field(1),
+      wizardId: WizardId.MAGE,
+      playerStats: new PlayerStats({
+        hp: Int64.from(100),
+        maxHp: Int64.from(100),
+        position: new PositionOption({
+          value: new Position({
+            x: Int64.from(0),
+            y: Int64.from(0),
+          }),
+          isSome: Field(1),
+        }),
+        speed: Int64.from(1),
+        attack: UInt64.from(10),
+        defense: UInt64.from(10),
+        critChance: UInt64.from(0),
+        dodgeChance: UInt64.from(100),
+        accuracy: UInt64.from(100),
+      }),
+      spellStats: Array(5)
+        .fill(null)
+        .map(
+          () =>
+            new SpellStats({
+              spellId: Field(0),
+              cooldown: Int64.from(0),
+              currentCooldown: Int64.from(0),
+            })
+        ),
+      publicStateEffects: Array(10)
+        .fill(null)
+        .map(
+          () =>
+            new Effect({
+              effectId: Field(0),
+              duration: Field(0),
+              param: Field(0),
+            })
+        ),
+      endOfRoundEffects: Array(10)
+        .fill(null)
+        .map(
+          () =>
+            new Effect({
+              effectId: Field(0),
+              duration: Field(0),
+              param: Field(0),
+            })
+        ),
+      map: [...Array(64).fill(Field(0))],
+      turnId: Int64.from(1),
+      randomSeed: Field(456),
+    });
   });
 
   describe('Mage Spells Array', () => {
@@ -100,7 +170,7 @@ describe('Mage Spells', () => {
 
       const spellNames = mageSpells.map((spell) => spell.name);
       expect(spellNames).toContain('Lightning');
-      expect(spellNames).toContain('Fire Ball');
+      expect(spellNames).toContain('FireBall');
       expect(spellNames).toContain('Teleport');
       expect(spellNames).toContain('Heal');
       expect(spellNames).toContain('Laser');
@@ -119,7 +189,7 @@ describe('Mage Spells', () => {
         expect(typeof spell.name).toBe('string');
         expect(typeof spell.description).toBe('string');
         expect(typeof spell.image).toBe('string');
-        expect(typeof spell.modifyer).toBe('function');
+        expect(typeof spell.modifier).toBe('function');
       });
     });
   });
@@ -138,59 +208,59 @@ describe('Mage Spells', () => {
       expect(lightningBoldSpell.description).toBe(
         'A powerful bolt of lightning. High one point damage'
       );
-      expect(lightningBoldSpell.image).toBe('/wizards/skills/1.svg');
+      expect(lightningBoldSpell.image).toBe('/wizards/skills/lightning.png');
       expect(lightningBoldSpell.cooldown.toString()).toBe('1');
     });
 
-    it('should deal 100 damage on direct hit (distance = 0)', () => {
+    it('should deal 80 damage on direct hit (distance = 0)', () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<LightningBoldData> = {
+      const spellCast = new LightningBoldSpellCast({
         spellId: lightningBoldSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new LightningBoldData({
           position: new Position({ x: Int64.from(5), y: Int64.from(5) }), // Same position as player
         }),
-      };
+      });
 
-      LightningBoldModifyer(stater.state, spellCast);
+      LightningBoldModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
-      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 100);
+      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 80);
     });
 
-    it('should deal 50 damage on nearby hit (distance = 1)', () => {
+    it('should deal 40 damage on nearby hit (distance = 1)', () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<LightningBoldData> = {
+      const spellCast = new LightningBoldSpellCast({
         spellId: lightningBoldSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new LightningBoldData({
           position: new Position({ x: Int64.from(6), y: Int64.from(5) }), // Distance 1 from player
         }),
-      };
+      });
 
-      LightningBoldModifyer(stater.state, spellCast);
+      LightningBoldModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
-      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 50);
+      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 40);
     });
 
     it('should deal 0 damage on distant hit (distance >= 2)', () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<LightningBoldData> = {
+      const spellCast = new LightningBoldSpellCast({
         spellId: lightningBoldSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new LightningBoldData({
           position: new Position({ x: Int64.from(8), y: Int64.from(5) }), // Distance 3 from player
         }),
-      };
+      });
 
-      LightningBoldModifyer(stater.state, spellCast);
+      LightningBoldModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp)); // No damage
@@ -201,85 +271,85 @@ describe('Mage Spells', () => {
     let fireBallSpell: any;
 
     beforeEach(() => {
-      fireBallSpell = mageSpells.find((spell) => spell.name === 'Fire Ball');
+      fireBallSpell = mageSpells.find((spell) => spell.name === 'FireBall');
     });
 
     it('should have correct spell properties', () => {
-      expect(fireBallSpell.name).toBe('Fire Ball');
+      expect(fireBallSpell.name).toBe('FireBall');
       expect(fireBallSpell.description).toBe(
         'A ball of fire. Deals damage to a single target'
       );
-      expect(fireBallSpell.image).toBe('/wizards/skills/2.svg');
+      expect(fireBallSpell.image).toBe('/wizards/skills/fireball.png');
       expect(fireBallSpell.cooldown.toString()).toBe('1');
     });
 
-    it('should deal 60 damage on direct hit (distance = 0)', () => {
+    it('should deal 50 damage on direct hit (distance = 0)', () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<FireBallData> = {
+      const spellCast = new FireBallSpellCast({
         spellId: fireBallSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new FireBallData({
           position: new Position({ x: Int64.from(5), y: Int64.from(5) }), // Same position as player
         }),
-      };
+      });
 
-      FireBallModifyer(stater.state, spellCast);
+      FireBallModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
-      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 60);
+      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 50);
     });
 
-    it('should deal 40 damage on nearby hit (distance = 1)', () => {
+    it('should deal 25 damage on nearby hit (distance = 1)', () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<FireBallData> = {
+      const spellCast = new FireBallSpellCast({
         spellId: fireBallSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new FireBallData({
           position: new Position({ x: Int64.from(6), y: Int64.from(5) }), // Distance 1 from player
         }),
-      };
+      });
 
-      FireBallModifyer(stater.state, spellCast);
+      FireBallModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
-      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 40);
+      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 25);
     });
 
-    it('should deal 20 damage on far hit (distance = 2)', () => {
+    it('should deal 15 damage on far hit (distance = 2)', () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<FireBallData> = {
+      const spellCast = new FireBallSpellCast({
         spellId: fireBallSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new FireBallData({
           position: new Position({ x: Int64.from(7), y: Int64.from(5) }), // Distance 2 from player
         }),
-      };
+      });
 
-      FireBallModifyer(stater.state, spellCast);
+      FireBallModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
-      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 20);
+      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 15);
     });
 
     it('should deal 0 damage on distant hit (distance >= 3)', () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<FireBallData> = {
+      const spellCast = new FireBallSpellCast({
         spellId: fireBallSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new FireBallData({
           position: new Position({ x: Int64.from(8), y: Int64.from(5) }), // Distance 3 from player
         }),
-      };
+      });
 
-      FireBallModifyer(stater.state, spellCast);
+      FireBallModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp)); // No damage
@@ -298,23 +368,23 @@ describe('Mage Spells', () => {
       expect(laserSpell.description).toBe(
         'A beam of laser. Deals damage to a single target'
       );
-      expect(laserSpell.image).toBe('/wizards/skills/5.svg');
+      expect(laserSpell.image).toBe('/wizards/skills/laser.png');
       expect(laserSpell.cooldown.toString()).toBe('1');
     });
 
     it('should deal 50 damage when target is in same row', () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<LaserData> = {
+      const spellCast = new LaserSpellCast({
         spellId: laserSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new LaserData({
           position: new Position({ x: Int64.from(5), y: Int64.from(10) }), // Same row (x=5), different column
         }),
-      };
+      });
 
-      LaserModifyer(stater.state, spellCast);
+      LaserModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 50);
@@ -323,16 +393,16 @@ describe('Mage Spells', () => {
     it('should deal 50 damage when target is in same column', () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<LaserData> = {
+      const spellCast = new LaserSpellCast({
         spellId: laserSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new LaserData({
           position: new Position({ x: Int64.from(10), y: Int64.from(5) }), // Same column (y=5), different row
         }),
-      };
+      });
 
-      LaserModifyer(stater.state, spellCast);
+      LaserModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 50);
@@ -341,16 +411,16 @@ describe('Mage Spells', () => {
     it('should deal 0 damage when target is neither in same row nor column', () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<LaserData> = {
+      const spellCast = new LaserSpellCast({
         spellId: laserSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new LaserData({
           position: new Position({ x: Int64.from(7), y: Int64.from(8) }), // Different row and column
         }),
-      };
+      });
 
-      LaserModifyer(stater.state, spellCast);
+      LaserModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(parseInt(finalHp)).toBe(parseInt(initialHp)); // No damage
@@ -367,7 +437,7 @@ describe('Mage Spells', () => {
     it('should have correct spell properties', () => {
       expect(teleportSpell.name).toBe('Teleport');
       expect(teleportSpell.description).toBe('Teleport to a random position');
-      expect(teleportSpell.image).toBe('/wizards/skills/3.svg');
+      expect(teleportSpell.image).toBe('/wizards/skills/teleport.png');
       expect(teleportSpell.cooldown.toString()).toBe('1');
     });
 
@@ -380,16 +450,16 @@ describe('Mage Spells', () => {
         y: Int64.from(15),
       });
 
-      const spellCast: SpellCast<TeleportData> = {
+      const spellCast = new TeleportSpellCast({
         spellId: teleportSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new TeleportData({
           position: targetPosition,
         }),
-      };
+      });
 
-      TeleportModifyer(stater.state, spellCast);
+      TeleportModifier(stater, spellCast, opponentState);
 
       const finalX = stater.state.playerStats.position.value.x.toString();
       const finalY = stater.state.playerStats.position.value.y.toString();
@@ -403,16 +473,16 @@ describe('Mage Spells', () => {
     it('should not affect player HP', () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<TeleportData> = {
+      const spellCast = new TeleportSpellCast({
         spellId: teleportSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new TeleportData({
           position: new Position({ x: Int64.from(10), y: Int64.from(15) }),
         }),
-      };
+      });
 
-      TeleportModifyer(stater.state, spellCast);
+      TeleportModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
       expect(finalHp).toBe(initialHp);
@@ -429,38 +499,55 @@ describe('Mage Spells', () => {
     it('should have correct spell properties', () => {
       expect(healSpell.name).toBe('Heal');
       expect(healSpell.description).toBe('Heal yourself for 100 health');
-      expect(healSpell.image).toBe('/wizards/skills/4.svg');
+      expect(healSpell.image).toBe('/wizards/skills/heal.png');
       expect(healSpell.cooldown.toString()).toBe('1');
     });
 
-    it('should increase player HP by 100', () => {
+    it('should increase player HP by 50', () => {
+      // Set HP lower than max so we can see the heal
+      stater.state.playerStats.hp = Int64.from(50);
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<HealData> = {
+      const spellCast = new HealSpellCast({
         spellId: healSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new HealData({}),
-      };
+      });
 
-      HealModifyer(stater.state, spellCast);
+      HealModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
-      expect(parseInt(finalHp)).toBe(parseInt(initialHp) + 100);
+      expect(parseInt(finalHp)).toBe(parseInt(initialHp) + 50);
+    });
+
+    it('should not exceed max HP', () => {
+      // HP is already at max (100)
+      const spellCast = new HealSpellCast({
+        spellId: healSpell.id,
+        caster: Field(42),
+        target: Field(1),
+        additionalData: new HealData({}),
+      });
+
+      HealModifier(stater, spellCast, opponentState);
+
+      const finalHp = stater.state.playerStats.hp.toString();
+      expect(parseInt(finalHp)).toBe(100); // Should be capped at max HP
     });
 
     it('should not affect player position', () => {
       const initialX = stater.state.playerStats.position.value.x.toString();
       const initialY = stater.state.playerStats.position.value.y.toString();
 
-      const spellCast: SpellCast<HealData> = {
+      const spellCast = new HealSpellCast({
         spellId: healSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new HealData({}),
-      };
+      });
 
-      HealModifyer(stater.state, spellCast);
+      HealModifier(stater, spellCast, opponentState);
 
       const finalX = stater.state.playerStats.position.value.x.toString();
       const finalY = stater.state.playerStats.position.value.y.toString();
@@ -474,17 +561,17 @@ describe('Mage Spells', () => {
       stater.state.playerStats.hp = Int64.from(10);
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<HealData> = {
+      const spellCast = new HealSpellCast({
         spellId: healSpell.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new HealData({}),
-      };
+      });
 
-      HealModifyer(stater.state, spellCast);
+      HealModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
-      expect(parseInt(finalHp)).toBe(110); // 10 + 100
+      expect(parseInt(finalHp)).toBe(60); // 10 + 50
     });
   });
 
@@ -496,37 +583,39 @@ describe('Mage Spells', () => {
       expect(lightningSpell).toBeDefined();
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<LightningBoldData> = {
+      const spellCast = new LightningBoldSpellCast({
         spellId: lightningSpell!.id,
         caster: Field(42),
-        target: Field(1),
+        target: Field(42), // Target is the player
         additionalData: new LightningBoldData({
           position: new Position({ x: Int64.from(5), y: Int64.from(5) }), // Direct hit
         }),
-      };
+      });
 
-      stater.applySpellCast(spellCast);
+      stater.applySpellCast(spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
-      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 100);
+      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 80);
     });
 
     it('should apply heal spell through stater.applySpellCast', () => {
       const healSpell = mageSpells.find((spell) => spell.name === 'Heal');
       expect(healSpell).toBeDefined();
+      // Set HP lower so we can see the heal
+      stater.state.playerStats.hp = Int64.from(50);
       const initialHp = stater.state.playerStats.hp.toString();
 
-      const spellCast: SpellCast<HealData> = {
+      const spellCast = new HealSpellCast({
         spellId: healSpell!.id,
         caster: Field(42),
-        target: Field(1),
+        target: Field(42), // Target is the player
         additionalData: new HealData({}),
-      };
+      });
 
-      stater.applySpellCast(spellCast);
+      stater.applySpellCast(spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
-      expect(parseInt(finalHp)).toBe(parseInt(initialHp) + 100);
+      expect(parseInt(finalHp)).toBe(parseInt(initialHp) + 50);
     });
 
     it('should apply teleport spell through stater.applySpellCast', () => {
@@ -535,16 +624,16 @@ describe('Mage Spells', () => {
       );
       expect(teleportSpell).toBeDefined();
 
-      const spellCast: SpellCast<TeleportData> = {
+      const spellCast = new TeleportSpellCast({
         spellId: teleportSpell!.id,
         caster: Field(42),
-        target: Field(1),
+        target: Field(42), // Target is the player
         additionalData: new TeleportData({
           position: new Position({ x: Int64.from(20), y: Int64.from(25) }),
         }),
-      };
+      });
 
-      stater.applySpellCast(spellCast);
+      stater.applySpellCast(spellCast, opponentState);
 
       const finalX = stater.state.playerStats.position.value.x.toString();
       const finalY = stater.state.playerStats.position.value.y.toString();
@@ -571,19 +660,19 @@ describe('Mage Spells', () => {
       );
       expect(lightningSpell).toBeDefined();
 
-      const spellCast: SpellCast<LightningBoldData> = {
+      const spellCast = new LightningBoldSpellCast({
         spellId: lightningSpell!.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new LightningBoldData({
           position: new Position({ x: Int64.from(-5), y: Int64.from(-5) }), // Same position
         }),
-      };
+      });
 
-      LightningBoldModifyer(stater.state, spellCast);
+      LightningBoldModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
-      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 100); // Should still deal full damage
+      expect(parseInt(finalHp)).toBe(parseInt(initialHp) - 80); // Should still deal full damage
     });
 
     it('should handle healing when player is at zero health', () => {
@@ -593,17 +682,17 @@ describe('Mage Spells', () => {
       const healSpell = mageSpells.find((spell) => spell.name === 'Heal');
       expect(healSpell).toBeDefined();
 
-      const spellCast: SpellCast<HealData> = {
+      const spellCast = new HealSpellCast({
         spellId: healSpell!.id,
         caster: Field(42),
         target: Field(1),
         additionalData: new HealData({}),
-      };
+      });
 
-      HealModifyer(stater.state, spellCast);
+      HealModifier(stater, spellCast, opponentState);
 
       const finalHp = stater.state.playerStats.hp.toString();
-      expect(parseInt(finalHp)).toBe(100);
+      expect(parseInt(finalHp)).toBe(50);
     });
 
     it('should handle multiple spell applications', () => {
@@ -615,30 +704,30 @@ describe('Mage Spells', () => {
       expect(lightningSpell).toBeDefined();
 
       // Apply lightning (damage)
-      const damageSpell: SpellCast<LightningBoldData> = {
+      const damageSpell = new LightningBoldSpellCast({
         spellId: lightningSpell!.id,
         caster: Field(42),
-        target: Field(1),
+        target: Field(42), // Target is the player
         additionalData: new LightningBoldData({
           position: new Position({ x: Int64.from(5), y: Int64.from(5) }),
         }),
-      };
+      });
 
-      stater.applySpellCast(damageSpell);
+      stater.applySpellCast(damageSpell, opponentState);
       const afterDamageHp = parseInt(stater.state.playerStats.hp.toString());
-      expect(afterDamageHp).toBe(0); // 100 - 100 = 0
+      expect(afterDamageHp).toBe(20); // 100 - 80 = 20
 
       // Apply heal
-      const healingSpell: SpellCast<HealData> = {
+      const healingSpell = new HealSpellCast({
         spellId: healSpell!.id,
         caster: Field(42),
-        target: Field(1),
+        target: Field(42), // Target is the player
         additionalData: new HealData({}),
-      };
+      });
 
-      stater.applySpellCast(healingSpell);
+      stater.applySpellCast(healingSpell, opponentState);
       const afterHealHp = parseInt(stater.state.playerStats.hp.toString());
-      expect(afterHealHp).toBe(100); // 0 + 100 = 100
+      expect(afterHealHp).toBe(70); // 20 + 50 = 70
     });
   });
 });
