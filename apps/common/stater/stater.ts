@@ -73,7 +73,7 @@ export class Stater extends Struct({
   getRandomPercentage() {
     const bitsLength = 10;
     const bigRandomValue = Poseidon.hash([this.state.randomSeed]);
-    const bits = bigRandomValue.toBits(bitsLength);
+    const bits = bigRandomValue.toBits();
     const value = UInt64.from(0);
     value.value = Field.fromBits(bits.slice(0, bitsLength));
     return value.mod(UInt64.from(100));

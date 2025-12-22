@@ -1,4 +1,4 @@
-import { Field, Int64 } from 'o1js';
+import { Field, Int64, UInt64 } from 'o1js';
 import { Stater } from './stater';
 import { State } from './state';
 
@@ -7,7 +7,6 @@ import {
   PlayerStats,
   Position,
   PositionOption,
-  SpellCast,
   SpellStats,
 } from './structs';
 import { WizardId } from '../wizards';
@@ -15,6 +14,7 @@ import { WizardId } from '../wizards';
 describe('Stater', () => {
   let initialState: State;
   let stater: Stater;
+  let opponentState: State;
 
   beforeEach(() => {
     // Create initial state
@@ -29,6 +29,11 @@ describe('Stater', () => {
         isSome: Field(1),
       }),
       speed: Int64.from(1),
+      attack: UInt64.from(10),
+      defense: UInt64.from(10),
+      critChance: UInt64.from(0),
+      dodgeChance: UInt64.from(100),
+      accuracy: UInt64.from(100),
     });
 
     const spellStats = Array(5)
@@ -79,6 +84,62 @@ describe('Stater', () => {
 
     stater = new Stater({
       state: initialState,
+    });
+
+    // Create opponent state
+    opponentState = new State({
+      playerId: Field(1),
+      wizardId: WizardId.MAGE,
+      playerStats: new PlayerStats({
+        hp: Int64.from(100),
+        maxHp: Int64.from(100),
+        position: new PositionOption({
+          value: new Position({
+            x: Int64.from(0),
+            y: Int64.from(0),
+          }),
+          isSome: Field(1),
+        }),
+        speed: Int64.from(1),
+        attack: UInt64.from(10),
+        defense: UInt64.from(10),
+        critChance: UInt64.from(0),
+        dodgeChance: UInt64.from(100),
+        accuracy: UInt64.from(100),
+      }),
+      spellStats: Array(5)
+        .fill(null)
+        .map(
+          () =>
+            new SpellStats({
+              spellId: Field(0),
+              cooldown: Int64.from(0),
+              currentCooldown: Int64.from(0),
+            })
+        ),
+      publicStateEffects: Array(10)
+        .fill(null)
+        .map(
+          () =>
+            new Effect({
+              effectId: Field(0),
+              duration: Field(0),
+              param: Field(0),
+            })
+        ),
+      endOfRoundEffects: Array(10)
+        .fill(null)
+        .map(
+          () =>
+            new Effect({
+              effectId: Field(0),
+              duration: Field(0),
+              param: Field(0),
+            })
+        ),
+      map: [...Array(64).fill(Field(0))],
+      turnId: Int64.from(1),
+      randomSeed: Field(456),
     });
   });
 
@@ -139,29 +200,35 @@ describe('Stater', () => {
   });
 
   describe('applySpellCast', () => {
-    it('should throw error for unknown spell', () => {
-      const spellCast: SpellCast<any> = {
-        caster: Field(42),
+    it('should not apply spell when target does not match player', () => {
+      const initialHp = stater.state.playerStats.hp.toString();
+
+      // Spell targeting someone else (Field(1)) should not affect our player (Field(42))
+      const spellCast = {
+        caster: Field(1),
         spellId: Field(999),
-        target: Field(1),
+        target: Field(1), // Target is not our player
         additionalData: {},
+        hash: () => Field(0),
       };
 
-      expect(() => stater.applySpellCast(spellCast)).toThrow(
-        'No such spell modifier'
-      );
+      // Should not throw, just return early
+      stater.applySpellCast(spellCast, opponentState);
+
+      // HP should be unchanged
+      expect(stater.state.playerStats.hp.toString()).toBe(initialHp);
     });
 
-    it('should not crash with valid spell cast structure', () => {
-      const spellCast: SpellCast<any> = {
-        caster: Field(42),
-        spellId: Field(1),
-        target: Field(1),
-        additionalData: { test: 'data' },
+    it('should throw error for unknown spell when target matches player', () => {
+      const spellCast = {
+        caster: Field(1),
+        spellId: Field(999),
+        target: Field(42), // Target matches our player
+        additionalData: {},
+        hash: () => Field(0),
       };
 
-      // This should throw "No such spell modifier" but not crash with invalid structure
-      expect(() => stater.applySpellCast(spellCast)).toThrow(
+      expect(() => stater.applySpellCast(spellCast, opponentState)).toThrow(
         'No such spell modifier'
       );
     });
@@ -182,19 +249,17 @@ describe('Stater', () => {
       );
     });
 
-    it('should not crash with valid effect structure', () => {
+    it('should skip effects with effectId of 0', () => {
       const effect = new Effect({
-        effectId: Field(1),
+        effectId: Field(0),
         duration: Field(3),
         param: Field(0),
       });
 
       const publicState = stater.generatePublicState();
 
-      // This should throw "No such effectInfo" but not crash with invalid structure
-      expect(() => stater.applyEffect(publicState, effect)).toThrow(
-        'No such effectInfo'
-      );
+      // Should not throw for effectId 0, just return early
+      expect(() => stater.applyEffect(publicState, effect)).not.toThrow();
     });
   });
 
@@ -207,7 +272,9 @@ describe('Stater', () => {
         param: Field(0),
       });
 
-      const publicState = stater.generatePublicState();
+      // Create a copy of state for publicState without calling generatePublicState
+      // (which would trigger applyPublicStateEffects and throw early)
+      const publicState = stater.state.copy();
 
       expect(() => stater.applyPublicStateEffects(publicState)).toThrow(
         'No such effectInfo'
@@ -235,22 +302,23 @@ describe('Stater', () => {
   });
 
   describe('error handling', () => {
-    it('should handle invalid spell ID types gracefully', () => {
-      const spellCast: SpellCast<any> = {
-        caster: Field(42),
+    it('should handle unknown spell ID when target matches', () => {
+      const spellCast = {
+        caster: Field(1),
         spellId: Field(0),
-        target: Field(1),
+        target: Field(42), // Target matches our player
         additionalData: {},
+        hash: () => Field(0),
       };
 
-      expect(() => stater.applySpellCast(spellCast)).toThrow(
+      expect(() => stater.applySpellCast(spellCast, opponentState)).toThrow(
         'No such spell modifier'
       );
     });
 
     it('should handle invalid effect ID types gracefully', () => {
       const effect = new Effect({
-        effectId: Field(-1),
+        effectId: Field(999),
         duration: Field(0),
         param: Field(0),
       });
@@ -289,6 +357,11 @@ describe('Stater', () => {
         maxHp: Int64.from(150),
         position: new PositionOption({ value: position, isSome: Field(1) }),
         speed: Int64.from(1),
+        attack: UInt64.from(10),
+        defense: UInt64.from(10),
+        critChance: UInt64.from(0),
+        dodgeChance: UInt64.from(100),
+        accuracy: UInt64.from(100),
       });
 
       expect(playerStats.hp.toString()).toBe('150');
