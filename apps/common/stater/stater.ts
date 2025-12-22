@@ -1,10 +1,12 @@
-import { Field, Int64, Poseidon, Provable, Struct } from 'o1js';
+import { Field, Int64, Poseidon, Provable, Struct, UInt64 } from 'o1js';
 import { Effect, type SpellCast } from './structs';
 import { allSpells } from './spells';
 import { allEffectsInfo } from './effects/effects';
 import { State } from './state';
 import { type IUserActions, type ITrustedState } from '../types/gameplay.types';
 import { type IUserAction } from '../types/gameplay.types';
+
+const CALCULATION_PRECISION = 100;
 
 /**
  * @title ZK-Provable Game State Manager
@@ -66,6 +68,31 @@ export class Stater extends Struct({
 
   generateStateCommit() {
     return this.state.getCommit();
+  }
+
+  getRandomPercentage() {
+    const bitsLength = 10;
+    const bigRandomValue = Poseidon.hash([this.state.randomSeed]);
+    const bits = bigRandomValue.toBits(bitsLength);
+    const value = UInt64.from(0);
+    value.value = Field.fromBits(bits.slice(0, bitsLength));
+    return value.mod(UInt64.from(100));
+  }
+
+  applyDamage(damage: Int64) {
+    // Check dodge and accuracy
+    const hitChance = this.state.playerStats.dodgeChance;
+    const dodgeRandomPercentage = this.getRandomPercentage();
+    const isHit = dodgeRandomPercentage.lessThan(hitChance);
+    const isDodged = dodgeRandomPercentage.greaterThan(hitChance);
+
+    // Calculate damage (damage * defense * crit * accuracy)
+    const fullDamage = damage
+      .mul(this.state.playerStats.defense)
+      .div(CALCULATION_PRECISION);
+    const finalDamage = Provable.if(isHit, fullDamage, Int64.from(0));
+
+    this.state.playerStats.hp = this.state.playerStats.hp.sub(finalDamage);
   }
 
   applyEffect(publicState: State, effect: Effect) {
@@ -181,6 +208,14 @@ export class Stater extends Struct({
         caster: Field(action.caster),
         target: Field(action.playerId), // or however you want to map this
         additionalData: action.spellCastInfo,
+        // TODO: Add real hash function
+        hash: () =>
+          Poseidon.hash([
+            Field(action.spellId),
+            Field(action.caster),
+            Field(action.playerId),
+            Field(action.spellCastInfo),
+          ]),
       }))
       .sort((a, b) => {
         return (b.spell?.priority ?? 0) - (a.spell?.priority ?? 0);
@@ -193,6 +228,12 @@ export class Stater extends Struct({
           additionalData: action.spell!.modifyerData.fromJSON(
             JSON.parse(action.additionalData)
           ),
+          hash: () =>
+            Poseidon.hash([
+              Field(action.spellId),
+              Field(action.caster),
+              Field(action.caster),
+            ]),
         };
       });
 
@@ -223,6 +264,13 @@ export class Stater extends Struct({
           additionalData: action.spell!.modifyerData.fromJSON(
             JSON.parse(action.additionalData)
           ),
+          // TODO: Add real hash function
+          hash: () =>
+            Poseidon.hash([
+              Field(action.spellId),
+              Field(action.caster),
+              Field(action.caster),
+            ]),
         };
       });
 
