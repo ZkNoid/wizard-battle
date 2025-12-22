@@ -1,4 +1,4 @@
-import { Scene, Tilemaps } from "phaser";
+import { Scene, Tilemaps } from 'phaser';
 
 export interface TilemapConfig {
   width: number;
@@ -44,19 +44,19 @@ export class GameTilemap {
       });
 
       if (!this.map) {
-        throw new Error("Failed to create tilemap");
+        throw new Error('Failed to create tilemap');
       }
 
       // Add tileset
       this.tileset = this.map.addTilesetImage(tilesetName, tilesetKey);
       if (!this.tileset) {
-        throw new Error("Failed to create tileset");
+        throw new Error('Failed to create tileset');
       }
 
       // Create ground layer
       this.groundLayer = this.map.createLayer(0, this.tileset);
       if (!this.groundLayer) {
-        throw new Error("Failed to create ground layer");
+        throw new Error('Failed to create ground layer');
       }
 
       // For now, we'll use the same layer for both ground and details
@@ -71,7 +71,7 @@ export class GameTilemap {
       // Set collision for ground layer
       this.groundLayer.setCollisionByProperty({ collides: false });
     } catch (error) {
-      console.error("Error initializing tilemap:", error);
+      console.error('Error initializing tilemap:', error);
       throw error;
     }
   }
@@ -102,7 +102,7 @@ export class GameTilemap {
   loadTilemapFromData(tilemapData: number[]): void {
     if (tilemapData.length !== this.config.width * this.config.height) {
       console.error(
-        `Invalid tilemap data length: ${tilemapData.length}, expected: ${this.config.width * this.config.height}`,
+        `Invalid tilemap data length: ${tilemapData.length}, expected: ${this.config.width * this.config.height}`
       );
       return;
     }

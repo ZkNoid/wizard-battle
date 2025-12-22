@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import { Button } from "../shared/Button";
-import { Background } from "./assets/background";
-import { Tab } from "@/lib/enums/Tab";
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import { motion } from "motion/react";
-import * as Yup from "yup";
-import { Cross } from "./assets/cross";
-import { api } from "@/trpc/react";
+import { Button } from '../shared/Button';
+import { Background } from './assets/background';
+import { Tab } from '@/lib/enums/Tab';
+import { Formik, Form, Field, ErrorMessage } from 'formik';
+import { motion } from 'motion/react';
+import * as Yup from 'yup';
+import { Cross } from './assets/cross';
+import { api } from '@/trpc/react';
 
 const validationSchema = Yup.object({
   issue: Yup.string()
-    .required("Please describe your issue")
-    .min(10, "Description must be at least 10 characters"),
+    .required('Please describe your issue')
+    .min(10, 'Description must be at least 10 characters'),
   contact: Yup.string()
-    .required("Please provide contact information")
+    .required('Please provide contact information')
     .matches(
       /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$|^@[a-zA-Z0-9_]+$/,
-      "Please provide a valid email or telegram handle",
+      'Please provide a valid email or telegram handle'
     ),
 });
 
@@ -40,7 +40,7 @@ export default function Support({ setTab }: { setTab: (tab: Tab) => void }) {
           </span>
           {/* Form */}
           <Formik
-            initialValues={{ issue: "", contact: "" }}
+            initialValues={{ issue: '', contact: '' }}
             validationSchema={validationSchema}
             onSubmit={(values, { resetForm }) => {
               createFeedback(
@@ -53,10 +53,10 @@ export default function Support({ setTab }: { setTab: (tab: Tab) => void }) {
                     setTab(Tab.HOME);
                   },
                   onError: (error) => {
-                    console.error("Failed to send feedback", error);
+                    console.error('Failed to send feedback', error);
                     setTab(Tab.HOME);
                   },
-                },
+                }
               );
               resetForm();
             }}
@@ -119,7 +119,7 @@ export default function Support({ setTab }: { setTab: (tab: Tab) => void }) {
             onClick={() => setTab(Tab.HOME)}
             className="flex cursor-pointer flex-col items-center justify-center"
             whileHover={{ rotate: 90 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
           >
             <Cross className="h-9 w-9" />
           </motion.button>

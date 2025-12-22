@@ -33,7 +33,7 @@ export interface IInventoryAccessoryItem extends IInventoryItem {
   level: number;
   buff: {
     effect: string;
-    value: number 
+    value: number;
   }[];
   improvementRequirements: {
     item: IInventoryItem;

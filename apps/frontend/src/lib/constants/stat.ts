@@ -1,4 +1,4 @@
-import type { IHeroStatConfig, IHeroStats } from "../types/IHeroStat";
+import type { IHeroStatConfig, IHeroStats } from '../types/IHeroStat';
 
 export const heroStatsConfig: IHeroStatConfig[] = [
   {

@@ -1,6 +1,6 @@
-import { motion } from "motion/react";
-import { SlotBg } from "./assets/slot-bg";
-import { cn } from "@/lib/utils";
+import { motion } from 'motion/react';
+import { SlotBg } from './assets/slot-bg';
+import { cn } from '@/lib/utils';
 
 export function SaveSlot({
   slot,
@@ -8,7 +8,7 @@ export function SaveSlot({
   isActive,
   onClick,
 }: {
-  slot: "1" | "2" | "3" | "4";
+  slot: '1' | '2' | '3' | '4';
   className: string;
   isActive: boolean;
   onClick: () => void;
@@ -23,14 +23,14 @@ export function SaveSlot({
       }}
       animate={isActive ? { x: 100 } : { x: 0 }}
       transition={{
-        type: "spring",
+        type: 'spring',
         stiffness: 80,
         damping: 12,
         duration: 0.3,
       }}
       className={cn(
-        "w-65 h-33 relative flex cursor-pointer flex-col items-center justify-center",
-        className,
+        'w-65 h-33 relative flex cursor-pointer flex-col items-center justify-center',
+        className
       )}
       onClick={onClick}
     >

@@ -99,7 +99,7 @@ export const usersRouter = createTRPCRouter({
       }
 
       // TODO: Add fetch from database
-      
+
       return 17;
     }),
 });

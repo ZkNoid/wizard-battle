@@ -1,4 +1,8 @@
-import type { IInventoryAccessoryItem, IInventoryArmorItem, IInventoryItem } from '../types/Inventory';
+import type {
+  IInventoryAccessoryItem,
+  IInventoryArmorItem,
+  IInventoryItem,
+} from '../types/Inventory';
 
 export const ALL_ITEMS: IInventoryItem[] | IInventoryArmorItem[] = [
   {

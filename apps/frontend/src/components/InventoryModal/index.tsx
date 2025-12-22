@@ -2,9 +2,14 @@
 
 import { InventoryBg } from './assets/inventory-bg';
 import Image from 'next/image';
-import type { IInventoryAccessoryItem, IInventoryArmorItem, IInventoryItem, InventoryFilterType } from '@/lib/types/Inventory';
+import type {
+  IInventoryAccessoryItem,
+  IInventoryArmorItem,
+  IInventoryItem,
+  InventoryFilterType,
+} from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
-import { ALL_ITEMS} from '@/lib/constants/items';
+import { ALL_ITEMS } from '@/lib/constants/items';
 import { useState, useEffect } from 'react';
 import { CharacterBg } from './assets/character-bg';
 import { LvlBg } from './assets/lvl-bg';
@@ -27,15 +32,14 @@ enum Wizards {
 }
 
 export default function InventoryModal({ onClose }: { onClose: () => void }) {
-
   // Request user XP (mock address for now)
   const { data: xp = 0, isLoading: isXpLoading } = api.users.getXp.useQuery({
     address: 'mock-address', // TODO: get from wallet when connected
   });
 
-  const [items, setItems] = useState<IInventoryItem[] | IInventoryArmorItem[]>(
-    [...ALL_ITEMS]
-  );
+  const [items, setItems] = useState<IInventoryItem[] | IInventoryArmorItem[]>([
+    ...ALL_ITEMS,
+  ]);
   const [currentWizard, setCurrentWizard] = useState<Wizards>(Wizards.MAGE);
   const [stats, setStats] = useState<IHeroStats>(defaultHeroStats);
   const [equippedItems, setEquippedItems] = useState<
@@ -58,7 +62,9 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
 
     Object.values(equippedItems).forEach((item) => {
       if (item && (item.type === 'armor' || item.type === 'accessory')) {
-        const wearableItem = item as IInventoryArmorItem | IInventoryAccessoryItem;
+        const wearableItem = item as
+          | IInventoryArmorItem
+          | IInventoryAccessoryItem;
         wearableItem.buff.forEach((buff) => {
           const statKey = buff.effect as keyof IHeroStats;
           if (statKey in calculatedStats) {
@@ -158,7 +164,9 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    const wearableItem = draggedItem as IInventoryArmorItem | IInventoryAccessoryItem;
+    const wearableItem = draggedItem as
+      | IInventoryArmorItem
+      | IInventoryAccessoryItem;
     if (wearableItem.wearableSlot !== slotId) {
       setDraggedItem(null);
       return;
@@ -209,13 +217,14 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     }));
   };
 
-  const filteredItems = activeFilter === 'all' 
-  ? items 
-  : items.filter(item => item.type === activeFilter)
+  const filteredItems =
+    activeFilter === 'all'
+      ? items
+      : items.filter((item) => item.type === activeFilter);
 
   const handleChangeFilter = (filterMode: InventoryFilterType) => {
     setActiveFilter(filterMode);
-  }
+  };
 
   const filterBtns: IInventoryFilterBtnProps[] = [
     {
@@ -591,8 +600,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
           </div>
           {/* Items */}
           <div className="grid grid-cols-7 gap-2.5">
-            <div className='col-span-7 grid grid-cols-8 gap-2.5 mb-2.5'>
-              {filterBtns.map((btnProps, index) => <InventoryFilterBtn key={index} {...btnProps} />)}
+            <div className="col-span-7 mb-2.5 grid grid-cols-8 gap-2.5">
+              {filterBtns.map((btnProps, index) => (
+                <InventoryFilterBtn key={index} {...btnProps} />
+              ))}
             </div>
             {filteredItems.map((item) => (
               <div
