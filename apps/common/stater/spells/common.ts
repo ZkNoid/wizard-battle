@@ -3,6 +3,7 @@ import { Position, PositionOption, type SpellCast } from '../structs';
 import { State } from '../state';
 import { WizardId } from '../../wizards';
 import { type ISpell } from './interface';
+import { Stater } from '../stater';
 
 export class MoveData extends Struct({
   position: Position,
@@ -43,16 +44,16 @@ export const MoveCast = (
   });
 };
 
-export const MoveModifyer = (state: State, spellCast: MoveSpellCast) => {
-  console.log('MoveModifyer', state, spellCast);
+export const MoveModifyer = (stater: Stater, spellCast: MoveSpellCast) => {
+  console.log('MoveModifyer', stater.state, spellCast);
 
   // Fix rehydration
-  console.log(state.playerStats.position.value.x);
-  state.playerStats.position = new PositionOption({
+  console.log(stater.state.playerStats.position.value.x);
+  stater.state.playerStats.position = new PositionOption({
     value: spellCast.additionalData.position,
     isSome: Field(1),
   });
-  console.log(state.playerStats.position.value.x);
+  console.log(stater.state.playerStats.position.value.x);
 };
 
 export const allCommonSpells: ISpell<any>[] = [

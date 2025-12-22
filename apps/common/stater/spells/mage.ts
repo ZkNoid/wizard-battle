@@ -11,6 +11,7 @@ import { Position, PositionOption, type SpellCast } from '../structs';
 import { WizardId } from '../../wizards';
 import { type ISpell } from './interface';
 import type { State } from '../state';
+import { Stater } from '../stater';
 
 export class LightningBoldData extends Struct({
   position: Position,
@@ -52,10 +53,10 @@ export const LightningBoldCast = (
 };
 
 export const LightningBoldModifyer = (
-  state: State,
+  stater: Stater,
   spellCast: LightningBoldSpellCast
 ) => {
-  const selfPosition = state.playerStats.position.value;
+  const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
   console.log('LightningBoldModifyer');
   console.log(selfPosition);
@@ -77,7 +78,7 @@ export const LightningBoldModifyer = (
     [damage, damage2, Int64.from(0)]
   );
 
-  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+  stater.state.playerStats.hp = stater.state.playerStats.hp.sub(damageToApply);
 };
 
 const LightningBoldSceneEffect = (
@@ -145,10 +146,10 @@ export const FireBallCast = (
 };
 
 export const FireBallModifyer = (
-  state: State,
+  stater: Stater,
   spellCast: SpellCast<FireBallData>
 ) => {
-  const selfPosition = state.playerStats.position.value;
+  const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
 
   const distance = selfPosition.manhattanDistance(targetPosition);
@@ -168,7 +169,7 @@ export const FireBallModifyer = (
     [damage, damage2, damage3, Int64.from(0)]
   );
 
-  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+  stater.state.playerStats.hp = stater.state.playerStats.hp.sub(damageToApply);
 };
 
 const FireBallSceneEffect = (
@@ -244,10 +245,10 @@ export const LaserCast = (
 };
 
 export const LaserModifyer = (
-  state: State,
+  stater: Stater,
   spellCast: SpellCast<LaserData>
 ) => {
-  const selfPosition = state.playerStats.position.value;
+  const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
 
   const sameRow = selfPosition.x.equals(targetPosition.x);
@@ -258,7 +259,7 @@ export const LaserModifyer = (
 
   const damageToApply = Provable.if(hit, damage, Int64.from(0));
 
-  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+  stater.state.playerStats.hp = stater.state.playerStats.hp.sub(damageToApply);
 };
 
 const LaserSceneEffect = (
@@ -337,10 +338,10 @@ export const TeleportCast = (
 };
 
 export const TeleportModifyer = (
-  state: State,
+  stater: Stater,
   spellCast: SpellCast<TeleportData>
 ) => {
-  state.playerStats.position = new PositionOption({
+  stater.state.playerStats.position = new PositionOption({
     value: spellCast.additionalData.position,
     isSome: Field(1),
   });
@@ -375,13 +376,18 @@ export const HealCast = (
   });
 };
 
-export const HealModifyer = (state: State, spellCast: SpellCast<HealData>) => {
-  state.playerStats.hp = state.playerStats.hp.add(Int64.from(50));
+export const HealModifyer = (
+  stater: Stater,
+  spellCast: SpellCast<HealData>
+) => {
+  stater.state.playerStats.hp = stater.state.playerStats.hp.add(Int64.from(50));
   // If the player has more health than the max health, set the health to the max health
-  state.playerStats.hp = Provable.if(
-    state.playerStats.hp.sub(state.playerStats.maxHp).isPositive(),
-    state.playerStats.maxHp,
-    state.playerStats.hp
+  stater.state.playerStats.hp = Provable.if(
+    stater.state.playerStats.hp
+      .sub(stater.state.playerStats.maxHp)
+      .isPositive(),
+    stater.state.playerStats.maxHp,
+    stater.state.playerStats.hp
   );
 };
 

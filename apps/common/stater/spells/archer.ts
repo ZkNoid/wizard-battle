@@ -11,6 +11,7 @@ import {
 } from 'o1js';
 import { type ISpell } from './interface';
 import { WizardId } from '../../wizards';
+import { Stater } from '../stater';
 
 export class ArrowData extends Struct({
   position: Position,
@@ -52,10 +53,10 @@ export const ArrowCast = (
 };
 
 export const ArrowModifyer = (
-  state: State,
+  stater: Stater,
   spellCast: SpellCast<ArrowData>
 ) => {
-  const selfPosition = state.playerStats.position.value;
+  const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
   const distance = selfPosition.manhattanDistance(targetPosition);
   const directHit = distance.equals(UInt64.from(0));
@@ -65,16 +66,16 @@ export const ArrowModifyer = (
 
   const damageToApply = Provable.if(directHit, damage, Int64.from(0));
 
-  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+  stater.state.playerStats.hp = stater.state.playerStats.hp.sub(damageToApply);
 
   // #TODO make provable
   // Bleeding effect
 
-  const chance = Poseidon.hash([state.randomSeed]).toBigInt() % 2n;
-  const isBleeding = directHit.toBoolean() && chance === 1n;
+  const chance = stater.getRandomPercentage();
+  const isBleeding = directHit.and(chance.lessThan(UInt64.from(50)));
 
-  if (isBleeding) {
-    state.pushEffect(
+  if (isBleeding.toBoolean()) {
+    stater.state.pushEffect(
       new Effect({
         effectId: CircuitString.fromString('Bleeding').hash(),
         duration: Field.from(3),
@@ -140,10 +141,10 @@ export const AimingShotCast = (
 };
 
 export const AimingShotModifyer = (
-  state: State,
+  stater: Stater,
   spellCast: SpellCast<AimingShotData>
 ) => {
-  const selfPosition = state.playerStats.position.value;
+  const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
   const distance = selfPosition.manhattanDistance(targetPosition);
   const directHit = distance.equals(UInt64.from(0));
@@ -155,14 +156,14 @@ export const AimingShotModifyer = (
   // #TODO make provable
   // Critical hit
 
-  let randomValue = Poseidon.hash([state.randomSeed]).toBigInt() % 100n;
-  const isCritical = randomValue < 10n;
+  let randomValue = stater.getRandomPercentage();
+  const isCritical = randomValue.lessThan(UInt64.from(10));
 
-  if (isCritical) {
+  if (isCritical.toBoolean()) {
     damageToApply = damageToApply.mul(Int64.from(2));
   }
 
-  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+  stater.state.playerStats.hp = stater.state.playerStats.hp.sub(damageToApply);
 };
 
 const AimingShotSceneEffect = (
@@ -220,25 +221,25 @@ export const HailOfArrowsCast = (
 };
 
 export const HailOfArrowsModifyer = (
-  state: State,
+  stater: Stater,
   spellCast: SpellCast<HailOfArrowsData>
 ) => {
-  const selfPosition = state.playerStats.position.value;
+  const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
   const distance = selfPosition.manhattanDistance(targetPosition);
   const hasDamage = distance.lessThanOrEqual(UInt64.from(3));
   const damageToApply = Provable.if(hasDamage, Int64.from(50), Int64.from(0));
 
-  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+  stater.state.playerStats.hp = stater.state.playerStats.hp.sub(damageToApply);
 
   // #TODO make provable
   // Slowing effect
 
-  const chance = Poseidon.hash([state.randomSeed]).toBigInt() % 10n;
-  const isSlowing = hasDamage.toBoolean() && chance <= 2n;
+  const chance = stater.getRandomPercentage();
+  const isSlowing = hasDamage.and(chance.lessThan(UInt64.from(20)));
 
-  if (isSlowing) {
-    state.pushEffect(
+  if (isSlowing.toBoolean()) {
+    stater.state.pushEffect(
       new Effect({
         effectId: CircuitString.fromString('SlowingRestoration').hash(),
         duration: Field.from(3),
@@ -246,7 +247,7 @@ export const HailOfArrowsModifyer = (
       }),
       'endOfRound'
     );
-    state.pushEffect(
+    stater.state.pushEffect(
       new Effect({
         effectId: CircuitString.fromString('Slowing').hash(),
         duration: Field.from(2),
@@ -312,10 +313,10 @@ export const DecoyCast = (
 };
 
 export const DecoyModifyer = (
-  state: State,
+  stater: Stater,
   spellCast: SpellCast<DecoyData>
 ) => {
-  state.pushEffect(
+  stater.state.pushEffect(
     new Effect({
       effectId: CircuitString.fromString('Decoy').hash(),
       duration: Field.from(2),
@@ -365,11 +366,11 @@ export const CloudCast = (
 };
 
 export const CloudModifyer = (
-  state: State,
+  stater: Stater,
   spellCast: SpellCast<CloudData>
 ) => {
   console.log('Cloud modifyer');
-  state.pushEffect(
+  stater.state.pushEffect(
     new Effect({
       effectId: CircuitString.fromString('Cloud').hash(),
       duration: Field.from(3),

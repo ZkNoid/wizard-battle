@@ -54,7 +54,7 @@ export class Stater extends Struct({
       throw Error('No such spell modifier');
     }
 
-    spellModifier(this.state, spell);
+    spellModifier(this, spell);
     // Apply it to the
   }
 
@@ -79,18 +79,21 @@ export class Stater extends Struct({
     return value.mod(UInt64.from(100));
   }
 
-  applyDamage(damage: Int64) {
+  applyDamage(damage: UInt64, opponentState: State) {
     // Check dodge and accuracy
-    const hitChance = this.state.playerStats.dodgeChance;
+    const hitChance = opponentState.playerStats.accuracy
+      .mul(this.state.playerStats.dodgeChance)
+      .div(CALCULATION_PRECISION);
     const dodgeRandomPercentage = this.getRandomPercentage();
     const isHit = dodgeRandomPercentage.lessThan(hitChance);
     const isDodged = dodgeRandomPercentage.greaterThan(hitChance);
 
     // Calculate damage (damage * defense * crit * accuracy)
     const fullDamage = damage
+      .mul(this.state.playerStats.attack)
       .mul(this.state.playerStats.defense)
       .div(CALCULATION_PRECISION);
-    const finalDamage = Provable.if(isHit, fullDamage, Int64.from(0));
+    const finalDamage = Provable.if(isHit, fullDamage, UInt64.from(0));
 
     this.state.playerStats.hp = this.state.playerStats.hp.sub(finalDamage);
   }
