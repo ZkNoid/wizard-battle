@@ -595,7 +595,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
           <div className="grid grid-cols-7 gap-2.5">
             <div className="col-span-7 mb-2.5 grid grid-cols-8 gap-2.5">
               {filterBtns.map((btnProps, index) => (
-                <InventoryFilterBtn key={index} {...btnProps} />
+                <InventoryFilterBtn
+                  key={`${btnProps.title}-${index}`}
+                  {...btnProps}
+                />
               ))}
             </div>
             {filteredItems.map((item) => (
