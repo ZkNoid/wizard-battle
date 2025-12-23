@@ -98,11 +98,15 @@ export const usersRouter = createTRPCRouter({
         });
       }
 
-      const user = await db
-        .collection(collectionName)
-        .findOne({ address: input.address });
+      // const user = await db
+      //   .collection(collectionName)
+      //   .findOne({ address: input.address });
 
-      return (user as unknown as IUser)?.xp ?? 0;
+      // return (user as unknown as IUser)?.xp ?? 0;
+
+      await Promise.resolve(1000);
+
+      return 17;
     }),
 });
 
