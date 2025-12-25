@@ -79,6 +79,16 @@ describe('Random Events', () => {
               param: Field(0),
             })
         ),
+      onEndEffects: Array(10)
+        .fill(null)
+        .map(
+          () =>
+            new Effect({
+              effectId: Field(0),
+              duration: Field(0),
+              param: Field(0),
+            })
+        ),
       map: [...Array(64).fill(Field(0))],
       turnId: Int64.from(1),
       randomSeed: Field(seed),

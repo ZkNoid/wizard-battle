@@ -199,11 +199,45 @@ export const SpectralProjectionModifier = (
   spellCast: SpellCast<SpectralProjectionData>,
   opponentState: State
 ) => {
-  // TODO: Implement spectral form state tracking
-  // This requires additional logic to:
-  // 1. Track spectral form state
-  // 2. Transform available skills to melee variants
-  // 3. Position the spectral projection on opponent's field
+  // Skill transformation mappings:
+  // - Spectral Arrow → Shadow Strike
+  // - Dusk's Embrace → Shadow Dash
+  // - Phantom Echo → Whirling Blades
+  const spectralArrowId = CircuitString.fromString('SpectralArrow').hash();
+  const shadowStrikeId = CircuitString.fromString('ShadowStrike').hash();
+  const dusksEmbraceId = CircuitString.fromString('DusksEmbrace').hash();
+  const shadowDashId = CircuitString.fromString('ShadowDash').hash();
+  const phantomEchoId = CircuitString.fromString('PhantomEcho').hash();
+  const whirlingBladesId = CircuitString.fromString('WhirlingBlades').hash();
+
+  // Transform skills in a provable way using Provable.switch
+  for (let i = 0; i < stater.state.spellStats.length; i++) {
+    const currentSpellId = stater.state.spellStats[i]!.spellId;
+
+    // Check each condition for transformation
+    const isSpectralArrow = currentSpellId.equals(spectralArrowId);
+    const isDusksEmbrace = currentSpellId.equals(dusksEmbraceId);
+    const isPhantomEcho = currentSpellId.equals(phantomEchoId);
+    const isOther = isSpectralArrow.or(isDusksEmbrace).or(isPhantomEcho).not();
+
+    // Use Provable.switch to select the transformed spell ID
+    const finalSpellId = Provable.switch(
+      [isSpectralArrow, isDusksEmbrace, isPhantomEcho, isOther],
+      Field,
+      [shadowStrikeId, shadowDashId, whirlingBladesId, currentSpellId]
+    );
+
+    stater.state.spellStats[i]!.spellId = finalSpellId;
+  }
+
+  stater.state.pushEffect(
+    new Effect({
+      effectId: CircuitString.fromString('SpectralProjectionReturn').hash(),
+      duration: Field.from(3),
+      param: Field(0),
+    }),
+    'onEnd'
+  );
 };
 
 // ============================================================================
