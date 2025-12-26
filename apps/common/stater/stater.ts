@@ -121,6 +121,71 @@ export class Stater extends Struct({
     );
   }
 
+  applyOnEndEffect(publicState: State, effect: Effect) {
+    if (effect.effectId.toString() === '0') {
+      return;
+    }
+
+    const effectInfo = allEffectsInfo.find(
+      (e) => e.id.toString() === effect.effectId.toString()
+    );
+
+    if (!effectInfo) {
+      throw new Error('No such effectInfo');
+    }
+
+    // Store original states before applying
+    const originalState = this.state.copy();
+    const originalPublicState = publicState.copy();
+
+    // Always apply the effect (computes new state)
+    console.log('applyOnEndEffect', effectInfo.name);
+    effectInfo.apply(this.state, publicState, effect.param);
+
+    effect.duration = effect.duration.sub(Field.from(1));
+    const isExpired = effect.duration.equals(Field.from(0));
+
+    // Provably select: keep new state only if expired, otherwise restore original
+    const selectedState = Provable.if(
+      isExpired,
+      State,
+      this.state,
+      originalState
+    );
+    this.state = new State({
+      playerId: selectedState.playerId,
+      wizardId: selectedState.wizardId,
+      playerStats: selectedState.playerStats,
+      spellStats: selectedState.spellStats,
+      endOfRoundEffects: selectedState.endOfRoundEffects,
+      publicStateEffects: selectedState.publicStateEffects,
+      onEndEffects: selectedState.onEndEffects,
+      map: selectedState.map,
+      turnId: selectedState.turnId,
+      randomSeed: selectedState.randomSeed,
+    });
+
+    const selectedPublicState = Provable.if(
+      isExpired,
+      State,
+      publicState,
+      originalPublicState
+    );
+    // Update publicState fields in place
+    publicState.playerId = selectedPublicState.playerId;
+    publicState.wizardId = selectedPublicState.wizardId;
+    publicState.playerStats = selectedPublicState.playerStats;
+    publicState.spellStats = selectedPublicState.spellStats;
+    publicState.endOfRoundEffects = selectedPublicState.endOfRoundEffects;
+    publicState.publicStateEffects = selectedPublicState.publicStateEffects;
+    publicState.onEndEffects = selectedPublicState.onEndEffects;
+    publicState.map = selectedPublicState.map;
+    publicState.turnId = selectedPublicState.turnId;
+    publicState.randomSeed = selectedPublicState.randomSeed;
+
+    effect.effectId = Provable.if(isExpired, Field(0), effect.effectId);
+  }
+
   applyPublicStateEffects(publicState: State) {
     for (const effect of this.state.publicStateEffects) {
       this.applyEffect(publicState, effect);
