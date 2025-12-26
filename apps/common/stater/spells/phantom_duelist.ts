@@ -123,6 +123,21 @@ export const ShadowVeilCast = (
   });
 };
 
+const ShadowVeilSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: any,
+  type: 'user' | 'enemy'
+) => {
+  gameEmitter.throwEffect({
+    animationName: 'shadow_veil',
+    x,
+    y,
+    overlayId: type,
+    scale: 1.5,
+  });
+};
+
 export const ShadowVeilModifier = (
   stater: Stater,
   spellCast: SpellCast<ShadowVeilData>,
@@ -588,12 +603,14 @@ export const ShadowDashModifier = (
   // Base damage 50, up to +100% based on distance (max at distance 7)
   const baseDamage = UInt64.from(50);
 
-  // TODO: Make this fully provable
   // Scale damage based on distance: 50 + (distance/7 * 50) = 50 to 100 damage
-  const distanceValue = Number(distance.toBigInt());
-  const bonusMultiplier = Math.min(distanceValue / 7, 1); // Cap at 100% bonus
-  const bonusDamage = Math.floor(50 * bonusMultiplier);
-  const totalDamage = UInt64.from(50 + bonusDamage);
+  // bonusDamage = min(distance * 50 / 7, 50)
+  const scaledDistance = distance.mul(UInt64.from(50));
+  const rawBonusDamage = scaledDistance.div(UInt64.from(7));
+  const maxBonus = UInt64.from(50);
+  const isCapped = rawBonusDamage.greaterThan(maxBonus);
+  const bonusDamage = Provable.if(isCapped, maxBonus, rawBonusDamage);
+  const totalDamage = baseDamage.add(bonusDamage);
 
   const damageToApply = Provable.if(directHit, totalDamage, UInt64.from(0));
 
@@ -754,6 +771,7 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     modifier: ShadowVeilModifier,
     spellCast: ShadowVeilSpellCast,
     cast: ShadowVeilCast,
+    sceneEffect: ShadowVeilSceneEffect,
     target: 'ally',
     priority: 1,
     defaultValue: {
