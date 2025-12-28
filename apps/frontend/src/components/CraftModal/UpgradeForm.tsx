@@ -1,21 +1,11 @@
 import Image from 'next/image';
+import { UpgradeFieldBg } from './assets/upgrade-field-bg';
 
 export function UpgradeForm() {
   return (
-    <div className="flex flex-col gap-5 px-5">
+    <div className="relative flex min-h-[600px] flex-col px-5">
       {/* Header */}
-      <div className="flex flex-row items-center justify-center gap-2.5">
-        <Image
-          src="/icons/armor.png"
-          width={32}
-          height={28}
-          alt="upgrade"
-          className="h-7 w-8 object-contain object-center"
-        />
-        <span className="font-pixel text-main-gray text-lg font-bold">
-          Upgrade Items
-        </span>
-      </div>
+      <UpgradeFieldBg className="absolute inset-0 -top-5 z-0 h-full w-full" />
 
       {/* Content will go here */}
       <div className="flex flex-col gap-2.5">

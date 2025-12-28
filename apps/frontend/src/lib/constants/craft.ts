@@ -4,7 +4,15 @@ export const CRAFT_GROUP_PANELS: ICraftGroupPanel[] = [
   {
     title: 'Neclace',
     icon: '/inventory/placeholders/necklace.png',
-    items: [],
+    items: [
+      {
+        id: 'Sorcerer_necklace',
+        image: '/inventory/craft/sorcerer_necklace.png',
+        title: 'Sorcerer necklace',
+        description: 'Some description',
+        recipe: [],
+      },
+    ],
   },
   {
     title: 'Rings',

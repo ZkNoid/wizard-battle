@@ -11,5 +11,5 @@ export interface ICraftItem {
   image: string;
   title: string;
   description: string;
-  requiredItems: IInventoryItem[];
+  recipe: IInventoryItem[];
 }

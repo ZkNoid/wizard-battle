@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { CollapsePanel } from '../shared/CollapsePanel';
 import { CraftFormBg } from './assets/craft-form-bg';
 import { CRAFT_GROUP_PANELS } from '@/lib/constants/craft';
+import { CraftFormItem } from './CraftFormItem';
 
 export function CraftForm() {
   return (
@@ -12,7 +13,7 @@ export function CraftForm() {
       <CraftFormBg className="absolute inset-0 -top-5 z-0 h-full w-full" />
 
       {/* Content */}
-      <div className="absolute z-10 flex flex-col gap-5">
+      <div className="absolute z-10 flex w-full flex-col gap-5">
         {/* Header */}
         <div className="flex flex-row items-center gap-2.5">
           <Image
@@ -47,7 +48,7 @@ export function CraftForm() {
                 panel.items && panel.items.length > 0 ? (
                   <div className="flex flex-row gap-2.5">
                     {panel.items.map((item) => (
-                      <div className="flex flex-col gap-1">Content</div>
+                      <CraftFormItem key={item.id} item={item} />
                     ))}
                   </div>
                 ) : (
