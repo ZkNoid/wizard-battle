@@ -3,50 +3,9 @@
 import Image from 'next/image';
 import { CollapsePanel } from '../shared/CollapsePanel';
 import { CraftFormBg } from './assets/craft-form-bg';
-
-interface ItemPanel {
-  title: string;
-  icon: string;
-  items: ICraftItem[];
-}
-
-interface ICraftItem {
-  id: string;
-  image: string;
-  title: string;
-  description: string;
-  requiredItems: ICraftItem[];
-}
+import { CRAFT_GROUP_PANELS } from '@/lib/constants/craft';
 
 export function CraftForm() {
-  const itemPanels: ItemPanel[] = [
-    {
-      title: 'Neclace',
-      icon: '/inventory/placeholders/necklace.png',
-      items: [],
-    },
-    {
-      title: 'Rings',
-      icon: '/inventory/placeholders/ring.png',
-      items: [],
-    },
-    {
-      title: 'Belts',
-      icon: '/inventory/placeholders/belt.png',
-      items: [],
-    },
-    {
-      title: 'Gloves',
-      icon: '/inventory/placeholders/arms.png',
-      items: [],
-    },
-    {
-      title: 'Boots',
-      icon: '/inventory/placeholders/legs.png',
-      items: [],
-    },
-  ];
-
   return (
     <div className="relative flex min-h-[600px] flex-col px-5">
       {/* Background */}
@@ -71,7 +30,7 @@ export function CraftForm() {
         {/* Content will go here */}
         <div className="text-main-gray font-pixel flex flex-col gap-2.5">
           {/* TODO: Add craft content */}
-          {itemPanels.map((panel) => (
+          {CRAFT_GROUP_PANELS.map((panel) => (
             <CollapsePanel
               title={
                 <span className="flex flex-row items-center gap-2.5">
