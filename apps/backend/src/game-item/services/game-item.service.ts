@@ -57,5 +57,14 @@ export class GameItemService {
     return deletedItem;
   }
 
+  /** Find all craftable items (items that require recipes) */
+  async findCraftableItems(): Promise<GameItem[]> {
+    return this.gameItemModel.find({ isCraftable: true }).exec();
+  }
+
+  /** Find all standalone items/resources (items that don't require recipes) */
+  async findStandaloneItems(): Promise<GameItem[]> {
+    return this.gameItemModel.find({ isCraftable: false }).exec();
+  }
 
 }

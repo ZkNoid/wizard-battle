@@ -44,6 +44,15 @@ async findById(id: string): Promise<GameItemRecipe> {
   return recipe;
 }
 
+async findByResultItem(itemId: string): Promise<GameItemRecipe | null> {
+  return this.recipeModel.findOne({ resultItem: itemId }).populate([
+    { path: 'resultItem' },
+    { path: 'classRecipes.uniqueResource' },
+    { path: 'classRecipes.specificResource' },
+    { path: 'classRecipes.commonResource' },
+  ]).exec();
+}
+
 async update(id: string, updateDto: UpdateRecipeDto): Promise<GameItemRecipe> {
   const updated = await this.recipeModel.findByIdAndUpdate(id, updateDto, { new: true })
     .populate([
