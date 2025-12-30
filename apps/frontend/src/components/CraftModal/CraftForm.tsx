@@ -5,17 +5,18 @@ import { CollapsePanel } from '../shared/CollapsePanel';
 import { CraftFormBg } from './assets/craft-form-bg';
 import { CRAFT_GROUP_PANELS } from '@/lib/constants/craft';
 import { CraftFormItem } from './CraftFormItem';
+import { Scroll } from '../shared/Scroll';
 
 export function CraftForm() {
   return (
-    <div className="relative flex min-h-[600px] flex-col px-5">
+    <div className="relative flex h-[600px] flex-col px-5">
       {/* Background */}
       <CraftFormBg className="absolute inset-0 -top-5 z-0 h-full w-full" />
 
       {/* Content */}
-      <div className="absolute z-10 flex w-full flex-col gap-5">
+      <div className="relative z-10 flex h-full w-full flex-col gap-5">
         {/* Header */}
-        <div className="flex flex-row items-center gap-2.5">
+        <div className="flex flex-shrink-0 flex-row items-center gap-2.5">
           <Image
             src="/icons/armor.png"
             width={32}
@@ -28,37 +29,47 @@ export function CraftForm() {
           </span>
         </div>
 
-        {/* Content will go here */}
-        <div className="text-main-gray font-pixel flex flex-col gap-2.5">
-          {/* TODO: Add craft content */}
-          {CRAFT_GROUP_PANELS.map((panel) => (
-            <CollapsePanel
-              title={
-                <span className="flex flex-row items-center gap-2.5">
-                  <Image
-                    src={panel.icon}
-                    alt={panel.title}
-                    width={32}
-                    height={32}
-                  />
-                  {panel.title}
-                </span>
-              }
-              children={
-                panel.items && panel.items.length > 0 ? (
-                  <div className="flex flex-row gap-2.5">
-                    {panel.items.map((item) => (
-                      <CraftFormItem key={item.id} item={item} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-row gap-2.5">
-                    <div className="flex flex-col gap-1">No items</div>
-                  </div>
-                )
-              }
-            />
-          ))}
+        {/* Scrollable Content */}
+        <div className="text-main-gray font-pixel flex flex-1 flex-col overflow-hidden">
+          <Scroll
+            height="100%"
+            className="w-full"
+            scrollbarWidth={12}
+            scrollbarGap={12}
+            alwaysShowScrollbar={true}
+          >
+            <div className="flex flex-col gap-2.5">
+              {CRAFT_GROUP_PANELS.map((panel) => (
+                <CollapsePanel
+                  key={panel.title}
+                  title={
+                    <span className="flex flex-row items-center gap-2.5">
+                      <Image
+                        src={panel.icon}
+                        alt={panel.title}
+                        width={32}
+                        height={32}
+                      />
+                      {panel.title}
+                    </span>
+                  }
+                  children={
+                    panel.items && panel.items.length > 0 ? (
+                      <div className="flex flex-row gap-2.5">
+                        {panel.items.map((item) => (
+                          <CraftFormItem key={item.id} item={item} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-row gap-2.5">
+                        <div className="flex flex-col gap-1">No items</div>
+                      </div>
+                    )
+                  }
+                />
+              ))}
+            </div>
+          </Scroll>
         </div>
       </div>
     </div>
