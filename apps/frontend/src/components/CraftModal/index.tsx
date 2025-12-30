@@ -16,8 +16,8 @@ export default function CraftModal({ onClose }: { onClose: () => void }) {
   const iconClassName = 'h-7 w-8 object-contain object-center';
   const textClassName = 'font-pixel text-main-gray text-lg font-bold';
 
-  const getButtonVariant = (tabName: string): 'gray' | 'blue' => {
-    return activeTab === tabName ? 'blue' : 'gray';
+  const getButtonVariant = (tabName: string): 'gray' | 'blue' | 'lightGray' => {
+    return activeTab === tabName ? 'gray' : 'lightGray';
   };
 
   const getForm = (tabName: string): React.ReactNode => {
@@ -39,10 +39,10 @@ export default function CraftModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="w-170 h-189 relative -mb-2.5"
+        className="w-170 h-189 relative"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-row gap-2.5 px-5">
+        <div className="-mb-2.5 flex flex-row gap-2.5 px-5">
           <Button
             variant={getButtonVariant('craft')}
             className={buttonClassName}
