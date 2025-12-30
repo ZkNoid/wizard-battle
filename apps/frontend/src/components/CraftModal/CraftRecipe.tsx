@@ -16,27 +16,25 @@ export function CraftRecipe({ recipe, userInventory }: CraftRecipeProps) {
   };
 
   return (
-    <div className="flex flex-row items-center gap-4">
-      {recipe.map((item, index) => {
+    <div className="flex flex-row items-center gap-6 text-[8px]">
+      {recipe.map((item) => {
         const userAmount = getUserAmount(item.id);
         const hasEnoughAmount = hasEnough(item.id, item.requiredAmount);
         const amountColor = hasEnoughAmount ? 'text-green-500' : 'text-red-500';
 
         return (
-          <div key={item.id} className="flex flex-row items-center gap-2">
-            <div className="flex flex-row items-center gap-2">
-              <Image
-                src={`/items/${item.image}`}
-                alt={item.title}
-                width={24}
-                height={24}
-                className="object-contain"
-              />
-              <span className="font-pixel text-xs">{item.title}:</span>
-              <span className={`font-pixel text-xs font-bold ${amountColor}`}>
-                {userAmount}/{item.requiredAmount}
-              </span>
-            </div>
+          <div key={item.id} className="flex flex-row items-center gap-1.5">
+            <Image
+              src={`/items/${item.image}`}
+              alt={item.title}
+              width={24}
+              height={24}
+              className="shrink-0 object-contain"
+            />
+            <span className="font-pixel whitespace-nowrap">{item.title}:</span>
+            <span className={`font-pixel whitespace-nowrap ${amountColor}`}>
+              {userAmount}/{item.requiredAmount}
+            </span>
           </div>
         );
       })}

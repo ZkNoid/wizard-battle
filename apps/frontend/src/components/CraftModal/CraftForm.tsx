@@ -9,7 +9,7 @@ import { Scroll } from '../shared/Scroll';
 
 export function CraftForm() {
   return (
-    <div className="relative flex h-full flex-col px-5">
+    <div className="relative flex h-full flex-col pr-5">
       {/* Background */}
       <CraftFormBg className="absolute inset-0 -top-5 z-0 h-full w-full" />
 

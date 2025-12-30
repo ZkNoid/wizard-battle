@@ -8,7 +8,7 @@ export function CraftFormItem({ item }: { item: ICraftItem }) {
     'flex h-10 flex-row items-center justify-center gap-2 px-4';
 
   return (
-    <div className="flex w-full flex-row items-center gap-4 text-sm">
+    <div className="flex w-full flex-row items-center gap-2 text-sm">
       <Image
         src={item.image}
         alt={item.title}
@@ -19,7 +19,7 @@ export function CraftFormItem({ item }: { item: ICraftItem }) {
       <div className="flex flex-1 flex-col gap-1.5">
         <span className="font-pixel font-bold">{item.title}</span>
         <div className="flex flex-row items-center gap-2">
-          <span className="font-pixel text-xs">Recipe:</span>
+          <span className="font-pixel text-[8px]">Recipe:</span>
           <CraftRecipe recipe={item.recipe} />
         </div>
       </div>
