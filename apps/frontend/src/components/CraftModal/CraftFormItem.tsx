@@ -23,7 +23,7 @@ export function CraftFormItem({ item }: { item: ICraftItem }) {
           Recipe: {item.recipe.map((item) => item.title).join(', ')}
         </span>
       </div>
-      <Button variant={'gray'} className={buttonClassName} onClick={() => {}}>
+      <Button variant={'green'} className={buttonClassName} onClick={() => {}}>
         <span>Craft</span>
       </Button>
     </div>
