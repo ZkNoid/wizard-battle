@@ -561,7 +561,6 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
             <CharacterBg className="-z-5 absolute inset-0 h-auto w-full" />
           </div>
         </div>
-        <CraftModal />
         {/* Right side */}
         <div className="w-218 h-189 relative -mb-2.5 px-5 pt-5">
           <div className="font-pixel text-main-gray w-full pb-5 pt-2.5 text-center text-3xl font-bold">
