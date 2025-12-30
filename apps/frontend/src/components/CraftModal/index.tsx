@@ -39,7 +39,7 @@ export default function CraftModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="w-170 h-189 relative"
+        className="w-170 h-220 relative"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="-mb-2.5 flex flex-row gap-2.5 px-5">
@@ -86,8 +86,8 @@ export default function CraftModal({ onClose }: { onClose: () => void }) {
             <span className={textClassName}>Unite</span>
           </Button>
         </div>
-        <div className="h-170 relative w-full">
-          <div className="w-full pb-5 pt-2.5">{getForm(activeTab)}</div>
+        <div className="h-207 relative w-full">
+          <div className="h-full w-full px-5 py-5">{getForm(activeTab)}</div>
           <Image
             src="/icons/cross.png"
             width={32}
