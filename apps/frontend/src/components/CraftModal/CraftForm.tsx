@@ -17,13 +17,7 @@ export function CraftForm() {
       <div className="relative z-10 flex h-full w-full flex-col gap-5">
         {/* Scrollable Content */}
         <div className="text-main-gray font-pixel flex flex-1 flex-col overflow-hidden">
-          <Scroll
-            height="100%"
-            className="w-full"
-            scrollbarWidth={12}
-            scrollbarGap={12}
-            alwaysShowScrollbar={true}
-          >
+          <Scroll height="100%" className="w-full" alwaysShowScrollbar={true}>
             <div className="flex flex-shrink-0 flex-row items-center gap-2.5">
               <Image
                 src="/icons/armor.png"

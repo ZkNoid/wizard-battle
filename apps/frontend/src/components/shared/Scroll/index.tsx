@@ -16,7 +16,7 @@ export function Scroll({
   className = '',
   children,
   height = '400px',
-  scrollbarWidth = 12,
+  scrollbarWidth = 24,
   scrollbarGap = 8,
   alwaysShowScrollbar = false,
 }: ScrollProps) {
@@ -29,25 +29,25 @@ export function Scroll({
   const [showScrollbar, setShowScrollbar] = useState(false);
   const [isScrollable, setIsScrollable] = useState(false);
 
-  // Обновление размера и позиции ползунка
+  // Update scrollbar size and position
   const updateScrollbar = () => {
     if (!contentRef.current) return;
 
     const { scrollTop, scrollHeight, clientHeight } = contentRef.current;
 
-    // Проверяем, нужен ли скроллбар
+    // Check if scrollbar is needed
     const needsScrollbar = scrollHeight > clientHeight;
     setIsScrollable(needsScrollbar);
     setShowScrollbar(alwaysShowScrollbar || needsScrollbar);
 
-    // Рассчитываем высоту ползунка
+    // Calculate thumb height
     const scrollRatio = clientHeight / scrollHeight;
     const calculatedThumbHeight = Math.max(
       clientHeight * scrollRatio,
-      30 // минимальная высота ползунка
+      50 // minimum thumb height
     );
 
-    // Рассчитываем позицию ползунка
+    // Calculate thumb position
     const maxScroll = scrollHeight - clientHeight;
     const maxThumbTop = clientHeight - calculatedThumbHeight;
     const calculatedThumbTop =
@@ -57,14 +57,14 @@ export function Scroll({
     setThumbTop(calculatedThumbTop);
   };
 
-  // Обработчик прокрутки контента
+  // Handle content scroll
   const handleScroll = () => {
     if (!isDragging) {
       updateScrollbar();
     }
   };
 
-  // Начало перетаскивания
+  // Start dragging
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -78,14 +78,14 @@ export function Scroll({
     });
   };
 
-  // Клик по треку (не по ползунку)
+  // Click on track (not on thumb)
   const handleTrackClick = (e: React.MouseEvent) => {
     if (!contentRef.current || !scrollTrackRef.current) return;
 
     const trackRect = scrollTrackRef.current.getBoundingClientRect();
     const clickY = e.clientY - trackRect.top;
 
-    // Не реагируем, если клик по ползунку
+    // Don't react if clicking on the thumb
     if (clickY >= thumbTop && clickY <= thumbTop + thumbHeight) {
       return;
     }
@@ -94,7 +94,7 @@ export function Scroll({
     const maxScroll = scrollHeight - clientHeight;
     const maxThumbTop = clientHeight - thumbHeight;
 
-    // Прокручиваем к месту клика
+    // Scroll to click position
     const targetScrollTop = (clickY / clientHeight) * scrollHeight;
     contentRef.current.scrollTop = Math.min(
       Math.max(0, targetScrollTop),
@@ -102,7 +102,7 @@ export function Scroll({
     );
   };
 
-  // Обработка перетаскивания
+  // Handle dragging
   useEffect(() => {
     if (!isDragging) return;
 
@@ -113,7 +113,7 @@ export function Scroll({
       const maxScroll = scrollHeight - clientHeight;
       const maxThumbTop = clientHeight - thumbHeight;
 
-      // Рассчитываем смещение
+      // Calculate offset
       const deltaY = e.clientY - dragStart.y;
       const scrollDelta =
         maxScroll > 0 ? (deltaY / maxThumbTop) * maxScroll : 0;
@@ -137,7 +137,7 @@ export function Scroll({
     };
   }, [isDragging, dragStart, thumbHeight]);
 
-  // Обновление скроллбара при изменении размера
+  // Update scrollbar on resize
   useEffect(() => {
     const resizeObserver = new ResizeObserver(updateScrollbar);
 
@@ -151,7 +151,7 @@ export function Scroll({
 
   return (
     <div className={`relative ${className}`} style={{ height }}>
-      {/* Контент с прокруткой */}
+      {/* Scrollable content */}
       <div
         ref={contentRef}
         onScroll={handleScroll}
@@ -168,7 +168,7 @@ export function Scroll({
         {children}
       </div>
 
-      {/* Кастомный скроллбар */}
+      {/* Custom scrollbar */}
       {showScrollbar && (
         <div
           ref={scrollTrackRef}
@@ -176,18 +176,20 @@ export function Scroll({
           style={{ width: `${scrollbarWidth}px`, height: '100%' }}
           onClick={isScrollable ? handleTrackClick : undefined}
         >
-          {/* Трек скроллбара */}
+          {/* Scrollbar track */}
           <div className="absolute inset-0">
             <ScrollBar className="h-full w-full" />
           </div>
 
-          {/* Ползунок */}
+          {/* Scroll thumb */}
           <div
             className={`absolute transition-opacity ${isScrollable ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
             style={{
               top: `${thumbTop}px`,
               height: `${thumbHeight}px`,
-              width: '100%',
+              width: '36px',
+              left: '50%',
+              transform: 'translateX(-50%)',
               opacity: isScrollable ? (isDragging ? 1 : 0.8) : 0.5,
             }}
             onMouseDown={isScrollable ? handleMouseDown : undefined}
