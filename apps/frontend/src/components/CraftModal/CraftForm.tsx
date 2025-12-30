@@ -9,26 +9,12 @@ import { Scroll } from '../shared/Scroll';
 
 export function CraftForm() {
   return (
-    <div className="relative flex h-[600px] flex-col px-5">
+    <div className="relative flex h-full flex-col px-5">
       {/* Background */}
       <CraftFormBg className="absolute inset-0 -top-5 z-0 h-full w-full" />
 
       {/* Content */}
       <div className="relative z-10 flex h-full w-full flex-col gap-5">
-        {/* Header */}
-        <div className="flex flex-shrink-0 flex-row items-center gap-2.5">
-          <Image
-            src="/icons/armor.png"
-            width={32}
-            height={28}
-            alt="armor"
-            className="h-7 w-8 object-contain object-center"
-          />
-          <span className="font-pixel text-main-gray text-lg font-bold">
-            Armor
-          </span>
-        </div>
-
         {/* Scrollable Content */}
         <div className="text-main-gray font-pixel flex flex-1 flex-col overflow-hidden">
           <Scroll
@@ -38,6 +24,18 @@ export function CraftForm() {
             scrollbarGap={12}
             alwaysShowScrollbar={true}
           >
+            <div className="flex flex-shrink-0 flex-row items-center gap-2.5">
+              <Image
+                src="/icons/armor.png"
+                width={32}
+                height={28}
+                alt="armor"
+                className="h-7 w-8 object-contain object-center"
+              />
+              <span className="font-pixel text-main-gray text-lg font-bold">
+                Armor
+              </span>
+            </div>
             <div className="flex flex-col gap-2.5">
               {CRAFT_GROUP_PANELS.map((panel) => (
                 <CollapsePanel
