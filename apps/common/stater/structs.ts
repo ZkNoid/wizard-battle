@@ -1,4 +1,4 @@
-import { Field, Int64, Poseidon, Struct } from 'o1js';
+import { Field, Int64, Poseidon, Struct, UInt64 } from 'o1js';
 
 export class Position extends Struct({
   x: Int64,
@@ -22,6 +22,11 @@ export class PlayerStats extends Struct({
   maxHp: Int64,
   position: PositionOption,
   speed: Int64,
+  attack: UInt64,
+  defense: UInt64,
+  critChance: UInt64,
+  dodgeChance: UInt64,
+  accuracy: UInt64,
 }) {}
 
 export class SpellStats extends Struct({

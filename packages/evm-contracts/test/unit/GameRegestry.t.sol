@@ -14,9 +14,7 @@ contract GameRegestryTest is Test {
     event GrantAdminRole(address indexed account);
     event CommitConfirmed(bytes indexed commit);
     event CommitRejected(bytes indexed commit);
-    event AddGameElement(
-        bytes32 indexed nameHash, address indexed tokenAddress, uint256 indexed tokenId, bool requiresTokenId
-    );
+    event AddGameElement(bytes32 indexed nameHash, address indexed tokenAddress, uint256 indexed tokenId, bool requiresTokenId);
     event RemoveGameElement(bytes32 indexed nameHash);
 
     GameRegestry public gameRegestry;
@@ -158,16 +156,12 @@ contract GameRegestryTest is Test {
         address gameManager = makeAddr("gameManager");
         vm.prank(ADMIN);
         gameRegestry.grantRole(GAME_SIGNER_ROLE, gameManager);
-        assertTrue(
-            gameRegestry.hasRole(GAME_SIGNER_ROLE, gameManager), "The gameManager now should have GAME_SIGNER_ROLE"
-        );
+        assertTrue(gameRegestry.hasRole(GAME_SIGNER_ROLE, gameManager), "The gameManager now should have GAME_SIGNER_ROLE");
     }
 
     function test_grantRoleNotAdmin() public {
         address gameManager = makeAddr("gameManager");
-        vm.expectRevert(
-            abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), bytes32(0))
-        );
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), bytes32(0)));
         gameRegestry.grantRole(GAME_SIGNER_ROLE, gameManager);
     }
 
@@ -175,16 +169,12 @@ contract GameRegestryTest is Test {
         address gameManager = makeAddr("gameManager");
         vm.prank(ADMIN);
         gameRegestry.revokeRole(GAME_SIGNER_ROLE, gameManager);
-        assertTrue(
-            !gameRegestry.hasRole(GAME_SIGNER_ROLE, gameManager), "The gameManager now should have GAME_SIGNER_ROLE"
-        );
+        assertTrue(!gameRegestry.hasRole(GAME_SIGNER_ROLE, gameManager), "The gameManager now should have GAME_SIGNER_ROLE");
     }
 
     function test_revokeRoleNotAdmin() public {
         address gameManager = makeAddr("gameManager");
-        vm.expectRevert(
-            abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), bytes32(0))
-        );
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", address(this), bytes32(0)));
         gameRegestry.revokeRole(GAME_SIGNER_ROLE, gameManager);
     }
 
@@ -211,9 +201,7 @@ contract GameRegestryTest is Test {
     function test_renounce() public {
         vm.prank(GAME_SIGNER);
         gameRegestry.renounceRole(GAME_SIGNER_ROLE, GAME_SIGNER);
-        assertTrue(
-            !gameRegestry.hasRole(GAME_SIGNER_ROLE, GAME_SIGNER), "The GAME_SIGNER should  not have GAME_SIGNER_ROLE"
-        );
+        assertTrue(!gameRegestry.hasRole(GAME_SIGNER_ROLE, GAME_SIGNER), "The GAME_SIGNER should  not have GAME_SIGNER_ROLE");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -223,11 +211,7 @@ contract GameRegestryTest is Test {
     function test_getGameElement() public addGameElement {
         bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
         GameRegestry.GameElementStruct memory gameElemetStruct = gameRegestry.getGameElement(resourceHash);
-        assertEq(
-            address(gameRegestry),
-            gameElemetStruct.tokenAddress,
-            "Element tokenAddress should match the tokenAddress from modifier"
-        );
+        assertEq(address(gameRegestry), gameElemetStruct.tokenAddress, "Element tokenAddress should match the tokenAddress from modifier");
     }
 
     function test_getGameCoinsList() public addGameCoin {
@@ -320,11 +304,7 @@ contract GameRegestryTest is Test {
         vm.prank(GAME_SIGNER);
         vm.expectRevert(GameRegestry.GameRegestry__AddressZero.selector);
         gameRegestry.addGameElement({
-            elementType: GameRegestry.GameElementType.RESOURCE,
-            name: "iron",
-            elementTokenAddress: address(0),
-            elementTokenId: 0,
-            elementHasTokenId: false
+            elementType: GameRegestry.GameElementType.RESOURCE, name: "iron", elementTokenAddress: address(0), elementTokenId: 0, elementHasTokenId: false
         });
     }
 
@@ -672,47 +652,23 @@ contract GameRegestryTest is Test {
                             HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function getMessageHash(
-        address target,
-        address account,
-        address signer,
-        uint256 nonce,
-        bytes memory callData
-    )
-        public
-        view
-        returns (bytes32 digest)
-    {
-        bytes32 MESSAGE_TYPEHASH =
-            keccak256("CommitStruct(address target,address account,address signer,uint256 nonce,bytes callData)");
+    function getMessageHash(address target, address account, address signer, uint256 nonce, bytes memory callData) public view returns (bytes32 digest) {
+        bytes32 MESSAGE_TYPEHASH = keccak256("CommitStruct(address target,address account,address signer,uint256 nonce,bytes callData)");
 
-        bytes32 TYPE_HASH =
-            keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+        bytes32 TYPE_HASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
         bytes32 _hashedName = keccak256(bytes("GameRegestry"));
         bytes32 _hashedVersion = keccak256(bytes("1"));
 
         bytes32 hashStruct = keccak256(
-            abi.encode(
-                MESSAGE_TYPEHASH,
-                GameRegestry.CommitStruct({
-                    target: target, account: account, signer: signer, nonce: nonce, callData: callData
-                })
-            )
+            abi.encode(MESSAGE_TYPEHASH, GameRegestry.CommitStruct({target: target, account: account, signer: signer, nonce: nonce, callData: callData}))
         );
 
-        bytes32 domainSeparatorV4 =
-            keccak256(abi.encode(TYPE_HASH, _hashedName, _hashedVersion, block.chainid, address(gameRegestry)));
+        bytes32 domainSeparatorV4 = keccak256(abi.encode(TYPE_HASH, _hashedName, _hashedVersion, block.chainid, address(gameRegestry)));
         return MessageHashUtils.toTypedDataHash(domainSeparatorV4, hashStruct);
     }
 
-    function getSignedMessage(
-        uint256 nonce,
-        bytes memory callData
-    )
-        public
-        returns (bytes32, bytes memory, bytes memory)
-    {
+    function getSignedMessage(uint256 nonce, bytes memory callData) public returns (bytes32, bytes memory, bytes memory) {
         bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
 
         address target = address(gameRegestry);

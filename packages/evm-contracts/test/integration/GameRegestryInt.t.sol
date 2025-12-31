@@ -19,9 +19,7 @@ contract GameRegestryIntTest is Test {
     event GrantAdminRole(address indexed account);
     event CommitConfirmed(bytes indexed commit);
     event CommitRejected(bytes indexed commit);
-    event AddGameElement(
-        bytes32 indexed nameHash, address indexed tokenAddress, uint256 indexed tokenId, bool requiresTokenId
-    );
+    event AddGameElement(bytes32 indexed nameHash, address indexed tokenAddress, uint256 indexed tokenId, bool requiresTokenId);
     event RemoveGameElement(bytes32 indexed nameHash);
 
     GameRegestry public gameRegestry;
@@ -103,8 +101,7 @@ contract GameRegestryIntTest is Test {
         uint256 amount = 1000 ether;
 
         bytes memory callData = abi.encodeWithSignature("mint(address,uint256)", PLAYER, amount);
-        (bytes32 resourceHash, bytes memory commit, bytes memory signature) =
-            getSignedMessage("WBCoin", address(wBCoin), 0, callData);
+        (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage("WBCoin", address(wBCoin), 0, callData);
 
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
@@ -126,8 +123,7 @@ contract GameRegestryIntTest is Test {
         uint256 amount = 1000;
 
         bytes memory callData = abi.encodeWithSignature("mint(address,uint256,uint256,bytes)", PLAYER, 1, amount, "");
-        (bytes32 resourceHash, bytes memory commit, bytes memory signature) =
-            getSignedMessage("Wood", address(wbResources), 0, callData);
+        (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage("Wood", address(wbResources), 0, callData);
 
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
@@ -148,8 +144,7 @@ contract GameRegestryIntTest is Test {
         console.log("Game signer:", GAME_SIGNER);
 
         bytes memory callData = abi.encodeWithSignature("mint(address)", PLAYER);
-        (bytes32 resourceHash, bytes memory commit, bytes memory signature) =
-            getSignedMessage("Wizard", address(wbCharacter), 0, callData);
+        (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage("Wizard", address(wbCharacter), 0, callData);
 
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
@@ -166,37 +161,19 @@ contract GameRegestryIntTest is Test {
                             HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function getMessageHash(
-        address target,
-        address account,
-        address signer,
-        uint256 nonce,
-        bytes memory callData
-    )
-        public
-        view
-        returns (bytes32 digest)
-    {
-        bytes32 MESSAGE_TYPEHASH =
-            keccak256("CommitStruct(address target,address account,address signer,uint256 nonce,bytes callData)");
+    function getMessageHash(address target, address account, address signer, uint256 nonce, bytes memory callData) public view returns (bytes32 digest) {
+        bytes32 MESSAGE_TYPEHASH = keccak256("CommitStruct(address target,address account,address signer,uint256 nonce,bytes callData)");
 
-        bytes32 TYPE_HASH =
-            keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+        bytes32 TYPE_HASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
         bytes32 _hashedName = keccak256(bytes("GameRegestry"));
         bytes32 _hashedVersion = keccak256(bytes("1"));
 
         bytes32 hashStruct = keccak256(
-            abi.encode(
-                MESSAGE_TYPEHASH,
-                GameRegestry.CommitStruct({
-                    target: target, account: account, signer: signer, nonce: nonce, callData: callData
-                })
-            )
+            abi.encode(MESSAGE_TYPEHASH, GameRegestry.CommitStruct({target: target, account: account, signer: signer, nonce: nonce, callData: callData}))
         );
 
-        bytes32 domainSeparatorV4 =
-            keccak256(abi.encode(TYPE_HASH, _hashedName, _hashedVersion, block.chainid, address(gameRegestry)));
+        bytes32 domainSeparatorV4 = keccak256(abi.encode(TYPE_HASH, _hashedName, _hashedVersion, block.chainid, address(gameRegestry)));
         return MessageHashUtils.toTypedDataHash(domainSeparatorV4, hashStruct);
     }
 

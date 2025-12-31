@@ -9,7 +9,7 @@ export function verifySpellCastTransition<T>(
   publicInput: SpellsPublicInput,
   state: State,
   spellCast: SpellCast<T>,
-  modifyer: (state: State, spellCast: SpellCast<T>) => void
+  modifier: (state: State, spellCast: SpellCast<T>) => void
 ) {
   publicInput.initialStateHash.assertEquals(
     state.hash(),
@@ -19,7 +19,7 @@ export function verifySpellCastTransition<T>(
     spellCast.hash(),
     'Spell cast hash mismatch'
   );
-  modifyer(state, spellCast);
+  modifier(state, spellCast);
   return {
     publicOutput: new SpellsPublicOutput({
       finalStateHash: state.hash(),
@@ -44,7 +44,7 @@ export const splellsProofs = allSpells.map((spell) => {
             publicInput,
             state,
             spellCast,
-            spell.modifyer
+            spell.modifier
           );
         },
       },

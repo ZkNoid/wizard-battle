@@ -1,75 +1,27 @@
 'use client';
 
-import { Button } from '../shared/Button';
 import { InventoryBg } from './assets/inventory-bg';
 import Image from 'next/image';
-import type { IInventoryArmor, IInventoryItem } from '@/lib/types/Inventory';
+import type {
+  IInventoryArmorItem,
+  IInventoryItem,
+  InventoryFilterType,
+} from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
 import { ALL_ITEMS } from '@/lib/constants/items';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CharacterBg } from './assets/character-bg';
 import { LvlBg } from './assets/lvl-bg';
 import { LEVELS_XP, levelFromXp } from '@/lib/constants/levels';
-import { SmBtn } from './assets/sm-btn';
 import { InventoryTooltip } from './InventoryTooltip';
 import CraftModal from '../CraftModal';
+import type { IInventoryFilterBtnProps } from './InventoryFilterBtn';
+import InventoryFilterBtn from './InventoryFilterBtn';
+import { defaultHeroStats, heroStatsConfig } from '@/lib/constants/stat';
+import type { IHeroStatConfig, IHeroStats } from '@/lib/types/IHeroStat';
+import { api } from '@/trpc/react';
 
 const MAX_ITEMS = 35;
-
-interface StatConfig {
-  id: string;
-  icon: string;
-  label: string;
-  alt: string;
-}
-
-const defaultStats = {
-  hp: 100,
-  atk: 10,
-  def: 10,
-  crit: 10,
-  dodge: 10,
-  accuracy: 10,
-};
-
-const statsConfig: StatConfig[] = [
-  {
-    id: 'hp',
-    icon: '/inventory/stats/hp.png',
-    label: 'Hp',
-    alt: 'hp',
-  },
-  {
-    id: 'atk',
-    icon: '/inventory/stats/attack.png',
-    label: 'Atk',
-    alt: 'attack',
-  },
-  {
-    id: 'def',
-    icon: '/inventory/stats/defence.png',
-    label: 'Def',
-    alt: 'defence',
-  },
-  {
-    id: 'crit',
-    icon: '/inventory/stats/crit.png',
-    label: 'Crit',
-    alt: 'crit',
-  },
-  {
-    id: 'dodge',
-    icon: '/inventory/stats/dodge.png',
-    label: 'Dodge',
-    alt: 'dodge',
-  },
-  {
-    id: 'accuracy',
-    icon: '/inventory/stats/accuracy.png',
-    label: 'Acc',
-    alt: 'accuracy',
-  },
-];
 
 enum Wizards {
   ARCHER,
@@ -78,13 +30,16 @@ enum Wizards {
 }
 
 export default function InventoryModal({ onClose }: { onClose: () => void }) {
-  const xp = 17;
+  // Request user XP (mock address for now)
+  const { data: xp = 0 } = api.users.getXp.useQuery({
+    address: 'mock-address',
+  });
 
-  const [items, setItems] = useState<IInventoryItem[] | IInventoryArmor[]>(
-    ALL_ITEMS
-  );
+  const [items, setItems] = useState<IInventoryItem[] | IInventoryArmorItem[]>([
+    ...ALL_ITEMS,
+  ]);
   const [currentWizard, setCurrentWizard] = useState<Wizards>(Wizards.MAGE);
-  const [stats, setStats] = useState<typeof defaultStats>(defaultStats);
+  const [stats, setStats] = useState<IHeroStats>(defaultHeroStats);
   const [equippedItems, setEquippedItems] = useState<
     Record<string, IInventoryItem | null>
   >({
@@ -96,6 +51,27 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     belt: null,
   });
   const [draggedItem, setDraggedItem] = useState<IInventoryItem | null>(null);
+
+  const [activeFilter, setActiveFilter] = useState<InventoryFilterType>('all');
+
+  // Recalculate stats when items are equipped
+  useEffect(() => {
+    const calculatedStats: IHeroStats = { ...defaultHeroStats };
+
+    Object.values(equippedItems).forEach((item) => {
+      if (item && item.type === 'armor') {
+        const wearableItem = item as IInventoryArmorItem;
+        wearableItem.buff.forEach((buff) => {
+          const statKey = buff.effect as keyof IHeroStats;
+          if (statKey in calculatedStats) {
+            calculatedStats[statKey] += buff.value;
+          }
+        });
+      }
+    });
+
+    setStats(calculatedStats);
+  }, [equippedItems]);
 
   const handleNext = () => {
     setCurrentWizard((prev) => (prev + 1) % 3);
@@ -124,7 +100,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     return (current + 1) % 3;
   };
 
-  const formatStat = (stat: StatConfig): string => {
+  const formatStat = (stat: IHeroStatConfig): string => {
     switch (stat.id) {
       case 'hp':
         return stats.hp.toString();
@@ -133,7 +109,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
       case 'accuracy':
         return `+${stats.accuracy.toString()}%`;
     }
-    return `${stats[stat.id as keyof typeof defaultStats].toString()}%`;
+    return `${stats[stat.id as keyof IHeroStats].toString()}%`;
   };
 
   const getLevelProgress = (xp: number): number => {
@@ -177,6 +153,18 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
 
     // Get current item in slot
     const currentEquippedItem = equippedItems[slotId];
+
+    // Check if dragged item can be equipped in this slot
+    if (draggedItem.type !== 'armor') {
+      setDraggedItem(null);
+      return;
+    }
+
+    const wearableItem = draggedItem as IInventoryArmorItem;
+    if (wearableItem.wearableSlot !== slotId) {
+      setDraggedItem(null);
+      return;
+    }
 
     // Update equipped items
     setEquippedItems((prev) => {
@@ -222,6 +210,44 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
       [slotId]: null,
     }));
   };
+
+  const filteredItems =
+    activeFilter === 'all'
+      ? items
+      : items.filter((item) => item.type === activeFilter);
+
+  const handleChangeFilter = (filterMode: InventoryFilterType) => {
+    setActiveFilter(filterMode);
+  };
+
+  const filterBtns: IInventoryFilterBtnProps[] = [
+    {
+      isActiveFilter: activeFilter === 'all',
+      title: 'All',
+      handleChangeFilter: () => handleChangeFilter('all'),
+    },
+    {
+      isActiveFilter: activeFilter === 'armor',
+      title: 'Armor',
+      imgSrc: '/icons/armor.png',
+      alt: 'armor',
+      handleChangeFilter: () => handleChangeFilter('armor'),
+    },
+    {
+      isActiveFilter: activeFilter === 'craft',
+      title: 'Craft',
+      imgSrc: '/icons/pickaxe.png',
+      alt: 'pickaxe',
+      handleChangeFilter: () => handleChangeFilter('craft'),
+    },
+    {
+      isActiveFilter: activeFilter === 'gems',
+      title: 'Gems',
+      imgSrc: '/icons/gem.png',
+      alt: 'gem',
+      handleChangeFilter: () => handleChangeFilter('gems'),
+    },
+  ];
 
   return (
     <div
@@ -537,7 +563,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
             </div>
             {/* Stats */}
             <div className="grid grid-cols-3 items-center gap-x-10 gap-y-2.5">
-              {statsConfig.map((stat) => {
+              {heroStatsConfig.map((stat) => {
                 return (
                   <div
                     key={stat.id}
@@ -568,58 +594,15 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
           </div>
           {/* Items */}
           <div className="grid grid-cols-7 gap-2.5">
-            <button className="w-25 relative h-16 cursor-pointer transition-transform duration-300 hover:scale-105">
-              <SmBtn className="-z-1 absolute inset-0 size-full" />
-              <span className="font-pixel text-main-gray text-lg font-bold">
-                All
-              </span>
-            </button>
-            <Button
-              variant="gray"
-              className="col-span-2 flex size-full flex-row items-center gap-2.5"
-            >
-              <Image
-                src="/icons/armor.png"
-                width={32}
-                height={28}
-                alt="armor"
-                className="h-7 w-8 object-contain object-center"
-              />
-              <span className="font-pixel text-main-gray text-lg font-bold">
-                Armor
-              </span>
-            </Button>
-            <Button
-              variant="gray"
-              className="col-span-2 flex size-full flex-row items-center gap-2.5"
-            >
-              <Image
-                src="/icons/pickaxe.png"
-                width={32}
-                height={28}
-                alt="pickaxe"
-                className="h-7 w-8 object-contain object-center"
-              />
-              <span className="font-pixel text-main-gray text-lg font-bold">
-                Craft
-              </span>
-            </Button>
-            <Button
-              variant="gray"
-              className="col-span-2 flex size-full flex-row items-center gap-2.5"
-            >
-              <Image
-                src="/icons/gem.png"
-                width={32}
-                height={28}
-                alt="gem"
-                className="h-7 w-8 object-contain object-center"
-              />
-              <span className="font-pixel text-main-gray text-lg font-bold">
-                Gems
-              </span>
-            </Button>
-            {items.map((item) => (
+            <div className="col-span-7 mb-2.5 grid grid-cols-8 gap-2.5">
+              {filterBtns.map((btnProps, index) => (
+                <InventoryFilterBtn
+                  key={`${btnProps.title}-${index}`}
+                  {...btnProps}
+                />
+              ))}
+            </div>
+            {filteredItems.map((item) => (
               <div
                 key={item.id}
                 className="size-25 relative cursor-grab p-6 active:cursor-grabbing"

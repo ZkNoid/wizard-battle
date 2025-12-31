@@ -51,7 +51,7 @@ export default function Matchmaking({
 
       let opponentState = State.fromJSON(
         JSON.parse(response.opponentSetup[0]!.fields)
-      );
+      ) as State;
 
       setOpponentState(opponentState as State);
 
@@ -60,6 +60,7 @@ export default function Matchmaking({
           socket,
           response.roomId,
           stater,
+          opponentState,
           setOpponentState,
           setCurrentPhase,
           onGameEnd

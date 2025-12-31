@@ -5,8 +5,11 @@ import {Script} from "forge-std/Script.sol";
 
 contract HelperConfig is Script {
     struct NetworkConfig {
-        bytes32 minterRole;
+        address defaultAdmin;
         address gameSigner;
+        address pauser;
+        address minter;
+        address upgrader;
     }
 
     NetworkConfig public activeNetworkConfig;
@@ -22,11 +25,23 @@ contract HelperConfig is Script {
     }
 
     function getSepoliaEthConfig() public pure returns (NetworkConfig memory sepoliaConfig) {
-        sepoliaConfig = NetworkConfig({minterRole: keccak256("MINTER_ROLE"), gameSigner: 0x1234567890123456789012345678901234567890});
+        sepoliaConfig = NetworkConfig({
+            defaultAdmin: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218, // My dev address
+            gameSigner: 0xB4Ee8D79974f85AA9D298628A37754d1313dAA99, // Game signer address
+            pauser: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218, // My dev address
+            minter: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218, // My dev address
+            upgrader: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218 // My dev address
+        });
     }
 
     function getFujiAvlConfig() public pure returns (NetworkConfig memory fujiConfig) {
-        fujiConfig = NetworkConfig({minterRole: keccak256("MINTER_ROLE"), gameSigner: 0x1234567890123456789012345678901234567890});
+        fujiConfig = NetworkConfig({
+            defaultAdmin: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218, // My dev address
+            gameSigner: 0xB4Ee8D79974f85AA9D298628A37754d1313dAA99, // Game signer address
+            pauser: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218, // My dev address
+            minter: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218, // My dev address
+            upgrader: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218 // My dev address
+        });
     }
 
     function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory anvilConfig) {
@@ -34,7 +49,13 @@ contract HelperConfig is Script {
             return activeNetworkConfig;
         }
 
-        anvilConfig = NetworkConfig({minterRole: keccak256("MINTER_ROLE"), gameSigner: 0x1234567890123456789012345678901234567890});
+        anvilConfig = NetworkConfig({
+            defaultAdmin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // My dev address
+            gameSigner: 0xB4Ee8D79974f85AA9D298628A37754d1313dAA99, // Game signer address
+            pauser: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // My dev address
+            minter: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // My dev address
+            upgrader: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 // My dev address
+        });
     }
 
     function getConfig() public view returns (NetworkConfig memory) {

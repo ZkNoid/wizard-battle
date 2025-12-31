@@ -1,13 +1,13 @@
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
-import { z } from "zod";
-import { TRPCError } from "@trpc/server";
-import clientPromise from "@/server/db";
-import { env } from "@/env";
+import { createTRPCRouter, publicProcedure } from '@/server/api/trpc';
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import clientPromise from '@/server/db';
+import { env } from '@/env';
 
 const client = await clientPromise;
 const db = client?.db(env.MONGODB_DB);
 
-const collectionName = "tilemap";
+const collectionName = 'tilemap';
 
 export const tilemapRouter = createTRPCRouter({
   updateTilemap: publicProcedure
@@ -15,22 +15,22 @@ export const tilemapRouter = createTRPCRouter({
       z.object({
         userAddress: z.string(),
         tilemap: z.array(z.number()),
-        slot: z.enum(["1", "2", "3", "4"]),
-      }),
+        slot: z.enum(['1', '2', '3', '4']),
+      })
     )
     .mutation(async ({ input }) => {
       if (!db) {
         throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Database not connected",
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database not connected',
         });
       }
 
       // Check if tilemap contains needed elements
       if (!Array.isArray(input.tilemap) || input.tilemap.length !== 64) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Tilemap must contain exactly 64 elements",
+          code: 'BAD_REQUEST',
+          message: 'Tilemap must contain exactly 64 elements',
         });
       }
 
@@ -42,7 +42,7 @@ export const tilemapRouter = createTRPCRouter({
             updatedAt: new Date().toISOString(),
           },
         },
-        { upsert: true },
+        { upsert: true }
       );
 
       return true;
@@ -50,13 +50,13 @@ export const tilemapRouter = createTRPCRouter({
 
   getTilemap: publicProcedure
     .input(
-      z.object({ userAddress: z.string(), slot: z.enum(["1", "2", "3", "4"]) }),
+      z.object({ userAddress: z.string(), slot: z.enum(['1', '2', '3', '4']) })
     )
     .query(async ({ input }) => {
       if (!db) {
         throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Database not connected",
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database not connected',
         });
       }
 

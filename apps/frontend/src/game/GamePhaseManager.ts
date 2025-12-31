@@ -39,6 +39,7 @@ export class GamePhaseManager {
   private socket: Socket;
   private roomId: string;
   private stater: Stater; // Your Stater instance
+  private opponentState: State;
   private lastActions?: IUserActions; // Add this property
   private setOpponentState: (state: State) => void;
   private onNewTurnHook: (() => void) | null = null;
@@ -56,6 +57,7 @@ export class GamePhaseManager {
     socket: Socket,
     roomId: string,
     stater: Stater,
+    opponentState: State,
     setOpponentState: (state: State) => void,
     setCurrentPhaseCallback?: (phase: GamePhase) => void,
     onGameEnd?: (winner: boolean) => void
@@ -64,6 +66,7 @@ export class GamePhaseManager {
     this.socket = socket;
     this.roomId = roomId;
     this.stater = stater;
+    this.opponentState = opponentState;
     this.setOpponentState = setOpponentState;
     this.setCurrentPhaseCallback = setCurrentPhaseCallback;
     this.setupSocketListeners();
@@ -537,7 +540,11 @@ export class GamePhaseManager {
     );
 
     try {
-      const trustedState = this.stater.generateTrustedState(playerId, actions);
+      const trustedState = this.stater.generateTrustedState(
+        playerId,
+        actions,
+        this.opponentState!
+      );
       console.log(
         `✅ Successfully generated trusted state for player ${playerId}`
       );
@@ -653,7 +660,7 @@ export class GamePhaseManager {
           (spell) => spell.id.toString() === action.spellId.toString()
         );
 
-        let coordinates = spell?.modifyerData.fromJSON(
+        let coordinates = spell?.modifierData.fromJSON(
           JSON.parse(action.spellCastInfo)
         ).position;
 

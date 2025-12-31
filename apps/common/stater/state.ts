@@ -46,6 +46,11 @@ export class State extends Struct({
           isSome: Field(1),
         }),
         speed: Int64.from(1),
+        attack: UInt64.from(100),
+        defense: UInt64.from(100),
+        critChance: UInt64.from(0),
+        dodgeChance: UInt64.from(0),
+        accuracy: UInt64.from(0),
       }),
       spellStats: Array(spellStatsAmount).fill(
         new SpellStats({

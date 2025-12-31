@@ -10,7 +10,8 @@ import {
 import { Position, PositionOption, type SpellCast } from '../structs';
 import { WizardId } from '../../wizards';
 import { type ISpell } from './interface';
-import type { State } from '../state';
+import { State } from '../state';
+import { Stater } from '../stater';
 
 export class LightningBoldData extends Struct({
   position: Position,
@@ -51,21 +52,22 @@ export const LightningBoldCast = (
   });
 };
 
-export const LightningBoldModifyer = (
-  state: State,
-  spellCast: LightningBoldSpellCast
+export const LightningBoldModifier = (
+  stater: Stater,
+  spellCast: LightningBoldSpellCast,
+  opponentState: State
 ) => {
-  const selfPosition = state.playerStats.position.value;
+  const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
-  console.log('LightningBoldModifyer');
+  console.log('LightningBoldModifier');
   console.log(selfPosition);
   console.log(targetPosition);
   console.log(spellCast.additionalData);
 
   const distance = selfPosition.manhattanDistance(targetPosition);
 
-  const damage = Int64.from(80);
-  const damage2 = Int64.from(40);
+  const damage = UInt64.from(80);
+  const damage2 = UInt64.from(40);
 
   const directHit = distance.equals(UInt64.from(0));
   const nearbyHit = distance.equals(UInt64.from(1));
@@ -73,11 +75,11 @@ export const LightningBoldModifyer = (
 
   const damageToApply = Provable.switch(
     [directHit, nearbyHit, distantHit],
-    Int64,
-    [damage, damage2, Int64.from(0)]
+    UInt64,
+    [damage, damage2, UInt64.from(0)]
   );
 
-  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+  stater.applyDamage(damageToApply, opponentState);
 };
 
 const LightningBoldSceneEffect = (
@@ -144,18 +146,19 @@ export const FireBallCast = (
   });
 };
 
-export const FireBallModifyer = (
-  state: State,
-  spellCast: SpellCast<FireBallData>
+export const FireBallModifier = (
+  stater: Stater,
+  spellCast: SpellCast<FireBallData>,
+  opponentState: State
 ) => {
-  const selfPosition = state.playerStats.position.value;
+  const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
 
   const distance = selfPosition.manhattanDistance(targetPosition);
 
-  const damage = Int64.from(50);
-  const damage2 = Int64.from(25);
-  const damage3 = Int64.from(15);
+  const damage = UInt64.from(50);
+  const damage2 = UInt64.from(25);
+  const damage3 = UInt64.from(15);
 
   const directHit = distance.equals(UInt64.from(0));
   const nearbyHit = distance.equals(UInt64.from(1));
@@ -164,11 +167,11 @@ export const FireBallModifyer = (
 
   const damageToApply = Provable.switch(
     [directHit, nearbyHit, farHit, distantHit],
-    Int64,
-    [damage, damage2, damage3, Int64.from(0)]
+    UInt64,
+    [damage, damage2, damage3, UInt64.from(0)]
   );
 
-  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+  stater.applyDamage(damageToApply, opponentState);
 };
 
 const FireBallSceneEffect = (
@@ -243,22 +246,23 @@ export const LaserCast = (
   });
 };
 
-export const LaserModifyer = (
-  state: State,
-  spellCast: SpellCast<LaserData>
+export const LaserModifier = (
+  stater: Stater,
+  spellCast: SpellCast<LaserData>,
+  opponentState: State
 ) => {
-  const selfPosition = state.playerStats.position.value;
+  const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
 
   const sameRow = selfPosition.x.equals(targetPosition.x);
   const sameColumn = selfPosition.y.equals(targetPosition.y);
   const hit = sameRow.or(sameColumn);
 
-  const damage = Int64.from(50);
+  const damage = UInt64.from(50);
 
-  const damageToApply = Provable.if(hit, damage, Int64.from(0));
+  const damageToApply = Provable.if(hit, damage, UInt64.from(0));
 
-  state.playerStats.hp = state.playerStats.hp.sub(damageToApply);
+  stater.applyDamage(damageToApply, opponentState);
 };
 
 const LaserSceneEffect = (
@@ -336,11 +340,12 @@ export const TeleportCast = (
   });
 };
 
-export const TeleportModifyer = (
-  state: State,
-  spellCast: SpellCast<TeleportData>
+export const TeleportModifier = (
+  stater: Stater,
+  spellCast: SpellCast<TeleportData>,
+  opponentState: State
 ) => {
-  state.playerStats.position = new PositionOption({
+  stater.state.playerStats.position = new PositionOption({
     value: spellCast.additionalData.position,
     isSome: Field(1),
   });
@@ -375,13 +380,19 @@ export const HealCast = (
   });
 };
 
-export const HealModifyer = (state: State, spellCast: SpellCast<HealData>) => {
-  state.playerStats.hp = state.playerStats.hp.add(Int64.from(50));
+export const HealModifier = (
+  stater: Stater,
+  spellCast: SpellCast<HealData>,
+  opponentState: State
+) => {
+  stater.state.playerStats.hp = stater.state.playerStats.hp.add(Int64.from(50));
   // If the player has more health than the max health, set the health to the max health
-  state.playerStats.hp = Provable.if(
-    state.playerStats.hp.sub(state.playerStats.maxHp).isPositive(),
-    state.playerStats.maxHp,
-    state.playerStats.hp
+  stater.state.playerStats.hp = Provable.if(
+    stater.state.playerStats.hp
+      .sub(stater.state.playerStats.maxHp)
+      .isPositive(),
+    stater.state.playerStats.maxHp,
+    stater.state.playerStats.hp
   );
 };
 
@@ -393,8 +404,8 @@ export const mageSpells: ISpell<any>[] = [
     name: 'Lightning',
     description: 'A powerful bolt of lightning. High one point damage',
     image: '/wizards/skills/lightning.png',
-    modifyerData: LightningBoldData,
-    modifyer: LightningBoldModifyer,
+    modifierData: LightningBoldData,
+    modifier: LightningBoldModifier,
     spellCast: LightningBoldSpellCast,
     cast: LightningBoldCast,
     sceneEffect: LightningBoldSceneEffect,
@@ -412,8 +423,8 @@ export const mageSpells: ISpell<any>[] = [
     name: 'FireBall',
     description: 'A ball of fire. Deals damage to a single target',
     image: '/wizards/skills/fireball.png',
-    modifyerData: FireBallData,
-    modifyer: FireBallModifyer,
+    modifierData: FireBallData,
+    modifier: FireBallModifier,
     spellCast: FireBallSpellCast,
     cast: FireBallCast,
     sceneEffect: FireBallSceneEffect,
@@ -431,8 +442,8 @@ export const mageSpells: ISpell<any>[] = [
     name: 'Teleport',
     description: 'Teleport to a random position',
     image: '/wizards/skills/teleport.png',
-    modifyerData: TeleportData,
-    modifyer: TeleportModifyer,
+    modifierData: TeleportData,
+    modifier: TeleportModifier,
     spellCast: TeleportSpellCast,
     cast: TeleportCast,
     target: 'ally',
@@ -450,8 +461,8 @@ export const mageSpells: ISpell<any>[] = [
     name: 'Heal',
     description: 'Heal yourself for 100 health',
     image: '/wizards/skills/heal.png',
-    modifyerData: HealData,
-    modifyer: HealModifyer,
+    modifierData: HealData,
+    modifier: HealModifier,
     spellCast: HealSpellCast,
     cast: HealCast,
     target: 'ally',
@@ -469,8 +480,8 @@ export const mageSpells: ISpell<any>[] = [
     name: 'Laser',
     description: 'A beam of laser. Deals damage to a single target',
     image: '/wizards/skills/laser.png',
-    modifyerData: LaserData,
-    modifyer: LaserModifyer,
+    modifierData: LaserData,
+    modifier: LaserModifier,
     spellCast: LaserSpellCast,
     cast: LaserCast,
     target: 'enemy',
