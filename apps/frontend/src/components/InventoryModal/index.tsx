@@ -14,6 +14,7 @@ import { CharacterBg } from './assets/character-bg';
 import { LvlBg } from './assets/lvl-bg';
 import { LEVELS_XP, levelFromXp } from '@/lib/constants/levels';
 import { InventoryTooltip } from './InventoryTooltip';
+import CraftModal from '../CraftModal';
 import type { IInventoryFilterBtnProps } from './InventoryFilterBtn';
 import InventoryFilterBtn from './InventoryFilterBtn';
 import { defaultHeroStats, heroStatsConfig } from '@/lib/constants/stat';

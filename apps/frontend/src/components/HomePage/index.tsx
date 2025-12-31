@@ -24,6 +24,7 @@ import { useMinaAppkit } from 'mina-appkit';
 import InventoryModal from '../InventoryModal';
 import WelcomeScreen from '../WelcomeScreen';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
+import CraftModal from '../CraftModal';
 
 enum TabHover {
   CRAFT,
@@ -40,6 +41,8 @@ export default function HomePage() {
 
   const [isInventoryModalOpen, setIsInventoryModalOpen] =
     useState<boolean>(false);
+
+  const [isCraftModalOpen, setIsCraftModalOpen] = useState<boolean>(false);
 
   const router = useRouter();
   const { address, triggerWallet } = useMinaAppkit();
@@ -218,7 +221,7 @@ export default function HomePage() {
         <button
           className="col-span-2 row-span-2 row-start-2 row-end-4 size-full cursor-pointer"
           onClick={() => {
-            alert('Coming soon...');
+            setIsCraftModalOpen(true);
           }}
           onMouseEnter={() => setTabHover(TabHover.CRAFT)}
           onMouseLeave={() => setTabHover(undefined)}
@@ -266,6 +269,10 @@ export default function HomePage() {
       )}
       {!hasShownWelcomeScreen && (
         <WelcomeScreen onClick={() => setHasShownWelcomeScreen(true)} />
+      )}
+
+      {isCraftModalOpen && (
+        <CraftModal onClose={() => setIsCraftModalOpen(false)} />
       )}
     </main>
   );
