@@ -9,9 +9,9 @@ export interface IInventoryItem {
   price: number;
 }
 
-export interface IInventoryArmor extends IInventoryItem {
+export interface IInventoryArmorItem extends IInventoryItem {
   type: 'armor';
-  wearableSlot: 'gem' | 'ring' | 'necklace' | 'arms' | 'legs' | 'belt';
+  wearableSlot: InventoryItemWearableArmorSlot;
   level: number;
   buff: {
     effect: string;
@@ -26,3 +26,13 @@ export interface IInventoryArmor extends IInventoryItem {
     value: number;
   }[];
 }
+
+export type InventoryItemWearableArmorSlot =
+  | 'arms'
+  | 'legs'
+  | 'belt'
+  | 'necklace'
+  | 'gem'
+  | 'ring';
+
+export type InventoryFilterType = 'all' | 'armor' | 'craft' | 'gems';
