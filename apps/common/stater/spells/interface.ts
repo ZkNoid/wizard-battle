@@ -34,4 +34,8 @@ export interface ISpell<T> {
   ) => (() => void) | void;
   priority?: number;
   defaultValue: SpellStats;
+  /** Companion spell ID that is cast on self alongside the main spell */
+  companionSpellId?: Field;
+  /** If true, spell is not shown in UI spell selection (used for internal companion spells) */
+  hidden?: boolean;
 }

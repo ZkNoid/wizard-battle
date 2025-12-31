@@ -615,9 +615,6 @@ export const ShadowDashModifier = (
   const damageToApply = Provable.if(directHit, totalDamage, UInt64.from(0));
 
   stater.applyDamage(damageToApply, opponentState);
-
-  // Move caster to target position after dash
-  // TODO: This should update the caster's position, but we're modifying opponent's state perspective
 };
 
 const ShadowDashSceneEffect = (
@@ -626,13 +623,86 @@ const ShadowDashSceneEffect = (
   gameEmitter: any,
   type: 'user' | 'enemy'
 ) => {
-  // TODO: Implement dash animation from caster to target
   gameEmitter.throwEffect({
     animationName: 'shadow_dash',
     x,
     y,
     overlayId: type,
     scale: 1.5,
+  });
+};
+
+// ============================================================================
+// SHADOW DASH MOVE (Spectral Form) - Companion spell to update caster position
+// Cast on self to move to the dash target position
+// ============================================================================
+
+export class ShadowDashMoveData extends Struct({
+  position: Position,
+}) {}
+
+export class ShadowDashMoveSpellCast
+  extends Struct({
+    caster: Field,
+    spellId: Field,
+    target: Field,
+    additionalData: ShadowDashMoveData,
+  })
+  implements SpellCast<ShadowDashMoveData>
+{
+  hash(): Field {
+    return Poseidon.hash([
+      this.caster,
+      this.spellId,
+      this.target,
+      this.additionalData.position.hash(),
+    ]);
+  }
+}
+
+export const ShadowDashMoveCast = (
+  state: State,
+  caster: Field,
+  target: Field,
+  position: Position
+): SpellCast<ShadowDashMoveData> => {
+  return new ShadowDashMoveSpellCast({
+    spellId: CircuitString.fromString('ShadowDashMove').hash(),
+    caster,
+    target,
+    additionalData: {
+      position,
+    },
+  });
+};
+
+export const ShadowDashMoveModifier = (
+  stater: Stater,
+  spellCast: SpellCast<ShadowDashMoveData>,
+  opponentState: State
+) => {
+  const targetPosition = spellCast.additionalData.position;
+
+  // Update caster's position to the dash target
+  stater.state.playerStats.position = new PositionOption({
+    value: targetPosition,
+    isSome: Field(1),
+  });
+};
+
+const ShadowDashMoveSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: any,
+  type: 'user' | 'enemy'
+) => {
+  // The visual dash effect is handled by ShadowDash, this is just the position update
+  gameEmitter.throwEffect({
+    animationName: 'shadow_dash_move',
+    x,
+    y,
+    overlayId: type,
+    scale: 1.0,
   });
 };
 
@@ -874,9 +944,31 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     cast: ShadowDashCast,
     sceneEffect: ShadowDashSceneEffect,
     target: 'enemy',
+    companionSpellId: CircuitString.fromString('ShadowDashMove').hash(),
     defaultValue: {
       spellId: CircuitString.fromString('ShadowDash').hash(),
       cooldown: Int64.from(2),
+      currentCooldown: Int64.from(0),
+    },
+  },
+  {
+    id: CircuitString.fromString('ShadowDashMove').hash(),
+    wizardId: WizardId.PHANTOM_DUELIST,
+    cooldown: Field(0),
+    name: 'ShadowDashMove',
+    description:
+      'Move to dash target position. (Companion spell for ShadowDash)',
+    image: '/wizards/skills/shadow_dash.png',
+    modifierData: ShadowDashMoveData,
+    modifier: ShadowDashMoveModifier,
+    spellCast: ShadowDashMoveSpellCast,
+    cast: ShadowDashMoveCast,
+    sceneEffect: ShadowDashMoveSceneEffect,
+    target: 'ally',
+    hidden: true, // Not shown in spell selection, used internally
+    defaultValue: {
+      spellId: CircuitString.fromString('ShadowDashMove').hash(),
+      cooldown: Int64.from(0),
       currentCooldown: Int64.from(0),
     },
   },
