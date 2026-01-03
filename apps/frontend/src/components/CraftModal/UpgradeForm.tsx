@@ -57,11 +57,11 @@ export function UpgradeForm() {
               </div>
               {steps.map((step) => (
                 <div className="flex w-full items-center justify-between">
-                  <span>{step.title}</span>
+                  <span className="text-[10px]">{step.title}</span>
                 </div>
               ))}
               <div>
-                <span className="text-main-gray text-xs">
+                <span className="text-main-gray text-[10px] font-thin">
                   If the forging fails, you lose your money and soul gems
                 </span>
               </div>
