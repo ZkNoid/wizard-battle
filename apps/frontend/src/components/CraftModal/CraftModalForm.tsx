@@ -80,7 +80,7 @@ export function CraftModalForm() {
         </Button>
       </div>
       <div className="h-185 relative -mt-5 w-full">
-        <div className="h-full w-full px-4 py-5">{getForm(activeTab)}</div>
+        <div className="h-full w-full px-4 py-4">{getForm(activeTab)}</div>
         <CraftBg className="absolute inset-0 -z-10 size-full h-full w-full" />
       </div>
     </div>
