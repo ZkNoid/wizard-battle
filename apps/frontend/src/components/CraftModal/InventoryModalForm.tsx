@@ -12,13 +12,21 @@ import type { IInventoryFilterBtnProps } from '../InventoryModal/InventoryFilter
 import InventoryFilterBtn from '../InventoryModal/InventoryFilterBtn';
 import { ItemBg } from '../InventoryModal/assets/item-bg';
 import { InventoryBg } from './assets/inventory-bg';
+import { Button } from '../shared/Button';
 
-const MAX_ITEMS = 35;
+const ITEMS_PER_PAGE = 28; // 7 columns × 4 rows
+const ROWS = 4;
+const COLS = 7;
+
+// Mock for pagination (temporary for styling)
+const MOCK_PAGINATION = true;
+const MOCK_TOTAL_PAGES = 2;
 
 export function InventoryModalForm({ onClose }: { onClose: () => void }) {
   const [items, setItems] = useState<IInventoryItem[]>([...ALL_ITEMS]);
   const [draggedItem, setDraggedItem] = useState<IInventoryItem | null>(null);
   const [activeFilter, setActiveFilter] = useState<InventoryFilterType>('all');
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const handleDragStart = (item: IInventoryItem) => {
     setDraggedItem(item);
@@ -33,8 +41,28 @@ export function InventoryModalForm({ onClose }: { onClose: () => void }) {
       ? items
       : items.filter((item) => item.type === activeFilter);
 
+  const totalPages = MOCK_PAGINATION
+    ? MOCK_TOTAL_PAGES
+    : Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedItems = filteredItems.slice(startIndex, endIndex);
+
   const handleChangeFilter = (filterMode: InventoryFilterType) => {
     setActiveFilter(filterMode);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
   const filterBtns: IInventoryFilterBtnProps[] = [
@@ -67,7 +95,7 @@ export function InventoryModalForm({ onClose }: { onClose: () => void }) {
   ];
 
   return (
-    <div className="w-261 h-220 relative px-5 pt-5">
+    <div className="w-230 h-199 relative px-5 pt-5">
       <div className="font-pixel text-main-gray flex w-full items-center justify-between pb-5 pt-2.5 text-3xl font-bold">
         <span className="flex-1 text-center">Inventory</span>
         <Image
@@ -80,8 +108,8 @@ export function InventoryModalForm({ onClose }: { onClose: () => void }) {
         />
       </div>
       {/* Items */}
-      <div className="grid grid-cols-7 gap-2.5">
-        <div className="col-span-7 mb-2.5 grid grid-cols-8 gap-2.5">
+      <div className="px-13">
+        <div className="mb-2.5 flex flex-row gap-2.5">
           {filterBtns.map((btnProps, index) => (
             <InventoryFilterBtn
               key={`${btnProps.title}-${index}`}
@@ -89,37 +117,106 @@ export function InventoryModalForm({ onClose }: { onClose: () => void }) {
             />
           ))}
         </div>
-        {filteredItems.map((item) => (
-          <div
-            key={item.id}
-            className="size-25 relative cursor-grab p-6 active:cursor-grabbing"
-            draggable
-            onDragStart={() => handleDragStart(item)}
-            onDragEnd={handleDragEnd}
-          >
-            <InventoryTooltip item={item}>
-              <Image
-                src={`/items/${item.image}`}
-                width={100}
-                height={100}
-                alt={item.title}
-                quality={100}
-                unoptimized={true}
-                className="size-full object-contain object-center"
-              />
-            </InventoryTooltip>
-            <div className="font-pixel text-main-gray absolute bottom-2 right-2 text-sm font-bold">
-              {item.amount}
+
+        <div className="grid grid-cols-7 gap-2.5">
+          {paginatedItems.map((item) => (
+            <div
+              key={item.id}
+              className="size-25 relative cursor-grab p-6 active:cursor-grabbing"
+              draggable
+              onDragStart={() => handleDragStart(item)}
+              onDragEnd={handleDragEnd}
+            >
+              <InventoryTooltip item={item}>
+                <Image
+                  src={`/items/${item.image}`}
+                  width={100}
+                  height={100}
+                  alt={item.title}
+                  quality={100}
+                  unoptimized={true}
+                  className="size-full object-contain object-center"
+                />
+              </InventoryTooltip>
+              <div className="font-pixel text-main-gray absolute bottom-2 right-2 text-sm font-bold">
+                {item.amount}
+              </div>
+              <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
             </div>
-            <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
+          ))}
+          {Array.from({
+            length: ITEMS_PER_PAGE - paginatedItems.length,
+          }).map((_, index) => (
+            <div key={`empty-${index}`} className="size-25 relative p-6">
+              <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
+            </div>
+          ))}
+        </div>
+
+        {/* Pagination */}
+        {(MOCK_PAGINATION || totalPages > 1) && (
+          <div className="relative mt-5 flex w-full items-center">
+            {/* Action button - left side */}
+            <div className="flex-1">
+              <Button
+                variant={'gray'}
+                className={
+                  'flex h-16 w-auto flex-row items-center gap-2.5 px-6'
+                }
+                onClick={() => {}}
+              >
+                <Image
+                  src={'/icons/trash.png'}
+                  width={32}
+                  height={28}
+                  alt={'delete'}
+                  className="h-7 w-8 object-contain object-center"
+                />
+                <span className="font-pixel text-main-gray text-lg font-bold">
+                  Delete
+                </span>
+              </Button>
+            </div>
+
+            {/* Pagination controls - centered */}
+            <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-5">
+              <button
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+                className="transition-transform duration-300 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Image
+                  src="/inventory/arrow-left.png"
+                  width={36}
+                  height={48}
+                  alt="previous-page"
+                  className="h-12 w-16 object-contain object-center"
+                />
+              </button>
+              <div className="font-pixel text-main-gray text-xl font-bold">
+                {currentPage} / {totalPages}
+              </div>
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className="transition-transform duration-300 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Image
+                  src="/inventory/arrow-right.png"
+                  width={36}
+                  height={48}
+                  alt="next-page"
+                  className="h-12 w-16 object-contain object-center"
+                />
+              </button>
+            </div>
+
+            {/* Empty space on the right for balance */}
+            <div className="flex-1"></div>
           </div>
-        ))}
-        {Array.from({ length: MAX_ITEMS - items.length }).map((_, index) => (
-          <div key={index} className="size-25 relative p-6">
-            <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
-          </div>
-        ))}
+        )}
       </div>
+
       <InventoryBg className="-z-5 absolute inset-0 size-full" />
     </div>
   );

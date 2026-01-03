@@ -34,8 +34,8 @@ export function CraftModalForm() {
   };
 
   return (
-    <div className="w-172 h-220 relative" onClick={(e) => e.stopPropagation()}>
-      <div className="-mb-2.5 flex flex-row gap-2.5 px-5">
+    <div className="w-150 h-199 relative" onClick={(e) => e.stopPropagation()}>
+      <div className="flex flex-row gap-2.5 px-5">
         <Button
           variant={getButtonVariant('craft')}
           className={buttonClassName}
@@ -79,8 +79,8 @@ export function CraftModalForm() {
           <span className={textClassName}>Unite</span>
         </Button>
       </div>
-      <div className="h-207 relative w-full">
-        <div className="h-full w-full px-5 py-5">{getForm(activeTab)}</div>
+      <div className="h-185 relative -mt-5 w-full">
+        <div className="h-full w-full px-4 py-5">{getForm(activeTab)}</div>
         <CraftBg className="absolute inset-0 -z-10 size-full h-full w-full" />
       </div>
     </div>
