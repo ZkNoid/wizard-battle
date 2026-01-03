@@ -6,7 +6,7 @@ interface ColorScheme {
 }
 
 const colorSchemes: Record<
-  'gray' | 'blue' | 'lightGray' | 'green',
+  'gray' | 'blue' | 'lightGray' | 'green' | 'red',
   ColorScheme
 > = {
   gray: {
@@ -33,6 +33,12 @@ const colorSchemes: Record<
     dark: '#005101',
     main: '#008800',
   },
+  red: {
+    light: '#FF0000',
+    medium: '#FF0000',
+    dark: '#FF0000',
+    main: '#FF0000',
+  },
 };
 
 export const ButtonBackground = ({
@@ -40,7 +46,7 @@ export const ButtonBackground = ({
   color = 'gray',
 }: {
   className?: string;
-  color?: 'gray' | 'blue' | 'lightGray' | 'green';
+  color?: 'gray' | 'blue' | 'lightGray' | 'green' | 'red';
 }) => {
   const scheme = colorSchemes[color];
 
