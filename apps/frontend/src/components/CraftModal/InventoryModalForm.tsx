@@ -22,18 +22,58 @@ const COLS = 7;
 const MOCK_PAGINATION = true;
 const MOCK_TOTAL_PAGES = 2;
 
-export function InventoryModalForm({ onClose }: { onClose: () => void }) {
+export interface IInventoryModalFormProps {
+  onClose: () => void;
+  /**
+   * Callback вызывается при начале перетаскивания элемента
+   */
+  onItemDragStart?: (item: IInventoryItem) => void;
+  /**
+   * Callback вызывается при окончании перетаскивания элемента
+   */
+  onItemDragEnd?: (item: IInventoryItem | null) => void;
+  /**
+   * Callback вызывается при удалении элемента из инвентаря
+   */
+  onItemRemove?: (item: IInventoryItem) => void;
+  /**
+   * Внешнее управление перетаскиваемым элементом (опционально)
+   */
+  draggedItem?: IInventoryItem | null;
+}
+
+export function InventoryModalForm({
+  onClose,
+  onItemDragStart,
+  onItemDragEnd,
+  onItemRemove,
+  draggedItem: externalDraggedItem,
+}: IInventoryModalFormProps) {
   const [items, setItems] = useState<IInventoryItem[]>([...ALL_ITEMS]);
-  const [draggedItem, setDraggedItem] = useState<IInventoryItem | null>(null);
+  const [internalDraggedItem, setInternalDraggedItem] =
+    useState<IInventoryItem | null>(null);
   const [activeFilter, setActiveFilter] = useState<InventoryFilterType>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
 
+  // Используем внешнее состояние, если оно передано, иначе внутреннее
+  const draggedItem =
+    externalDraggedItem !== undefined
+      ? externalDraggedItem
+      : internalDraggedItem;
+
   const handleDragStart = (item: IInventoryItem) => {
-    setDraggedItem(item);
+    if (externalDraggedItem === undefined) {
+      setInternalDraggedItem(item);
+    }
+    onItemDragStart?.(item);
   };
 
   const handleDragEnd = () => {
-    setDraggedItem(null);
+    const previousDraggedItem = draggedItem;
+    if (externalDraggedItem === undefined) {
+      setInternalDraggedItem(null);
+    }
+    onItemDragEnd?.(previousDraggedItem);
   };
 
   const filteredItems =
@@ -63,6 +103,13 @@ export function InventoryModalForm({ onClose }: { onClose: () => void }) {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
+  };
+
+  const handleDeleteItem = (item: IInventoryItem) => {
+    // Удаляем элемент из локального состояния
+    setItems((prevItems) => prevItems.filter((i) => i.id !== item.id));
+    // Уведомляем родительский компонент
+    onItemRemove?.(item);
   };
 
   const filterBtns: IInventoryFilterBtnProps[] = [
@@ -122,10 +169,25 @@ export function InventoryModalForm({ onClose }: { onClose: () => void }) {
           {paginatedItems.map((item) => (
             <div
               key={item.id}
-              className="size-25 relative cursor-grab p-6 active:cursor-grabbing"
+              className={`size-25 relative p-6 transition-opacity duration-200 ${
+                draggedItem?.id === item.id
+                  ? 'cursor-grabbing opacity-50'
+                  : 'cursor-grab opacity-100'
+              }`}
               draggable
-              onDragStart={() => handleDragStart(item)}
+              onDragStart={(e) => {
+                handleDragStart(item);
+                // Добавляем данные для передачи между компонентами
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData(
+                  'application/json',
+                  JSON.stringify(item)
+                );
+                e.dataTransfer.setData('text/plain', item.id);
+              }}
               onDragEnd={handleDragEnd}
+              data-item-id={item.id}
+              data-item-type={item.type}
             >
               <InventoryTooltip item={item}>
                 <Image
@@ -158,24 +220,36 @@ export function InventoryModalForm({ onClose }: { onClose: () => void }) {
           <div className="relative mt-5 flex w-full items-center">
             {/* Action button - left side */}
             <div className="flex-1">
-              <Button
-                variant={'gray'}
-                className={
-                  'flex h-16 w-auto flex-row items-center gap-2.5 px-6'
-                }
-                onClick={() => {}}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (draggedItem) {
+                    handleDeleteItem(draggedItem);
+                  }
+                }}
               >
-                <Image
-                  src={'/icons/trash.png'}
-                  width={32}
-                  height={28}
-                  alt={'delete'}
-                  className="h-7 w-8 object-contain object-center"
-                />
-                <span className="font-pixel text-main-gray text-lg font-bold">
-                  Delete
-                </span>
-              </Button>
+                <Button
+                  variant={'gray'}
+                  className={`flex h-16 w-auto flex-row items-center gap-2.5 px-6 transition-all duration-200 ${
+                    draggedItem ? 'ring-2 ring-red-500 ring-opacity-50' : ''
+                  }`}
+                >
+                  <Image
+                    src={'/icons/trash.png'}
+                    width={32}
+                    height={28}
+                    alt={'delete'}
+                    className="h-7 w-8 object-contain object-center"
+                  />
+                  <span className="font-pixel text-main-gray text-lg font-bold">
+                    Delete
+                  </span>
+                </Button>
+              </div>
             </div>
 
             {/* Pagination controls - centered */}
