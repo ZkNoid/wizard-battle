@@ -68,8 +68,8 @@ export function UpgradeForm() {
             </div>
             <div className="flex w-full justify-between">
               <div>
-                <Button variant="green" className={buttonClassName}>
-                  Cancel
+                <Button variant="red" className={buttonClassName}>
+                  <span className="text-white">Cancel</span>
                 </Button>
               </div>
               <div className="flex gap-2">
