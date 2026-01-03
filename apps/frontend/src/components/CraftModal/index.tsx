@@ -1,7 +1,7 @@
 'use client';
 
 import { CraftModalForm } from './CraftModalForm';
-import { InventoryModalForm } from './InventoryModalForm';
+import { InventoryModalForm } from '../InventoryModalForm';
 
 export default function CraftModal({ onClose }: { onClose: () => void }) {
   return (

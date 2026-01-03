@@ -11,7 +11,7 @@ import { InventoryTooltip } from '../InventoryModal/InventoryTooltip';
 import type { IInventoryFilterBtnProps } from '../InventoryModal/InventoryFilterBtn';
 import InventoryFilterBtn from '../InventoryModal/InventoryFilterBtn';
 import { ItemBg } from '../InventoryModal/assets/item-bg';
-import { InventoryBg } from './assets/inventory-bg';
+import { InventoryModalFormBg } from './assets/inventory-bg';
 import { Button } from '../shared/Button';
 
 const ITEMS_PER_PAGE = 28; // 7 columns × 4 rows
@@ -291,7 +291,7 @@ export function InventoryModalForm({
         )}
       </div>
 
-      <InventoryBg className="-z-5 absolute inset-0 size-full" />
+      <InventoryModalFormBg className="-z-5 absolute inset-0 size-full" />
     </div>
   );
 }

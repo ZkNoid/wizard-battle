@@ -1,4 +1,4 @@
-export const InventoryBg = ({ className }: { className: string }) => {
+export const InventoryModalFormBg = ({ className }: { className: string }) => {
   return (
     <svg
       width="870"
