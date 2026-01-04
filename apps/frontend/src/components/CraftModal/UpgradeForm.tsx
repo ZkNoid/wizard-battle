@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { UpgradeFieldBg } from './assets/upgrade-field-bg';
 import { Button } from '../shared/Button';
+import { ItemSlot } from '../shared/ItemSlot';
 
 export function UpgradeForm() {
   const upgradeChance = 48;
@@ -37,8 +38,89 @@ export function UpgradeForm() {
               <UpgradeFieldBg className="absolute inset-0 z-10 h-full w-full" />
 
               {/* Inner content */}
-              <div className="relative z-20 flex size-10 w-full items-center justify-center">
-                Upgrade chance: {upgradeChance}%
+              <div className="relative z-20 flex h-full w-full flex-col p-1">
+                {/* Header with upgrade chance */}
+                <div className="flex w-full items-center justify-center text-center font-bold">
+                  Upgrade chance: {upgradeChance}%
+                </div>
+
+                {/* Main crafting area */}
+                <div className="flex flex-1 flex-col gap-5">
+                  <div className="flex flex-col gap-2">
+                    <div className="mt-2 flex gap-2.5">
+                      <div className="ml-28">
+                        <ItemSlot
+                          placeholder="/inventory/placeholders/necklace.png"
+                          placeholderAlt="gear-placeholder"
+                          onDrop={() => {}}
+                          onDragOver={() => {}}
+                          onClick={() => {}}
+                          label="Gear"
+                        />
+                      </div>
+                      <div className="ml-32">
+                        <ItemSlot
+                          placeholder="/inventory/placeholders/necklace.png"
+                          placeholderAlt="gear-placeholder"
+                          onDrop={() => {}}
+                          onDragOver={() => {}}
+                          onClick={() => {}}
+                          label="Soul gem"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="mt-10 flex gap-2.5">
+                      <div className="ml-15">
+                        <ItemSlot
+                          placeholder="/inventory/placeholders/necklace.png"
+                          placeholderAlt="gear-placeholder"
+                          onDrop={() => {}}
+                          onDragOver={() => {}}
+                          onClick={() => {}}
+                          label="Common resource"
+                        />
+                      </div>
+                      <div className="ml-15">
+                        <ItemSlot
+                          placeholder="/inventory/placeholders/necklace.png"
+                          placeholderAlt="gear-placeholder"
+                          onDrop={() => {}}
+                          onDragOver={() => {}}
+                          onClick={() => {}}
+                          label="Result"
+                        />
+                      </div>
+                      <div className="ml-15">
+                        <ItemSlot
+                          placeholder="/inventory/placeholders/necklace.png"
+                          placeholderAlt="gear-placeholder"
+                          onDrop={() => {}}
+                          onDragOver={() => {}}
+                          onClick={() => {}}
+                          label="Unique resource"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="mt-10 flex gap-2.5">
+                      <div className="flex w-full items-center justify-center">
+                        <ItemSlot
+                          placeholder="/inventory/placeholders/gem.png"
+                          placeholderAlt="soul-gem-placeholder"
+                          onDrop={() => {}}
+                          onDragOver={() => {}}
+                          onClick={() => {}}
+                          label="Uncommon resource"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex flex-col gap-1 text-sm">
