@@ -57,12 +57,12 @@ export function UnityForm({ onCancel }: UnityFormProps) {
   const gemsTypes = useMemo<InventoryFilterType[]>(() => ['gems'], []);
 
   return (
-    <div className="relative flex h-full flex-col">
+    <div className="relative flex h-full flex-col pb-5">
       {/* Content */}
       <div className="relative flex h-full w-full flex-col gap-5">
         {/* Content */}
         <div className="text-main-gray font-pixel flex flex-1 flex-col overflow-hidden">
-          <div className="flex flex-col gap-2.5">
+          <div className="flex h-full flex-col gap-2.5">
             {/* Unite content goes here */}
             <div className="h-110 relative w-full bg-[#ACB0BC]">
               {/* Background overlay */}
@@ -173,7 +173,7 @@ export function UnityForm({ onCancel }: UnityFormProps) {
                 </span>
               </div>
             </div>
-            <div className="flex w-full justify-between">
+            <div className="mt-auto flex w-full justify-between">
               <div>
                 <Button
                   variant="red"
