@@ -1,6 +1,10 @@
 import Image from 'next/image';
 
-export function UnityForm() {
+interface UnityFormProps {
+  onCancel?: () => void;
+}
+
+export function UnityForm({ onCancel }: UnityFormProps) {
   return (
     <div className="relative flex h-[600px] flex-col px-5">
       {/* Content */}

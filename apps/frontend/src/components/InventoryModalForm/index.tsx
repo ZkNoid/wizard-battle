@@ -6,7 +6,7 @@ import type {
   InventoryFilterType,
 } from '@/lib/types/Inventory';
 import { ALL_ITEMS } from '@/lib/constants/items';
-import { useState } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { InventoryTooltip } from '../InventoryModal/InventoryTooltip';
 import type { IInventoryFilterBtnProps } from '../InventoryModal/InventoryFilterBtn';
 import InventoryFilterBtn from '../InventoryModal/InventoryFilterBtn';
@@ -22,22 +22,67 @@ const COLS = 7;
 const MOCK_PAGINATION = true;
 const MOCK_TOTAL_PAGES = 2;
 
+// Memoized component for inventory item
+const InventoryItem = memo(({ 
+  item, 
+  isDragged, 
+  onDragStart, 
+  onDragEnd 
+}: {
+  item: IInventoryItem;
+  isDragged: boolean;
+  onDragStart: (item: IInventoryItem, e: React.DragEvent) => void;
+  onDragEnd: () => void;
+}) => (
+  <div
+    key={item.id}
+    className={`size-25 relative p-6 transition-opacity duration-200 ${
+      isDragged
+        ? 'cursor-grabbing opacity-50'
+        : 'cursor-grab opacity-100'
+    }`}
+    draggable
+    onDragStart={(e) => onDragStart(item, e)}
+    onDragEnd={onDragEnd}
+    data-item-id={item.id}
+    data-item-type={item.type}
+  >
+    <InventoryTooltip item={item}>
+      <Image
+        src={`/items/${item.image}`}
+        width={100}
+        height={100}
+        alt={item.title}
+        quality={100}
+        unoptimized={true}
+        className="size-full object-contain object-center"
+      />
+    </InventoryTooltip>
+    <div className="font-pixel text-main-gray absolute bottom-2 right-2 text-sm font-bold">
+      {item.amount}
+    </div>
+    <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
+  </div>
+));
+
+InventoryItem.displayName = 'InventoryItem';
+
 export interface IInventoryModalFormProps {
   onClose: () => void;
   /**
-   * Callback вызывается при начале перетаскивания элемента
+   * Callback called when item drag starts
    */
   onItemDragStart?: (item: IInventoryItem) => void;
   /**
-   * Callback вызывается при окончании перетаскивания элемента
+   * Callback called when item drag ends
    */
   onItemDragEnd?: (item: IInventoryItem | null) => void;
   /**
-   * Callback вызывается при удалении элемента из инвентаря
+   * Callback called when item is removed from inventory
    */
   onItemRemove?: (item: IInventoryItem) => void;
   /**
-   * Внешнее управление перетаскиваемым элементом (опционально)
+   * External control of dragged item (optional)
    */
   draggedItem?: IInventoryItem | null;
 }
@@ -55,64 +100,77 @@ export function InventoryModalForm({
   const [activeFilter, setActiveFilter] = useState<InventoryFilterType>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Используем внешнее состояние, если оно передано, иначе внутреннее
+  // Use external state if provided, otherwise use internal
   const draggedItem =
     externalDraggedItem !== undefined
       ? externalDraggedItem
       : internalDraggedItem;
 
-  const handleDragStart = (item: IInventoryItem) => {
+  const handleDragStart = useCallback((item: IInventoryItem) => {
     if (externalDraggedItem === undefined) {
       setInternalDraggedItem(item);
     }
     onItemDragStart?.(item);
-  };
+  }, [externalDraggedItem, onItemDragStart]);
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     const previousDraggedItem = draggedItem;
     if (externalDraggedItem === undefined) {
       setInternalDraggedItem(null);
     }
     onItemDragEnd?.(previousDraggedItem);
-  };
+  }, [draggedItem, externalDraggedItem, onItemDragEnd]);
 
-  const filteredItems =
-    activeFilter === 'all'
+  const filteredItems = useMemo(() => {
+    return activeFilter === 'all'
       ? items
       : items.filter((item) => item.type === activeFilter);
+  }, [items, activeFilter]);
 
-  const totalPages = MOCK_PAGINATION
-    ? MOCK_TOTAL_PAGES
-    : Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedItems = filteredItems.slice(startIndex, endIndex);
+  const totalPages = useMemo(() => {
+    return MOCK_PAGINATION
+      ? MOCK_TOTAL_PAGES
+      : Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  }, [filteredItems.length]);
 
-  const handleChangeFilter = (filterMode: InventoryFilterType) => {
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredItems.slice(startIndex, endIndex);
+  }, [filteredItems, currentPage]);
+
+  const handleChangeFilter = useCallback((filterMode: InventoryFilterType) => {
     setActiveFilter(filterMode);
     setCurrentPage(1); // Reset to first page when filter changes
-  };
+  }, []);
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
+  const handleNextPage = useCallback(() => {
+    setCurrentPage((prev) => (prev < totalPages ? prev + 1 : prev));
+  }, [totalPages]);
 
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  const handlePrevPage = useCallback(() => {
+    setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
+  }, []);
 
-  const handleDeleteItem = (item: IInventoryItem) => {
-    // Удаляем элемент из локального состояния
+  const handleDeleteItem = useCallback((item: IInventoryItem) => {
+    // Remove item from local state
     setItems((prevItems) => prevItems.filter((i) => i.id !== item.id));
-    // Уведомляем родительский компонент
+    // Notify parent component
     onItemRemove?.(item);
-  };
+  }, [onItemRemove]);
 
-  const filterBtns: IInventoryFilterBtnProps[] = [
+  const handleItemDragStart = useCallback((item: IInventoryItem, e: React.DragEvent) => {
+    handleDragStart(item);
+    // Add data for transfer between components
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData(
+      'application/json',
+      JSON.stringify(item)
+    );
+    e.dataTransfer.setData('text/plain', item.id);
+  }, [handleDragStart]);
+
+  const filterBtns: IInventoryFilterBtnProps[] = useMemo(() => [
     {
       isActiveFilter: activeFilter === 'all',
       title: 'All',
@@ -139,7 +197,7 @@ export function InventoryModalForm({
       alt: 'gem',
       handleChangeFilter: () => handleChangeFilter('gems'),
     },
-  ];
+  ], [activeFilter, handleChangeFilter]);
 
   return (
     <div className="w-230 h-199 relative px-5 pt-5">
@@ -167,44 +225,13 @@ export function InventoryModalForm({
 
         <div className="grid grid-cols-7 gap-2.5">
           {paginatedItems.map((item) => (
-            <div
+            <InventoryItem
               key={item.id}
-              className={`size-25 relative p-6 transition-opacity duration-200 ${
-                draggedItem?.id === item.id
-                  ? 'cursor-grabbing opacity-50'
-                  : 'cursor-grab opacity-100'
-              }`}
-              draggable
-              onDragStart={(e) => {
-                handleDragStart(item);
-                // Добавляем данные для передачи между компонентами
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData(
-                  'application/json',
-                  JSON.stringify(item)
-                );
-                e.dataTransfer.setData('text/plain', item.id);
-              }}
+              item={item}
+              isDragged={draggedItem?.id === item.id}
+              onDragStart={handleItemDragStart}
               onDragEnd={handleDragEnd}
-              data-item-id={item.id}
-              data-item-type={item.type}
-            >
-              <InventoryTooltip item={item}>
-                <Image
-                  src={`/items/${item.image}`}
-                  width={100}
-                  height={100}
-                  alt={item.title}
-                  quality={100}
-                  unoptimized={true}
-                  className="size-full object-contain object-center"
-                />
-              </InventoryTooltip>
-              <div className="font-pixel text-main-gray absolute bottom-2 right-2 text-sm font-bold">
-                {item.amount}
-              </div>
-              <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
-            </div>
+            />
           ))}
           {Array.from({
             length: ITEMS_PER_PAGE - paginatedItems.length,

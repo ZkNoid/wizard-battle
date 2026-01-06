@@ -2,28 +2,89 @@ import Image from 'next/image';
 import { UpgradeFieldBg } from './assets/upgrade-field-bg';
 import { Button } from '../shared/Button';
 import { ItemSlot } from '../shared/ItemSlot';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import type {
+  IInventoryItem,
+  InventoryFilterType,
+} from '@/lib/types/Inventory';
 
-export function UpgradeForm() {
-  const upgradeChance = 48;
+interface UpgradeFormProps {
+  onCancel?: () => void;
+}
+
+export function UpgradeForm({ onCancel }: UpgradeFormProps) {
+  // State for each slot
+  const [gearSlot, setGearSlot] = useState<IInventoryItem | null>(null);
+  const [soulGemSlot, setSoulGemSlot] = useState<IInventoryItem | null>(null);
+  const [commonResourceSlot, setCommonResourceSlot] =
+    useState<IInventoryItem | null>(null);
+  const [uncommonResourceSlot, setUncommonResourceSlot] =
+    useState<IInventoryItem | null>(null);
+  const [uniqueResourceSlot, setUniqueResourceSlot] =
+    useState<IInventoryItem | null>(null);
+
+  const [upgradeChance, setUpgradeChance] = useState(48);
   const cost = 1234;
 
-  const steps: Array<{ title: string }> = [
-    {
-      title: '1. Place your gear',
-    },
-    {
-      title: '2. Place crafting materials mentioned on gear for improvement',
-    },
-    {
-      title: '3. To increase your % of crafting success add soul gem',
-    },
-    {
-      title: '4. Click “craft”',
-    },
-  ];
+  // Recalculate upgrade chance when soul gem changes
+  useEffect(() => {
+    let chance = 48; // base chance
+    if (soulGemSlot) {
+      // Add bonus from soul gem (e.g., +20%)
+      chance += 20;
+    }
+    setUpgradeChance(Math.min(chance, 100)); // Maximum 100%
+  }, [soulGemSlot]);
+
+  const handleClearAll = useCallback(() => {
+    setGearSlot(null);
+    setSoulGemSlot(null);
+    setCommonResourceSlot(null);
+    setUncommonResourceSlot(null);
+    setUniqueResourceSlot(null);
+  }, []);
+
+  const handleCraft = useCallback(() => {
+    // Check that all required slots are filled
+    if (!gearSlot) {
+      alert('Please place gear first');
+      return;
+    }
+    // TODO: Add craft logic
+  }, [
+    gearSlot,
+    soulGemSlot,
+    commonResourceSlot,
+    uncommonResourceSlot,
+    uniqueResourceSlot,
+    upgradeChance,
+    cost,
+  ]);
+
+  const steps = useMemo(
+    () => [
+      {
+        title: '1. Place your gear',
+      },
+      {
+        title: '2. Place crafting materials mentioned on gear for improvement',
+      },
+      {
+        title: '3. To increase your % of crafting success add soul gem',
+      },
+      {
+        title: '4. Click "craft"',
+      },
+    ],
+    []
+  );
 
   const buttonClassName =
     'flex h-16 w-auto flex-row items-center gap-2.5 px-6 transition-al -mt-4';
+
+  const armorTypes = useMemo<InventoryFilterType[]>(() => ['armor'], []);
+  const gemsTypes = useMemo<InventoryFilterType[]>(() => ['gems'], []);
+  const craftTypes = useMemo<InventoryFilterType[]>(() => ['craft'], []);
 
   return (
     <div className="relative flex h-full flex-col">
@@ -49,21 +110,21 @@ export function UpgradeForm() {
                   <div className="flex gap-2.5">
                     <div className="ml-28">
                       <ItemSlot
+                        item={gearSlot}
                         placeholder="/inventory/placeholders/necklace.png"
                         placeholderAlt="gear-placeholder"
-                        onDrop={() => {}}
-                        onDragOver={() => {}}
-                        onClick={() => {}}
+                        onItemDrop={setGearSlot}
+                        onItemRemove={() => setGearSlot(null)}
                         label="Gear"
                       />
                     </div>
                     <div className="ml-32">
                       <ItemSlot
-                        placeholder="/inventory/placeholders/necklace.png"
-                        placeholderAlt="gear-placeholder"
-                        onDrop={() => {}}
-                        onDragOver={() => {}}
-                        onClick={() => {}}
+                        item={soulGemSlot}
+                        placeholder="/inventory/placeholders/gem.png"
+                        placeholderAlt="soul-gem-placeholder"
+                        onItemDrop={setSoulGemSlot}
+                        onItemRemove={() => setSoulGemSlot(null)}
                         label="Soul gem"
                       />
                     </div>
@@ -72,31 +133,30 @@ export function UpgradeForm() {
                   <div className="flex gap-2.5">
                     <div className="ml-15">
                       <ItemSlot
+                        item={commonResourceSlot}
                         placeholder="/inventory/placeholders/necklace.png"
-                        placeholderAlt="gear-placeholder"
-                        onDrop={() => {}}
-                        onDragOver={() => {}}
-                        onClick={() => {}}
+                        placeholderAlt="resource-placeholder"
+                        onItemDrop={setCommonResourceSlot}
+                        onItemRemove={() => setCommonResourceSlot(null)}
                         label="Common resource"
                       />
                     </div>
                     <div className="ml-15">
                       <ItemSlot
+                        item={gearSlot} // Display result (same gear)
                         placeholder="/inventory/placeholders/necklace.png"
-                        placeholderAlt="gear-placeholder"
-                        onDrop={() => {}}
-                        onDragOver={() => {}}
-                        onClick={() => {}}
+                        placeholderAlt="result-placeholder"
                         label="Result"
+                        className="pointer-events-none opacity-70"
                       />
                     </div>
                     <div className="ml-15">
                       <ItemSlot
+                        item={uniqueResourceSlot}
                         placeholder="/inventory/placeholders/necklace.png"
-                        placeholderAlt="gear-placeholder"
-                        onDrop={() => {}}
-                        onDragOver={() => {}}
-                        onClick={() => {}}
+                        placeholderAlt="resource-placeholder"
+                        onItemDrop={setUniqueResourceSlot}
+                        onItemRemove={() => setUniqueResourceSlot(null)}
                         label="Unique resource"
                       />
                     </div>
@@ -104,11 +164,11 @@ export function UpgradeForm() {
 
                   <div className="flex w-full items-center justify-center">
                     <ItemSlot
+                      item={uncommonResourceSlot}
                       placeholder="/inventory/placeholders/gem.png"
-                      placeholderAlt="soul-gem-placeholder"
-                      onDrop={() => {}}
-                      onDragOver={() => {}}
-                      onClick={() => {}}
+                      placeholderAlt="resource-placeholder"
+                      onItemDrop={setUncommonResourceSlot}
+                      onItemRemove={() => setUncommonResourceSlot(null)}
                       label="Uncommon resource"
                     />
                   </div>
@@ -142,15 +202,27 @@ export function UpgradeForm() {
             </div>
             <div className="flex w-full justify-between">
               <div>
-                <Button variant="red" className={buttonClassName}>
+                <Button
+                  variant="red"
+                  className={buttonClassName}
+                  onClick={onCancel}
+                >
                   <span className="text-white">Cancel</span>
                 </Button>
               </div>
               <div className="flex gap-2">
-                <Button variant="gray" className={buttonClassName}>
+                <Button
+                  variant="gray"
+                  className={buttonClassName}
+                  onClick={handleClearAll}
+                >
                   Clear
                 </Button>
-                <Button variant="green" className={buttonClassName}>
+                <Button
+                  variant="green"
+                  className={buttonClassName}
+                  onClick={handleCraft}
+                >
                   Craft
                 </Button>
               </div>

@@ -8,7 +8,11 @@ import { UpgradeForm } from './UpgradeForm';
 import { UnityForm } from './UnityForm';
 import { CraftBg } from './assets/craft-bg';
 
-export function CraftModalForm() {
+interface CraftModalFormProps {
+  onClose?: () => void;
+}
+
+export function CraftModalForm({ onClose }: CraftModalFormProps) {
   const [activeTab, setActiveTab] = useState<string>('craft');
 
   const buttonClassName =
@@ -23,11 +27,11 @@ export function CraftModalForm() {
   const getForm = (tabName: string): React.ReactNode => {
     switch (tabName) {
       case 'craft':
-        return <CraftForm />;
+        return <CraftForm onCancel={onClose} />;
       case 'upgrade':
-        return <UpgradeForm />;
+        return <UpgradeForm onCancel={onClose} />;
       case 'unite':
-        return <UnityForm />;
+        return <UnityForm onCancel={onClose} />;
       default:
         return null;
     }

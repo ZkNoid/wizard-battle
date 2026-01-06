@@ -7,7 +7,11 @@ import { CRAFT_GROUP_PANELS } from '@/lib/constants/craft';
 import { CraftFormItem } from './CraftFormItem';
 import { Scroll } from '../shared/Scroll';
 
-export function CraftForm() {
+interface CraftFormProps {
+  onCancel?: () => void;
+}
+
+export function CraftForm({ onCancel }: CraftFormProps) {
   return (
     <div className="relative flex h-full flex-col">
       {/* Background */}
