@@ -33,7 +33,7 @@ export function UpgradeForm() {
         <div className="text-main-gray font-pixel flex flex-1 flex-col overflow-hidden">
           <div className="flex flex-col gap-2.5">
             {/* Upgrade content goes here */}
-            <div className="relative h-[470px] w-full bg-[#ACB0BC]">
+            <div className="h-110 relative w-full bg-[#ACB0BC]">
               {/* Background overlay */}
               <UpgradeFieldBg className="absolute inset-0 z-10 h-full w-full" />
 
@@ -45,80 +45,72 @@ export function UpgradeForm() {
                 </div>
 
                 {/* Main crafting area */}
-                <div className="flex flex-1 flex-col gap-5">
-                  <div className="flex flex-col gap-2">
-                    <div className="mt-2 flex gap-2.5">
-                      <div className="ml-28">
-                        <ItemSlot
-                          placeholder="/inventory/placeholders/necklace.png"
-                          placeholderAlt="gear-placeholder"
-                          onDrop={() => {}}
-                          onDragOver={() => {}}
-                          onClick={() => {}}
-                          label="Gear"
-                        />
-                      </div>
-                      <div className="ml-32">
-                        <ItemSlot
-                          placeholder="/inventory/placeholders/necklace.png"
-                          placeholderAlt="gear-placeholder"
-                          onDrop={() => {}}
-                          onDragOver={() => {}}
-                          onClick={() => {}}
-                          label="Soul gem"
-                        />
-                      </div>
+                <div className="justyfy-between mb-5 flex flex-1 flex-col justify-between">
+                  <div className="flex gap-2.5">
+                    <div className="ml-28">
+                      <ItemSlot
+                        placeholder="/inventory/placeholders/necklace.png"
+                        placeholderAlt="gear-placeholder"
+                        onDrop={() => {}}
+                        onDragOver={() => {}}
+                        onClick={() => {}}
+                        label="Gear"
+                      />
+                    </div>
+                    <div className="ml-32">
+                      <ItemSlot
+                        placeholder="/inventory/placeholders/necklace.png"
+                        placeholderAlt="gear-placeholder"
+                        onDrop={() => {}}
+                        onDragOver={() => {}}
+                        onClick={() => {}}
+                        label="Soul gem"
+                      />
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <div className="mt-10 flex gap-2.5">
-                      <div className="ml-15">
-                        <ItemSlot
-                          placeholder="/inventory/placeholders/necklace.png"
-                          placeholderAlt="gear-placeholder"
-                          onDrop={() => {}}
-                          onDragOver={() => {}}
-                          onClick={() => {}}
-                          label="Common resource"
-                        />
-                      </div>
-                      <div className="ml-15">
-                        <ItemSlot
-                          placeholder="/inventory/placeholders/necklace.png"
-                          placeholderAlt="gear-placeholder"
-                          onDrop={() => {}}
-                          onDragOver={() => {}}
-                          onClick={() => {}}
-                          label="Result"
-                        />
-                      </div>
-                      <div className="ml-15">
-                        <ItemSlot
-                          placeholder="/inventory/placeholders/necklace.png"
-                          placeholderAlt="gear-placeholder"
-                          onDrop={() => {}}
-                          onDragOver={() => {}}
-                          onClick={() => {}}
-                          label="Unique resource"
-                        />
-                      </div>
+                  <div className="flex gap-2.5">
+                    <div className="ml-15">
+                      <ItemSlot
+                        placeholder="/inventory/placeholders/necklace.png"
+                        placeholderAlt="gear-placeholder"
+                        onDrop={() => {}}
+                        onDragOver={() => {}}
+                        onClick={() => {}}
+                        label="Common resource"
+                      />
+                    </div>
+                    <div className="ml-15">
+                      <ItemSlot
+                        placeholder="/inventory/placeholders/necklace.png"
+                        placeholderAlt="gear-placeholder"
+                        onDrop={() => {}}
+                        onDragOver={() => {}}
+                        onClick={() => {}}
+                        label="Result"
+                      />
+                    </div>
+                    <div className="ml-15">
+                      <ItemSlot
+                        placeholder="/inventory/placeholders/necklace.png"
+                        placeholderAlt="gear-placeholder"
+                        onDrop={() => {}}
+                        onDragOver={() => {}}
+                        onClick={() => {}}
+                        label="Unique resource"
+                      />
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <div className="mt-10 flex gap-2.5">
-                      <div className="flex w-full items-center justify-center">
-                        <ItemSlot
-                          placeholder="/inventory/placeholders/gem.png"
-                          placeholderAlt="soul-gem-placeholder"
-                          onDrop={() => {}}
-                          onDragOver={() => {}}
-                          onClick={() => {}}
-                          label="Uncommon resource"
-                        />
-                      </div>
-                    </div>
+                  <div className="flex w-full items-center justify-center">
+                    <ItemSlot
+                      placeholder="/inventory/placeholders/gem.png"
+                      placeholderAlt="soul-gem-placeholder"
+                      onDrop={() => {}}
+                      onDragOver={() => {}}
+                      onClick={() => {}}
+                      label="Uncommon resource"
+                    />
                   </div>
                 </div>
               </div>
