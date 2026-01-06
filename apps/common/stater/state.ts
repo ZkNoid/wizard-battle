@@ -107,6 +107,10 @@ export class State extends Struct({
     return this.spellStats.length;
   }
 
+  setPlayerStats(playerStats: PlayerStats) {
+    this.playerStats = playerStats;
+  }
+
   pushSpell(spell: SpellStats) {
     let spellLength = this.getSpellLength();
     if (spellLength >= spellStatsAmount) {

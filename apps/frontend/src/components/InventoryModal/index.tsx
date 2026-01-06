@@ -9,7 +9,7 @@ import type {
   InventoryItemWearableArmorSlot,
 } from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { CharacterBg } from './assets/character-bg';
 import { LvlBg } from './assets/lvl-bg';
 import { LEVELS_XP, levelFromXp } from '@/lib/constants/levels';
@@ -20,6 +20,7 @@ import { defaultHeroStats, heroStatsConfig } from '@/lib/constants/stat';
 import type { IHeroStatConfig, IHeroStats } from '@/lib/types/IHeroStat';
 import { api } from '@/trpc/react';
 import { useInventoryStore, type EquippedSlots } from '@/lib/store';
+import { WizardId } from '../../../../common/wizards';
 
 const MAX_ITEMS = 35;
 
@@ -29,6 +30,18 @@ enum Wizards {
   MAGE,
 }
 
+// Map UI wizard enum to actual WizardId strings
+const getWizardId = (wizard: Wizards): string => {
+  switch (wizard) {
+    case Wizards.ARCHER:
+      return WizardId.ARCHER.toString();
+    case Wizards.WARRIOR:
+      return WizardId.PHANTOM_DUELIST.toString();
+    case Wizards.MAGE:
+      return WizardId.MAGE.toString();
+  }
+};
+
 export default function InventoryModal({ onClose }: { onClose: () => void }) {
   // Request user XP (mock address for now)
   const { data: xp = 0 } = api.users.getXp.useQuery({
@@ -36,7 +49,6 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   });
 
   const [currentWizard, setCurrentWizard] = useState<Wizards>(Wizards.MAGE);
-  const [stats, setStats] = useState<IHeroStats>(defaultHeroStats);
   const [draggedItem, setDraggedItem] = useState<IInventoryItem | null>(null);
   const [activeFilter, setActiveFilter] = useState<InventoryFilterType>('all');
 
@@ -45,8 +57,15 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const equippedItemsByWizard = useInventoryStore(
     (state) => state.equippedItemsByWizard
   );
+  const statsByWizard = useInventoryStore((state) => state.statsByWizard);
   const equipItem = useInventoryStore((state) => state.equipItem);
   const unequipItem = useInventoryStore((state) => state.unequipItem);
+
+  // Get current wizard ID string
+  const currentWizardId = useMemo(
+    () => getWizardId(currentWizard),
+    [currentWizard]
+  );
 
   // Get equipped items for current wizard
   const equippedItems = useMemo((): EquippedSlots => {
@@ -58,27 +77,13 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
       legs: null,
       belt: null,
     };
-    return equippedItemsByWizard[currentWizard] ?? defaultSlots;
-  }, [equippedItemsByWizard, currentWizard]);
+    return equippedItemsByWizard[currentWizardId] ?? defaultSlots;
+  }, [equippedItemsByWizard, currentWizardId]);
 
-  // Recalculate stats when items are equipped
-  useEffect(() => {
-    const calculatedStats: IHeroStats = { ...defaultHeroStats };
-
-    Object.values(equippedItems).forEach((item) => {
-      if (item && item.type === 'armor') {
-        const wearableItem = item as IInventoryArmorItem;
-        wearableItem.buff.forEach((buff) => {
-          const statKey = buff.effect as keyof IHeroStats;
-          if (statKey in calculatedStats) {
-            calculatedStats[statKey] += buff.value;
-          }
-        });
-      }
-    });
-
-    setStats(calculatedStats);
-  }, [equippedItems]);
+  // Get stats for current wizard from store
+  const stats = useMemo(() => {
+    return statsByWizard[currentWizardId] ?? { ...defaultHeroStats };
+  }, [statsByWizard, currentWizardId]);
 
   const handleNext = () => {
     setCurrentWizard((prev) => (prev + 1) % 3);
@@ -171,7 +176,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     }
 
     // Use store action to equip item (handles inventory swap automatically)
-    equipItem(currentWizard, slotId, draggedItem);
+    equipItem(currentWizardId, slotId, draggedItem);
     setDraggedItem(null);
   };
 
@@ -184,7 +189,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     if (!item) return;
 
     // Use store action to unequip item
-    unequipItem(currentWizard, slotId);
+    unequipItem(currentWizardId, slotId);
   };
 
   const filteredItems =
