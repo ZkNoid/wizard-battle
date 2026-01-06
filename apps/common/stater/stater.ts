@@ -198,6 +198,12 @@ export class Stater extends Struct({
     }
   }
 
+  applyOnEndEffects() {
+    for (const effect of this.state.onEndEffects) {
+      this.applyEffect(this.state, effect);
+    }
+  }
+
   applySpellCastsLocally(spellCasts: SpellCast<any>[], opponentState: State) {
     for (const spell of spellCasts) {
       this.applySpellCast(spell, opponentState);
@@ -225,6 +231,9 @@ export class Stater extends Struct({
 
     // Apply end of round effects
     this.applyEndOfRoundEffects();
+
+    // Apply on end effects
+    this.applyOnEndEffects();
 
     const publicState = this.generatePublicState();
 
