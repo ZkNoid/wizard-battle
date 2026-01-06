@@ -111,7 +111,7 @@ export function UpgradeForm({ onCancel }: UpgradeFormProps) {
                     <div className="ml-28">
                       <ItemSlot
                         item={gearSlot}
-                        placeholder="/inventory/placeholders/necklace.png"
+                        placeholder="/inventory/craft/default/gear.png"
                         placeholderAlt="gear-placeholder"
                         onItemDrop={setGearSlot}
                         onItemRemove={() => setGearSlot(null)}
@@ -121,7 +121,7 @@ export function UpgradeForm({ onCancel }: UpgradeFormProps) {
                     <div className="ml-32">
                       <ItemSlot
                         item={soulGemSlot}
-                        placeholder="/inventory/placeholders/gem.png"
+                        placeholder="/inventory/craft/default/soul-gem.png"
                         placeholderAlt="soul-gem-placeholder"
                         onItemDrop={setSoulGemSlot}
                         onItemRemove={() => setSoulGemSlot(null)}
@@ -134,7 +134,7 @@ export function UpgradeForm({ onCancel }: UpgradeFormProps) {
                     <div className="ml-15">
                       <ItemSlot
                         item={commonResourceSlot}
-                        placeholder="/inventory/placeholders/necklace.png"
+                        placeholder="/inventory/craft/default/common-resource.png"
                         placeholderAlt="resource-placeholder"
                         onItemDrop={setCommonResourceSlot}
                         onItemRemove={() => setCommonResourceSlot(null)}
@@ -144,7 +144,7 @@ export function UpgradeForm({ onCancel }: UpgradeFormProps) {
                     <div className="ml-15">
                       <ItemSlot
                         item={gearSlot} // Display result (same gear)
-                        placeholder="/inventory/placeholders/necklace.png"
+                        placeholder="/inventory/craft/default/result.png"
                         placeholderAlt="result-placeholder"
                         label="Result"
                         className="pointer-events-none opacity-70"
@@ -153,7 +153,7 @@ export function UpgradeForm({ onCancel }: UpgradeFormProps) {
                     <div className="ml-15">
                       <ItemSlot
                         item={uniqueResourceSlot}
-                        placeholder="/inventory/placeholders/necklace.png"
+                        placeholder="/inventory/craft/default/unique-resource.png"
                         placeholderAlt="resource-placeholder"
                         onItemDrop={setUniqueResourceSlot}
                         onItemRemove={() => setUniqueResourceSlot(null)}
@@ -165,7 +165,7 @@ export function UpgradeForm({ onCancel }: UpgradeFormProps) {
                   <div className="flex w-full items-center justify-center">
                     <ItemSlot
                       item={uncommonResourceSlot}
-                      placeholder="/inventory/placeholders/gem.png"
+                      placeholder="/inventory/craft/default/uncommon-resource.png"
                       placeholderAlt="resource-placeholder"
                       onItemDrop={setUncommonResourceSlot}
                       onItemRemove={() => setUncommonResourceSlot(null)}
