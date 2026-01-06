@@ -6,20 +6,20 @@ import type {
   IInventoryArmorItem,
   IInventoryItem,
   InventoryFilterType,
+  InventoryItemWearableArmorSlot,
 } from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
-import { ALL_ITEMS } from '@/lib/constants/items';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CharacterBg } from './assets/character-bg';
 import { LvlBg } from './assets/lvl-bg';
 import { LEVELS_XP, levelFromXp } from '@/lib/constants/levels';
 import { InventoryTooltip } from './InventoryTooltip';
-import CraftModal from '../CraftModal';
 import type { IInventoryFilterBtnProps } from './InventoryFilterBtn';
 import InventoryFilterBtn from './InventoryFilterBtn';
 import { defaultHeroStats, heroStatsConfig } from '@/lib/constants/stat';
 import type { IHeroStatConfig, IHeroStats } from '@/lib/types/IHeroStat';
 import { api } from '@/trpc/react';
+import { useInventoryStore, type EquippedSlots } from '@/lib/store';
 
 const MAX_ITEMS = 35;
 
@@ -35,24 +35,31 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     address: 'mock-address',
   });
 
-  const [items, setItems] = useState<IInventoryItem[] | IInventoryArmorItem[]>([
-    ...ALL_ITEMS,
-  ]);
   const [currentWizard, setCurrentWizard] = useState<Wizards>(Wizards.MAGE);
   const [stats, setStats] = useState<IHeroStats>(defaultHeroStats);
-  const [equippedItems, setEquippedItems] = useState<
-    Record<string, IInventoryItem | null>
-  >({
-    gem: null,
-    ring: null,
-    necklace: null,
-    arms: null,
-    legs: null,
-    belt: null,
-  });
   const [draggedItem, setDraggedItem] = useState<IInventoryItem | null>(null);
-
   const [activeFilter, setActiveFilter] = useState<InventoryFilterType>('all');
+
+  // Get inventory data from store
+  const inventoryItems = useInventoryStore((state) => state.inventoryItems);
+  const equippedItemsByWizard = useInventoryStore(
+    (state) => state.equippedItemsByWizard
+  );
+  const equipItem = useInventoryStore((state) => state.equipItem);
+  const unequipItem = useInventoryStore((state) => state.unequipItem);
+
+  // Get equipped items for current wizard
+  const equippedItems = useMemo((): EquippedSlots => {
+    const defaultSlots: EquippedSlots = {
+      gem: null,
+      ring: null,
+      necklace: null,
+      arms: null,
+      legs: null,
+      belt: null,
+    };
+    return equippedItemsByWizard[currentWizard] ?? defaultSlots;
+  }, [equippedItemsByWizard, currentWizard]);
 
   // Recalculate stats when items are equipped
   useEffect(() => {
@@ -148,11 +155,8 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     setDraggedItem(null);
   };
 
-  const handleDrop = (slotId: string) => {
+  const handleDrop = (slotId: InventoryItemWearableArmorSlot) => {
     if (!draggedItem) return;
-
-    // Get current item in slot
-    const currentEquippedItem = equippedItems[slotId];
 
     // Check if dragged item can be equipped in this slot
     if (draggedItem.type !== 'armor') {
@@ -166,30 +170,8 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    // Update equipped items
-    setEquippedItems((prev) => {
-      const newEquipped = { ...prev };
-
-      // Check if item is already equipped in another slot
-      Object.keys(newEquipped).forEach((key) => {
-        if (newEquipped[key]?.id === draggedItem.id) {
-          newEquipped[key] = null;
-        }
-      });
-
-      newEquipped[slotId] = draggedItem;
-
-      return newEquipped;
-    });
-
-    // Remove item from inventory
-    setItems((prev) => prev.filter((item) => item.id !== draggedItem.id));
-
-    // If there was an item in the slot, return it to the inventory
-    if (currentEquippedItem) {
-      setItems((prev) => [...prev, currentEquippedItem]);
-    }
-
+    // Use store action to equip item (handles inventory swap automatically)
+    equipItem(currentWizard, slotId, draggedItem);
     setDraggedItem(null);
   };
 
@@ -197,24 +179,18 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     e.preventDefault();
   };
 
-  const handleUnequip = (slotId: string) => {
+  const handleUnequip = (slotId: InventoryItemWearableArmorSlot) => {
     const item = equippedItems[slotId];
     if (!item) return;
 
-    // Return item to inventory
-    setItems((prev) => [...prev, item]);
-
-    // Remove item from slot
-    setEquippedItems((prev) => ({
-      ...prev,
-      [slotId]: null,
-    }));
+    // Use store action to unequip item
+    unequipItem(currentWizard, slotId);
   };
 
   const filteredItems =
     activeFilter === 'all'
-      ? items
-      : items.filter((item) => item.type === activeFilter);
+      ? inventoryItems
+      : inventoryItems.filter((item) => item.type === activeFilter);
 
   const handleChangeFilter = (filterMode: InventoryFilterType) => {
     setActiveFilter(filterMode);
@@ -627,7 +603,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                 <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
               </div>
             ))}
-            {Array.from({ length: MAX_ITEMS - items.length }).map(
+            {Array.from({ length: MAX_ITEMS - inventoryItems.length }).map(
               (_, index) => (
                 <div key={index} className="size-25 relative p-6">
                   <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
