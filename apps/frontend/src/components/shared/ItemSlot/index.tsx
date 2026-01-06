@@ -141,10 +141,10 @@ export const ItemSlot = memo(function ItemSlot({
         <>
           <Image
             src={`/items/${item.image}`}
-            width={100}
-            height={100}
+            width={80}
+            height={80}
             alt={item.title}
-            className={`pointer-events-none size-full select-none object-contain object-center ${label ? '-mt-2' : ''}`}
+            className={`pointer-events-none mx-auto h-[75%] w-[75%] select-none object-contain object-center ${label ? 'mt-0' : 'mt-2'}`}
             quality={100}
             unoptimized={true}
           />
@@ -157,14 +157,14 @@ export const ItemSlot = memo(function ItemSlot({
       ) : placeholder ? (
         <Image
           src={placeholder}
-          width={100}
-          height={100}
+          width={80}
+          height={80}
           alt={placeholderAlt}
-          className={`pointer-events-none size-full select-none object-contain object-center opacity-50 ${label ? '-mt-2' : ''}`}
+          className={`pointer-events-none mx-auto h-[75%] w-[75%] select-none object-contain object-center opacity-50 ${label ? 'mt-0' : 'mt-2'}`}
         />
       ) : null}
       {label && (
-        <div className="font-pixel absolute inset-x-0 bottom-0 flex items-end justify-center pb-2 text-center text-[9px] font-bold text-[#747C8F]">
+        <div className="font-pixel absolute inset-x-0 bottom-0 mx-auto flex w-[75%] items-end justify-center pb-2 text-center text-[9px] font-bold text-[#747C8F]">
           {label}
         </div>
       )}
