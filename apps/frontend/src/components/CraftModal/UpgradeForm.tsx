@@ -144,7 +144,7 @@ export function UpgradeForm({ onCancel }: UpgradeFormProps) {
                     <div className="ml-15">
                       <ItemSlot
                         item={gearSlot} // Display result (same gear)
-                        placeholder="/inventory/craft/default/result.png"
+                        placeholder="/inventory/craft/default/upgrade-result.png"
                         placeholderAlt="result-placeholder"
                         label="Result"
                         className="pointer-events-none opacity-70"
