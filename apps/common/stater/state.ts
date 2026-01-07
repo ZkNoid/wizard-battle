@@ -1,4 +1,5 @@
 import {
+  Bool,
   CircuitString,
   Field,
   Int64,
@@ -155,13 +156,24 @@ export class State extends Struct({
     return effects.length;
   }
 
-  pushEffect(effect: Effect, type: EffectType) {
-    let effectLength = this.getEffectLength(type);
-    if (effectLength >= maxSpellEffects) {
-      throw new Error('Effect array is full');
-    }
+  pushEffect(effect: Effect, type: EffectType, shouldAdd: Bool) {
     const effects = this.getEffects(type);
-    effects[effectLength] = effect;
+
+    // Track if we've already found and filled an empty slot
+    let alreadyAdded = Bool(false);
+
+    for (let i = 0; i < maxSpellEffects; i++) {
+      const currentEffect = effects[i]!;
+      const isEmpty = currentEffect.effectId.equals(Field(0));
+
+      // Add to this slot if: shouldAdd AND isEmpty AND not already added
+      const shouldAddHere = shouldAdd.and(isEmpty).and(alreadyAdded.not());
+
+      effects[i] = Provable.if(shouldAddHere, Effect, effect, currentEffect);
+
+      // Update alreadyAdded: if we added here, mark as added
+      alreadyAdded = Provable.if(shouldAddHere, Bool(true), alreadyAdded);
+    }
   }
 
   removeEffect(effectId: Field, type: EffectType) {

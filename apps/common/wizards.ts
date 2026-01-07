@@ -1,4 +1,4 @@
-import { CircuitString, Field, Int64 } from 'o1js';
+import { Bool, CircuitString, Field, Int64 } from 'o1js';
 import { State } from './stater/state';
 import { Effect } from './stater/structs';
 import { EffectsId } from './stater/effects/effects';
@@ -30,7 +30,8 @@ const mageDefaultState = () => {
       duration: Field(-1),
       param: Field(0),
     }),
-    'public'
+    'public',
+    Bool(true)
   );
 
   return state;

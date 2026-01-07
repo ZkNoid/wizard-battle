@@ -1,6 +1,7 @@
 import { State } from '../state';
 import { Effect, Position, type SpellCast } from '../structs';
 import {
+  Bool,
   CircuitString,
   Field,
   Poseidon,
@@ -150,7 +151,8 @@ export const ShadowVeilModifier = (
       duration: Field.from(2),
       param: Field(0),
     }),
-    'public'
+    'public',
+    Bool(true)
   );
 
   // Apply damage boost effect for next attack (+50% damage)
@@ -251,7 +253,8 @@ export const SpectralProjectionModifier = (
       duration: Field.from(3),
       param: Field(0),
     }),
-    'onEnd'
+    'onEnd',
+    Bool(true)
   );
 };
 
@@ -314,17 +317,16 @@ export const DusksEmbraceModifier = (
 
   stater.applyDamage(damageToApply, opponentState);
 
-  // Apply Weaken effect if hit
-  if (sameRow.toBoolean()) {
-    stater.state.pushEffect(
-      new Effect({
-        effectId: CircuitString.fromString('Weaken').hash(),
-        duration: Field.from(2),
-        param: Field(30), // -30% defence
-      }),
-      'endOfRound'
-    );
-  }
+  // Apply Weaken effect if hit (provable)
+  stater.state.pushEffect(
+    new Effect({
+      effectId: CircuitString.fromString('Weaken').hash(),
+      duration: Field.from(2),
+      param: Field(30), // -30% defence
+    }),
+    'endOfRound',
+    sameRow
+  );
 };
 
 const DusksEmbraceSceneEffect = (
@@ -406,28 +408,28 @@ export const PhantomEchoModifier = (
 
   stater.applyDamage(damageToApply, opponentState);
 
-  // If hit, apply visibility and vulnerability effects
-  if (isInDiamond.toBoolean()) {
-    // Remove invisibility / make visible
-    stater.state.pushEffect(
-      new Effect({
-        effectId: CircuitString.fromString('Revealed').hash(),
-        duration: Field.from(1),
-        param: Field(0),
-      }),
-      'public'
-    );
+  // If hit, apply visibility and vulnerability effects (provable)
+  // Remove invisibility / make visible
+  stater.state.pushEffect(
+    new Effect({
+      effectId: CircuitString.fromString('Revealed').hash(),
+      duration: Field.from(1),
+      param: Field(0),
+    }),
+    'public',
+    isInDiamond
+  );
 
-    // Apply vulnerability (+50% damage taken)
-    stater.state.pushEffect(
-      new Effect({
-        effectId: CircuitString.fromString('Vulnerable').hash(),
-        duration: Field.from(1),
-        param: Field(50), // +50% damage taken
-      }),
-      'endOfRound'
-    );
-  }
+  // Apply vulnerability (+50% damage taken)
+  stater.state.pushEffect(
+    new Effect({
+      effectId: CircuitString.fromString('Vulnerable').hash(),
+      duration: Field.from(1),
+      param: Field(50), // +50% damage taken
+    }),
+    'endOfRound',
+    isInDiamond
+  );
 };
 
 const PhantomEchoSceneEffect = (
