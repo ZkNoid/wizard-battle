@@ -71,7 +71,7 @@ export function UnityForm({ onCancel }: UnityFormProps) {
               {/* Inner content */}
               <div className="relative z-20 flex h-full w-full flex-col p-1">
                 {/* Main crafting area */}
-                <div className="justyfy-between mb-5 flex flex-1 flex-col justify-between">
+                <div className="justyfy-between mb-5 mt-5 flex flex-1 flex-col justify-between">
                   <div className="flex gap-2.5">
                     <div className="ml-28">
                       <ItemSlot
@@ -145,8 +145,8 @@ export function UnityForm({ onCancel }: UnityFormProps) {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col gap-1 text-sm">
-              <div className="flex w-full items-center justify-between">
+            <div className="flex flex-col gap-1 text-base">
+              <div className="mb-2 flex w-full items-center justify-between">
                 <span>Unite soul gems</span>
                 <span className="flex items-center gap-1">
                   <span>Cost: {cost}</span>
@@ -159,14 +159,14 @@ export function UnityForm({ onCancel }: UnityFormProps) {
                   />
                 </span>
               </div>
-              <div className="flex w-full items-center justify-between">
-                <span className="text-[10px]">
+              <div className="mb-2 flex w-full items-center justify-between">
+                <span className="text-sm">
                   To get a higher-level soul gem , place five identical soul
-                  gems of a lower level in the cells and click “craft”.
+                  gems of a lower level in the cells and click "craft".
                 </span>
               </div>
               <div>
-                <span className="text-main-gray text-[10px] font-thin">
+                <span className="text-main-gray text-xs font-extralight">
                   Soul gems used to increase the chances of armor upgrades. They
                   have 5 levels. higher-level stones increase gear crafting
                   success by more %.
@@ -196,7 +196,7 @@ export function UnityForm({ onCancel }: UnityFormProps) {
                   className={buttonClassName}
                   onClick={handleCraft}
                 >
-                  Unite
+                  Craft
                 </Button>
               </div>
             </div>

@@ -101,7 +101,7 @@ export function UpgradeForm({ onCancel }: UpgradeFormProps) {
               {/* Inner content */}
               <div className="relative z-20 flex h-full w-full flex-col p-1">
                 {/* Header with upgrade chance */}
-                <div className="flex w-full items-center justify-center text-center font-bold">
+                <div className="flex w-full items-center justify-center text-center text-base font-bold">
                   Upgrade chance: {upgradeChance}%
                 </div>
 
@@ -175,8 +175,8 @@ export function UpgradeForm({ onCancel }: UpgradeFormProps) {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col gap-1 text-sm">
-              <div className="flex w-full items-center justify-between">
+            <div className="flex flex-col gap-1 text-base">
+              <div className="mb-2 flex w-full items-center justify-between">
                 <span>Upgrade gear</span>
                 <span className="flex items-center gap-1">
                   <span>Cost: {cost}</span>
@@ -189,13 +189,15 @@ export function UpgradeForm({ onCancel }: UpgradeFormProps) {
                   />
                 </span>
               </div>
-              {steps.map((step) => (
-                <div className="flex w-full items-center justify-between">
-                  <span className="text-[10px]">{step.title}</span>
-                </div>
-              ))}
+              <div className="mb-2">
+                {steps.map((step) => (
+                  <div className="mb-1 flex w-full items-center justify-between">
+                    <span className="text-sm">{step.title}</span>
+                  </div>
+                ))}
+              </div>
               <div>
-                <span className="text-main-gray text-[10px] font-thin">
+                <span className="text-main-gray text-xs font-extralight">
                   If the forging fails, you lose your money and soul gems
                 </span>
               </div>
