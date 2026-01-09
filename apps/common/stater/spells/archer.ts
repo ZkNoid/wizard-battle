@@ -1,6 +1,7 @@
 import { State } from '../state';
 import { Effect, Position, type SpellCast } from '../structs';
 import {
+  Bool,
   CircuitString,
   Field,
   Poseidon,
@@ -69,22 +70,19 @@ export const ArrowModifier = (
 
   stater.applyDamage(damageToApply, opponentState);
 
-  // #TODO make provable
-  // Bleeding effect
-
+  // Bleeding effect (provable)
   const chance = stater.getRandomPercentage();
   const isBleeding = directHit.and(chance.lessThan(UInt64.from(50)));
 
-  if (isBleeding.toBoolean()) {
-    stater.state.pushEffect(
-      new Effect({
-        effectId: CircuitString.fromString('Bleeding').hash(),
-        duration: Field.from(3),
-        param: Field(0),
-      }),
-      'endOfRound'
-    );
-  }
+  stater.state.pushEffect(
+    new Effect({
+      effectId: CircuitString.fromString('Bleeding').hash(),
+      duration: Field.from(3),
+      param: Field(0),
+    }),
+    'endOfRound',
+    isBleeding
+  );
 };
 
 const ArrowSceneEffect = (
@@ -235,30 +233,28 @@ export const HailOfArrowsModifier = (
 
   stater.applyDamage(damageToApply, opponentState);
 
-  // #TODO make provable
-  // Slowing effect
-
+  // Slowing effect (provable)
   const chance = stater.getRandomPercentage();
   const isSlowing = hasDamage.and(chance.lessThan(UInt64.from(20)));
 
-  if (isSlowing.toBoolean()) {
-    stater.state.pushEffect(
-      new Effect({
-        effectId: CircuitString.fromString('SlowingRestoration').hash(),
-        duration: Field.from(3),
-        param: Field(0),
-      }),
-      'endOfRound'
-    );
-    stater.state.pushEffect(
-      new Effect({
-        effectId: CircuitString.fromString('Slowing').hash(),
-        duration: Field.from(2),
-        param: Field(0),
-      }),
-      'endOfRound'
-    );
-  }
+  stater.state.pushEffect(
+    new Effect({
+      effectId: CircuitString.fromString('SlowingRestoration').hash(),
+      duration: Field.from(3),
+      param: Field(0),
+    }),
+    'endOfRound',
+    isSlowing
+  );
+  stater.state.pushEffect(
+    new Effect({
+      effectId: CircuitString.fromString('Slowing').hash(),
+      duration: Field.from(2),
+      param: Field(0),
+    }),
+    'endOfRound',
+    isSlowing
+  );
 };
 
 const HailOfArrowsSceneEffect = (
@@ -326,7 +322,8 @@ export const DecoyModifier = (
       duration: Field.from(2),
       param: Field(0),
     }),
-    'public'
+    'public',
+    Bool(true)
   );
 };
 
@@ -384,7 +381,8 @@ export const CloudModifier = (
           spellCast.additionalData.position.y.toBigint() * 8n
       ),
     }),
-    'public'
+    'public',
+    Bool(true)
   );
 };
 

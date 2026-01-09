@@ -70,6 +70,17 @@ describe('Stater', () => {
           })
       );
 
+    const onEndEffects = Array(10)
+      .fill(null)
+      .map(
+        () =>
+          new Effect({
+            effectId: Field(0),
+            duration: Field(0),
+            param: Field(0),
+          })
+      );
+
     initialState = new State({
       playerId: Field(42),
       wizardId: WizardId.MAGE,
@@ -77,6 +88,7 @@ describe('Stater', () => {
       spellStats,
       publicStateEffects,
       endOfRoundEffects,
+      onEndEffects,
       map: [...Array(64).fill(Field(0))],
       turnId: Int64.from(1),
       randomSeed: Field(123),
@@ -128,6 +140,16 @@ describe('Stater', () => {
             })
         ),
       endOfRoundEffects: Array(10)
+        .fill(null)
+        .map(
+          () =>
+            new Effect({
+              effectId: Field(0),
+              duration: Field(0),
+              param: Field(0),
+            })
+        ),
+      onEndEffects: Array(10)
         .fill(null)
         .map(
           () =>

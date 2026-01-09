@@ -1,4 +1,5 @@
 import {
+  Bool,
   CircuitString,
   Field,
   Int64,
@@ -19,6 +20,8 @@ import {
 export const spellStatsAmount = 5;
 export const maxSpellEffects = 10;
 
+export type EffectType = 'public' | 'endOfRound' | 'onEnd';
+
 function reify<T>(TProvable: Provable<T>, v: T): T {
   return TProvable.fromFields(TProvable.toFields(v), []);
 }
@@ -30,6 +33,7 @@ export class State extends Struct({
   spellStats: Provable.Array(SpellStats, spellStatsAmount),
   endOfRoundEffects: Provable.Array(Effect, maxSpellEffects),
   publicStateEffects: Provable.Array(Effect, maxSpellEffects),
+  onEndEffects: Provable.Array(Effect, maxSpellEffects),
   map: Provable.Array(Field, 64),
   turnId: Int64,
   randomSeed: Field,
@@ -73,6 +77,13 @@ export class State extends Struct({
           param: Field(0),
         })
       ),
+      onEndEffects: Array(maxSpellEffects).fill(
+        new Effect({
+          effectId: Field(0),
+          duration: Field(0),
+          param: Field(0),
+        })
+      ),
       map: Array(64).fill(Field(0)),
       turnId: Int64.from(0),
       randomSeed: Field(0),
@@ -95,6 +106,10 @@ export class State extends Struct({
       }
     }
     return this.spellStats.length;
+  }
+
+  setPlayerStats(playerStats: PlayerStats) {
+    this.playerStats = playerStats;
   }
 
   pushSpell(spell: SpellStats) {
@@ -120,31 +135,50 @@ export class State extends Struct({
     }
   }
 
-  getEffectLength(type: 'public' | 'endOfRound') {
-    const effects =
-      type === 'public' ? this.publicStateEffects : this.endOfRoundEffects;
+  getEffects(type: EffectType) {
+    switch (type) {
+      case 'public':
+        return this.publicStateEffects;
+      case 'endOfRound':
+        return this.endOfRoundEffects;
+      case 'onEnd':
+        return this.onEndEffects;
+    }
+  }
+
+  getEffectLength(type: EffectType) {
+    const effects = this.getEffects(type);
     for (let i = 0; i < effects.length; i++) {
       if (effects[i]!.effectId.equals(Field(0)).toBoolean()) {
         return i;
       }
     }
-    return this.publicStateEffects.length;
+    return effects.length;
   }
 
-  pushEffect(effect: Effect, type: 'public' | 'endOfRound') {
-    let effectLength = this.getEffectLength(type);
-    if (effectLength >= maxSpellEffects) {
-      throw new Error('Effect array is full');
+  pushEffect(effect: Effect, type: EffectType, shouldAdd: Bool) {
+    const effects = this.getEffects(type);
+
+    // Track if we've already found and filled an empty slot
+    let alreadyAdded = Bool(false);
+
+    for (let i = 0; i < maxSpellEffects; i++) {
+      const currentEffect = effects[i]!;
+      const isEmpty = currentEffect.effectId.equals(Field(0));
+
+      // Add to this slot if: shouldAdd AND isEmpty AND not already added
+      const shouldAddHere = shouldAdd.and(isEmpty).and(alreadyAdded.not());
+
+      effects[i] = Provable.if(shouldAddHere, Effect, effect, currentEffect);
+
+      // Update alreadyAdded: if we added here, mark as added
+      alreadyAdded = Provable.if(shouldAddHere, Bool(true), alreadyAdded);
     }
-    const effects =
-      type === 'public' ? this.publicStateEffects : this.endOfRoundEffects;
-    effects[effectLength] = effect;
   }
 
-  removeEffect(effectId: Field, type: 'public' | 'endOfRound') {
+  removeEffect(effectId: Field, type: EffectType) {
     let effectLength = this.getEffectLength(type);
-    const effects =
-      type === 'public' ? this.publicStateEffects : this.endOfRoundEffects;
+    const effects = this.getEffects(type);
     for (let i = 0; i < effectLength; i++) {
       if (effects[i]!.effectId.equals(effectId).toBoolean()) {
         effects[i] = effects[effectLength - 1]!;

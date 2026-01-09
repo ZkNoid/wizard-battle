@@ -105,6 +105,48 @@ const cloudEffect: IEffectInfo = {
   },
 };
 
+// Reverse of SpectralProjectionModifier - transforms melee skills back to ranged:
+// - Shadow Strike → Spectral Arrow
+// - Shadow Dash → Dusk's Embrace
+// - Whirling Blades → Phantom Echo
+const spectralProjectionReturnEffect: IEffectInfo = {
+  id: CircuitString.fromString('SpectralProjectionReturn').hash(),
+  name: 'SpectralProjectionReturn',
+  apply: (state: State, publicState: State, param: Field) => {
+    console.log('Applying SpectralProjectionReturn effect');
+
+    const spectralArrowId = CircuitString.fromString('SpectralArrow').hash();
+    const shadowStrikeId = CircuitString.fromString('ShadowStrike').hash();
+    const dusksEmbraceId = CircuitString.fromString('DusksEmbrace').hash();
+    const shadowDashId = CircuitString.fromString('ShadowDash').hash();
+    const phantomEchoId = CircuitString.fromString('PhantomEcho').hash();
+    const whirlingBladesId = CircuitString.fromString('WhirlingBlades').hash();
+
+    // Transform skills back in a provable way using Provable.switch
+    for (let i = 0; i < state.spellStats.length; i++) {
+      const currentSpellId = state.spellStats[i]!.spellId;
+
+      // Check each condition for reverse transformation
+      const isShadowStrike = currentSpellId.equals(shadowStrikeId);
+      const isShadowDash = currentSpellId.equals(shadowDashId);
+      const isWhirlingBlades = currentSpellId.equals(whirlingBladesId);
+      const isOther = isShadowStrike
+        .or(isShadowDash)
+        .or(isWhirlingBlades)
+        .not();
+
+      // Use Provable.switch to select the original spell ID
+      const finalSpellId = Provable.switch(
+        [isShadowStrike, isShadowDash, isWhirlingBlades, isOther],
+        Field,
+        [spectralArrowId, dusksEmbraceId, phantomEchoId, currentSpellId]
+      );
+
+      state.spellStats[i]!.spellId = finalSpellId;
+    }
+  },
+};
+
 export const allEffectsInfo: IEffectInfo[] = [
   invisibleEffect,
   bleedingEffect,
@@ -112,6 +154,7 @@ export const allEffectsInfo: IEffectInfo[] = [
   cloudEffect,
   slowingRestorationEffect,
   slowingEffect,
+  spectralProjectionReturnEffect,
 ];
 
 const EffectsId: Record<string, Field> = {};

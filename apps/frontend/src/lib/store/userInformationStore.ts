@@ -8,6 +8,7 @@ import {
 } from '../../../../common/stater/state';
 import { Field, Int64 } from 'o1js';
 import {
+  PlayerStats,
   Position,
   PositionOption,
   SpellStats,
@@ -56,11 +57,25 @@ export const useUserInformationStore = create<UserInformationStore>((set) => ({
       if (!wizard) return state;
 
       state.stater.state = wizard.defaultState();
-      state.stater.state.playerStats.position.value.x = Int64.from(
-        Math.floor(Math.random() * 8)
-      );
-      state.stater.state.playerStats.position.value.y = Int64.from(
-        Math.floor(Math.random() * 8)
+
+      state.stater.state.setPlayerStats(
+        new PlayerStats({
+          hp: state.stater.state.playerStats.hp,
+          maxHp: state.stater.state.playerStats.maxHp,
+          position: new PositionOption({
+            value: new Position({
+              x: Int64.from(Math.floor(Math.random() * 8)),
+              y: Int64.from(Math.floor(Math.random() * 8)),
+            }),
+            isSome: Field(1),
+          }),
+          speed: state.stater.state.playerStats.speed,
+          attack: state.stater.state.playerStats.attack,
+          defense: state.stater.state.playerStats.defense,
+          critChance: state.stater.state.playerStats.critChance,
+          dodgeChance: state.stater.state.playerStats.dodgeChance,
+          accuracy: state.stater.state.playerStats.accuracy,
+        })
       );
 
       return { stater: state.stater };
