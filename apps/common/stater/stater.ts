@@ -200,7 +200,7 @@ export class Stater extends Struct({
 
   applyOnEndEffects() {
     for (const effect of this.state.onEndEffects) {
-      this.applyEffect(this.state, effect);
+      this.applyOnEndEffect(this.state, effect);
     }
   }
 
