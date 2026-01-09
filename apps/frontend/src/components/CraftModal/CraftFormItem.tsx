@@ -5,7 +5,7 @@ import { CraftRecipe } from './CraftRecipe';
 
 export function CraftFormItem({ item }: { item: ICraftItem }) {
   const buttonClassName =
-    'flex h-10 flex-row items-center justify-center gap-2 px-4';
+    'flex h-12 flex-row items-center justify-center px-4 shrink-0';
 
   return (
     <div className="flex w-full flex-row items-center gap-2 text-sm">
@@ -16,14 +16,20 @@ export function CraftFormItem({ item }: { item: ICraftItem }) {
         height={40}
         className="shrink-0 bg-gray-400"
       />
-      <div className="flex flex-1 flex-col gap-1.5">
-        <span className="font-pixel font-bold">{item.title}</span>
-        <div className="flex flex-row items-center gap-2">
-          <span className="font-pixel text-[8px]">Recipe:</span>
-          <CraftRecipe recipe={item.recipe} />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <span className="font-pixel truncate font-bold">{item.title}</span>
+        <div className="flex min-w-0 flex-row items-center gap-2">
+          <span className="font-pixel shrink-0 text-[8px]">Recipe:</span>
+          <div className="min-w-0 flex-1 overflow-x-auto">
+            <CraftRecipe recipe={item.recipe} />
+          </div>
         </div>
       </div>
-      <Button variant={'green'} className={buttonClassName} onClick={() => {}}>
+      <Button
+        variant={'green'}
+        className={`${buttonClassName} shrink-0`}
+        onClick={() => {}}
+      >
         <span>Craft</span>
       </Button>
     </div>

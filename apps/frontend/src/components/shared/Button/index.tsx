@@ -12,7 +12,7 @@ export function Button({
   type = 'button',
   disabled,
 }: {
-  variant: 'gray' | 'blue' | 'lightGray' | 'green';
+  variant: 'gray' | 'blue' | 'lightGray' | 'green' | 'red';
   text?: string;
   children?: React.ReactNode;
   onClick?: () => void;
