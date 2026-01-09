@@ -20,9 +20,6 @@ export default function Play() {
   const { stater, setSelectedSkills, setCurrentWizard } =
     useUserInformationStore();
 
-  console.log(allWizards.map((w) => w.id.toString()));
-  console.log(stater?.state.wizardId.toString());
-
   // Reset selected skills when wizard changes
   // useEffect(() => {
   //   setSelectedSkills([]);

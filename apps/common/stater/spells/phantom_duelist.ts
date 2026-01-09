@@ -933,6 +933,7 @@ export const phantomDuelistSpells: ISpell<any>[] = [
       cooldown: Int64.from(1),
       currentCooldown: Int64.from(0),
     },
+    hidden: true,
   },
   {
     id: CircuitString.fromString('ShadowDash').hash(),
@@ -948,12 +949,13 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     cast: ShadowDashCast,
     sceneEffect: ShadowDashSceneEffect,
     target: 'enemy',
-    companionSpellId: CircuitString.fromString('ShadowDashMove').hash(),
     defaultValue: {
       spellId: CircuitString.fromString('ShadowDash').hash(),
       cooldown: Int64.from(2),
       currentCooldown: Int64.from(0),
     },
+    hidden: true,
+    companionSpellId: CircuitString.fromString('ShadowDashMove').hash(),
   },
   {
     id: CircuitString.fromString('ShadowDashMove').hash(),
@@ -969,12 +971,12 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     cast: ShadowDashMoveCast,
     sceneEffect: ShadowDashMoveSceneEffect,
     target: 'ally',
-    hidden: true, // Not shown in spell selection, used internally
     defaultValue: {
       spellId: CircuitString.fromString('ShadowDashMove').hash(),
       cooldown: Int64.from(0),
       currentCooldown: Int64.from(0),
     },
+    hidden: true,
   },
   {
     id: CircuitString.fromString('WhirlingBlades').hash(),
@@ -994,5 +996,6 @@ export const phantomDuelistSpells: ISpell<any>[] = [
       cooldown: Int64.from(3),
       currentCooldown: Int64.from(0),
     },
+    hidden: true,
   },
 ];
