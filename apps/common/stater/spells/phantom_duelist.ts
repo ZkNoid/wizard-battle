@@ -519,9 +519,11 @@ export const ShadowStrikeModifier = (
   // Base crit + 20% bonus = check if random < 20
   const isCritical = chance.lessThan(UInt64.from(20));
 
-  if (isCritical.toBoolean()) {
-    damage = damage.mul(UInt64.from(2)); // Critical hits deal double damage
-  }
+  damage = Provable.if(
+    isCritical,
+    damage.mul(UInt64.from(2)), // Critical hits deal double damage
+    damage
+  );
 
   const damageToApply = Provable.if(directHit, damage, UInt64.from(0));
 
