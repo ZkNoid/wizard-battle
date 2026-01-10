@@ -245,11 +245,13 @@ describe('GameManager Game Proof tests (slot-based deadlines)', () => {
 
     // Now prove the game record
 
-    console.log('Before GameRecordProgram.prove');
-    const proof = await GameRecordProgram.prove(
+    console.log('Before GameRecordProgram.proveDirect');
+    const proof = await GameRecordProgram.proveDirect(
       new GameRecordProofPublicInput({
         gameId,
         setupHash,
+        stateTreeRoot: Field(0), // Not used in proveDirect
+        vkRoot: Field(0), // Not used in proveDirect
       }),
       resultHash
     );

@@ -1,5 +1,4 @@
 import {
-  Bool,
   Field,
   MerkleMapWitness,
   Struct,
@@ -7,6 +6,12 @@ import {
   ZkProgram,
 } from 'o1js';
 import { SpellsDynamicProof } from './DynamicProof';
+import {
+  verifyStateInTree,
+  verifyVkInTree,
+  verifyDynamicProofInitialState,
+  verifySequentialStates,
+} from './ProofUtils';
 
 // Public input contains only provable field elements
 export class FraudProofPublicInput extends Struct({
@@ -27,45 +32,34 @@ export function proveFraud(
   vkWitness: MerkleMapWitness,
   dynamicProof: SpellsDynamicProof
 ) {
-  // Check that the state tree hashes are correct
-  const [rootBefore1, key1] = state1Witness.computeRootAndKey(
-    publicInput.state1Hash
-  );
-  rootBefore1.assertEquals(
+  // Verify both states exist in the state tree
+  const key1 = verifyStateInTree(
+    state1Witness,
+    publicInput.state1Hash,
     publicInput.stateTreeHash,
-    'State tree hash mismatch. rootBefore1'
+    'State1'
   );
 
-  const [rootBefore2, key2] = state2Witness.computeRootAndKey(
-    publicInput.state2Hash
-  );
-  rootBefore2.assertEquals(
+  const key2 = verifyStateInTree(
+    state2Witness,
+    publicInput.state2Hash,
     publicInput.stateTreeHash,
-    'State tree hash mismatch. rootBefore2'
+    'State2'
   );
 
   // Verify states are sequential
-  key1.add(1).assertEquals(key2, 'States are not sequential');
+  verifySequentialStates(key1, key2);
 
-  // Check vk merkle root
-  const [rootBeforeVk] = vkWitness.computeRootAndKey(vk.hash);
-  rootBeforeVk.assertEquals(
-    publicInput.vkRoot,
-    'VK merkle root mismatch. rootBeforeVk'
-  );
+  // Verify VK is in the VK tree
+  verifyVkInTree(vkWitness, vk, publicInput.vkRoot);
 
-  // Verify proof
-  dynamicProof.verify(vk);
+  // Verify dynamic proof with initial state
+  verifyDynamicProofInitialState(dynamicProof, vk, publicInput.state1Hash);
 
-  dynamicProof.publicInput.initialStateHash.assertEquals(
-    publicInput.state1Hash,
-    'Initial state hash mismatch. initialStateHash'
-  );
-
-  // In case of fraud, the final state hash should be different from the recorded state2Hash
+  // In case of fraud, the final state hash should be DIFFERENT from the recorded state2Hash
   dynamicProof.publicOutput.finalStateHash.assertNotEquals(
     publicInput.state2Hash,
-    'Final state hash mismatch. finalStateHash'
+    'Final state hash matches - no fraud detected'
   );
 
   return {

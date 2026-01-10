@@ -409,10 +409,12 @@ describe('GameManager Fraud Proof tests', () => {
     const deadlineSlot = UInt32.from(60_000 + 100); // 60_100
 
     // Prove game record to finalize OK
-    const proof = await GameRecordProgram.prove(
+    const proof = await GameRecordProgram.proveDirect(
       new GameRecordProofPublicInput({
         gameId,
         setupHash,
+        stateTreeRoot: Field(0), // Not used in proveDirect
+        vkRoot: Field(0), // Not used in proveDirect
       }),
       fraudResultHash
     );
