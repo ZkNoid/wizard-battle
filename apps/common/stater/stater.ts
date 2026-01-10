@@ -220,7 +220,10 @@ export class Stater extends Struct({
     console.log('apply', spellCasts);
     // Derive random seed form all [spellCast, turnId, randomSeed]
     // ToDo: Include actual spellCast data
-    const randomSeed = Poseidon.hash([this.state.randomSeed]);
+    let randomSeed = Poseidon.hash([this.state.randomSeed]);
+    spellCasts.forEach((spell) => {
+      randomSeed = Poseidon.hash([randomSeed, spell.hash()]);
+    });
     this.state.randomSeed = randomSeed;
 
     // Apply spells

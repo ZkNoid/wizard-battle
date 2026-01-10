@@ -86,7 +86,7 @@ export class State extends Struct({
       ),
       map: Array(64).fill(Field(0)),
       turnId: Int64.from(0),
-      randomSeed: Field(0),
+      randomSeed: Field(BigInt(Math.floor(Math.random() * 1000000))),
     });
   }
 
