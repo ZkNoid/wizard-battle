@@ -100,6 +100,10 @@ const ArrowSceneEffect = (
   });
 };
 
+const ArrowAffectedArea = (x: number, y: number) => {
+  return [{ x, y }];
+};
+
 export class AimingShotData extends Struct({
   position: Position,
 }) {}
@@ -181,6 +185,10 @@ const AimingShotSceneEffect = (
   });
 };
 
+const AimingShotAffectedArea = (x: number, y: number) => {
+  return [{ x, y }];
+};
+
 export class HailOfArrowsData extends Struct({
   position: Position,
 }) {}
@@ -257,19 +265,23 @@ export const HailOfArrowsModifier = (
   );
 };
 
-const HailOfArrowsSceneEffect = (
-  x: number,
-  y: number,
-  gameEmitter: any,
-  type: 'user' | 'enemy'
-) => {
-  let positions = [
+const HailOfArrowsAffectedArea = (x: number, y: number) => {
+  return [
     { x: x, y: y },
     { x: x + 1, y: y },
     { x: x - 1, y: y },
     { x: x, y: y + 1 },
     { x: x, y: y - 1 },
   ];
+};
+
+const HailOfArrowsSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: any,
+  type: 'user' | 'enemy'
+) => {
+  const positions = HailOfArrowsAffectedArea(x, y);
 
   positions.forEach((position) => {
     gameEmitter.throwEffect({
@@ -386,13 +398,8 @@ export const CloudModifier = (
   );
 };
 
-const CloudSceneEffect = (
-  x: number,
-  y: number,
-  gameEmitter: any,
-  type: 'user' | 'enemy'
-) => {
-  let positions = [
+const CloudAffectedArea = (x: number, y: number) => {
+  return [
     { x: x, y: y },
     { x: x + 1, y: y },
     { x: x - 1, y: y },
@@ -407,6 +414,15 @@ const CloudSceneEffect = (
     { x: x, y: y + 2 },
     { x: x, y: y - 2 },
   ];
+};
+
+const CloudSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: any,
+  type: 'user' | 'enemy'
+) => {
+  const positions = CloudAffectedArea(x, y);
 
   let effectsId: any = [];
 
@@ -448,6 +464,7 @@ export const archerSpells: ISpell<any>[] = [
     spellCast: ArrowSpellCast,
     cast: ArrowCast,
     sceneEffect: ArrowSceneEffect,
+    affectedArea: ArrowAffectedArea,
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('Arrow').hash(),
@@ -466,6 +483,7 @@ export const archerSpells: ISpell<any>[] = [
     modifier: AimingShotModifier,
     spellCast: AimingShotSpellCast,
     sceneEffect: AimingShotSceneEffect,
+    affectedArea: AimingShotAffectedArea,
     cast: AimingShotCast,
     target: 'enemy',
     defaultValue: {
@@ -486,6 +504,7 @@ export const archerSpells: ISpell<any>[] = [
     spellCast: HailOfArrowsSpellCast,
     cast: HailOfArrowsCast,
     sceneEffect: HailOfArrowsSceneEffect,
+    affectedArea: HailOfArrowsAffectedArea,
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('HailOfArrows').hash(),
@@ -523,6 +542,7 @@ export const archerSpells: ISpell<any>[] = [
     spellCast: CloudSpellCast,
     cast: CloudCast,
     sceneEffect: CloudSceneEffect,
+    affectedArea: CloudAffectedArea,
     target: 'ally',
     globalStatus: 'global',
     defaultValue: {
