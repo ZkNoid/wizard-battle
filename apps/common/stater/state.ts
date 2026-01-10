@@ -4,6 +4,7 @@ import {
   Field,
   Int64,
   Poseidon,
+  PrivateKey,
   Provable,
   Sign,
   Struct,
@@ -37,6 +38,7 @@ export class State extends Struct({
   map: Provable.Array(Field, 64),
   turnId: Int64,
   randomSeed: Field,
+  signingKey: PrivateKey,
 }) {
   static default() {
     return new State({
@@ -87,6 +89,7 @@ export class State extends Struct({
       map: Array(64).fill(Field(0)),
       turnId: Int64.from(0),
       randomSeed: Field(BigInt(Math.floor(Math.random() * 1000000))),
+      signingKey: PrivateKey.random(),
     });
   }
 
