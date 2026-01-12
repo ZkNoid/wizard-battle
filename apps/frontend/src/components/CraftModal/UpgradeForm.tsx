@@ -190,8 +190,11 @@ export function UpgradeForm({ onCancel }: UpgradeFormProps) {
                 </span>
               </div>
               <div className="mb-2">
-                {steps.map((step) => (
-                  <div className="mb-1 flex w-full items-center justify-between">
+                {steps.map((step, index) => (
+                  <div
+                    key={index}
+                    className="mb-1 flex w-full items-center justify-between"
+                  >
                     <span className="text-sm">{step.title}</span>
                   </div>
                 ))}

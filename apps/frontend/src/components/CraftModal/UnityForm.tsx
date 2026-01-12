@@ -161,8 +161,8 @@ export function UnityForm({ onCancel }: UnityFormProps) {
               </div>
               <div className="mb-2 flex w-full items-center justify-between">
                 <span className="text-sm">
-                  To get a higher-level soul gem , place five identical soul
-                  gems of a lower level in the cells and click "craft".
+                  To get a higher-level soul gem, place five identical soul
+                  gems of a lower level in the cells and click &quot;craft&quot;.
                 </span>
               </div>
               <div>
