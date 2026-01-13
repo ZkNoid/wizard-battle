@@ -79,15 +79,20 @@ describe('GameCommitService', () => {
     jest.restoreAllMocks();
   });
 
-  describe('loadAndVerifyResourceForUser', () => {
+  describe('loadAndVerifyResourceForUserFromDataBase', () => {
     it('should return resource and verify user has it', async () => {
       // Arrange
       gameItemService.findAll.mockResolvedValue([mockGameItem] as any);
       userInventoryService.hasItem.mockResolvedValue(true);
-      userInventoryService.getUserInventoryItem.mockResolvedValue(mockInventoryItem as any);
+      userInventoryService.getUserInventoryItem.mockResolvedValue(
+        mockInventoryItem as any
+      );
 
       // Act
-      const result = await service.loadAndVerifyResourceForUser('Iron Ore', 'user123');
+      const result = await service.loadAndVerifyResourceForUserFromDataBase(
+        'Iron Ore',
+        'user123'
+      );
 
       // Assert
       expect(result.found).toBe(true);
@@ -109,13 +114,23 @@ describe('GameCommitService', () => {
 
       // Verify service calls
       expect(gameItemService.findAll).toHaveBeenCalledTimes(1);
-      expect(userInventoryService.hasItem).toHaveBeenCalledWith('user123', '507f1f77bcf86cd799439011');
-      expect(userInventoryService.getUserInventoryItem).toHaveBeenCalledWith('user123', '507f1f77bcf86cd799439011');
+      expect(userInventoryService.hasItem).toHaveBeenCalledWith(
+        'user123',
+        '507f1f77bcf86cd799439011'
+      );
+      expect(userInventoryService.getUserInventoryItem).toHaveBeenCalledWith(
+        'user123',
+        '507f1f77bcf86cd799439011'
+      );
 
       // Verify console logs
-      expect(console.log).toHaveBeenCalledWith('📦 Resource loaded from database:');
+      expect(console.log).toHaveBeenCalledWith(
+        '📦 Resource loaded from database:'
+      );
       expect(console.log).toHaveBeenCalledWith('   Name: Iron Ore');
-      expect(console.log).toHaveBeenCalledWith('   User has "Iron Ore": ✅ YES');
+      expect(console.log).toHaveBeenCalledWith(
+        '   User has "Iron Ore": ✅ YES'
+      );
     });
 
     it('should return resource but user does not have it', async () => {
@@ -124,7 +139,10 @@ describe('GameCommitService', () => {
       userInventoryService.hasItem.mockResolvedValue(false);
 
       // Act
-      const result = await service.loadAndVerifyResourceForUser('Iron Ore', 'user456');
+      const result = await service.loadAndVerifyResourceForUserFromDataBase(
+        'Iron Ore',
+        'user456'
+      );
 
       // Assert
       expect(result.found).toBe(true);
@@ -141,7 +159,10 @@ describe('GameCommitService', () => {
 
       // Verify service calls
       expect(gameItemService.findAll).toHaveBeenCalledTimes(1);
-      expect(userInventoryService.hasItem).toHaveBeenCalledWith('user456', '507f1f77bcf86cd799439011');
+      expect(userInventoryService.hasItem).toHaveBeenCalledWith(
+        'user456',
+        '507f1f77bcf86cd799439011'
+      );
       expect(userInventoryService.getUserInventoryItem).not.toHaveBeenCalled();
 
       // Verify console logs
@@ -153,7 +174,10 @@ describe('GameCommitService', () => {
       gameItemService.findAll.mockResolvedValue([mockGameItem] as any);
 
       // Act
-      const result = await service.loadAndVerifyResourceForUser('Nonexistent Item', 'user123');
+      const result = await service.loadAndVerifyResourceForUserFromDataBase(
+        'Nonexistent Item',
+        'user123'
+      );
 
       // Assert
       expect(result.found).toBe(false);
@@ -167,7 +191,9 @@ describe('GameCommitService', () => {
       expect(userInventoryService.getUserInventoryItem).not.toHaveBeenCalled();
 
       // Verify console logs
-      expect(console.log).toHaveBeenCalledWith('❌ Resource "Nonexistent Item" not found in database');
+      expect(console.log).toHaveBeenCalledWith(
+        '❌ Resource "Nonexistent Item" not found in database'
+      );
     });
 
     it('should handle craftable items correctly', async () => {
@@ -183,7 +209,10 @@ describe('GameCommitService', () => {
       } as any);
 
       // Act
-      const result = await service.loadAndVerifyResourceForUser('Iron Sword', 'user123');
+      const result = await service.loadAndVerifyResourceForUserFromDataBase(
+        'Iron Sword',
+        'user123'
+      );
 
       // Assert
       expect(result.found).toBe(true);
@@ -205,7 +234,10 @@ describe('GameCommitService', () => {
       );
 
       // Act
-      const result = await service.loadAndVerifyResourceForUser('Iron Ore', 'user123');
+      const result = await service.loadAndVerifyResourceForUserFromDataBase(
+        'Iron Ore',
+        'user123'
+      );
 
       // Assert
       expect(result.found).toBe(true);
@@ -237,7 +269,10 @@ describe('GameCommitService', () => {
       userInventoryService.hasItem.mockResolvedValue(false);
 
       // Act
-      const result = await service.loadAndVerifyResourceForUser('Gold Ore', 'user123');
+      const result = await service.loadAndVerifyResourceForUserFromDataBase(
+        'Gold Ore',
+        'user123'
+      );
 
       // Assert
       expect(result.found).toBe(true);
@@ -251,7 +286,7 @@ describe('GameCommitService', () => {
 
       // Act & Assert
       await expect(
-        service.loadAndVerifyResourceForUser('Iron Ore', 'user123')
+        service.loadAndVerifyResourceForUserFromDataBase('Iron Ore', 'user123')
       ).rejects.toThrow('Database error');
 
       expect(console.error).toHaveBeenCalledWith(
@@ -263,21 +298,36 @@ describe('GameCommitService', () => {
       // Arrange
       gameItemService.findAll.mockResolvedValue([mockGameItem] as any);
       userInventoryService.hasItem.mockResolvedValue(true);
-      userInventoryService.getUserInventoryItem.mockResolvedValue(mockInventoryItem as any);
+      userInventoryService.getUserInventoryItem.mockResolvedValue(
+        mockInventoryItem as any
+      );
 
       // Act
-      await service.loadAndVerifyResourceForUser('Iron Ore', 'user123');
+      await service.loadAndVerifyResourceForUserFromDataBase(
+        'Iron Ore',
+        'user123'
+      );
 
       // Assert - verify all expected console logs were called
-      expect(console.log).toHaveBeenCalledWith('📦 Resource loaded from database:');
+      expect(console.log).toHaveBeenCalledWith(
+        '📦 Resource loaded from database:'
+      );
       expect(console.log).toHaveBeenCalledWith('   Name: Iron Ore');
       expect(console.log).toHaveBeenCalledWith('   Rarity: common');
       expect(console.log).toHaveBeenCalledWith('   Origin: mining');
-      expect(console.log).toHaveBeenCalledWith('   Description: A basic iron ore resource');
+      expect(console.log).toHaveBeenCalledWith(
+        '   Description: A basic iron ore resource'
+      );
       expect(console.log).toHaveBeenCalledWith('   Is Craftable: false');
-      expect(console.log).toHaveBeenCalledWith('   Resource ID: 507f1f77bcf86cd799439011');
-      expect(console.log).toHaveBeenCalledWith('\n🔍 Checking user inventory for userId: user123');
-      expect(console.log).toHaveBeenCalledWith('   User has "Iron Ore": ✅ YES');
+      expect(console.log).toHaveBeenCalledWith(
+        '   Resource ID: 507f1f77bcf86cd799439011'
+      );
+      expect(console.log).toHaveBeenCalledWith(
+        '\n🔍 Checking user inventory for userId: user123'
+      );
+      expect(console.log).toHaveBeenCalledWith(
+        '   User has "Iron Ore": ✅ YES'
+      );
       expect(console.log).toHaveBeenCalledWith('   Quantity: 5');
       expect(console.log).toHaveBeenCalledWith('   Is Equipped: false');
       expect(console.log).toHaveBeenCalledWith('   Acquired From: mining');
@@ -286,8 +336,10 @@ describe('GameCommitService', () => {
 
   describe('commitResource', () => {
     it('should commit a resource with mint action', async () => {
-      const result = await service.commitResource('Iron Ore', 'mint', { amount: 10 });
-      
+      const result = await service.commitResource('Iron Ore', 'mint', {
+        amount: 10,
+      });
+
       expect(result).toEqual({
         success: true,
         resource: 'Iron Ore',
@@ -300,7 +352,7 @@ describe('GameCommitService', () => {
   describe('commitCoin', () => {
     it('should commit a coin with burn action', () => {
       const result = service.commitCoin('Gold', 'burn', { amount: 5 });
-      
+
       expect(result).toEqual({
         success: true,
         coin: 'Gold',
@@ -313,7 +365,7 @@ describe('GameCommitService', () => {
   describe('commitItem', () => {
     it('should commit an item with modify action', () => {
       const result = service.commitItem('Sword', 'modify', { durability: 50 });
-      
+
       expect(result).toEqual({
         success: true,
         item: 'Sword',
@@ -326,7 +378,7 @@ describe('GameCommitService', () => {
   describe('commitCharacter', () => {
     it('should commit a character with mint action', () => {
       const result = service.commitCharacter('Wizard', 'mint', { level: 1 });
-      
+
       expect(result).toEqual({
         success: true,
         character: 'Wizard',
