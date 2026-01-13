@@ -15,25 +15,25 @@ import {StringArray} from "./libraries/StringArray.sol";
  */
 
 /**
- * @title Game Regestry
+ * @title Game Registry
  * @author Alexander Scherbatyuk (http://x.com/AlexScherbatyuk)
- * @notice Main game regestry contract, that consist of all game on-chain resources.
+ * @notice Main game registry contract, that consist of all game on-chain resources.
  * @dev What contract must do:
- * - Regester resource (game element) to the regestry
- * - Add game elements parameters to the regestry
- * - Remove game elements from the regestry
- * - Commit game element to the regestry, this function is the main entry point if verified can mint tokens, nfts, etc
+ * - Regester resource (game element) to the registry
+ * - Add game elements parameters to the registry
+ * - Remove game elements from the registry
+ * - Commit game element to the registry, this function is the main entry point if verified can mint tokens, nfts, etc
  * - Verify signature of the commit data, signer must be GAME_SIGNER_ROLE
- * - Get game elements from the regestry.
+ * - Get game elements from the registry.
  * - Commit marketplace transactions of game elements.
  * @dev possible invariants:
  * @dev roles and limitations:
  * - OWNER: can revoke / grant DEFAULT_ADMIN_ROLE
  * - DEFAULT_ADMIN_ROLE: can revoke / grant roles
  * - GAME_SIGNER_ROLE: can sign commit data, to mint, burn, transfer, etc game elements
- * - MARKET_ROLE: can sign commit marketplace transactions only for game elements that are registered in the regestry
+ * - MARKET_ROLE: can sign commit marketplace transactions only for game elements that are registered in the registry
  */
-contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeable, EIP712Upgradeable, ReentrancyGuard, UUPSUpgradeable {
+contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeable, EIP712Upgradeable, ReentrancyGuard, UUPSUpgradeable {
     using StringArray for string[];
 
     /*//////////////////////////////////////////////////////////////
@@ -41,53 +41,53 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Thrown when attempting to revoke admin role in an unauthorized way
-    error GameRegestry__AdminRoleRevokeNotAllowed();
+    error GameRegistry__AdminRoleRevokeNotAllowed();
     /// @dev Thrown when attempting to grant admin role in an unauthorized way
-    error GameRegestry__AdminRoleGrantNotAllowed();
+    error GameRegistry__AdminRoleGrantNotAllowed();
     /// @dev Thrown when attempting to renounce admin role (not allowed)
-    error GameRegestry__AdminRoleRenounceNotAllowed();
+    error GameRegistry__AdminRoleRenounceNotAllowed();
     /// @dev Thrown when caller doesn't have GAME_SIGNER_ROLE
-    error GameRegestry__OnlyGameSignerRole();
+    error GameRegistry__OnlyGameSignerRole();
     /// @dev Thrown when caller doesn't have GAME_SIGNER_ROLE or MARKET_ROLE
-    error GameRegestry__OnlyGameSignerOrMarketRole();
+    error GameRegistry__OnlyGameSignerOrMarketRole();
     /// @dev Thrown when signature verification fails
-    error GameRegestry__InvalidSignatureMessage();
+    error GameRegistry__InvalidSignatureMessage();
     /// @dev Thrown when commit transaction execution fails
-    error GameRegestry__CommitFailed();
+    error GameRegistry__CommitFailed();
     /// @dev Thrown when target address is invalid or zero
-    error GameRegestry__InvalidTarget();
+    error GameRegistry__InvalidTarget();
     /// @dev Thrown when player/account address is invalid or zero
-    error GameRegestry__InvalidPlayer();
+    error GameRegistry__InvalidPlayer();
     /// @dev Thrown when signer address doesn't have required role
-    error GameRegestry__InvalidSigner();
+    error GameRegistry__InvalidSigner();
     /// @dev Thrown when commit data is malformed or empty
-    error GameRegestry__InvalidCommitData();
+    error GameRegistry__InvalidCommitData();
     /// @dev Thrown when resource hash doesn't match any registered game element
-    error GameRegestry__InvalidResource();
+    error GameRegistry__InvalidResource();
     /// @dev Thrown when attempting to use a nonce that's already been used
-    error GameRegestry__NonceAlreadyUsed();
+    error GameRegistry__NonceAlreadyUsed();
     /// @dev Thrown when game signer address is invalid during initialization
-    error GameRegestry__InvalidGameSigner();
+    error GameRegistry__InvalidGameSigner();
     /// @dev Thrown when account with special roles tries to commit
-    error GameRegestry__NotAllowedToCommit();
+    error GameRegistry__NotAllowedToCommit();
     /// @dev Thrown when batch array is empty
-    error GameRegestry__BatchLengthZero();
+    error GameRegistry__BatchLengthZero();
     /// @dev Thrown when batch array exceeds maximum allowed length
-    error GameRegestry__BatchLengthTooLong();
+    error GameRegistry__BatchLengthTooLong();
     /// @dev Thrown when nonce is zero or invalid
-    error GameRegestry__InvalidNonce();
+    error GameRegistry__InvalidNonce();
     /// @dev Thrown when attempting to add a game element that already exists
-    error GameRegestry__GameElementExists();
+    error GameRegistry__GameElementExists();
     /// @dev Thrown when game element index is out of range
-    error GameRegestry__GameElementIndexOuntOfRange();
+    error GameRegistry__GameElementIndexOuntOfRange();
     /// @dev Thrown when address parameter is zero address
-    error GameRegestry__AddressZero();
+    error GameRegistry__AddressZero();
     /// @dev Thrown when game element name is empty string
-    error GameRegestry__GameElementNameIsEmpty();
+    error GameRegistry__GameElementNameIsEmpty();
     /// @dev Thrown when target address doesn't match registered token address
-    error GameRegestry__UnknownTargetAddress();
+    error GameRegistry__UnknownTargetAddress();
     /// @dev Thrown when signature recovery fails or signer doesn't match
-    error GameRegestry__NotSigner();
+    error GameRegistry__NotSigner();
     /*//////////////////////////////////////////////////////////////
                                ENUMS
     //////////////////////////////////////////////////////////////*/
@@ -140,6 +140,17 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
     /*//////////////////////////////////////////////////////////////
                                MAPPINGS
     //////////////////////////////////////////////////////////////*/
+
+    //Aave implementation:
+    //       mapping(bytes32 => address) private _addresses;
+    //   // Main identifiers
+    //   bytes32 private constant POOL = 'POOL';
+    //   bytes32 private constant POOL_CONFIGURATOR = 'POOL_CONFIGURATOR';
+    //   bytes32 private constant PRICE_ORACLE = 'PRICE_ORACLE';
+    //   bytes32 private constant ACL_MANAGER = 'ACL_MANAGER';
+    //   bytes32 private constant ACL_ADMIN = 'ACL_ADMIN';
+    //   bytes32 private constant PRICE_ORACLE_SENTINEL = 'PRICE_ORACLE_SENTINEL';
+    //   bytes32 private constant DATA_PROVIDER = 'DATA_PROVIDER';
 
     /**
      * @notice Mapping of game element types to their respective name arrays
@@ -244,7 +255,7 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      */
     modifier onlyGameSignerRole() {
         if (!hasRole(GAME_SIGNER_ROLE, _msgSender())) {
-            revert GameRegestry__OnlyGameSignerRole();
+            revert GameRegistry__OnlyGameSignerRole();
         }
         _;
     }
@@ -260,7 +271,7 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Initializes the GameRegestry contract
+     * @notice Initializes the GameRegistry contract
      * @dev Sets up EIP-712 domain, access control, and registers initial game elements.
      *      Can only be called once due to initializer modifier.
      * @param _coins Array of coin names available within the game (ERC20 tokens)
@@ -279,7 +290,7 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
         external
         initializer
     {
-        __EIP712_init("GameRegestry", "1");
+        __EIP712_init("GameRegistry", "1");
         __AccessControlDefaultAdminRules_init(1 days, msg.sender);
 
         s_gameElementsByType[GameElementType.COIN] = _coins;
@@ -288,7 +299,7 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
         s_gameElementsByType[GameElementType.UNIQUE_ITEM] = _uiniqueItems;
 
         if (_gameSigner == address(0)) {
-            revert GameRegestry__InvalidGameSigner();
+            revert GameRegistry__InvalidGameSigner();
         }
         _grantRole(GAME_SIGNER_ROLE, _gameSigner);
     }
@@ -305,13 +316,13 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      */
     function commitBatch(uint256 nonce, bytes[] calldata batch) external nonReentrant {
         if (nonce == 0) {
-            revert GameRegestry__InvalidNonce();
+            revert GameRegistry__InvalidNonce();
         }
         if (batch.length == 0) {
-            revert GameRegestry__BatchLengthZero();
+            revert GameRegistry__BatchLengthZero();
         }
         if (batch.length > BATCH_LENGTH_MAX) {
-            revert GameRegestry__BatchLengthTooLong();
+            revert GameRegistry__BatchLengthTooLong();
         }
         s_usedNonces[nonce] = true;
 
@@ -350,7 +361,7 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
         string[] memory elementsNames = s_gameElementsByType[elementType];
 
         if (index > elementsNames.length - 1) {
-            revert GameRegestry__GameElementIndexOuntOfRange();
+            revert GameRegistry__GameElementIndexOuntOfRange();
         }
 
         string memory elementName = elementsNames[index];
@@ -385,11 +396,11 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
         onlyGameSignerRole
     {
         if (elementTokenAddress == address(0)) {
-            revert GameRegestry__AddressZero();
+            revert GameRegistry__AddressZero();
         }
 
         if (_hashString(name) == _hashString("")) {
-            revert GameRegestry__GameElementNameIsEmpty();
+            revert GameRegistry__GameElementNameIsEmpty();
         }
 
         // convert name to bytes32 hash
@@ -400,7 +411,7 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
 
         // check already exists
         if (elementStruct.tokenAddress != address(0)) {
-            revert GameRegestry__GameElementExists();
+            revert GameRegistry__GameElementExists();
         }
 
         // regestr element name in the specified type array for external reference
@@ -425,7 +436,7 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      */
     function _commitResource(bytes32 resourceHash, bytes memory commit, bytes memory signature) private {
         if (resourceHash == bytes32(0) || commit.length == 0 || signature.length == 0) {
-            revert GameRegestry__InvalidCommitData();
+            revert GameRegistry__InvalidCommitData();
         }
 
         (uint256 nonce, address target, bytes memory callData) = _verifyInputs(resourceHash, commit, signature);
@@ -444,12 +455,12 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      */
     function _commitDispatcher(address target, bytes memory callData) private {
         if (target == address(0)) {
-            revert GameRegestry__InvalidTarget();
+            revert GameRegistry__InvalidTarget();
         }
         emit CommitConfirmed(callData);
         (bool success,) = target.call(callData);
         if (!success) {
-            revert GameRegestry__CommitFailed();
+            revert GameRegistry__CommitFailed();
         }
     }
 
@@ -492,29 +503,29 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
         (target, account, signer, nonce, callData) = abi.decode(commit, (address, address, address, uint256, bytes));
 
         if (s_usedNonces[nonce]) {
-            revert GameRegestry__NonceAlreadyUsed();
+            revert GameRegistry__NonceAlreadyUsed();
         }
         if (gameElement.tokenAddress == address(0)) {
-            revert GameRegestry__InvalidResource();
+            revert GameRegistry__InvalidResource();
         }
         if (target == address(0)) {
-            revert GameRegestry__InvalidTarget();
+            revert GameRegistry__InvalidTarget();
         }
         if (target != gameElement.tokenAddress) {
-            revert GameRegestry__UnknownTargetAddress();
+            revert GameRegistry__UnknownTargetAddress();
         }
         if (account == address(0)) {
-            revert GameRegestry__InvalidPlayer();
+            revert GameRegistry__InvalidPlayer();
         }
         if (!hasRole(GAME_SIGNER_ROLE, signer)) {
-            revert GameRegestry__InvalidSigner();
+            revert GameRegistry__InvalidSigner();
         }
 
         if (hasRole(MARKET_ROLE, account) || hasRole(GAME_SIGNER_ROLE, account)) {
-            revert GameRegestry__NotAllowedToCommit();
+            revert GameRegistry__NotAllowedToCommit();
         }
         if (!_verifySignature(target, account, signer, nonce, callData, signature)) {
-            revert GameRegestry__InvalidSignatureMessage();
+            revert GameRegistry__InvalidSignatureMessage();
         }
 
         return (nonce, target, callData);
@@ -549,7 +560,7 @@ contract GameRegestry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
         bytes32 hash = _getMessageHash(target, account, signer, nonce, callData);
         (address actualSigner,,) = ECDSA.tryRecover(hash, signature);
         if (signer != actualSigner) {
-            revert GameRegestry__NotSigner();
+            revert GameRegistry__NotSigner();
         }
         return hasRole(GAME_SIGNER_ROLE, actualSigner);
     }

@@ -2,17 +2,17 @@
 pragma solidity 0.8.30;
 
 import {Test, console} from "forge-std/Test.sol";
-import {GameRegestry} from "src/GameRegestry.sol";
+import {GameRegistry} from "src/GameRegistry.sol";
 import {WBResources} from "src/tokens/ERC1155/WBResources.sol";
 import {WBCoin} from "src/tokens/ERC20/WBCoin.sol";
 import {WBCharacter} from "src/tokens/ERC721/WBCharacter.sol";
-import {DeployGameRegestry} from "script/DeployGameRegestry.s.sol";
+import {DeployGameRegistry} from "script/DeployGameRegistry.s.sol";
 import {DeployWBResources} from "script/DeployWBResources.s.sol";
 import {DeployWBCoin} from "script/DeployWBCoin.s.sol";
 import {DeployWBCharacter} from "script/DeployWBCharacter.s.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
-contract GameRegestryIntTest is Test {
+contract GameRegistryIntTest is Test {
     event CommitResources(bytes indexed commit);
     event CommitBatch(uint256 indexed nonce, bytes[] indexed commits);
     event RevokeAdminRole(address indexed account);
@@ -22,7 +22,7 @@ contract GameRegestryIntTest is Test {
     event AddGameElement(bytes32 indexed nameHash, address indexed tokenAddress, uint256 indexed tokenId, bool requiresTokenId);
     event RemoveGameElement(bytes32 indexed nameHash);
 
-    GameRegestry public gameRegestry;
+    GameRegistry public gameRegistry;
     WBResources public wbResources;
     WBCoin public wBCoin;
     WBCharacter public wbCharacter;
@@ -45,51 +45,51 @@ contract GameRegestryIntTest is Test {
         address wbResourcesAddress = new DeployWBResources().deploy();
         wbResources = WBResources(wbResourcesAddress);
 
-        address gameRegestryAddress = new DeployGameRegestry().deploy();
-        gameRegestry = GameRegestry(gameRegestryAddress);
+        address gameRegistryAddress = new DeployGameRegistry().deploy();
+        gameRegistry = GameRegistry(gameRegistryAddress);
 
         // renounce admin as GAME_SIGNER_ROLE for propper tessting
-        gameRegestry.renounceRole(GAME_SIGNER_ROLE, address(this));
+        gameRegistry.renounceRole(GAME_SIGNER_ROLE, address(this));
 
         ADMIN = msg.sender;
 
         vm.prank(ADMIN);
-        gameRegestry.grantRole(GAME_SIGNER_ROLE, GAME_SIGNER);
+        gameRegistry.grantRole(GAME_SIGNER_ROLE, GAME_SIGNER);
 
         wBCoin = WBCoin(new DeployWBCoin().deploy());
-        wBCoin.grantRole(MINTER_ROLE, gameRegestryAddress);
+        wBCoin.grantRole(MINTER_ROLE, gameRegistryAddress);
         wBCoin.grantRole(MINTER_ROLE, GAME_SIGNER);
 
         wbResources = WBResources(new DeployWBResources().deploy());
-        wbResources.grantRole(MINTER_ROLE, gameRegestryAddress);
+        wbResources.grantRole(MINTER_ROLE, gameRegistryAddress);
         wbResources.grantRole(MINTER_ROLE, GAME_SIGNER);
 
         wbCharacter = WBCharacter(new DeployWBCharacter().deploy());
-        wbCharacter.grantRole(MINTER_ROLE, gameRegestryAddress);
+        wbCharacter.grantRole(MINTER_ROLE, gameRegistryAddress);
         wbCharacter.grantRole(MINTER_ROLE, GAME_SIGNER);
     }
 
     modifier addCoinResourceType() {
         vm.prank(GAME_SIGNER);
-        gameRegestry.addGameElement(GameRegestry.GameElementType.COIN, "WBCoin", address(wBCoin), 0, false);
+        gameRegistry.addGameElement(GameRegistry.GameElementType.COIN, "WBCoin", address(wBCoin), 0, false);
         _;
     }
 
     modifier addResourceType() {
         vm.prank(GAME_SIGNER);
-        gameRegestry.addGameElement(GameRegestry.GameElementType.RESOURCE, "Wood", address(wbResources), 1, true);
+        gameRegistry.addGameElement(GameRegistry.GameElementType.RESOURCE, "Wood", address(wbResources), 1, true);
         _;
     }
 
     modifier addCharacterType() {
         vm.prank(GAME_SIGNER);
-        gameRegestry.addGameElement(GameRegestry.GameElementType.CHARACTER, "Wizard", address(wbCharacter), 0, false);
+        gameRegistry.addGameElement(GameRegistry.GameElementType.CHARACTER, "Wizard", address(wbCharacter), 0, false);
         _;
     }
 
-    function test_wbCoinGameSignerAndGameRegestryHaveMinterRoles() public view {
+    function test_wbCoinGameSignerAndGameRegistryHaveMinterRoles() public view {
         assertTrue(wBCoin.hasRole(MINTER_ROLE, GAME_SIGNER), "GAME_SIGNER should have MINTER_ROLE on WBCoin");
-        assertTrue(wBCoin.hasRole(MINTER_ROLE, address(gameRegestry)), "GameRegestry should have MINTER_ROLE on WBCoin");
+        assertTrue(wBCoin.hasRole(MINTER_ROLE, address(gameRegistry)), "GameRegistry should have MINTER_ROLE on WBCoin");
     }
 
     function test_mintWBCoinsToPlayer() public addCoinResourceType {
@@ -105,7 +105,7 @@ contract GameRegestryIntTest is Test {
 
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
-        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
 
         uint256 playerWBCoinBalance = wBCoin.balanceOf(PLAYER);
         assertEq(playerWBCoinBalance, amount);
@@ -127,7 +127,7 @@ contract GameRegestryIntTest is Test {
 
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
-        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
 
         uint256 playerWBCResourcelance = wbResources.balanceOf(PLAYER, 1);
         assertEq(playerWBCResourcelance, amount);
@@ -148,7 +148,7 @@ contract GameRegestryIntTest is Test {
 
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
-        gameRegestry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
 
         uint256 playerWBCCharacterBalance = wbCharacter.balanceOf(PLAYER);
         assertEq(playerWBCCharacterBalance, 1);
@@ -166,14 +166,14 @@ contract GameRegestryIntTest is Test {
 
         bytes32 TYPE_HASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
-        bytes32 _hashedName = keccak256(bytes("GameRegestry"));
+        bytes32 _hashedName = keccak256(bytes("GameRegistry"));
         bytes32 _hashedVersion = keccak256(bytes("1"));
 
         bytes32 hashStruct = keccak256(
-            abi.encode(MESSAGE_TYPEHASH, GameRegestry.CommitStruct({target: target, account: account, signer: signer, nonce: nonce, callData: callData}))
+            abi.encode(MESSAGE_TYPEHASH, GameRegistry.CommitStruct({target: target, account: account, signer: signer, nonce: nonce, callData: callData}))
         );
 
-        bytes32 domainSeparatorV4 = keccak256(abi.encode(TYPE_HASH, _hashedName, _hashedVersion, block.chainid, address(gameRegestry)));
+        bytes32 domainSeparatorV4 = keccak256(abi.encode(TYPE_HASH, _hashedName, _hashedVersion, block.chainid, address(gameRegistry)));
         return MessageHashUtils.toTypedDataHash(domainSeparatorV4, hashStruct);
     }
 
