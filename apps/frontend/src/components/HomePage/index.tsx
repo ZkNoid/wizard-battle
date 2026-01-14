@@ -25,6 +25,7 @@ import InventoryModal from '../InventoryModal';
 import WelcomeScreen from '../WelcomeScreen';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 import CraftModal from '../CraftModal';
+import ExpeditionModal from '../ExpeditionModal';
 
 enum TabHover {
   CRAFT,
@@ -43,6 +44,9 @@ export default function HomePage() {
     useState<boolean>(false);
 
   const [isCraftModalOpen, setIsCraftModalOpen] = useState<boolean>(false);
+
+  const [isExpeditionModalOpen, setIsExpeditionModalOpen] =
+    useState<boolean>(false);
 
   const router = useRouter();
   const { address, triggerWallet } = useMinaAppkit();
@@ -257,7 +261,7 @@ export default function HomePage() {
         <button
           className="col-span-2 row-span-2 row-start-5 size-full cursor-pointer"
           onClick={() => {
-            alert('Coming soon...');
+            setIsExpeditionModalOpen(true);
           }}
           onMouseEnter={() => setTabHover(TabHover.EXPEDITIONS)}
           onMouseLeave={() => setTabHover(undefined)}
@@ -273,6 +277,10 @@ export default function HomePage() {
 
       {isCraftModalOpen && (
         <CraftModal onClose={() => setIsCraftModalOpen(false)} />
+      )}
+
+      {isExpeditionModalOpen && (
+        <ExpeditionModal onClose={() => setIsExpeditionModalOpen(false)} />
       )}
     </main>
   );
