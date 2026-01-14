@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import ChooseLocation from './ChooseLocation';
+import ChooseCharacter from './ChooseCharacter';
 
 export default function NewExpeditionForm({
   onClose,
@@ -31,11 +32,8 @@ export default function NewExpeditionForm({
       </div>
       <div className="flex flex-col gap-2.5">
         <ChooseLocation onSelectLocation={handleSelectLocation} />
-        <div className="mt-5 flex flex-col gap-2.5">
-          <span className="font-pixel text-main-gray text-center text-2xl font-bold">
-            Choose Character & Duration
-          </span>
-        </div>
+
+        <ChooseCharacter />
       </div>
     </div>
   );
