@@ -3,9 +3,13 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { allWizards, type Wizard } from '../../../../common/wizards';
+import { Button } from '../shared/Button';
+
+type Duration = '1hour' | '3hour' | '24hour';
 
 export default function ChooseCharacter() {
   const [currentWizard, setCurrentWizard] = useState<Wizard>(allWizards[0]!);
+  const [selectedDuration, setSelectedDuration] = useState<Duration>('1hour');
 
   const getWizardImage = (wizard: Wizard) => {
     switch (wizard.name) {
@@ -35,7 +39,7 @@ export default function ChooseCharacter() {
   };
 
   return (
-    <div className="mt-5 flex flex-col gap-2.5">
+    <div className="mx-5 mt-5 flex flex-col gap-2.5">
       <span className="font-pixel text-main-gray text-center text-2xl font-bold">
         Choose Character & Duration
       </span>
@@ -50,10 +54,10 @@ export default function ChooseCharacter() {
             >
               <Image
                 src="/inventory/arrow-left.png"
-                width={36}
-                height={48}
+                width={48}
+                height={64}
                 alt="previous-wizard"
-                className="h-12 w-16 object-contain object-center"
+                className="h-16 w-20 object-contain object-center"
               />
             </button>
 
@@ -79,10 +83,10 @@ export default function ChooseCharacter() {
             >
               <Image
                 src="/inventory/arrow-right.png"
-                width={36}
-                height={48}
+                width={48}
+                height={64}
                 alt="next-wizard"
-                className="h-12 w-16 object-contain object-center"
+                className="h-16 w-20 object-contain object-center"
               />
             </button>
           </div>
@@ -94,6 +98,26 @@ export default function ChooseCharacter() {
               other game actions until the expedition is over. You can interrupt
               expedition and claim less rewards if you want to return character.
             </span>
+            <div className="flex flex-row justify-around gap-2.5">
+              <Button
+                variant={selectedDuration === '1hour' ? 'blue' : 'gray'}
+                text="1 hour"
+                onClick={() => setSelectedDuration('1hour')}
+                className="min-w-32 px-8 py-3"
+              />
+              <Button
+                variant={selectedDuration === '3hour' ? 'blue' : 'gray'}
+                text="3 hour"
+                onClick={() => setSelectedDuration('3hour')}
+                className="min-w-32 px-8 py-3"
+              />
+              <Button
+                variant={selectedDuration === '24hour' ? 'blue' : 'gray'}
+                text="24 hour"
+                onClick={() => setSelectedDuration('24hour')}
+                className="min-w-32 px-8 py-3"
+              />
+            </div>
           </div>
         </div>
       </div>
