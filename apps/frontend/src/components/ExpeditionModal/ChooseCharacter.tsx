@@ -39,7 +39,7 @@ export default function ChooseCharacter() {
   };
 
   return (
-    <div className="mx-5 mt-5 flex flex-col gap-2.5">
+    <div className="mx-8 mt-5 flex flex-col gap-2.5">
       <span className="font-pixel text-main-gray text-center text-2xl font-bold">
         Choose Character & Duration
       </span>

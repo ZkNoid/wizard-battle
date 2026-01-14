@@ -17,9 +17,9 @@ const MOCK_REWARDS = getRandomRewards(5);
 
 export default function RewardsSection() {
   return (
-    <div className="mt-5 flex flex-col gap-2.5">
+    <div className="mt-8 flex flex-col gap-2.5">
       <span className="font-pixel text-main-gray text-center text-2xl font-bold">
-        Expected Rewards
+        Choose Character & Duration
       </span>
       <div className="flex flex-col items-center gap-4">
         <span className="font-pixel text-main-gray w-110 text-center text-sm font-thin">

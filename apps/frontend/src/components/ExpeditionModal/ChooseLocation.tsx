@@ -16,7 +16,7 @@ export default function ChooseLocation({
   }, [selectedLocation]);
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="mt-8 flex flex-col gap-2.5">
       <span className="font-pixel text-main-gray text-center text-2xl font-bold">
         Choose location
       </span>
