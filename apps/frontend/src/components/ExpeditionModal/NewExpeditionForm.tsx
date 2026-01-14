@@ -4,6 +4,8 @@ import Image from 'next/image';
 import { useState } from 'react';
 import ChooseLocation from './ChooseLocation';
 import ChooseCharacter from './ChooseCharacter';
+import RewardsSection from './RewardsSection';
+import { Button } from '../shared/Button';
 
 export default function NewExpeditionForm({
   onClose,
@@ -18,7 +20,7 @@ export default function NewExpeditionForm({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex h-full flex-col">
       <div className="font-pixel text-main-gray mt-5 flex w-full items-center justify-between pb-5 pt-2.5 text-4xl font-bold">
         <span className="flex-1 text-center">Expedition</span>
         <Image
@@ -30,10 +32,24 @@ export default function NewExpeditionForm({
           onClick={onClose}
         />
       </div>
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto">
         <ChooseLocation onSelectLocation={handleSelectLocation} />
 
         <ChooseCharacter />
+
+        <RewardsSection />
+      </div>
+
+      <div className="mx-10 mb-10 mt-4 pt-4">
+        <Button
+          variant="blue"
+          onClick={() => {}}
+          className="w-180 flex h-20 flex-row items-center justify-center gap-2.5"
+        >
+          <span className="font-pixel text-main-gray whitespace-nowrap text-lg font-bold">
+            Start Expedition
+          </span>
+        </Button>
       </div>
     </div>
   );
