@@ -134,7 +134,7 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
         /// @dev Unique nonce to prevent replay attacks
         uint256 nonce;
         /// @dev Encoded function call data for the target contract
-        bytes callData;
+        bytes32 callData;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -576,8 +576,9 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      * @return digest The EIP-712 compliant hash digest
      */
     function _getMessageHash(address target, address account, address signer, uint256 nonce, bytes memory callData) private view returns (bytes32 digest) {
-        bytes32 hashStruct =
-            keccak256(abi.encode(MESSAGE_TYPEHASH, CommitStruct({target: target, account: account, signer: signer, nonce: nonce, callData: callData})));
+        bytes32 hashStruct = keccak256(
+            abi.encode(MESSAGE_TYPEHASH, CommitStruct({target: target, account: account, signer: signer, nonce: nonce, callData: keccak256(callData)}))
+        );
         return _hashTypedDataV4(hashStruct);
     }
 

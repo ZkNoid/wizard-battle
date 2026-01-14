@@ -661,7 +661,9 @@ contract GameRegistryTest is Test {
         bytes32 _hashedVersion = keccak256(bytes("1"));
 
         bytes32 hashStruct = keccak256(
-            abi.encode(MESSAGE_TYPEHASH, GameRegistry.CommitStruct({target: target, account: account, signer: signer, nonce: nonce, callData: callData}))
+            abi.encode(
+                MESSAGE_TYPEHASH, GameRegistry.CommitStruct({target: target, account: account, signer: signer, nonce: nonce, callData: keccak256(callData)})
+            )
         );
 
         bytes32 domainSeparatorV4 = keccak256(abi.encode(TYPE_HASH, _hashedName, _hashedVersion, block.chainid, address(gameRegistry)));
