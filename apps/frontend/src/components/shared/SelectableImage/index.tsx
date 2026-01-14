@@ -37,6 +37,10 @@ export function SelectableImage({
         width={width}
         height={height}
         className={cn('size-40 object-contain object-center', imageClassName)}
+        style={{
+          clipPath:
+            'polygon(8% 0%, 92% 0%, 96% 4%, 100% 8%, 100% 92%, 96% 96%, 92% 100%, 8% 100%, 4% 96%, 0% 92%, 0% 8%, 4% 4%)',
+        }}
         unoptimized={true}
         quality={100}
       />
