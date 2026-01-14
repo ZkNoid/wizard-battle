@@ -4,6 +4,8 @@ import { LOCATIONS } from '@/lib/constants/location';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { DefaultImgBorder } from './assets/default-img.border';
+import { ActiveImgBorder } from './assets/active-img.border';
 
 export default function ChooseLocation({
   onSelectLocation,
@@ -26,7 +28,7 @@ export default function ChooseLocation({
           <div
             key={location.id}
             onClick={() => setSelectedLocation(location.id)}
-            className={cn('cursor-pointer')}
+            className={cn('relative h-40 w-40 cursor-pointer')}
           >
             <Image
               src={location.image}
@@ -37,6 +39,11 @@ export default function ChooseLocation({
               unoptimized={true}
               quality={100}
             />
+            {selectedLocation === location.id ? (
+              <ActiveImgBorder className="pointer-events-none absolute inset-0 h-40 w-40" />
+            ) : (
+              <DefaultImgBorder className="pointer-events-none absolute inset-0 h-40 w-40" />
+            )}
           </div>
         ))}
       </div>
