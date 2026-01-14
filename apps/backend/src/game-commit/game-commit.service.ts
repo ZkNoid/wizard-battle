@@ -57,12 +57,15 @@ export class GameCommitService {
 
       // 3. Check if user has this resource in their inventory
       const resourceId = (resource as any)._id.toString();
+      console.log(`\n🔍 Checking user inventory:`);
+      console.log(`   userId: ${userId}`);
+      console.log(`   resourceId: ${resourceId}`);
+
       const userHasIt = await this.userInventoryService.hasItem(
         userId,
         resourceId
       );
 
-      console.log(`\n🔍 Checking user inventory for userId: ${userId}`);
       console.log(
         `   User has "${itemName}": ${userHasIt ? '✅ YES' : '❌ NO'}`
       );
@@ -115,9 +118,16 @@ export class GameCommitService {
         };
       } else {
         return {
-          found: false,
-          userHasIt: false,
-          resource: null,
+          found: true, // Resource exists in database
+          userHasIt: false, // But user doesn't have it in inventory
+          resource: {
+            id: resourceId,
+            name: resource.name,
+            rarity: resource.rarity,
+            origin: resource.origin,
+            description: resource.desc,
+            isCraftable: resource.isCraftable,
+          },
           inventoryDetails: null,
         };
       }
@@ -132,16 +142,6 @@ export class GameCommitService {
   async pullGameElemtentStructFromChain(
     name: string
   ): Promise<GameElementStruct | boolean> {
-    // Must return something like this:
-    //  struct GameElementStruct {
-    //     /// @dev Contract address of the token (ERC20/ERC721/ERC1155)
-    //     address tokenAddress;
-    //     /// @dev Token ID (relevant for ERC721/ERC1155, may be 0 for ERC20)
-    //     uint256 tokenId;
-    //     /// @dev If true, tokenId must be included in commit data
-    //     bool requiresTokenId;
-    // }
-
     //const elementMetaData = await this.blockchainService.getGameElement(name);
     const elementMetaData = {
       // mocked data
@@ -157,11 +157,10 @@ export class GameCommitService {
     };
   }
 
-  async commitResource(
-    name: string,
-    action: 'mint' | 'burn' | 'modify',
-    payload: any
-  ) {
+  async commitResource(name: string, action: 'mint' | 'burn', payload: any) {
+    console.log(
+      `\n========== COMMIT RESOURCE CALLED (v2 with fixes) ==========`
+    );
     console.log(`Committing resource [${name}] - action: ${action}`, payload);
     try {
       // 1. We chek such resource exists and user has it in DB
@@ -185,7 +184,7 @@ export class GameCommitService {
         );
       }
 
-      // 3. We call BlockchainService to generate signed mint/burn/modify callData for the resource on-chain
+      // 3. We call BlockchainService to generate signed mint/burn callData for the resource on-chain
       const commitData = await this.blockchainService.mintResource(
         name,
         payload.playerAddress,
@@ -207,21 +206,17 @@ export class GameCommitService {
     return { success: false, resource: name, action, commit: null };
   }
 
-  commitCoin(name: string, action: 'mint' | 'burn' | 'modify', payload: any) {
+  commitCoin(name: string, action: 'mint' | 'burn', payload: any) {
     console.log(`Committing coin [${name}] - action: ${action}`, payload);
     return { success: true, coin: name, action, payload };
   }
 
-  commitItem(name: string, action: 'mint' | 'burn' | 'modify', payload: any) {
+  commitItem(name: string, action: 'mint' | 'burn', payload: any) {
     console.log(`Committing item [${name}] - action: ${action}`, payload);
     return { success: true, item: name, action, payload };
   }
 
-  commitCharacter(
-    name: string,
-    action: 'mint' | 'burn' | 'modify',
-    payload: any
-  ) {
+  commitCharacter(name: string, action: 'mint' | 'burn', payload: any) {
     console.log(`Committing character [${name}] - action: ${action}`, payload);
     return { success: true, character: name, action, payload };
   }

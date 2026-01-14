@@ -74,10 +74,13 @@ export class BlockchainService {
       console.log('📦 Encoded callData:', callData);
 
       // Step 2: Get signed message (resourceHash, commit, signature)
+      // Generate unique nonce using timestamp to prevent replay attacks
+      const nonce = Date.now();
+
       const { resourceHash, commit, signature } = await this.getSignedMessage(
         resourceName,
         this.wbResourcesAddress,
-        0, // nonce - should be incremented for each transaction
+        nonce,
         callData,
         playerAddress
       );
@@ -159,7 +162,7 @@ export class BlockchainService {
     const chainId = (await this.provider!.getNetwork()).chainId;
 
     const domain = {
-      name: 'GameRegestry',
+      name: 'GameRegistry',
       version: '1',
       chainId: Number(chainId),
       verifyingContract: this.gameRegistryAddress,
@@ -185,7 +188,7 @@ export class BlockchainService {
       callData,
     };
 
-    // Sign typed data
+    // Sign typed data using proper EIP-712
     const signature = await this.signer.signTypedData(domain, types, value);
 
     return { resourceHash, commit, signature };
@@ -234,17 +237,31 @@ export class BlockchainService {
       );
     }
 
-    const wbResourcesContract = new ethers.Contract(
+    const gameRegistryContract = new ethers.Contract(
       this.gameRegistryAddress,
       [
-        'function getGameElement(bytes32 resourceHash) external view returns (GameElementStruct)',
+        // GameElementStruct is: (address tokenAddress, uint256 tokenId, bool requiresTokenId)
+        'function getGameElement(bytes32 resourceHash) external view returns (tuple(address tokenAddress, uint256 tokenId, bool requiresTokenId))',
       ],
       this.provider
     );
 
-    const metaData = await wbResourcesContract.getGameElement!(
-      keccak256(ethers.toUtf8Bytes(name))
-    );
-    return metaData;
+    const resourceHash = keccak256(ethers.toUtf8Bytes(name));
+    console.log(`🔍 [getGameElement] Fetching element for "${name}"`);
+    console.log(`   Resource hash: ${resourceHash}`);
+
+    const result = await gameRegistryContract.getGameElement!(resourceHash);
+
+    console.log(`🔍 [getGameElement] Raw result:`, result);
+
+    const parsedResult = {
+      tokenAddress: result.tokenAddress || result[0],
+      tokenId: Number(result.tokenId || result[1]),
+      requiresTokenId: result.requiresTokenId ?? result[2],
+    };
+
+    console.log(`🔍 [getGameElement] Parsed result:`, parsedResult);
+
+    return parsedResult;
   }
 }

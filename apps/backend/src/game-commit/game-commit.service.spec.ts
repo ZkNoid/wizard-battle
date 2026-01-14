@@ -362,18 +362,18 @@ describe('GameCommitService', () => {
     });
   });
 
-  describe('commitItem', () => {
-    it('should commit an item with modify action', () => {
-      const result = service.commitItem('Sword', 'modify', { durability: 50 });
+  // describe('commitItem', () => {
+  //   it('should commit an item with modify action', () => {
+  //     const result = service.commitItem('Sword', 'modify', { durability: 50 });
 
-      expect(result).toEqual({
-        success: true,
-        item: 'Sword',
-        action: 'modify',
-        payload: { durability: 50 },
-      });
-    });
-  });
+  //     expect(result).toEqual({
+  //       success: true,
+  //       item: 'Sword',
+  //       action: 'modify',
+  //       payload: { durability: 50 },
+  //     });
+  //   });
+  // });
 
   describe('commitCharacter', () => {
     it('should commit a character with mint action', () => {
