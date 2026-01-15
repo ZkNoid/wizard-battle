@@ -125,6 +125,133 @@ contract WBResourcesTest is Test {
         assertEq(wbResources.totalSupply(1), 3);
     }
 
+    function test_BurnByApprovedOperator() public {
+        // Mint tokens to user1
+        wbResources.mint(user1, 1, 10, "");
+
+        // User1 approves user2 as operator
+        vm.prank(user1);
+        wbResources.setApprovalForAll(user2, true);
+
+        // User2 burns user1's tokens
+        vm.prank(user2);
+        wbResources.burn(user1, 1, 3);
+
+        assertEq(wbResources.balanceOf(user1, 1), 7);
+        assertEq(wbResources.totalSupply(1), 7);
+    }
+
+    function test_BurnByMinter() public {
+        // Mint tokens to user1
+        wbResources.mint(user1, 1, 10, "");
+
+        // address(this) has MINTER_ROLE and burns user1's tokens (without approval)
+        wbResources.burn(user1, 1, 4);
+
+        assertEq(wbResources.balanceOf(user1, 1), 6);
+        assertEq(wbResources.totalSupply(1), 6);
+    }
+
+    function test_BurnRevertsIfNotAuthorized() public {
+        // Mint tokens to user1
+        wbResources.mint(user1, 1, 10, "");
+
+        // Attacker tries to burn user1's tokens without approval
+        vm.prank(attacker);
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("ERC1155MissingApprovalForAll(address,address)")), attacker, user1));
+        wbResources.burn(user1, 1, 1);
+    }
+
+    function test_BurnBatchByOwner() public {
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = 1;
+        ids[1] = 2;
+
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 10;
+        amounts[1] = 20;
+
+        wbResources.mintBatch(user1, ids, amounts, "");
+
+        uint256[] memory burnAmounts = new uint256[](2);
+        burnAmounts[0] = 3;
+        burnAmounts[1] = 5;
+
+        vm.prank(user1);
+        wbResources.burnBatch(user1, ids, burnAmounts);
+
+        assertEq(wbResources.balanceOf(user1, 1), 7);
+        assertEq(wbResources.balanceOf(user1, 2), 15);
+    }
+
+    function test_BurnBatchByApprovedOperator() public {
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = 1;
+        ids[1] = 2;
+
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 10;
+        amounts[1] = 20;
+
+        wbResources.mintBatch(user1, ids, amounts, "");
+
+        // User1 approves user2 as operator
+        vm.prank(user1);
+        wbResources.setApprovalForAll(user2, true);
+
+        uint256[] memory burnAmounts = new uint256[](2);
+        burnAmounts[0] = 2;
+        burnAmounts[1] = 4;
+
+        vm.prank(user2);
+        wbResources.burnBatch(user1, ids, burnAmounts);
+
+        assertEq(wbResources.balanceOf(user1, 1), 8);
+        assertEq(wbResources.balanceOf(user1, 2), 16);
+    }
+
+    function test_BurnBatchByMinter() public {
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = 1;
+        ids[1] = 2;
+
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 10;
+        amounts[1] = 20;
+
+        wbResources.mintBatch(user1, ids, amounts, "");
+
+        uint256[] memory burnAmounts = new uint256[](2);
+        burnAmounts[0] = 1;
+        burnAmounts[1] = 3;
+
+        // address(this) has MINTER_ROLE
+        wbResources.burnBatch(user1, ids, burnAmounts);
+
+        assertEq(wbResources.balanceOf(user1, 1), 9);
+        assertEq(wbResources.balanceOf(user1, 2), 17);
+    }
+
+    function test_BurnBatchRevertsIfNotAuthorized() public {
+        uint256[] memory ids = new uint256[](2);
+        ids[0] = 1;
+        ids[1] = 2;
+
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 10;
+        amounts[1] = 20;
+
+        wbResources.mintBatch(user1, ids, amounts, "");
+
+        uint256[] memory burnAmounts = new uint256[](2);
+        burnAmounts[0] = 1;
+        burnAmounts[1] = 1;
+
+        vm.prank(attacker);
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("ERC1155MissingApprovalForAll(address,address)")), attacker, user1));
+        wbResources.burnBatch(user1, ids, burnAmounts);
+    }
+
     /*//////////////////////////////////////////////////////////////
                          PAUSE/UNPAUSE TESTS
     //////////////////////////////////////////////////////////////*/
@@ -187,6 +314,10 @@ contract WBResourcesTest is Test {
 
     function test_UpgradeByUpgrader() public {
         WBResourcesV2Mock v2 = new WBResourcesV2Mock();
+
+        // Verify mock version
+        assertEq(v2.version(), 2);
+        assertEq(v2.newFunction(), "Upgraded!");
 
         bytes32 IMPLEMENTATION_SLOT = bytes32(uint256(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc));
 

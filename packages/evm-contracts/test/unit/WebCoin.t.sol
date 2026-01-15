@@ -183,6 +183,10 @@ contract WBCoinTest is Test {
     function test_UpgradeByUpgrader() public {
         WBCoinV2Mock v2 = new WBCoinV2Mock();
 
+        // Verify mock version
+        assertEq(v2.version(), 2);
+        assertEq(v2.newFunction(), "Upgraded!");
+
         vm.startPrank(upgrader);
 
         bytes32 IMPLEMENTATION_SLOT = bytes32(uint256(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc));
@@ -244,5 +248,18 @@ contract WBCoinTest is Test {
         vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlEnforcedDefaultAdminRules()"))));
         wbCoin.grantRole(role, user2);
         vm.stopPrank();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    SUPPORTS INTERFACE TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    function test_SupportsInterface() public view {
+        // ERC20 interface ID: 0x36372b07
+        bytes4 erc20InterfaceId = 0x36372b07;
+        assertTrue(wbCoin.supportsInterface(type(IAccessControl).interfaceId));
+
+        // Should return false for random interface
+        assertFalse(wbCoin.supportsInterface(bytes4(0x12345678)));
     }
 }
