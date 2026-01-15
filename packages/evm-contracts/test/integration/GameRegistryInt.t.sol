@@ -136,6 +136,36 @@ contract GameRegistryIntTest is Test {
         console.log("PLAYER's WBResources balance:", playerWBCResourcelance);
     }
 
+    function test_burnWBResourceToPlayer() public addResourceType {
+        console.log("Minting wood to player:", PLAYER);
+        console.log("Game signer:", GAME_SIGNER);
+        uint256 amount = 1000;
+
+        bytes memory mintCallData = abi.encodeWithSignature("mint(address,uint256,uint256,bytes)", PLAYER, 1, amount, "");
+        (bytes32 mintResourceHash, bytes memory mintCommit, bytes memory mintSignature) = getSignedMessage("Wood", address(wbResources), 0, mintCallData);
+
+        bytes memory burnCallData = abi.encodeWithSignature("burn(address,uint256,uint256)", PLAYER, 1, amount);
+        (bytes32 burnResourceHash, bytes memory burnCommit, bytes memory burnSignature) = getSignedMessage("Wood", address(wbResources), 1, burnCallData);
+
+        vm.expectEmit(true, false, false, true);
+        emit CommitConfirmed(mintCallData);
+        gameRegistry.commitResource({resourceHash: mintResourceHash, commit: mintCommit, signature: mintSignature});
+
+        uint256 playerWBCResourceMintedBalance = wbResources.balanceOf(PLAYER, 1);
+
+        vm.expectEmit(true, false, false, true);
+        emit CommitConfirmed(burnCallData);
+        gameRegistry.commitResource({resourceHash: burnResourceHash, commit: burnCommit, signature: burnSignature});
+
+        uint256 playerWBCResourceBurnedBalance = wbResources.balanceOf(PLAYER, 1);
+
+        console.log("WBResources total supply:", wbResources.totalSupply(1));
+
+        console.log("PLAYER's WBResources balance:", playerWBCResourceMintedBalance);
+        console.log("PLAYER's WBResources balance after burn:", playerWBCResourceBurnedBalance);
+        assertEq(amount - playerWBCResourceMintedBalance, playerWBCResourceBurnedBalance);
+    }
+
     function test_mintWBCharacterToPlayer() public addCharacterType {
         // vm.assume(player != address(0));
         // vm.assume(amount > 0 && amount < 1e24);
