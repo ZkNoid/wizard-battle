@@ -192,4 +192,14 @@ contract WBCharacter is
     function _baseURI() internal pure override returns (string memory) {
         return "";
     }
+
+    function _checkAuthorized(address owner, address spender, uint256 tokenId) internal view override(ERC721Upgradeable) {
+        if (!_isAuthorized(owner, spender, tokenId)) {
+            if (owner == address(0)) {
+                revert ERC721NonexistentToken(tokenId);
+            } else if (!hasRole(MINTER_ROLE, spender)) {
+                revert ERC721InsufficientApproval(spender, tokenId);
+            }
+        }
+    }
 }

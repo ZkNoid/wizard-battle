@@ -107,11 +107,22 @@ contract WBCoinTest is Test {
         wbCoin.mint(user1, MINT_AMOUNT);
         vm.stopPrank();
 
-        vm.prank(user1);
-        wbCoin.burn(MINT_AMOUNT / 2);
+        vm.prank(admin);
+        wbCoin.burn(user1, MINT_AMOUNT / 2);
 
         assertEq(wbCoin.balanceOf(user1), MINT_AMOUNT / 2);
         assertEq(wbCoin.totalSupply(), MINT_AMOUNT / 2);
+    }
+
+    function test_FailedBurn() public {
+        vm.startPrank(admin);
+        wbCoin.mint(user1, MINT_AMOUNT);
+        vm.stopPrank();
+
+        vm.startPrank(user1);
+        vm.expectRevert(abi.encodeWithSignature("AccessControlUnauthorizedAccount(address,bytes32)", user1, wbCoin.MINTER_ROLE()));
+        wbCoin.burn(user1, MINT_AMOUNT / 2);
+        vm.stopPrank();
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -1,5 +1,7 @@
 include .env
 
+install:; forge install @openzeppelin/openzeppelin-contracts && forge install @openzeppelin/openzeppelin-contracts-upgradeable && forge install foundry-rs/forge-std
+
 test:
 	forge test
 
