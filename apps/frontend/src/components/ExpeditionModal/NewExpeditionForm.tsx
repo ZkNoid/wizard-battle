@@ -21,7 +21,7 @@ export default function NewExpeditionForm({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="font-pixel text-main-gray mt-10 flex w-full items-center justify-between pb-5 pt-2.5 text-4xl font-bold">
+      <div className="font-pixel text-main-gray mt-8 flex w-full items-center justify-between pb-5 pt-2.5 text-4xl font-bold">
         <span className="flex-1 text-center">Expedition</span>
         <Image
           src="/icons/cross.png"
