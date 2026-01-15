@@ -185,12 +185,30 @@ export class GameCommitService {
       }
 
       // 3. We call BlockchainService to generate signed mint/burn callData for the resource on-chain
-      const commitData = await this.blockchainService.mintResource(
-        name,
-        payload.playerAddress,
-        metaData.tokenId,
-        result.inventoryDetails?.quantity || 1000
-      );
+      let commitData;
+
+      switch (action) {
+        case 'mint':
+          console.log(`Generating mint callData for resource [${name}]...`);
+          commitData = await this.blockchainService.mintResource(
+            name,
+            payload.playerAddress,
+            metaData.tokenId,
+            result.inventoryDetails?.quantity || 1000
+          );
+          break;
+        case 'burn':
+          console.log(`Generating burn callData for resource [${name}]...`);
+          commitData = await this.blockchainService.burnResource(
+            name,
+            payload.playerAddress,
+            metaData.tokenId,
+            result.inventoryDetails?.quantity || 1000
+          );
+          break;
+        default:
+          throw new Error(`Unsupported action: ${action}`);
+      }
 
       // 4. Return success signed callData to user for submission to blockchain
       if (commitData && commitData.resourceHash.length > 0) {

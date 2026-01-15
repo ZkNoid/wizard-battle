@@ -12,19 +12,19 @@ describe('GameCommitService', () => {
   // Mock data
   const mockGameItem = {
     _id: '507f1f77bcf86cd799439011',
-    name: 'Iron Ore',
+    name: 'Wood',
     rarity: 'common',
     origin: 'mining',
-    desc: 'A basic iron ore resource',
+    desc: 'A basic Wood resource',
     isCraftable: false,
   };
 
   const mockGameItemCraftable = {
     _id: '507f1f77bcf86cd799439012',
-    name: 'Iron Sword',
+    name: 'Wood Sword',
     rarity: 'uncommon',
     origin: 'crafted',
-    desc: 'A simple iron sword',
+    desc: 'A simple Wood sword',
     isCraftable: true,
   };
 
@@ -90,7 +90,7 @@ describe('GameCommitService', () => {
 
       // Act
       const result = await service.loadAndVerifyResourceForUserFromDataBase(
-        'Iron Ore',
+        'Wood',
         'user123'
       );
 
@@ -99,10 +99,10 @@ describe('GameCommitService', () => {
       expect(result.userHasIt).toBe(true);
       expect(result.resource).toEqual({
         id: '507f1f77bcf86cd799439011',
-        name: 'Iron Ore',
+        name: 'Wood',
         rarity: 'common',
         origin: 'mining',
-        description: 'A basic iron ore resource',
+        description: 'A basic Wood resource',
         isCraftable: false,
       });
       expect(result.inventoryDetails).toEqual({
@@ -127,10 +127,8 @@ describe('GameCommitService', () => {
       expect(console.log).toHaveBeenCalledWith(
         '📦 Resource loaded from database:'
       );
-      expect(console.log).toHaveBeenCalledWith('   Name: Iron Ore');
-      expect(console.log).toHaveBeenCalledWith(
-        '   User has "Iron Ore": ✅ YES'
-      );
+      expect(console.log).toHaveBeenCalledWith('   Name: Wood');
+      expect(console.log).toHaveBeenCalledWith('   User has "Wood": ✅ YES');
     });
 
     it('should return resource but user does not have it', async () => {
@@ -140,7 +138,7 @@ describe('GameCommitService', () => {
 
       // Act
       const result = await service.loadAndVerifyResourceForUserFromDataBase(
-        'Iron Ore',
+        'Wood',
         'user456'
       );
 
@@ -149,10 +147,10 @@ describe('GameCommitService', () => {
       expect(result.userHasIt).toBe(false);
       expect(result.resource).toEqual({
         id: '507f1f77bcf86cd799439011',
-        name: 'Iron Ore',
+        name: 'Wood',
         rarity: 'common',
         origin: 'mining',
-        description: 'A basic iron ore resource',
+        description: 'A basic Wood resource',
         isCraftable: false,
       });
       expect(result.inventoryDetails).toBeNull();
@@ -166,7 +164,7 @@ describe('GameCommitService', () => {
       expect(userInventoryService.getUserInventoryItem).not.toHaveBeenCalled();
 
       // Verify console logs
-      expect(console.log).toHaveBeenCalledWith('   User has "Iron Ore": ❌ NO');
+      expect(console.log).toHaveBeenCalledWith('   User has "Wood": ❌ NO');
     });
 
     it('should handle resource not found in database', async () => {
@@ -210,7 +208,7 @@ describe('GameCommitService', () => {
 
       // Act
       const result = await service.loadAndVerifyResourceForUserFromDataBase(
-        'Iron Sword',
+        'Wood Sword',
         'user123'
       );
 
@@ -235,7 +233,7 @@ describe('GameCommitService', () => {
 
       // Act
       const result = await service.loadAndVerifyResourceForUserFromDataBase(
-        'Iron Ore',
+        'Wood',
         'user123'
       );
 
@@ -286,7 +284,7 @@ describe('GameCommitService', () => {
 
       // Act & Assert
       await expect(
-        service.loadAndVerifyResourceForUserFromDataBase('Iron Ore', 'user123')
+        service.loadAndVerifyResourceForUserFromDataBase('Wood', 'user123')
       ).rejects.toThrow('Database error');
 
       expect(console.error).toHaveBeenCalledWith(
@@ -303,20 +301,17 @@ describe('GameCommitService', () => {
       );
 
       // Act
-      await service.loadAndVerifyResourceForUserFromDataBase(
-        'Iron Ore',
-        'user123'
-      );
+      await service.loadAndVerifyResourceForUserFromDataBase('Wood', 'user123');
 
       // Assert - verify all expected console logs were called
       expect(console.log).toHaveBeenCalledWith(
         '📦 Resource loaded from database:'
       );
-      expect(console.log).toHaveBeenCalledWith('   Name: Iron Ore');
+      expect(console.log).toHaveBeenCalledWith('   Name: Wood');
       expect(console.log).toHaveBeenCalledWith('   Rarity: common');
       expect(console.log).toHaveBeenCalledWith('   Origin: mining');
       expect(console.log).toHaveBeenCalledWith(
-        '   Description: A basic iron ore resource'
+        '   Description: A basic Wood resource'
       );
       expect(console.log).toHaveBeenCalledWith('   Is Craftable: false');
       expect(console.log).toHaveBeenCalledWith(
@@ -325,9 +320,7 @@ describe('GameCommitService', () => {
       expect(console.log).toHaveBeenCalledWith(
         '\n🔍 Checking user inventory for userId: user123'
       );
-      expect(console.log).toHaveBeenCalledWith(
-        '   User has "Iron Ore": ✅ YES'
-      );
+      expect(console.log).toHaveBeenCalledWith('   User has "Wood": ✅ YES');
       expect(console.log).toHaveBeenCalledWith('   Quantity: 5');
       expect(console.log).toHaveBeenCalledWith('   Is Equipped: false');
       expect(console.log).toHaveBeenCalledWith('   Acquired From: mining');
@@ -336,13 +329,13 @@ describe('GameCommitService', () => {
 
   describe('commitResource', () => {
     it('should commit a resource with mint action', async () => {
-      const result = await service.commitResource('Iron Ore', 'mint', {
+      const result = await service.commitResource('Wood', 'mint', {
         amount: 10,
       });
 
       expect(result).toEqual({
         success: true,
-        resource: 'Iron Ore',
+        resource: 'Wood',
         action: 'mint',
         payload: { amount: 10 },
       });

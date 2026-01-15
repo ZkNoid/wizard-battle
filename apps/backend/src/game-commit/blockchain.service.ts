@@ -89,32 +89,59 @@ export class BlockchainService {
       console.log('📝 Commit:', commit);
       console.log('✍️ Signature:', signature);
 
-      // Step 3: Call gameRegistry.commitResource - user submits this transaction
-      // const gameRegistryContract = new ethers.Contract(
-      //   this.gameRegistryAddress,
-      //   [
-      //     'function commitResource(bytes32 resourceHash, bytes commit, bytes signature)',
-      //     'event CommitConfirmed(bytes indexed commit)',
-      //   ],
-      //   this.signer
-      // );
+      return { resourceHash, commit, signature };
+    } catch (error) {
+      console.error('❌ Error minting resource:', error);
+    }
+    return { resourceHash: '', commit: '', signature: '' };
+  }
 
-      // console.log('📡 Calling gameRegistry.commitResource...');
+  async burnResource(
+    resourceName: string,
+    playerAddress: string,
+    tokenId: number,
+    amount: number
+  ): Promise<{ resourceHash: string; commit: string; signature: string }> {
+    try {
+      if (!this.signer) {
+        throw new Error(
+          'Blockchain service not initialized. Please set GAME_SIGNER_PRIVATE_KEY'
+        );
+      }
 
-      // const tx = await gameRegistryContract.commitResource!(
-      //   resourceHash,
-      //   commit,
-      //   signature
-      // );
+      console.log(
+        `🪙 Minting ${amount} ${resourceName} (tokenId: ${tokenId}) to player: ${playerAddress}`
+      );
 
-      // console.log('⏳ Waiting for transaction confirmation...');
-      // console.log('Transaction hash:', tx.hash);
+      // Step 1: Encode callData for mint function
+      // mint(address,uint256,uint256,bytes)
+      const wbResourcesInterface = new ethers.Interface([
+        'function burn(address account, uint256 id, uint256 value)',
+      ]);
 
-      // const receipt = await tx.wait();
+      const callData = wbResourcesInterface.encodeFunctionData('burn', [
+        playerAddress, // address to
+        tokenId, // uint256 id
+        amount, // uint256 amount
+      ]);
 
-      // console.log('✅ Transaction confirmed!');
-      // console.log('Block number:', receipt.blockNumber);
-      // console.log('Gas used:', receipt.gasUsed.toString());
+      console.log('📦 Encoded callData:', callData);
+
+      // Step 2: Get signed message (resourceHash, commit, signature)
+      // Generate unique nonce using timestamp to prevent replay attacks
+      const nonce = Date.now();
+
+      const { resourceHash, commit, signature } = await this.getSignedMessage(
+        resourceName,
+        this.wbResourcesAddress,
+        nonce,
+        callData,
+        playerAddress
+      );
+
+      console.log('🔐 Resource hash:', resourceHash);
+      console.log('📝 Commit:', commit);
+      console.log('✍️ Signature:', signature);
 
       return { resourceHash, commit, signature };
     } catch (error) {
