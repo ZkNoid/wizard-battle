@@ -3,7 +3,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { GameItemDrop, GameItemDropDocument } from '../schemas/game-item-drop.schema';
+import {
+  GameItemDrop,
+  GameItemDropDocument,
+} from '../schemas/game-item-drop.schema';
 import { CreateDropDto } from '../dto/create-game-drop.dto';
 import { UpdateDropDto } from '../dto/update-game-drop.dto';
 import { BadRequestException } from '@nestjs/common';
@@ -17,7 +20,7 @@ export class DropService {
   constructor(
     @InjectModel(GameItemDrop.name)
     private dropModel: Model<GameItemDropDocument>,
-    @InjectModel(GameItem.name) private gameItemModel: Model<GameItemDocument>,
+    @InjectModel(GameItem.name) private gameItemModel: Model<GameItemDocument>
   ) {}
 
   async create(createDto: CreateDropDto): Promise<GameItemDrop> {
@@ -30,7 +33,10 @@ export class DropService {
   }
 
   async findOne(id: string): Promise<GameItemDrop> {
-    const drop = await this.dropModel.findById(id).populate('durations.dropGroups.item').exec();
+    const drop = await this.dropModel
+      .findById(id)
+      .populate('durations.dropGroups.item')
+      .exec();
     if (!drop) {
       throw new NotFoundException(`Drop table with ID "${id}" not found`);
     }
@@ -38,9 +44,14 @@ export class DropService {
   }
 
   async findByLocation(locationName: string): Promise<GameItemDrop> {
-    const drop = await this.dropModel.findOne({ locationName }).populate('durations.dropGroups.item').exec();
+    const drop = await this.dropModel
+      .findOne({ locationName })
+      .populate('durations.dropGroups.item')
+      .exec();
     if (!drop) {
-      throw new NotFoundException(`Drop table for location "${locationName}" not found`);
+      throw new NotFoundException(
+        `Drop table for location "${locationName}" not found`
+      );
     }
     return drop;
   }
@@ -75,17 +86,19 @@ export class DropService {
       .exec();
 
     if (!dropTable) {
-      throw new BadRequestException(`No drop table found for location: ${locationName}`);
+      throw new BadRequestException(
+        `No drop table found for location: ${locationName}`
+      );
     }
 
     // Find the duration config
     const durationConfig = dropTable.durations.find(
-      (d) => d.durationHours === durationHours,
+      (d) => d.durationHours === durationHours
     );
 
     if (!durationConfig) {
       throw new BadRequestException(
-        `No drop configuration for ${durationHours} hours in ${locationName}`,
+        `No drop configuration for ${durationHours} hours in ${locationName}`
       );
     }
 
@@ -94,7 +107,7 @@ export class DropService {
     // Process each drop group
     for (const group of durationConfig.dropGroups) {
       if (group.type === 'guaranteed') {
-        const itemId = group.item._id.toString();
+        const itemId = group.item.id.toString();
         if (!lootMap.has(itemId)) {
           lootMap.set(itemId, {
             item: group.item as any,
@@ -102,9 +115,7 @@ export class DropService {
           });
         }
         lootMap.get(itemId)!.quantity += group.quantity;
-      }
-
-      else if (group.type === 'chance-rolls') {
+      } else if (group.type === 'chance-rolls') {
         // We need to fetch items of the specified rarity
         // Assuming your GameItem has a 'rarity' field that matches (e.g., "unique", "common")
         const candidateItems = await this.gameItemModel

@@ -4,25 +4,31 @@ import { State } from '@wizard-battle/common/stater/state';
 import { allSpells } from '@wizard-battle/common/stater/spells';
 import { SpellCast } from '@wizard-battle/common/stater/structs';
 import { Field, Poseidon, Struct, ZkProgram } from 'o1js';
+import { Stater } from '@wizard-battle/common';
 
 export function verifySpellCastTransition<T>(
   publicInput: SpellsPublicInput,
-  state: State,
+  stater: Stater,
+  opponentState: State,
   spellCast: SpellCast<T>,
-  modifier: (state: State, spellCast: SpellCast<T>) => void
+  modifier: (
+    stater: Stater,
+    spellCast: SpellCast<T>,
+    opponentState: State
+  ) => void
 ) {
   publicInput.initialStateHash.assertEquals(
-    state.hash(),
+    stater.state.hash(),
     'Initial state hash mismatch'
   );
   publicInput.spellCastHash.assertEquals(
     spellCast.hash(),
     'Spell cast hash mismatch'
   );
-  modifier(state, spellCast);
+  modifier(stater, spellCast, opponentState);
   return {
     publicOutput: new SpellsPublicOutput({
-      finalStateHash: state.hash(),
+      finalStateHash: stater.state.hash(),
     }),
   };
 }
@@ -34,15 +40,17 @@ export const splellsProofs = allSpells.map((spell) => {
     publicOutput: SpellsPublicOutput,
     methods: {
       prove: {
-        privateInputs: [State, spell.spellCast],
+        privateInputs: [Stater, State, spell.spellCast],
         async method(
           publicInput: SpellsPublicInput,
-          state: State,
-          spellCast: typeof spell.spellCast
+          stater: Stater,
+          spellCast: typeof spell.spellCast,
+          opponentState: State
         ) {
           return verifySpellCastTransition(
             publicInput,
-            state,
+            stater,
+            opponentState,
             spellCast,
             spell.modifier
           );

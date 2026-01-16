@@ -1,4 +1,4 @@
-import { Field, Int64, UInt64 } from 'o1js';
+import { Field, Int64, UInt64, PrivateKey } from 'o1js';
 import { Stater } from '../stater';
 import { State } from '../state';
 import {
@@ -113,6 +113,7 @@ describe('Mage Spells', () => {
       map: [...Array(64).fill(Field(0))],
       turnId: Int64.from(1),
       randomSeed: Field(123),
+      signingKey: PrivateKey.random(),
     });
 
     stater = new Stater({
@@ -183,6 +184,7 @@ describe('Mage Spells', () => {
       map: [...Array(64).fill(Field(0))],
       turnId: Int64.from(1),
       randomSeed: Field(456),
+      signingKey: PrivateKey.random(),
     });
   });
 

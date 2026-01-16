@@ -1,4 +1,4 @@
-import { Field, Int64, UInt64, CircuitString } from 'o1js';
+import { Field, Int64, UInt64, CircuitString, PrivateKey } from 'o1js';
 import { Stater } from './stater';
 import { State } from './state';
 import {
@@ -92,6 +92,7 @@ describe('Random Events', () => {
       map: [...Array(64).fill(Field(0))],
       turnId: Int64.from(1),
       randomSeed: Field(seed),
+      signingKey: PrivateKey.random(),
     });
   };
 
@@ -455,4 +456,3 @@ describe('Random Events', () => {
     });
   });
 });
-
