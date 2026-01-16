@@ -16,7 +16,7 @@ RUN <<EOF
 sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
 sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
 yum update -y
-curl -fsSL https://rpm.nodesource.com/setup_22.x | bash -
+curl -fsSL https://rpm.nodesource.com/setup_23.x | bash -
 yum install -y nodejs
 yum install -y gcc-c++ make
 yum install -y cronie && yum clean all
