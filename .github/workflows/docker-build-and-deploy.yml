@@ -25,20 +25,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Create .env file
-        run: |
-          cat > .env << 'EOT'
-          MONGODB_URI=${{ secrets.MONGODB_URI }}
-          MONGODB_DB=${{ secrets.MONGODB_DB }}
-          REDIS_URL=${{ secrets.REDIS_URL }}
-          WEBSOCKET_URL=${{ secrets.WEBSOCKET_URL }}
-          SPELL_CAST_TIMEOUT=${{ secrets.SPELL_CAST_TIMEOUT }}
-          EOT
-          echo "Created .env file with secure variables"
-          cat .env
-
       - name: Run build
-        run: source .env && pnpm turbo run build
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_DB: ${{ secrets.MONGODB_DB }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          WEBSOCKET_URL: ${{ secrets.WEBSOCKET_URL }}
+          SPELL_CAST_TIMEOUT: ${{ secrets.SPELL_CAST_TIMEOUT }}
+        run: pnpm turbo run build
   deploy:
     needs: test-build
     runs-on: ubuntu-latest
