@@ -38,7 +38,7 @@ jobs:
           cat .env
 
       - name: Run build
-        run: pnpm turbo run build
+        run: source .env && pnpm turbo run build
   deploy:
     needs: test-build
     runs-on: ubuntu-latest
