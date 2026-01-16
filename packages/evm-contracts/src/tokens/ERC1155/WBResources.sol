@@ -7,7 +7,6 @@ import {AccessControlEnumerableUpgradeable} from "@openzeppelin/contracts-upgrad
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {ERC1155Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import {ERC1155BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol";
 import {ERC1155PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155PausableUpgradeable.sol";
 import {ERC1155SupplyUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
@@ -34,7 +33,7 @@ contract WBResources is
     ERC1155Upgradeable,
     AccessControlUpgradeable,
     ERC1155PausableUpgradeable,
-    ERC1155BurnableUpgradeable,
+    /* ERC1155BurnableUpgradeable,*/
     ERC1155SupplyUpgradeable,
     UUPSUpgradeable
 {
@@ -68,7 +67,6 @@ contract WBResources is
         __ERC1155_init("");
         __AccessControl_init();
         __ERC1155Pausable_init();
-        __ERC1155Burnable_init();
         __ERC1155Supply_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
@@ -119,6 +117,20 @@ contract WBResources is
     }
 
     /**
+     * @notice Burns tokens of a specific ID from an address
+     * @dev Can only be called by addresses with MINTER_ROLE
+     * @param account Address from which the tokens will be burned
+     * @param id Token ID to burn
+     * @param value Amount of tokens to burn
+     */
+    function burn(address account, uint256 id, uint256 value) public {
+        if (account != _msgSender() && !isApprovedForAll(account, _msgSender()) && !hasRole(MINTER_ROLE, _msgSender())) {
+            revert ERC1155MissingApprovalForAll(_msgSender(), account);
+        }
+        _burn(account, id, value);
+    }
+
+    /**
      * @notice Mints multiple token types in a single transaction
      * @dev Can only be called by addresses with MINTER_ROLE. Arrays must have equal length
      * @param to Address to receive the minted tokens
@@ -128,6 +140,13 @@ contract WBResources is
      */
     function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) public onlyRole(MINTER_ROLE) {
         _mintBatch(to, ids, amounts, data);
+    }
+
+    function burnBatch(address account, uint256[] memory ids, uint256[] memory values) public {
+        if (account != _msgSender() && !isApprovedForAll(account, _msgSender()) && !hasRole(MINTER_ROLE, _msgSender())) {
+            revert ERC1155MissingApprovalForAll(_msgSender(), account);
+        }
+        _burnBatch(account, ids, values);
     }
 
     /**

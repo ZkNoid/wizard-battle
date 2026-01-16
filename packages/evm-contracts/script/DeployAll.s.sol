@@ -1,7 +1,7 @@
-// SPDX-license-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 import {Script} from "forge-std/Script.sol";
-import {GameRegestry} from "../src/GameRegestry.sol";
+import {GameRegistry} from "../src/GameRegistry.sol";
 import {WBCharacter} from "../src/tokens/ERC721/WBCharacter.sol";
 import {WBResources} from "../src/tokens/ERC1155/WBResources.sol";
 import {WBCoin} from "../src/tokens/ERC20/WBCoin.sol";
@@ -19,13 +19,13 @@ contract DeployAll is Script {
         deploy();
     }
 
-    function _deployGameRegestry() internal returns (address gameRegestry) {
+    function _deployGameRegistry() internal returns (address gameRegistry) {
         vm.startBroadcast();
-        // Deploy GameRegestry
-        gameRegestry = address(
+        // Deploy GameRegistry
+        gameRegistry = address(
             new ERC1967Proxy(
-                address(new GameRegestry()),
-                abi.encodeCall(GameRegestry.initialize, (new string[](0), new string[](0), new string[](0), new string[](0), config.gameSigner))
+                address(new GameRegistry()),
+                abi.encodeCall(GameRegistry.initialize, (new string[](0), new string[](0), new string[](0), new string[](0), config.gameSigner))
             )
         );
         vm.stopBroadcast();
@@ -57,10 +57,10 @@ contract DeployAll is Script {
     function deploy() public {
         vm.startBroadcast();
 
-        address gameRegestry = address(
+        address gameRegistry = address(
             new ERC1967Proxy(
-                address(new GameRegestry()),
-                abi.encodeCall(GameRegestry.initialize, (new string[](0), new string[](0), new string[](0), new string[](0), config.gameSigner))
+                address(new GameRegistry()),
+                abi.encodeCall(GameRegistry.initialize, (new string[](0), new string[](0), new string[](0), new string[](0), config.gameSigner))
             )
         );
 
@@ -72,13 +72,13 @@ contract DeployAll is Script {
 
         address wbCoin = address(new ERC1967Proxy(address(new WBCoin()), abi.encodeCall(WBCoin.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))));
 
-        WBCoin(wbCoin).grantRole(keccak256("MINTER_ROLE"), gameRegestry);
+        WBCoin(wbCoin).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
         WBCoin(wbCoin).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
 
-        WBCharacter(wbCharacter).grantRole(keccak256("MINTER_ROLE"), gameRegestry);
+        WBCharacter(wbCharacter).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
         WBCharacter(wbCharacter).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
 
-        WBResources(wbResources).grantRole(keccak256("MINTER_ROLE"), gameRegestry);
+        WBResources(wbResources).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
         WBResources(wbResources).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
 
         vm.stopBroadcast();

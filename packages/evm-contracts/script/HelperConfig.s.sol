@@ -51,7 +51,7 @@ contract HelperConfig is Script {
 
         anvilConfig = NetworkConfig({
             defaultAdmin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // My dev address
-            gameSigner: 0xB4Ee8D79974f85AA9D298628A37754d1313dAA99, // Game signer address
+            gameSigner: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // Game signer address
             pauser: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // My dev address
             minter: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // My dev address
             upgrader: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 // My dev address

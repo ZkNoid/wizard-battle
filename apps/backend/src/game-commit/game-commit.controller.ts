@@ -16,10 +16,10 @@ export class GameCommitController {
     return this.gameCommitService.commitResource(name, 'burn', body);
   }
 
-  @Post('resources/:name/modify')
-  modifyResource(@Param('name') name: string, @Body() body: any) {
-    return this.gameCommitService.commitResource(name, 'modify', body);
-  }
+  // @Post('resources/:name/modify')
+  // modifyResource(@Param('name') name: string, @Body() body: any) {
+  //   return this.gameCommitService.commitResource(name, 'modify', body);
+  // }
 
   // Coins
   @Post('coins/:name/mint')
@@ -32,10 +32,10 @@ export class GameCommitController {
     return this.gameCommitService.commitCoin(name, 'burn', body);
   }
 
-  @Post('coins/:name/modify')
-  modifyCoin(@Param('name') name: string, @Body() body: any) {
-    return this.gameCommitService.commitCoin(name, 'modify', body);
-  }
+  // @Post('coins/:name/modify')
+  // modifyCoin(@Param('name') name: string, @Body() body: any) {
+  //   return this.gameCommitService.commitCoin(name, 'modify', body);
+  // }
 
   // Items
   @Post('items/:name/mint')
@@ -48,10 +48,10 @@ export class GameCommitController {
     return this.gameCommitService.commitItem(name, 'burn', body);
   }
 
-  @Post('items/:name/modify')
-  modifyItem(@Param('name') name: string, @Body() body: any) {
-    return this.gameCommitService.commitItem(name, 'modify', body);
-  }
+  // @Post('items/:name/modify')
+  // modifyItem(@Param('name') name: string, @Body() body: any) {
+  //   return this.gameCommitService.commitItem(name, 'modify', body);
+  // }
 
   // Characters
   @Post('characters/:name/mint')
@@ -64,8 +64,8 @@ export class GameCommitController {
     return this.gameCommitService.commitCharacter(name, 'burn', body);
   }
 
-  @Post('characters/:name/modify')
-  modifyCharacter(@Param('name') name: string, @Body() body: any) {
-    return this.gameCommitService.commitCharacter(name, 'modify', body);
-  }
+  // @Post('characters/:name/modify')
+  // modifyCharacter(@Param('name') name: string, @Body() body: any) {
+  //   return this.gameCommitService.commitCharacter(name, 'modify', body);
+  // }
 }

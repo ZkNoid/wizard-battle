@@ -7,7 +7,6 @@ import {AccessControlEnumerableUpgradeable} from "@openzeppelin/contracts-upgrad
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import {ERC20BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import {ERC20PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PausableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
@@ -28,7 +27,6 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeab
 contract WBCoin is
     Initializable,
     ERC20Upgradeable,
-    ERC20BurnableUpgradeable,
     ERC20PausableUpgradeable,
     AccessControlEnumerableUpgradeable,
     AccessControlDefaultAdminRulesUpgradeable,
@@ -58,7 +56,6 @@ contract WBCoin is
      */
     function initialize(address defaultAdmin, address pauser, address minter, address upgrader) public initializer {
         __ERC20_init("WBCoin", "WBC");
-        __ERC20Burnable_init();
         __ERC20Pausable_init();
         __AccessControlDefaultAdminRules_init(0, defaultAdmin);
         __AccessControlEnumerable_init();
@@ -92,6 +89,10 @@ contract WBCoin is
      */
     function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
         _mint(to, amount);
+    }
+
+    function burn(address account, uint256 amount) public onlyRole(MINTER_ROLE) {
+        _burn(account, amount);
     }
 
     /**

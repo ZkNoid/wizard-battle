@@ -314,6 +314,10 @@ contract WBCharacterTest is Test {
     function test_UpgradeByUpgrader() public {
         WBCharacterV2Mock v2 = new WBCharacterV2Mock();
 
+        // Verify mock version
+        assertEq(v2.version(), 2);
+        assertEq(v2.newFunction(), "Upgraded!");
+
         bytes32 IMPLEMENTATION_SLOT = bytes32(uint256(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc));
 
         address currentImpl = address(uint160(uint256(vm.load(address(wbCharacter), IMPLEMENTATION_SLOT))));

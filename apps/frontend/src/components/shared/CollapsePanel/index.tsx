@@ -21,7 +21,7 @@ export function CollapsePanel({
       {/* Header */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="text-main-gray font-pixel flex w-full cursor-pointer items-center gap-2 px-4 py-3 text-base transition-all duration-300"
+        className="text-main-gray font-pixel flex w-full cursor-pointer items-center gap-2 py-3 text-base transition-all duration-300"
       >
         <span
           className={cn(
@@ -41,7 +41,7 @@ export function CollapsePanel({
           isOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
         )}
       >
-        <div className="p-4">{children}</div>
+        <div>{children}</div>
       </div>
     </div>
   );

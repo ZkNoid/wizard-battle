@@ -7,9 +7,13 @@ import { CRAFT_GROUP_PANELS } from '@/lib/constants/craft';
 import { CraftFormItem } from './CraftFormItem';
 import { Scroll } from '../shared/Scroll';
 
-export function CraftForm() {
+interface CraftFormProps {
+  onCancel?: () => void;
+}
+
+export function CraftForm({ onCancel }: CraftFormProps) {
   return (
-    <div className="relative flex h-full flex-col pr-5">
+    <div className="relative flex h-full flex-col">
       {/* Background */}
       <CraftFormBg className="absolute inset-0 -top-5 z-0 h-full w-full" />
 
@@ -45,20 +49,19 @@ export function CraftForm() {
                       {panel.title}
                     </span>
                   }
-                  children={
-                    panel.items && panel.items.length > 0 ? (
-                      <div className="flex flex-row gap-2.5">
-                        {panel.items.map((item) => (
-                          <CraftFormItem key={item.id} item={item} />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-row gap-2.5">
-                        <div className="flex flex-col gap-1">No items</div>
-                      </div>
-                    )
-                  }
-                />
+                >
+                  {panel.items && panel.items.length > 0 ? (
+                    <div className="flex flex-row">
+                      {panel.items.map((item) => (
+                        <CraftFormItem key={item.id} item={item} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-row gap-2.5">
+                      <div className="flex flex-col gap-1">No items</div>
+                    </div>
+                  )}
+                </CollapsePanel>
               ))}
             </div>
           </Scroll>
