@@ -861,7 +861,7 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     cooldown: Field(1),
     name: 'SpectralArrow',
     description: 'Deal 50 damage to a single target.',
-    image: '/wizards/skills/spectralArrow.png',
+    image: '/wizards/skills/spectral-arrow.png',
     modifierData: SpectralArrowData,
     modifier: SpectralArrowModifier,
     spellCast: SpectralArrowSpellCast,
