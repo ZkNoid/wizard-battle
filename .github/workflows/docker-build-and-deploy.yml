@@ -18,11 +18,12 @@ jobs:
           node-version: '23'
 
       - name: Install dependencies
-        run: npmp install
+        run: npm install
 
       - name: Run build
-        run: npmp turbo run build
+        run: npm run turbo run build
   deploy:
+    needs: test-build
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Vercel Deploy Hook
@@ -51,6 +52,7 @@ jobs:
           fi
 
   copy-redis-config:
+    needs: test-build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -71,6 +73,7 @@ jobs:
           strip_components: 1
 
   copy-nginx-config:
+    needs: test-build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -91,6 +94,7 @@ jobs:
           strip_components: 1
 
   copy-server-config:
+    needs: test-build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -111,6 +115,7 @@ jobs:
           strip_components: 2
 
   build-and-deploy:
+    needs: test-build
     runs-on: ubuntu-latest
     env:
       DEPLOY_CONTAINER: '{"main": "nestjs-main", "dev": "nestjs-dev"}'
