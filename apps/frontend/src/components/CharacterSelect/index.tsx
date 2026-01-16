@@ -28,7 +28,7 @@ export default function CharacterSelect({
   setSelectedSkills: (skills: SpellStats[]) => void;
 }) {
   const currentWizardSpells = allSpells.filter(
-    (spell) => spell.wizardId === currentWizard.id
+    (spell) => spell.wizardId === currentWizard.id && !spell.hidden
   );
 
   const selectedSkillsLength = selectedSkills.filter(

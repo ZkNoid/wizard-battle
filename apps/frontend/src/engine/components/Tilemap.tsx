@@ -216,12 +216,20 @@ const updateTilemap2 = (tilemap: Megatile[]): Megatile[] => {
   return newTilemap;
 };
 
+export interface TileHighlight {
+  color?: string; // CSS color (default: 'rgba(255, 255, 0, 0.4)')
+  borderColor?: string; // Optional border color
+  borderWidth?: number; // Optional border width in pixels
+}
+
 export interface TilemapProps {
   width: number; // in tiles (megatiles)
   height: number; // in tiles (megatiles)
   tileSize: number; // in pixels
   tilemap?: number[]; // array of tile numbers
   className?: string;
+  highlightedTiles?: Map<number, TileHighlight> | Set<number> | number[]; // tiles to highlight
+  defaultHighlight?: TileHighlight; // default highlight style
   onTileClick?: (index: number) => void;
   onTileMouseDown?: (index: number) => void;
   onTileMouseEnter?: (index: number) => void;
@@ -234,11 +242,31 @@ export function Tilemap({
   tileSize = 60,
   tilemap = [],
   className = '',
+  highlightedTiles,
+  defaultHighlight = { color: 'rgba(255, 255, 0, 0.4)' },
   onTileClick,
   onTileMouseDown,
   onTileMouseEnter,
   onTileMouseUp,
 }: TilemapProps) {
+  // Helper to check if a tile is highlighted and get its style
+  const getHighlightStyle = (index: number): TileHighlight | null => {
+    if (!highlightedTiles) return null;
+
+    if (Array.isArray(highlightedTiles)) {
+      return highlightedTiles.includes(index) ? defaultHighlight : null;
+    }
+
+    if (highlightedTiles instanceof Set) {
+      return highlightedTiles.has(index) ? defaultHighlight : null;
+    }
+
+    if (highlightedTiles instanceof Map) {
+      return highlightedTiles.get(index) ?? null;
+    }
+
+    return null;
+  };
   const [megatiles, setMegatiles] = useState<Megatile[]>(
     Array(TILEMAP_SIZE)
       .fill(null)
@@ -298,6 +326,23 @@ export function Tilemap({
         >
           {/* Hover overlay */}
           <div className="pointer-events-none absolute inset-0 z-10 rounded-sm bg-neutral-200 opacity-0 transition-opacity duration-150 group-hover:opacity-30" />
+
+          {/* Highlight overlay */}
+          {(() => {
+            const highlight = getHighlightStyle(index);
+            if (!highlight) return null;
+            return (
+              <div
+                className="pointer-events-none absolute inset-0 z-20 rounded-sm"
+                style={{
+                  backgroundColor: highlight.color ?? 'rgba(255, 255, 0, 0.4)',
+                  border: highlight.borderColor
+                    ? `${highlight.borderWidth ?? 2}px solid ${highlight.borderColor}`
+                    : undefined,
+                }}
+              />
+            );
+          })()}
 
           {megatile.getMainTile().type === Tiles.Air ? (
             <div className="size-full bg-gray-100" />

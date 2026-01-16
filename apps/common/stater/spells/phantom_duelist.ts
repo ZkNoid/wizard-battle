@@ -90,6 +90,10 @@ const SpectralArrowSceneEffect = (
   });
 };
 
+const SpectralArrowAffectedArea = (x: number, y: number) => {
+  return [{ x, y }];
+};
+
 // ============================================================================
 // SHADOW VEIL - Become invisible for 2 turns
 // Next attack deals +50% damage and reveals the duelist
@@ -137,6 +141,10 @@ const ShadowVeilSceneEffect = (
     overlayId: type,
     scale: 1.5,
   });
+};
+
+const ShadowVeilAffectedArea = (x: number, y: number) => {
+  return [{ x, y }];
 };
 
 export const ShadowVeilModifier = (
@@ -258,6 +266,10 @@ export const SpectralProjectionModifier = (
   );
 };
 
+const SpectralProjectionAffectedArea = (x: number, y: number) => {
+  return [{ x, y }];
+};
+
 // ============================================================================
 // DUSK'S EMBRACE - Deal 50 damage to horizontal line
 // Apply Weaken (-30% Defence) for 2 turns if hit
@@ -329,6 +341,14 @@ export const DusksEmbraceModifier = (
   );
 };
 
+const DusksEmbraceAffectedArea = (x: number, y: number) => {
+  const positions: { x: number; y: number }[] = [];
+  for (let i = 0; i < 8; i++) {
+    positions.push({ x: i, y });
+  }
+  return positions;
+};
+
 const DusksEmbraceSceneEffect = (
   x: number,
   y: number,
@@ -336,15 +356,16 @@ const DusksEmbraceSceneEffect = (
   type: 'user' | 'enemy'
 ) => {
   // Draw horizontal line effect across the entire row
-  for (let i = 0; i < 8; i++) {
+  const positions = DusksEmbraceAffectedArea(x, y);
+  positions.forEach((position) => {
     gameEmitter.throwEffect({
       animationName: 'dusks_embrace',
-      x: i,
-      y,
+      x: position.x,
+      y: position.y,
       overlayId: type,
       scale: 1.5,
     });
-  }
+  });
 };
 
 // ============================================================================
@@ -432,20 +453,24 @@ export const PhantomEchoModifier = (
   );
 };
 
-const PhantomEchoSceneEffect = (
-  x: number,
-  y: number,
-  gameEmitter: any,
-  type: 'user' | 'enemy'
-) => {
+const PhantomEchoAffectedArea = (x: number, y: number) => {
   // Diamond 3x3 pattern (manhattan distance <= 1)
-  const positions = [
+  return [
     { x: x, y: y },
     { x: x + 1, y: y },
     { x: x - 1, y: y },
     { x: x, y: y + 1 },
     { x: x, y: y - 1 },
   ];
+};
+
+const PhantomEchoSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: any,
+  type: 'user' | 'enemy'
+) => {
+  const positions = PhantomEchoAffectedArea(x, y);
 
   positions.forEach((position) => {
     gameEmitter.throwEffect({
@@ -545,6 +570,10 @@ const ShadowStrikeSceneEffect = (
   });
 };
 
+const ShadowStrikeAffectedArea = (x: number, y: number) => {
+  return [{ x, y }];
+};
+
 // ============================================================================
 // SHADOW DASH (Spectral Form) - Dash at opponent
 // Deal up to +100% extra damage depending on distance
@@ -636,6 +665,10 @@ const ShadowDashSceneEffect = (
   });
 };
 
+const ShadowDashAffectedArea = (x: number, y: number) => {
+  return [{ x, y }];
+};
+
 // ============================================================================
 // SHADOW DASH MOVE (Spectral Form) - Companion spell to update caster position
 // Cast on self to move to the dash target position
@@ -710,6 +743,10 @@ const ShadowDashMoveSceneEffect = (
   });
 };
 
+const ShadowDashMoveAffectedArea = (x: number, y: number) => {
+  return [{ x, y }];
+};
+
 // ============================================================================
 // WHIRLING BLADES (Spectral Form) - Deal 50 damage to 3x3 area
 // ============================================================================
@@ -777,14 +814,9 @@ export const WhirlingBladesModifier = (
   stater.applyDamage(damageToApply, opponentState);
 };
 
-const WhirlingBladesSceneEffect = (
-  x: number,
-  y: number,
-  gameEmitter: any,
-  type: 'user' | 'enemy'
-) => {
+const WhirlingBladesAffectedArea = (x: number, y: number) => {
   // 3x3 area centered on target
-  const positions = [
+  return [
     { x: x - 1, y: y - 1 },
     { x: x, y: y - 1 },
     { x: x + 1, y: y - 1 },
@@ -795,6 +827,15 @@ const WhirlingBladesSceneEffect = (
     { x: x, y: y + 1 },
     { x: x + 1, y: y + 1 },
   ];
+};
+
+const WhirlingBladesSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: any,
+  type: 'user' | 'enemy'
+) => {
+  const positions = WhirlingBladesAffectedArea(x, y);
 
   positions.forEach((position) => {
     gameEmitter.throwEffect({
@@ -820,12 +861,13 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     cooldown: Field(1),
     name: 'SpectralArrow',
     description: 'Deal 50 damage to a single target.',
-    image: '/wizards/skills/spectral_arrow.png',
+    image: '/wizards/skills/spectral-arrow.png',
     modifierData: SpectralArrowData,
     modifier: SpectralArrowModifier,
     spellCast: SpectralArrowSpellCast,
     cast: SpectralArrowCast,
     sceneEffect: SpectralArrowSceneEffect,
+    affectedArea: SpectralArrowAffectedArea,
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('SpectralArrow').hash(),
@@ -840,12 +882,13 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     name: 'ShadowVeil',
     description:
       'Become invisible for 2 turns. Next attack deals +50% damage and reveals you.',
-    image: '/wizards/skills/shadow_veil.png',
+    image: '/wizards/skills/shadowVeil.png',
     modifierData: ShadowVeilData,
     modifier: ShadowVeilModifier,
     spellCast: ShadowVeilSpellCast,
     cast: ShadowVeilCast,
     sceneEffect: ShadowVeilSceneEffect,
+    affectedArea: ShadowVeilAffectedArea,
     target: 'ally',
     priority: 1,
     defaultValue: {
@@ -861,11 +904,12 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     name: 'SpectralProjection',
     description:
       "Create a spectral projection on opponent's field for 3 turns, transforming skills into melee variants.",
-    image: '/wizards/skills/spectral_projection.png',
+    image: '/wizards/skills/spectralProjection.png',
     modifierData: SpectralProjectionData,
     modifier: SpectralProjectionModifier,
     spellCast: SpectralProjectionSpellCast,
     cast: SpectralProjectionCast,
+    affectedArea: SpectralProjectionAffectedArea,
     target: 'ally',
     priority: 1,
     defaultValue: {
@@ -881,12 +925,13 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     name: 'DusksEmbrace',
     description:
       'Deal 50 damage to a horizontal line and apply Weaken (-30% Defence) for 2 turns if hit.',
-    image: '/wizards/skills/dusks_embrace.png',
+    image: '/wizards/skills/dusksEmbrace.png',
     modifierData: DusksEmbraceData,
     modifier: DusksEmbraceModifier,
     spellCast: DusksEmbraceSpellCast,
     cast: DusksEmbraceCast,
     sceneEffect: DusksEmbraceSceneEffect,
+    affectedArea: DusksEmbraceAffectedArea,
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('DusksEmbrace').hash(),
@@ -901,12 +946,13 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     name: 'PhantomEcho',
     description:
       'Deal 30 damage to a diamond 3x3 area. If hit, opponent becomes visible and takes +50% damage for 1 turn.',
-    image: '/wizards/skills/phantom_echo.png',
+    image: '/wizards/skills/phantomEcho.png',
     modifierData: PhantomEchoData,
     modifier: PhantomEchoModifier,
     spellCast: PhantomEchoSpellCast,
     cast: PhantomEchoCast,
     sceneEffect: PhantomEchoSceneEffect,
+    affectedArea: PhantomEchoAffectedArea,
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('PhantomEcho').hash(),
@@ -921,18 +967,20 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     cooldown: Field(1),
     name: 'ShadowStrike',
     description: 'Deal 50 damage with +20% critical chance. (Spectral Form)',
-    image: '/wizards/skills/shadow_strike.png',
+    image: '/wizards/skills/shadowStrike.png',
     modifierData: ShadowStrikeData,
     modifier: ShadowStrikeModifier,
     spellCast: ShadowStrikeSpellCast,
     cast: ShadowStrikeCast,
     sceneEffect: ShadowStrikeSceneEffect,
+    affectedArea: ShadowStrikeAffectedArea,
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('ShadowStrike').hash(),
       cooldown: Int64.from(1),
       currentCooldown: Int64.from(0),
     },
+    hidden: true,
   },
   {
     id: CircuitString.fromString('ShadowDash').hash(),
@@ -941,19 +989,21 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     name: 'ShadowDash',
     description:
       'Dash at opponent dealing up to +100% extra damage depending on distance. (Spectral Form)',
-    image: '/wizards/skills/shadow_dash.png',
+    image: '/wizards/skills/shadowDash.png',
     modifierData: ShadowDashData,
     modifier: ShadowDashModifier,
     spellCast: ShadowDashSpellCast,
     cast: ShadowDashCast,
     sceneEffect: ShadowDashSceneEffect,
+    affectedArea: ShadowDashAffectedArea,
     target: 'enemy',
-    companionSpellId: CircuitString.fromString('ShadowDashMove').hash(),
     defaultValue: {
       spellId: CircuitString.fromString('ShadowDash').hash(),
       cooldown: Int64.from(2),
       currentCooldown: Int64.from(0),
     },
+    hidden: true,
+    companionSpellId: CircuitString.fromString('ShadowDashMove').hash(),
   },
   {
     id: CircuitString.fromString('ShadowDashMove').hash(),
@@ -962,19 +1012,20 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     name: 'ShadowDashMove',
     description:
       'Move to dash target position. (Companion spell for ShadowDash)',
-    image: '/wizards/skills/shadow_dash.png',
+    image: '/wizards/skills/shadowDash.png',
     modifierData: ShadowDashMoveData,
     modifier: ShadowDashMoveModifier,
     spellCast: ShadowDashMoveSpellCast,
     cast: ShadowDashMoveCast,
     sceneEffect: ShadowDashMoveSceneEffect,
+    affectedArea: ShadowDashMoveAffectedArea,
     target: 'ally',
-    hidden: true, // Not shown in spell selection, used internally
     defaultValue: {
       spellId: CircuitString.fromString('ShadowDashMove').hash(),
       cooldown: Int64.from(0),
       currentCooldown: Int64.from(0),
     },
+    hidden: true,
   },
   {
     id: CircuitString.fromString('WhirlingBlades').hash(),
@@ -982,17 +1033,19 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     cooldown: Field(3),
     name: 'WhirlingBlades',
     description: 'Deal 50 damage to a 3x3 area. (Spectral Form)',
-    image: '/wizards/skills/whirling_blades.png',
+    image: '/wizards/skills/whirlingBlades.png',
     modifierData: WhirlingBladesData,
     modifier: WhirlingBladesModifier,
     spellCast: WhirlingBladesSpellCast,
     cast: WhirlingBladesCast,
     sceneEffect: WhirlingBladesSceneEffect,
+    affectedArea: WhirlingBladesAffectedArea,
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('WhirlingBlades').hash(),
       cooldown: Int64.from(3),
       currentCooldown: Int64.from(0),
     },
+    hidden: true,
   },
 ];

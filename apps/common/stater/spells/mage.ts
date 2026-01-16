@@ -82,19 +82,23 @@ export const LightningBoldModifier = (
   stater.applyDamage(damageToApply, opponentState);
 };
 
-const LightningBoldSceneEffect = (
-  x: number,
-  y: number,
-  gameEmitter: any,
-  type: 'user' | 'enemy'
-) => {
-  const positions = [
+const LightningBoldAffectedArea = (x: number, y: number) => {
+  return [
     { x: x, y: y },
     { x: x + 1, y: y },
     { x: x - 1, y: y },
     { x: x, y: y + 1 },
     { x: x, y: y - 1 },
   ];
+};
+
+const LightningBoldSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: any,
+  type: 'user' | 'enemy'
+) => {
+  const positions = LightningBoldAffectedArea(x, y);
 
   positions.forEach((position) => {
     gameEmitter.throwEffect({
@@ -174,13 +178,8 @@ export const FireBallModifier = (
   stater.applyDamage(damageToApply, opponentState);
 };
 
-const FireBallSceneEffect = (
-  x: number,
-  y: number,
-  gameEmitter: any,
-  type: 'user' | 'enemy'
-) => {
-  const positions = [
+const FireBallAffectedArea = (x: number, y: number) => {
+  return [
     { x: x, y: y },
     { x: x + 1, y: y },
     { x: x - 1, y: y },
@@ -195,6 +194,15 @@ const FireBallSceneEffect = (
     { x: x, y: y + 2 },
     { x: x, y: y - 2 },
   ];
+};
+
+const FireBallSceneEffect = (
+  x: number,
+  y: number,
+  gameEmitter: any,
+  type: 'user' | 'enemy'
+) => {
+  const positions = FireBallAffectedArea(x, y);
 
   positions.forEach((position) => {
     gameEmitter.throwEffect({
@@ -263,6 +271,25 @@ export const LaserModifier = (
   const damageToApply = Provable.if(hit, damage, UInt64.from(0));
 
   stater.applyDamage(damageToApply, opponentState);
+};
+
+const LaserAffectedArea = (x: number, y: number) => {
+  const positions: { x: number; y: number }[] = [];
+  // Add vertical line
+  for (let i = 0; i < 8; i++) {
+    if (i !== y) {
+      positions.push({ x, y: i });
+    }
+  }
+  // Add horizontal line
+  for (let i = 0; i < 8; i++) {
+    if (i !== x) {
+      positions.push({ x: i, y });
+    }
+  }
+  // Add center
+  positions.push({ x, y });
+  return positions;
 };
 
 const LaserSceneEffect = (
@@ -351,6 +378,10 @@ export const TeleportModifier = (
   });
 };
 
+const TeleportAffectedArea = (x: number, y: number) => {
+  return [{ x, y }];
+};
+
 export class HealData extends Struct({}) {}
 
 export class HealSpellCast
@@ -409,6 +440,7 @@ export const mageSpells: ISpell<any>[] = [
     spellCast: LightningBoldSpellCast,
     cast: LightningBoldCast,
     sceneEffect: LightningBoldSceneEffect,
+    affectedArea: LightningBoldAffectedArea,
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('LightningBold').hash(),
@@ -428,6 +460,7 @@ export const mageSpells: ISpell<any>[] = [
     spellCast: FireBallSpellCast,
     cast: FireBallCast,
     sceneEffect: FireBallSceneEffect,
+    affectedArea: FireBallAffectedArea,
     target: 'enemy',
     defaultValue: {
       spellId: CircuitString.fromString('FireBall').hash(),
@@ -446,6 +479,7 @@ export const mageSpells: ISpell<any>[] = [
     modifier: TeleportModifier,
     spellCast: TeleportSpellCast,
     cast: TeleportCast,
+    affectedArea: TeleportAffectedArea,
     target: 'ally',
     priority: 1,
     defaultValue: {
@@ -486,6 +520,7 @@ export const mageSpells: ISpell<any>[] = [
     cast: LaserCast,
     target: 'enemy',
     sceneEffect: LaserSceneEffect,
+    affectedArea: LaserAffectedArea,
     defaultValue: {
       spellId: CircuitString.fromString('Laser').hash(),
       cooldown: Int64.from(2),

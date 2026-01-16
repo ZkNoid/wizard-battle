@@ -1,12 +1,24 @@
-import { Field, Int64, Poseidon, Provable, Struct, UInt64 } from 'o1js';
+import {
+  Field,
+  Int64,
+  Poseidon,
+  PrivateKey,
+  Provable,
+  Struct,
+  UInt64,
+} from 'o1js';
 import { Effect, type SpellCast } from './structs';
 import { allSpells } from './spells';
 import { allEffectsInfo } from './effects/effects';
 import { State } from './state';
 import { type IUserActions, type ITrustedState } from '../types/gameplay.types';
 import { type IUserAction } from '../types/gameplay.types';
+import Client from 'mina-signer';
 
 const CALCULATION_PRECISION = 100;
+const minaClient = new Client({
+  network: 'testnet',
+});
 
 /**
  * @title ZK-Provable Game State Manager
@@ -163,6 +175,7 @@ export class Stater extends Struct({
       map: selectedState.map,
       turnId: selectedState.turnId,
       randomSeed: selectedState.randomSeed,
+      signingKey: selectedState.signingKey,
     });
 
     const selectedPublicState = Provable.if(
@@ -200,7 +213,7 @@ export class Stater extends Struct({
 
   applyOnEndEffects() {
     for (const effect of this.state.onEndEffects) {
-      this.applyEffect(this.state, effect);
+      this.applyOnEndEffect(this.state, effect);
     }
   }
 
@@ -220,7 +233,10 @@ export class Stater extends Struct({
     console.log('apply', spellCasts);
     // Derive random seed form all [spellCast, turnId, randomSeed]
     // ToDo: Include actual spellCast data
-    const randomSeed = Poseidon.hash([this.state.randomSeed]);
+    let randomSeed = Poseidon.hash([this.state.randomSeed]);
+    spellCasts.forEach((spell) => {
+      randomSeed = Poseidon.hash([randomSeed, spell.hash()]);
+    });
     this.state.randomSeed = randomSeed;
 
     // Apply spells
@@ -385,26 +401,19 @@ export class Stater extends Struct({
   ): ITrustedState {
     const result = this.applyActions(userActions, opponentState);
 
-    // Use crypto.randomUUID() for truly unique state commits
-    // This prevents the same stateCommit issue when testing with multiple tabs
-    const uniqueStateCommit =
-      typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID().replace(/-/g, '') // Remove dashes for cleaner format
-        : `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`; // Fallback for non-browser environments
-
-    console.log(
-      `🔐 Generated unique stateCommit for player ${playerId}: ${uniqueStateCommit}`
-    );
-
+    const stateHash = this.state.hash();
     return {
       playerId,
-      stateCommit: uniqueStateCommit,
+      stateCommit: stateHash.toString(),
       publicState: {
         playerId,
         socketId: '',
         fields: JSON.stringify(State.toJSON(result)),
       },
-      signature: 'TODO_IMPLEMENT_SIGNATURE', // Implement actual signing
+      signature: minaClient.signFields(
+        [stateHash.toBigInt()],
+        this.state.signingKey.toString()
+      ),
     };
   }
 }

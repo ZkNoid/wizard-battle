@@ -32,6 +32,8 @@ export interface ISpell<T> {
     gameEmitter: any,
     type: 'user' | 'enemy'
   ) => (() => void) | void;
+  /** Returns the positions affected by this spell centered at (x, y) */
+  affectedArea?: (x: number, y: number) => { x: number; y: number }[];
   priority?: number;
   defaultValue: SpellStats;
   /** Companion spell ID that is cast on self alongside the main spell */

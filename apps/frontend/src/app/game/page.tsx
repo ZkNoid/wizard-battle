@@ -53,6 +53,12 @@ export default function GamePage() {
     spellCastDone: false,
   });
   const [preparedActions, setPreparedActions] = useState<IUserAction[]>([]);
+  const [highlightedAllyTiles, setHighlightedAllyTiles] = useState<number[]>(
+    []
+  );
+  const [highlightedEnemyTiles, setHighlightedEnemyTiles] = useState<number[]>(
+    []
+  );
 
   // Store hooks
   const { stater, opponentState, gamePhaseManager, setActionSend, actionSend } =
@@ -94,6 +100,87 @@ export default function GamePage() {
     const y = Math.floor(index / GRID_WIDTH);
     return { x, y };
   }, []);
+
+  const coordinatesToIndex = useCallback((x: number, y: number) => {
+    return y * GRID_WIDTH + x;
+  }, []);
+
+  // Tile hover handler for spell affected area highlighting
+  const handleTileMouseEnter = useCallback(
+    (index: number, isEnemy: boolean) => {
+      if (!pickedSpellId) {
+        // Clear highlights when no spell is picked
+        if (isEnemy) {
+          setHighlightedEnemyTiles([]);
+        } else {
+          setHighlightedAllyTiles([]);
+        }
+        return;
+      }
+
+      const spell = allSpells.find(
+        (s) => s.id.toString() === pickedSpellId.toString()
+      );
+
+      if (!spell || !spell.affectedArea) {
+        if (isEnemy) {
+          setHighlightedEnemyTiles([]);
+        } else {
+          setHighlightedAllyTiles([]);
+        }
+        return;
+      }
+
+      // Check if spell target matches the map being hovered
+      const isValidTarget =
+        (spell.target === 'enemy' && isEnemy) ||
+        (spell.target === 'ally' && !isEnemy);
+
+      if (!isValidTarget) {
+        if (isEnemy) {
+          setHighlightedEnemyTiles([]);
+        } else {
+          setHighlightedAllyTiles([]);
+        }
+        return;
+      }
+
+      const { x, y } = indexToCoordinates(index);
+      const affectedPositions = spell.affectedArea(x, y);
+
+      // Convert positions to indices, filtering out-of-bounds
+      const indices = affectedPositions
+        .filter(
+          (pos) =>
+            pos.x >= 0 &&
+            pos.x < GRID_WIDTH &&
+            pos.y >= 0 &&
+            pos.y < GRID_HEIGHT
+        )
+        .map((pos) => coordinatesToIndex(pos.x, pos.y));
+
+      if (isEnemy) {
+        setHighlightedEnemyTiles(indices);
+      } else {
+        setHighlightedAllyTiles(indices);
+      }
+    },
+    [pickedSpellId, indexToCoordinates, coordinatesToIndex]
+  );
+
+  const handleAllyTileMouseEnter = useCallback(
+    (index: number) => {
+      handleTileMouseEnter(index, false);
+    },
+    [handleTileMouseEnter]
+  );
+
+  const handleEnemyTileMouseEnter = useCallback(
+    (index: number) => {
+      handleTileMouseEnter(index, true);
+    },
+    [handleTileMouseEnter]
+  );
 
   // Spell casting logic
   const createUserAction = useCallback(
@@ -342,6 +429,14 @@ export default function GamePage() {
     }
   }, [gamePhaseManager?.currentPhase]);
 
+  // Clear highlights when spell selection changes
+  useEffect(() => {
+    if (!pickedSpellId) {
+      setHighlightedAllyTiles([]);
+      setHighlightedEnemyTiles([]);
+    }
+  }, [pickedSpellId]);
+
   useEffect(() => {
     staterRef.current = stater;
   }, [stater]);
@@ -473,6 +568,9 @@ export default function GamePage() {
           tileSize={TILE_SIZE}
           tilemap={stater?.state?.map.map((tile) => +tile)}
           onTileClick={handleTilemapClick}
+          onTileMouseEnter={handleAllyTileMouseEnter}
+          highlightedTiles={highlightedAllyTiles}
+          defaultHighlight={{ color: 'rgba(255, 100, 100, 0.5)' }}
         />
         <EntityOverlay
           entities={entities.filter((entity) => entity.id !== 'enemy')}
@@ -499,6 +597,9 @@ export default function GamePage() {
           tileSize={TILE_SIZE}
           tilemap={opponentState?.map.map((tile) => +tile)}
           onTileClick={handleTilemapClickEnemy}
+          onTileMouseEnter={handleEnemyTileMouseEnter}
+          highlightedTiles={highlightedEnemyTiles}
+          defaultHighlight={{ color: 'rgba(255, 100, 100, 0.5)' }}
         />
         <EntityOverlay
           entities={
