@@ -17,11 +17,16 @@ jobs:
         with:
           node-version: '23'
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
       - name: Install dependencies
-        run: npm install
+        run: pnpm install
 
       - name: Run build
-        run: npm run turbo run build
+        run: pnpm turbo run build
   deploy:
     needs: test-build
     runs-on: ubuntu-latest
