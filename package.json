@@ -1,6 +1,7 @@
 {
   "dependencies": {
-    "@nestjs/mapped-types": "*"
+    "@nestjs/mapped-types": "*",
+    "mina-signer": "^3.1.0"
   },
   "name": "wizard-battle",
   "private": true,
