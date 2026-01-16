@@ -34,6 +34,8 @@ jobs:
           WEBSOCKET_URL=${{ secrets.WEBSOCKET_URL }}
           SPELL_CAST_TIMEOUT=${{ secrets.SPELL_CAST_TIMEOUT }}
           EOT
+          echo "Created .env file with secure variables"
+          cat .env
 
       - name: Run build
         run: pnpm turbo run build
