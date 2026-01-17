@@ -1,6 +1,6 @@
 'use client';
 
-import { LOCATIONS } from '@/lib/constants/location';
+import { LOCATIONS } from '@/lib/constants/expedition';
 import { useEffect, useState } from 'react';
 import { SelectableImage } from '@/components/shared/SelectableImage';
 

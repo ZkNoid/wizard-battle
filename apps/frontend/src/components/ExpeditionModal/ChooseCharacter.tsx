@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { allWizards, type Wizard } from '../../../../common/wizards';
 import { Button } from '../shared/Button';
+import WizardImageMini from './components/WizardImageMini';
 
 type Duration = '1hour' | '3hour' | '24hour';
 
@@ -62,19 +63,8 @@ export default function ChooseCharacter() {
             </button>
 
             {/* Wizard Image */}
-            <div className="size-35 flex-shrink-0">
-              <Image
-                src={getWizardImage(currentWizard)}
-                width={120}
-                height={120}
-                alt={currentWizard.name}
-                style={{ objectFit: 'contain', pointerEvents: 'none' }}
-                draggable={false}
-                className="size-full"
-                quality={100}
-                unoptimized={true}
-              />
-            </div>
+
+            <WizardImageMini wizard={currentWizard} />
 
             {/* Right Arrow Button */}
             <button
