@@ -9,7 +9,7 @@ export default function ExpeditionRewards({
 }) {
   return (
     <Button variant="lightGray" className="h-20 w-full">
-      <span className="flex w-full items-center gap-2 px-4">
+      <span className="flex w-full items-center gap-2 px-4 py-2">
         <Image
           src="/icons/gold-coin.png"
           width={16}
@@ -18,22 +18,19 @@ export default function ExpeditionRewards({
           className="size-6 object-contain object-center"
         />
         <span>Rewards: </span>
-        <span className="flex flex-row gap-2">
+        <span className="my-1 flex flex-row gap-2">
           {rewards.map((reward) => (
             <div
               key={reward.id}
               className="relative flex flex-col items-center gap-2 bg-gray-400/50 p-4"
             >
-              <div className="flex h-6 w-6 items-center justify-center">
+              <div className="mb-1 flex h-6 w-6 items-center justify-center">
                 <img
                   src={`/items/${reward.image}`}
                   alt={reward.name}
                   className="h-full w-full object-cover"
                 />
               </div>
-              <span className="font-pixel text-main-gray absolute bottom-1 right-1 px-1 text-xs">
-                {reward.amount}
-              </span>
             </div>
           ))}
         </span>

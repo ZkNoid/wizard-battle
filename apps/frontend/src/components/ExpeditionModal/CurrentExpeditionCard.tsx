@@ -19,11 +19,8 @@ export default function CurrentExpeditionCard({
   expedition,
 }: CurrentExpeditionCardProps) {
   return (
-    <div className="relative border-8 border-black bg-[#d4d4dc] p-4">
-      {/* Outer border styling */}
-      <div className="pointer-events-none absolute inset-0 border-4 border-white"></div>
-
-      <div className="flex gap-4">
+    <div className="relative p-4">
+      <div className="max-w-170 relative z-[1] flex gap-4 p-5">
         {/* Left side - Character */}
         <div className="flex flex-col gap-3">
           {/* Character Avatar */}
@@ -61,7 +58,7 @@ export default function CurrentExpeditionCard({
         </div>
       </div>
 
-      {/* <ExpeditionCardBg className="absolute bottom-0 left-0" /> */}
+      <ExpeditionCardBg className="pointer-events-none absolute inset-0 -z-[1] size-full" />
     </div>
   );
 }
