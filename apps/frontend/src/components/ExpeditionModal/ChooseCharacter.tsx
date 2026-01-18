@@ -12,19 +12,6 @@ export default function ChooseCharacter() {
   const [currentWizard, setCurrentWizard] = useState<Wizard>(allWizards[0]!);
   const [selectedDuration, setSelectedDuration] = useState<Duration>('1hour');
 
-  const getWizardImage = (wizard: Wizard) => {
-    switch (wizard.name) {
-      case 'Wizard':
-        return '/inventory/carousel/mage.png';
-      case 'Archer':
-        return '/inventory/carousel/archer.png';
-      case 'Phantom Duelist':
-        return '/inventory/carousel/warrior.png';
-      default:
-        return '/inventory/carousel/mage.png';
-    }
-  };
-
   const handlePrevWizard = () => {
     const currentIndex = allWizards.findIndex((w) => w.id === currentWizard.id);
     const prevIndex =
@@ -47,7 +34,7 @@ export default function ChooseCharacter() {
       <div className="flex w-full flex-row justify-center gap-10">
         <div className="flex w-[50%] items-center justify-center">
           {/* Hero Carousel */}
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-1">
             {/* Left Arrow Button */}
             <button
               onClick={handlePrevWizard}
@@ -55,10 +42,10 @@ export default function ChooseCharacter() {
             >
               <Image
                 src="/inventory/arrow-left.png"
-                width={48}
-                height={64}
+                width={80}
+                height={106}
                 alt="previous-wizard"
-                className="h-16 w-20 object-contain object-center"
+                className="h-24 w-32 object-contain object-center"
               />
             </button>
 
@@ -73,10 +60,10 @@ export default function ChooseCharacter() {
             >
               <Image
                 src="/inventory/arrow-right.png"
-                width={48}
-                height={64}
+                width={80}
+                height={106}
                 alt="next-wizard"
-                className="h-16 w-20 object-contain object-center"
+                className="h-24 w-32 object-contain object-center"
               />
             </button>
           </div>

@@ -26,6 +26,7 @@ export default function ChooseLocation({
             key={location.id}
             src={location.image}
             alt={location.name}
+            name={location.name}
             isSelected={selectedLocation === location.id}
             onClick={() => setSelectedLocation(location.id)}
           />

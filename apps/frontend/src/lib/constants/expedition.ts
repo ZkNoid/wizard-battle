@@ -6,22 +6,22 @@ import { ALL_ITEMS } from './items';
 export const LOCATIONS: ILocation[] = [
   {
     id: 1,
-    name: 'River',
+    name: 'Serpentwater Basin',
     image: '/locations/river.png',
   },
   {
     id: 2,
-    name: 'Mountain',
+    name: 'Mount Avalon',
     image: '/locations/mountain.png',
   },
   {
     id: 3,
-    name: 'Forest',
+    name: 'Whisperwood Grove',
     image: '/locations/forest.png',
   },
   {
     id: 4,
-    name: 'Hills',
+    name: 'Blackfin Hollow',
     image: '/locations/hills.png',
   },
 ];

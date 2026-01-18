@@ -14,6 +14,7 @@ export interface SelectableImageProps {
   height?: number;
   className?: string;
   imageClassName?: string;
+  name?: string;
 }
 
 export function SelectableImage({
@@ -25,6 +26,7 @@ export function SelectableImage({
   height = 100,
   className,
   imageClassName,
+  name,
 }: SelectableImageProps) {
   return (
     <div
@@ -48,6 +50,20 @@ export function SelectableImage({
         <ActiveImgBorder className="pointer-events-none absolute inset-0 h-40 w-40" />
       ) : (
         <DefaultImgBorder className="pointer-events-none absolute inset-0 h-40 w-40" />
+      )}
+      {isSelected && name && (
+        <div
+          className="pointer-events-none absolute bottom-0 left-0 right-0 py-1 text-center font-pixel text-sm text-black"
+          style={{
+            backgroundColor: '#5B7AC4',
+            clipPath:
+              'polygon(0% 0%, 100% 0%, 100% 75%, 95% 85%, 85% 100%, 15% 100%, 5% 85%, 0% 75%)',
+          }}
+        >
+          <span className="font-pixel text-main-gray text-sm">
+            {name}
+          </span>
+        </div>
       )}
     </div>
   );
