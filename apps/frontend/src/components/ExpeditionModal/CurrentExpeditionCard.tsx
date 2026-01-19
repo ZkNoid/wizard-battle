@@ -20,39 +20,43 @@ export default function CurrentExpeditionCard({
 }: CurrentExpeditionCardProps) {
   return (
     <div className="relative p-4">
-      <div className="max-w-170 relative z-[1] flex gap-4 p-5">
-        {/* Left side - Character */}
-        <div className="flex flex-col gap-3">
-          {/* Character Avatar */}
-          <WizardImageMini
-            wizard={{
-              id: expedition.characterId,
-              name: expedition.characterRole,
-              defaultHealth: 100,
-              defaultState: () => State.default(),
-            }}
-          />
-
-          {/* Character Role */}
-          <WizardRole role={expedition.characterRole} />
-        </div>
-
-        {/* Right side - Expedition Info */}
-        <div className="flex flex-1 flex-col gap-1">
-          {/* Top Row - Timer and Location */}
-          <div className="flex gap-1">
-            {/* Timer */}
-            <TimeToComplete timeToComplete={expedition.timeToComplete} />
-
-            {/* Location */}
-            <ExpeditionLocation location={expedition.locationName} />
+      <div className="max-w-185 relative z-[1] flex flex-col gap-3 p-5">
+        {/* First Row - Avatar and Info Column */}
+        <div className="flex gap-4">
+          {/* Column 1 - Character Avatar */}
+          <div className="w-1/4">
+            <WizardImageMini
+              wizard={{
+                id: expedition.characterId,
+                name: expedition.characterRole,
+                defaultHealth: 100,
+                defaultState: () => State.default(),
+              }}
+            />
           </div>
 
-          {/* Rewards Section */}
-          <ExpeditionRewards rewards={expedition.rewards} />
+          {/* Column 2 - Info Rows */}
+          <div className="flex flex-1 flex-col gap-2 mr-5">
+            {/* Row 1 - Timer and Location */}
+            <div className="flex gap-2">
+              <TimeToComplete timeToComplete={expedition.timeToComplete} />
+              <ExpeditionLocation location={expedition.locationName} />
+            </div>
+
+            {/* Row 2 - Rewards */}
+            <ExpeditionRewards rewards={expedition.rewards} />
+          </div>
+        </div>
+
+        {/* Second Row - Role and Interrupt Button */}
+        <div className="flex items-center gap-4">
+          {/* Character Role */}
+          <div className="w-1/4">
+            <WizardRole role={expedition.characterRole} />
+          </div>
 
           {/* Interrupt Button */}
-          <Button variant="blue" className="h-15 mt-1 w-full" isLong>
+          <Button variant="blue" className="h-15 flex-1 w-3/4" isLong>
             <span>Interrupt Expedition</span>
           </Button>
         </div>
