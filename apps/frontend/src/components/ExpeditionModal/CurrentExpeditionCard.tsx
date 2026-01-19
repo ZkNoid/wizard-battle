@@ -52,7 +52,7 @@ export default function CurrentExpeditionCard({
           <ExpeditionRewards rewards={expedition.rewards} />
 
           {/* Interrupt Button */}
-          <Button variant="blue" className="h-15 mt-1 w-full">
+          <Button variant="blue" className="h-15 mt-1 w-full" isLong>
             <span>Interrupt Expedition</span>
           </Button>
         </div>

@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { ButtonBackground } from './assets/button-background';
+import { LongButtonBackground } from './assets/long-button-background';
 
 export function Button({
   text,
@@ -11,6 +12,7 @@ export function Button({
   className,
   type = 'button',
   disabled,
+  isLong,
 }: {
   variant: 'gray' | 'blue' | 'lightGray' | 'green' | 'red';
   text?: string;
@@ -19,6 +21,7 @@ export function Button({
   className?: string;
   type?: 'button' | 'submit' | 'reset';
   disabled?: boolean;
+  isLong?: boolean;
 }) {
   return (
     <button
@@ -31,10 +34,7 @@ export function Button({
       )}
     >
       {children ? children : <span>{text}</span>}
-      <ButtonBackground
-        color={variant}
-        className="absolute inset-0 -z-[1] h-full w-full"
-      />
+      {isLong ? <LongButtonBackground color={variant} className="absolute inset-0 -z-[1] h-full w-full" /> : <ButtonBackground color={variant} className="absolute inset-0 -z-[1] h-full w-full" />}
     </button>
   );
 }

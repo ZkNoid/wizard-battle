@@ -5,7 +5,7 @@ interface ColorScheme {
   main: string;
 }
 
-const colorSchemes: Record<
+export const colorSchemes: Record<
   'gray' | 'blue' | 'lightGray' | 'green' | 'red',
   ColorScheme
 > = {

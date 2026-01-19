@@ -8,8 +8,8 @@ export default function ExpeditionRewards({
   rewards: IExpeditionReward[];
 }) {
   return (
-    <Button variant="lightGray" className="h-20 w-full">
-      <span className="flex w-full items-center gap-2 px-4 py-2">
+    <Button variant="lightGray" className="h-25 w-full" isLong>
+      <span className="flex w-full items-center gap-2 px-4 py-1">
         <Image
           src="/icons/gold-coin.png"
           width={16}

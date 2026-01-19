@@ -37,6 +37,7 @@ export default function NewExpeditionForm({
           variant="blue"
           onClick={() => {}}
           className="w-170 flex h-20 flex-row items-center justify-center gap-2.5"
+          isLong
         >
           <span className="font-pixel text-main-gray whitespace-nowrap text-lg font-bold">
             Start Expedition
