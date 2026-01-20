@@ -15,7 +15,7 @@ interface ChooseCharacterProps {
 
 export default function ChooseCharacter({ onSelectCharacter, onSelectTimePeriod }: ChooseCharacterProps) {
   const [currentWizard, setCurrentWizard] = useState<Wizard>(allWizards[0]!);
-  const [selectedDuration, setSelectedDuration] = useState<ExpeditionDuration>('1hour');
+  const [selectedDuration, setSelectedDuration] = useState<ExpeditionDuration | null>(null);
 
   const handlePrevWizard = () => {
     const currentIndex = allWizards.findIndex((w) => w.id === currentWizard.id);
@@ -31,12 +31,20 @@ export default function ChooseCharacter({ onSelectCharacter, onSelectTimePeriod 
     setCurrentWizard(allWizards[nextIndex]!);
   };
 
+  const handleSelectDuration = (duration: ExpeditionDuration) => {
+    if (duration === selectedDuration) {
+      setSelectedDuration(null);
+      return;
+    }
+    setSelectedDuration(duration);
+  };
+
   useEffect(() => {
     onSelectCharacter(currentWizard.id.toString());
   }, [currentWizard]);
 
   useEffect(() => {
-    onSelectTimePeriod(selectedDuration === '1hour' ? 1 : selectedDuration === '3hour' ? 3 : 24);
+    onSelectTimePeriod(selectedDuration ? selectedDuration === '1hour' ? 1 : selectedDuration === '3hour' ? 3 : 24 : null);
   }, [selectedDuration]);
 
   return (
@@ -92,19 +100,19 @@ export default function ChooseCharacter({ onSelectCharacter, onSelectTimePeriod 
               <Button
                 variant={selectedDuration === '1hour' ? 'blue' : 'gray'}
                 text="1 hour"
-                onClick={() => setSelectedDuration('1hour')}
+                onClick={() => handleSelectDuration('1hour')}
                 className="px-6 py-1 text-xs min-w-28"
               />
               <Button
                 variant={selectedDuration === '3hour' ? 'blue' : 'gray'}
                 text="3 hour"
-                onClick={() => setSelectedDuration('3hour')}
+                onClick={() => handleSelectDuration('3hour')}
                 className="px-6 py-1 text-xs min-w-28"
               />
               <Button
                 variant={selectedDuration === '24hour' ? 'blue' : 'gray'}
                 text="24 hour"
-                onClick={() => setSelectedDuration('24hour')}
+                onClick={() => handleSelectDuration('24hour')}
                 className="px-6 py-4 text-sm min-w-28"
               />
             </div>

@@ -11,6 +11,15 @@ export default function ChooseLocation({
 }) {
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
 
+  const handleSelectLocation = (location: number) => {
+    if (location === selectedLocation) {
+      setSelectedLocation(null);
+      
+      return;
+    }
+    setSelectedLocation(location);
+  };
+
   useEffect(() => {
     onSelectLocation(selectedLocation);
   }, [selectedLocation]);
@@ -28,7 +37,7 @@ export default function ChooseLocation({
             alt={location.name}
             name={location.name}
             isSelected={selectedLocation === location.id}
-            onClick={() => setSelectedLocation(location.id)}
+            onClick={() => handleSelectLocation(location.id)}
             width={140}
             height={140}
           />
