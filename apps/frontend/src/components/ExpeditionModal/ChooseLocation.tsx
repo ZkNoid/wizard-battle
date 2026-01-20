@@ -16,11 +16,11 @@ export default function ChooseLocation({
   }, [selectedLocation]);
 
   return (
-    <div className="mt-8 flex flex-col gap-2.5">
-      <span className="font-pixel text-main-gray text-center text-2xl font-bold">
+    <div className="mt-4 flex flex-col gap-2.5">
+      <span className="font-pixel text-main-gray text-center text-xl font-bold">
         Choose location
       </span>
-      <div className="flex flex-row justify-center gap-10">
+      <div className="flex flex-row justify-center gap-3 flex-wrap">
         {LOCATIONS.map((location) => (
           <SelectableImage
             key={location.id}
@@ -29,6 +29,8 @@ export default function ChooseLocation({
             name={location.name}
             isSelected={selectedLocation === location.id}
             onClick={() => setSelectedLocation(location.id)}
+            width={140}
+            height={140}
           />
         ))}
       </div>

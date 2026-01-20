@@ -31,15 +31,21 @@ export function SelectableImage({
   return (
     <div
       onClick={onClick}
-      className={cn('relative h-40 w-40 cursor-pointer', className)}
+      className={cn('relative cursor-pointer', className)}
+      style={{
+        width: `${width}px`,
+        height: `${height}px`,
+      }}
     >
       <Image
         src={src}
         alt={alt}
         width={width}
         height={height}
-        className={cn('size-40 object-contain object-center', imageClassName)}
+        className={cn('object-contain object-center', imageClassName)}
         style={{
+          width: `${width}px`,
+          height: `${height}px`,
           clipPath:
             'polygon(8% 0%, 92% 0%, 96% 4%, 100% 8%, 100% 92%, 96% 96%, 92% 100%, 8% 100%, 4% 96%, 0% 92%, 0% 8%, 4% 4%)',
         }}
@@ -47,15 +53,21 @@ export function SelectableImage({
         quality={100}
       />
       {isSelected ? (
-        <ActiveImgBorder className="pointer-events-none absolute inset-0 h-40 w-40" />
+        <ActiveImgBorder 
+          className="pointer-events-none absolute inset-0 h-full w-full"
+        />
       ) : (
-        <DefaultImgBorder className="pointer-events-none absolute inset-0 h-40 w-40" />
+        <DefaultImgBorder 
+          className="pointer-events-none absolute inset-0 h-full w-full"
+        />
       )}
       {isSelected && name && (
         <div
-          className="pointer-events-none absolute bottom-0 left-0 right-0 py-1 text-center font-pixel text-sm text-black h-12"
+          className="pointer-events-none absolute bottom-0 left-0 right-0 py-1 text-center font-pixel text-xs text-black"
           style={{
             backgroundColor: '#5B7AC4',
+            height: `${height * 0.35}px`,
+            minHeight: '24px',
             clipPath:
               'polygon(0% 0%, 100% 0%, 100% 75%, 95% 85%, 85% 100%, 15% 100%, 5% 85%, 0% 75%)',
           }}

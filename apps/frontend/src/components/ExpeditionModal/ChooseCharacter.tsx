@@ -1,16 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { allWizards, type Wizard } from '../../../../common/wizards';
 import { Button } from '../shared/Button';
 import WizardImageMini from './components/WizardImageMini';
+import type { Field } from 'o1js';
+import type { ExpeditionDuration, ExpeditionTimePeriod } from '@/lib/types/Expedition';
 
-type Duration = '1hour' | '3hour' | '24hour';
+interface ChooseCharacterProps {
+  onSelectCharacter: (character: Field | string | null) => void;
+  onSelectTimePeriod: (timePeriod: ExpeditionTimePeriod | null) => void;
+}
 
-export default function ChooseCharacter() {
+export default function ChooseCharacter({ onSelectCharacter, onSelectTimePeriod }: ChooseCharacterProps) {
   const [currentWizard, setCurrentWizard] = useState<Wizard>(allWizards[0]!);
-  const [selectedDuration, setSelectedDuration] = useState<Duration>('1hour');
+  const [selectedDuration, setSelectedDuration] = useState<ExpeditionDuration>('1hour');
 
   const handlePrevWizard = () => {
     const currentIndex = allWizards.findIndex((w) => w.id === currentWizard.id);
@@ -26,26 +31,34 @@ export default function ChooseCharacter() {
     setCurrentWizard(allWizards[nextIndex]!);
   };
 
+  useEffect(() => {
+    onSelectCharacter(currentWizard.id.toString());
+  }, [currentWizard]);
+
+  useEffect(() => {
+    onSelectTimePeriod(selectedDuration === '1hour' ? 1 : selectedDuration === '3hour' ? 3 : 24);
+  }, [selectedDuration]);
+
   return (
-    <div className="mx-8 mt-5 flex flex-col gap-2.5">
-      <span className="font-pixel text-main-gray text-center text-2xl font-bold">
+    <div className="mx-0 mt-5 flex flex-col gap-2.5">
+      <span className="font-pixel text-main-gray text-center text-xl font-bold">
         Choose Character & Duration
       </span>
-      <div className="flex w-full flex-row justify-center gap-10">
-        <div className="flex w-[50%] items-center justify-center">
+      <div className="flex w-full flex-row justify-center gap-4">
+        <div className="flex items-center justify-center">
           {/* Hero Carousel */}
           <div className="flex items-center gap-1">
             {/* Left Arrow Button */}
             <button
               onClick={handlePrevWizard}
-              className="transition-transform duration-300 hover:scale-110"
+              className="transition-transform duration-300 hover:scale-110 flex-shrink-0"
             >
               <Image
                 src="/inventory/arrow-left.png"
-                width={80}
-                height={106}
+                width={60}
+                height={80}
                 alt="previous-wizard"
-                className="h-24 w-32 object-contain object-center"
+                className="h-10 w-8 object-contain object-center"
               />
             </button>
 
@@ -56,43 +69,43 @@ export default function ChooseCharacter() {
             {/* Right Arrow Button */}
             <button
               onClick={handleNextWizard}
-              className="transition-transform duration-300 hover:scale-110"
+              className="transition-transform duration-300 hover:scale-110 flex-shrink-0"
             >
               <Image
                 src="/inventory/arrow-right.png"
-                width={80}
-                height={106}
+                width={60}
+                height={80}
                 alt="next-wizard"
-                className="h-24 w-32 object-contain object-center"
+                className="h-10 w-8 object-contain object-center"
               />
             </button>
           </div>
         </div>
-        <div className="w-full">
+        <div className="flex-1 max-w-md">
           <div className="flex flex-col gap-2.5">
-            <span className="font-pixel text-main-gray text-left text-sm font-thin">
+            <span className="font-pixel text-main-gray text-left text-xs font-thin">
               When a character is sent on an expedition, he is not available for
               other game actions until the expedition is over. You can interrupt
               expedition and claim less rewards if you want to return character.
             </span>
-            <div className="flex flex-row justify-around gap-2.5">
+            <div className="flex flex-row justify-around gap-1">
               <Button
                 variant={selectedDuration === '1hour' ? 'blue' : 'gray'}
                 text="1 hour"
                 onClick={() => setSelectedDuration('1hour')}
-                className="min-w-32 px-8 py-3"
+                className="px-6 py-1 text-xs min-w-28"
               />
               <Button
                 variant={selectedDuration === '3hour' ? 'blue' : 'gray'}
                 text="3 hour"
                 onClick={() => setSelectedDuration('3hour')}
-                className="min-w-32 px-8 py-3"
+                className="px-6 py-1 text-xs min-w-28"
               />
               <Button
                 variant={selectedDuration === '24hour' ? 'blue' : 'gray'}
                 text="24 hour"
                 onClick={() => setSelectedDuration('24hour')}
-                className="min-w-32 px-8 py-3"
+                className="px-6 py-4 text-sm min-w-28"
               />
             </div>
           </div>

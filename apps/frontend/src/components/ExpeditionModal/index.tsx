@@ -34,7 +34,7 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
       <div
-        className="w-200 h-265 relative"
+        className="w-160 h-215 relative"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex w-full flex-row justify-between gap-1 px-5">
@@ -53,7 +53,7 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
             <span className={textClassName}>Current Expeditions</span>
           </Button>
         </div>
-        <div className="h-250 relative z-10 -mt-8 w-full">
+        <div className="h-200 relative z-10 -mt-6 w-full">
           <div className="h-full w-full px-4 py-4">{getForm(activeTab)}</div>
           <ExpeditionsBg className="absolute inset-0 -z-10 size-full h-full w-full" />
         </div>

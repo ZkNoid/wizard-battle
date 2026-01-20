@@ -17,15 +17,15 @@ export default function WizardImageMini({ wizard }: { wizard: Wizard }) {
   };
 
   return (
-    <div className="size-40 flex-shrink-0">
+    <div className="w-40 h-40 flex-shrink-0">
       <Image
         src={getWizardImage(wizard)}
-        width={120}
-        height={120}
+        width={96}
+        height={96}
         alt={wizard.name}
         style={{ objectFit: 'contain', pointerEvents: 'none' }}
         draggable={false}
-        className="size-full"
+        className="w-full h-full"
         quality={100}
         unoptimized={true}
       />

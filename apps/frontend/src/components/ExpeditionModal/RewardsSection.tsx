@@ -17,11 +17,11 @@ const MOCK_REWARDS = getRandomRewards(5);
 
 export default function RewardsSection() {
   return (
-    <div className="mt-8 flex flex-col gap-2.5">
-      <span className="font-pixel text-main-gray text-center text-2xl font-bold">
+    <div className="mt-4 flex flex-col gap-2.5">
+      <span className="font-pixel text-main-gray text-center text-xl font-bold">
         Choose Character & Duration
       </span>
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-2">
         <span className="font-pixel text-main-gray w-110 text-center text-sm font-thin">
           Rewards you will receive when the expedition will end
         </span>
@@ -31,7 +31,7 @@ export default function RewardsSection() {
               key={reward.id}
               className="relative flex flex-col items-center gap-2 bg-gray-400 p-4"
             >
-              <div className="flex h-16 w-16 items-center justify-center">
+              <div className="flex h-12 w-12 items-center justify-center">
                 <img
                   src={`/items/${reward.image}`}
                   alt={reward.title}

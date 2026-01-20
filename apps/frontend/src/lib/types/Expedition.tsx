@@ -30,3 +30,7 @@ export interface IExpeditionReward {
   image: string;
   amount: number;
 }
+
+
+export type ExpeditionDuration = '1hour' | '3hour' | '24hour';
+export type ExpeditionTimePeriod = 1 | 3 | 24;
