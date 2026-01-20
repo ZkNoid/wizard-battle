@@ -53,7 +53,7 @@ export function SelectableImage({
       )}
       {isSelected && name && (
         <div
-          className="pointer-events-none absolute bottom-0 left-0 right-0 py-1 text-center font-pixel text-sm text-black"
+          className="pointer-events-none absolute bottom-0 left-0 right-0 py-1 text-center font-pixel text-sm text-black h-12"
           style={{
             backgroundColor: '#5B7AC4',
             clipPath:
