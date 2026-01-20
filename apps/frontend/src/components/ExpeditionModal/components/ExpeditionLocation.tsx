@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 export default function ExpeditionLocation({ location }: { location: string }) {
   return (
-    <Button variant="lightGray" className="h-20 w-full" isLong>
+    <Button variant="lightGray" className="h-18 w-115" isLong>
       <span className="flex w-full items-center gap-2 px-4">
         <Image
           src="/icons/pin.png"

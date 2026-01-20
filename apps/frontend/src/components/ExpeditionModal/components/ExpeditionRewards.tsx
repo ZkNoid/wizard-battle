@@ -8,7 +8,7 @@ export default function ExpeditionRewards({
   rewards: IExpeditionReward[];
 }) {
   return (
-    <Button variant="lightGray" className="h-25 w-full" isLong>
+    <Button variant="lightGray" className="h-15 w-full" isLong>
       <span className="flex w-full items-center gap-2 px-4 py-1">
         <Image
           src="/icons/gold-coin.png"
@@ -22,9 +22,9 @@ export default function ExpeditionRewards({
           {rewards.map((reward) => (
             <div
               key={reward.id}
-              className="relative flex flex-col items-center gap-2 bg-gray-400/50 p-4"
+              className="relative flex flex-col items-center gap-1 bg-gray-400/50 p-1.5"
             >
-              <div className="mb-1 flex h-6 w-6 items-center justify-center">
+              <div className="flex h-6 w-6 items-center justify-center">
                 <img
                   src={`/items/${reward.image}`}
                   alt={reward.name}

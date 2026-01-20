@@ -15,8 +15,8 @@ export default function CurrentExpeditionsForm({
       <ExpeditionModalTitle title="Current Expeditions" onClose={onClose} />
 
       {/* Scrollable Expeditions List */}
-      <div className="flex-1 overflow-y-auto pb-10 pr-2">
-        <div className="flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto pb-2 pr-2">
+        <div className="flex flex-col gap-2">
           {CURRENT_EXPEDITIONS.length > 0 ? (
             CURRENT_EXPEDITIONS.map((expedition) => (
               <CurrentExpeditionCard

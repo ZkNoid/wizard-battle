@@ -18,7 +18,7 @@ export default function TimeToComplete({
   timeToComplete: number;
 }) {
   return (
-    <Button variant="lightGray" className="w-60 h-20">
+    <Button variant="lightGray" className="w-65 h-18">
       <span className="flex w-full items-center gap-2 px-4">
         <Image
           src="/icons/timer.png"

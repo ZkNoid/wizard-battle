@@ -19,12 +19,12 @@ export default function CurrentExpeditionCard({
   expedition,
 }: CurrentExpeditionCardProps) {
   return (
-    <div className="relative p-4">
-      <div className="max-w-185 relative z-[1] flex flex-col gap-3 p-5">
+    <div className="relative">
+      <div className="w-full relative z-[1] flex flex-col gap-2 p-3">
         {/* First Row - Avatar and Info Column */}
-        <div className="flex gap-4">
+        <div className="flex gap-2">
           {/* Column 1 - Character Avatar */}
-          <div className="w-1/4">
+          <div className="w-36 h-36 flex-shrink-0">
             <WizardImageMini
               wizard={{
                 id: expedition.characterId,
@@ -36,9 +36,9 @@ export default function CurrentExpeditionCard({
           </div>
 
           {/* Column 2 - Info Rows */}
-          <div className="flex flex-1 flex-col gap-2 mr-5">
+          <div className="flex flex-1 flex-col gap-1 min-w-0 justify-between mb-1">
             {/* Row 1 - Timer and Location */}
-            <div className="flex gap-2">
+            <div className="flex gap-1">
               <TimeToComplete timeToComplete={expedition.timeToComplete} />
               <ExpeditionLocation location={expedition.locationName} />
             </div>
@@ -49,15 +49,15 @@ export default function CurrentExpeditionCard({
         </div>
 
         {/* Second Row - Role and Interrupt Button */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           {/* Character Role */}
-          <div className="w-1/4">
+          <div className="flex-shrink-0">
             <WizardRole role={expedition.characterRole} />
           </div>
 
           {/* Interrupt Button */}
-          <Button variant="blue" className="h-15 flex-1 w-3/4" isLong>
-            <span>Interrupt Expedition</span>
+          <Button variant="blue" className="h-15 flex-1 min-w-0" isLong>
+            <span className="truncate">Interrupt Expedition</span>
           </Button>
         </div>
       </div>
