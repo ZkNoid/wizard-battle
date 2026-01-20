@@ -13,10 +13,12 @@ import { ExpeditionCardBg } from './assets/expedition-card-bg';
 
 interface CurrentExpeditionCardProps {
   expedition: IExpedition;
+  onInterruptExpedition: () => void;
 }
 
 export default function CurrentExpeditionCard({
   expedition,
+  onInterruptExpedition,
 }: CurrentExpeditionCardProps) {
   return (
     <div className="relative">
@@ -56,7 +58,7 @@ export default function CurrentExpeditionCard({
           </div>
 
           {/* Interrupt Button */}
-          <Button variant="blue" className="h-15 flex-1 min-w-0" isLong>
+          <Button variant="blue" className="h-15 flex-1 min-w-0" isLong onClick={onInterruptExpedition}>
             <span className="truncate">Interrupt Expedition</span>
           </Button>
         </div>

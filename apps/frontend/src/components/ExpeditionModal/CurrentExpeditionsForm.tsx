@@ -1,15 +1,39 @@
 'use client';
 
+import { useState } from 'react';
 import { CURRENT_EXPEDITIONS } from '@/lib/constants/expedition';
 import CurrentExpeditionCard from './CurrentExpeditionCard';
 import Image from 'next/image';
 import ExpeditionModalTitle from './components/ExpeditionModalTitle';
+import ConfirmModal from '../shared/ConfirmModal';
 
 export default function CurrentExpeditionsForm({
   onClose,
 }: {
   onClose: () => void;
 }) {
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedExpeditionId, setSelectedExpeditionId] = useState<string | null>(null);
+
+  const onInterruptExpedition = (expeditionId: string) => {
+    setSelectedExpeditionId(expeditionId);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmInterrupt = () => {
+    if (selectedExpeditionId) {
+      console.log(`Interrupting expedition ${selectedExpeditionId}`);
+      // Здесь будет логика прерывания экспедиции
+    }
+    setShowConfirmModal(false);
+    setSelectedExpeditionId(null);
+  };
+
+  const handleCancelInterrupt = () => {
+    setShowConfirmModal(false);
+    setSelectedExpeditionId(null);
+  };
+
   return (
     <div className="flex h-full flex-col">
       <ExpeditionModalTitle title="Current Expeditions" onClose={onClose} />
@@ -22,6 +46,7 @@ export default function CurrentExpeditionsForm({
               <CurrentExpeditionCard
                 key={expedition.id}
                 expedition={expedition}
+                onInterruptExpedition={() => onInterruptExpedition(expedition.id)}
               />
             ))
           ) : (
@@ -33,6 +58,18 @@ export default function CurrentExpeditionsForm({
           )}
         </div>
       </div>
+
+      {/* Confirm Modal */}
+      {showConfirmModal && (
+        <ConfirmModal
+          title="Interrupt Expedition"
+          description="If you interrupt the expedition, you will receive only a part of the promised rewards. Are you sure you want to abort the expedition?"
+          onConfirm={handleConfirmInterrupt}
+          onCancel={handleCancelInterrupt}
+          confirmButtonText="Interrupt"
+          cancelButtonText="Cancel"
+        />
+      )}
     </div>
   );
 }
