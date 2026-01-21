@@ -1,4 +1,5 @@
 name: Agent-ready bug
+description: Report a bug with clear reproduction steps and acceptance criteria
 title: "[Bug] "
 labels: ["agent-bug"]
 body:
