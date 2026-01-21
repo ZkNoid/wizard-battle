@@ -25,7 +25,7 @@ export default function Matchmaking({
   playMode: PlayMode;
 }) {
   const router = useRouter();
-  const { socket, stater, setOpponentState, setGamePhaseManager } =
+  const { socket, stater, setOpponentState, setGamePhaseManager, setStater } =
     useUserInformationStore();
   const { setCurrentPhase } = useInGameStore();
 
@@ -63,7 +63,8 @@ export default function Matchmaking({
           opponentState,
           setOpponentState,
           setCurrentPhase,
-          onGameEnd
+          onGameEnd,
+          setStater
         )
       );
       router.push(`/game`);
