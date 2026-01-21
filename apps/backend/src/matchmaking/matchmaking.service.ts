@@ -238,7 +238,9 @@ export class MatchmakingService {
           // best-effort cleanup duplicate from Redis queue
           try {
             await this.redisClient.lRem('waiting:queue', 1, JSON.stringify(qp));
-          } catch {}
+          } catch (e) {
+            console.error('Error removing duplicate from queue:', e);
+          }
           continue;
         }
         seen.add(pid);
@@ -961,7 +963,9 @@ export class MatchmakingService {
             found = { roomId, match };
             break;
           }
-        } catch {}
+        } catch (e) {
+          console.error('Error parsing match during reconnect:', e);
+        }
       }
 
       if (!found) return; // Not in a match
@@ -1107,7 +1111,9 @@ export class MatchmakingService {
           if (parsed?.player?.playerId === player.playerId) {
             await this.redisClient.lRem('waiting:queue', 1, raw);
           }
-        } catch {}
+        } catch (e) {
+          console.error('Error parsing queue entry during dedup:', e);
+        }
       }
     } catch (err) {
       console.error('Failed to dedupe queue entries for player:', err);
@@ -1162,7 +1168,9 @@ export class MatchmakingService {
             );
             return roomId;
           }
-        } catch {}
+        } catch (e) {
+          console.error('Error parsing match during rejoin check:', e);
+        }
       }
     } catch (err) {
       console.error('Failed to check existing matches on join:', err);
@@ -1567,7 +1575,9 @@ export class MatchmakingService {
           // Remove game state and match so future joins don't reattach to the bot session
           try {
             await this.gameStateService.removeGameState(roomId);
-          } catch {}
+          } catch (e) {
+            console.error('Error removing game state during bot cleanup:', e);
+          }
           await this.redisClient.hDel('matches', roomId);
           console.log(
             `🗑️ Cleaned up bot match ${roomId} (botId=${botId}) after player left`

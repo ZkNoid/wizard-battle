@@ -512,7 +512,9 @@ export class BotService {
             const info = JSON.parse(action.spellCastInfo || '{}');
             targetX = parseInt(info?.position?.x?.magnitude ?? '0');
             targetY = parseInt(info?.position?.y?.magnitude ?? '0');
-          } catch {}
+          } catch (e) {
+            console.error('Error parsing spell cast info:', e);
+          }
 
           const distance = manhattan(preActionPos, { x: targetX, y: targetY });
 
@@ -552,7 +554,9 @@ export class BotService {
               botX = tx;
               botY = ty;
             }
-          } catch {}
+          } catch (e) {
+            console.error('Error parsing teleport info:', e);
+          }
         } else if (action.spellId === HEAL_ID) {
           // To make damage visible to clients/tests, skip immediate heal if bot took damage this round
           if (!damagedThisRound) {

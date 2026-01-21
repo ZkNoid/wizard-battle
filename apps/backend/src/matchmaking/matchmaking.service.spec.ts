@@ -191,7 +191,9 @@ describe('MatchmakingService', () => {
       } else {
         jest.runOnlyPendingTimers();
       }
-    } catch {}
+    } catch (e) {
+      console.error('Error running pending timers:', e);
+    }
     jest.useRealTimers();
   });
 
