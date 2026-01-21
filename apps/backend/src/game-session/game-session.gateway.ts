@@ -716,50 +716,58 @@ export class GameSessionGateway {
       `🔍 Processing death report: Player ${data.dead.playerId} in room ${data.roomId}`
     );
 
-    const winnerId = await this.gameStateService.markPlayerDead(
-      data.roomId,
-      data.dead.playerId
-    );
-
-    if (winnerId) {
-      // Game ended, announce winner
-      const gameEnd: IGameEnd = { winnerId };
-      console.log(
-        `📢 Broadcasting game end: ${winnerId} wins in room ${data.roomId}`
-      );
-
-      this.server.to(data.roomId).emit('gameEnd', gameEnd);
-      await this.gameStateService.publishToRoom(
+    try {
+      const winnerId = await this.gameStateService.markPlayerDead(
         data.roomId,
-        'gameEnd',
-        gameEnd
+        data.dead.playerId
       );
-      // Immediately destroy room resources when game ends
-      try {
-        // Use Redis transaction to ensure atomic cleanup
-        const multi = this.matchmakingService.redisClient.multi();
-        multi.hDel('matches', data.roomId);
-        multi.hDel('game_states', data.roomId);
 
-        const results = await multi.exec();
+      if (winnerId) {
+        // Game ended, announce winner
+        const gameEnd: IGameEnd = { winnerId };
         console.log(
-          `🗑️ Atomically removed match and game state for ${data.roomId}`
+          `📢 Broadcasting game end: ${winnerId} wins in room ${data.roomId}`
         );
 
-        await this.cleanupRoom(data.roomId, 'game_ended');
-        console.log(`🗑️ Destroyed room ${data.roomId} after game end`);
-      } catch (cleanupErr) {
-        console.error(
-          'Failed immediate cleanup after game end, marking for cleanup:',
-          cleanupErr
-        );
-        await this.gameStateService.markRoomForCleanup(
+        this.server.to(data.roomId).emit('gameEnd', gameEnd);
+        await this.gameStateService.publishToRoom(
           data.roomId,
-          'game_ended_fallback_mark'
+          'gameEnd',
+          gameEnd
         );
+        // Immediately destroy room resources when game ends
+        try {
+          // Use Redis transaction to ensure atomic cleanup
+          const multi = this.matchmakingService.redisClient.multi();
+          multi.hDel('matches', data.roomId);
+          multi.hDel('game_states', data.roomId);
+
+          const results = await multi.exec();
+          console.log(
+            `🗑️ Atomically removed match and game state for ${data.roomId}`
+          );
+
+          await this.cleanupRoom(data.roomId, 'game_ended');
+          console.log(`🗑️ Destroyed room ${data.roomId} after game end`);
+        } catch (cleanupErr) {
+          console.error(
+            'Failed immediate cleanup after game end, marking for cleanup:',
+            cleanupErr
+          );
+          await this.gameStateService.markRoomForCleanup(
+            data.roomId,
+            'game_ended_fallback_mark'
+          );
+        }
+      } else {
+        console.log(`🎮 Game continues in room ${data.roomId} - no winner yet`);
       }
-    } else {
-      console.log(`🎮 Game continues in room ${data.roomId} - no winner yet`);
+    } catch (error) {
+      console.error(
+        `❌ Error processing death report for player ${data.dead.playerId} in room ${data.roomId}:`,
+        error
+      );
+      // Don't throw - allow the game to continue even if death processing fails
     }
   }
 

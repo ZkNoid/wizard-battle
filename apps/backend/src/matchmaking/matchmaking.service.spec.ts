@@ -32,7 +32,15 @@ const mockRedisClient = {
   hDel: jest.fn(),
   hGet: jest.fn(),
   del: jest.fn(),
+  set: jest.fn().mockResolvedValue('OK'),
   quit: jest.fn(),
+  watch: jest.fn().mockResolvedValue('OK'),
+  unwatch: jest.fn().mockResolvedValue('OK'),
+  multi: jest.fn().mockReturnValue({
+    hSet: jest.fn().mockReturnThis(),
+    exec: jest.fn().mockResolvedValue([['OK']]),
+  }),
+  eval: jest.fn().mockResolvedValue(1),
 };
 
 // Mock the redis module before any imports
@@ -740,7 +748,7 @@ describe('MatchmakingService', () => {
       // Mock Redis error
       mockRedisClient.del.mockRejectedValue(new Error('Redis error'));
 
-      // Should not throw
+      // Should throw since the error is not caught in clearQueue
       await expect(service.clearQueue()).rejects.toThrow('Redis error');
     });
   });
@@ -758,7 +766,9 @@ describe('MatchmakingService', () => {
   describe('processMatchmaking (cron job)', () => {
     it('should be callable directly for testing', async () => {
       // Mock Redis responses for empty queue
+      mockRedisClient.set.mockResolvedValue('OK'); // Lock acquired
       mockRedisClient.lRange.mockResolvedValue([]);
+      mockRedisClient.del.mockResolvedValue(1); // Lock released
 
       // Call the private method directly for testing
       const processMatchmaking = (service as any).processMatchmaking.bind(
@@ -788,6 +798,7 @@ describe('MatchmakingService', () => {
       );
 
       // Mock Redis responses
+      mockRedisClient.set.mockResolvedValue('OK'); // Lock acquired
       mockRedisClient.lRange.mockResolvedValue([
         JSON.stringify({ player: player1, timestamp: Date.now() - 1000 }),
         JSON.stringify({ player: player2, timestamp: Date.now() }),
@@ -796,6 +807,7 @@ describe('MatchmakingService', () => {
       mockRedisClient.hGet.mockResolvedValue(null); // No duplicate match
       mockRedisClient.hSet.mockResolvedValue(1);
       mockRedisClient.lLen.mockResolvedValue(2);
+      mockRedisClient.del.mockResolvedValue(1); // Lock released
 
       // Call processMatchmaking directly
       const processMatchmaking = (service as any).processMatchmaking.bind(
@@ -813,6 +825,7 @@ describe('MatchmakingService', () => {
 
     it('should handle insufficient players gracefully', async () => {
       // Mock Redis responses for single player
+      mockRedisClient.set.mockResolvedValue('OK'); // Lock acquired
       mockRedisClient.lRange.mockResolvedValue([
         JSON.stringify({
           player: new TransformedPlayerSetup(
@@ -823,6 +836,7 @@ describe('MatchmakingService', () => {
           timestamp: Date.now(),
         }),
       ]);
+      mockRedisClient.del.mockResolvedValue(1); // Lock released
 
       const processMatchmaking = (service as any).processMatchmaking.bind(
         service

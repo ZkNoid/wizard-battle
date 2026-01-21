@@ -22,6 +22,13 @@ jest.mock('redis', () => ({
     subscribe: jest.fn(),
     unsubscribe: jest.fn(),
     quit: jest.fn(),
+    watch: jest.fn().mockResolvedValue('OK'),
+    unwatch: jest.fn().mockResolvedValue('OK'),
+    multi: jest.fn().mockReturnValue({
+      hSet: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue([]),
+    }),
+    eval: jest.fn().mockResolvedValue(1),
     duplicate: jest.fn(() => ({
       connect: jest.fn().mockResolvedValue(undefined),
       subscribe: jest.fn(),
@@ -44,6 +51,13 @@ jest.mock('../redis/redis.service', () => ({
       subscribe: jest.fn(),
       unsubscribe: jest.fn(),
       quit: jest.fn(),
+      watch: jest.fn().mockResolvedValue('OK'),
+      unwatch: jest.fn().mockResolvedValue('OK'),
+      multi: jest.fn().mockReturnValue({
+        hSet: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([]),
+      }),
+      eval: jest.fn().mockResolvedValue(1),
       duplicate: jest.fn(() => ({
         connect: jest.fn().mockResolvedValue(undefined),
         subscribe: jest.fn(),
@@ -61,12 +75,18 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
   let service: GameStateService;
   let mockRedisService: any;
   let mockRedisClient: any;
+  let multiMock: any;
 
   beforeEach(async () => {
-    // Mock Redis client
+    // Mock Redis client with transaction support
+    multiMock = {
+      hSet: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue([['OK']]),
+    };
+
     mockRedisClient = {
       hGet: jest.fn(),
-      hSet: jest.fn(),
+      hSet: jest.fn().mockResolvedValue('OK'),
       hDel: jest.fn(),
       del: jest.fn(),
       set: jest.fn().mockResolvedValue('OK'),
@@ -76,6 +96,10 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
       on: jest.fn(),
       quit: jest.fn(),
       connect: jest.fn().mockResolvedValue(undefined),
+      watch: jest.fn().mockResolvedValue('OK'),
+      unwatch: jest.fn().mockResolvedValue('OK'),
+      multi: jest.fn().mockReturnValue(multiMock),
+      eval: jest.fn().mockResolvedValue(1),
     };
 
     // Mock RedisService
@@ -127,7 +151,7 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
       expect(result).toBe('player2'); // Winner ID
 
       // Verify game status was set to finished
-      expect(mockRedisClient.hSet).toHaveBeenCalledWith(
+      expect(multiMock.hSet).toHaveBeenCalledWith(
         'game_states',
         roomId,
         expect.stringContaining('"status":"finished"')
@@ -192,7 +216,7 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
       expect(result).toBe('draw');
 
       // Verify game status was set to finished
-      expect(mockRedisClient.hSet).toHaveBeenCalledWith(
+      expect(multiMock.hSet).toHaveBeenCalledWith(
         'game_states',
         roomId,
         expect.stringContaining('"status":"finished"')
@@ -260,7 +284,7 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
       expect(result).toBeNull(); // Game continues
 
       // Verify game status remains active (not finished)
-      expect(mockRedisClient.hSet).toHaveBeenCalledWith(
+      expect(multiMock.hSet).toHaveBeenCalledWith(
         'game_states',
         roomId,
         expect.not.stringContaining('"status":"finished"')
@@ -431,7 +455,7 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
       await service.markPlayerDead(roomId, 'player1');
 
       // Verify the exact state that was persisted
-      const persistedState = JSON.parse(mockRedisClient.hSet.mock.calls[0][2]);
+      const persistedState = JSON.parse(multiMock.hSet.mock.calls[0][2]);
 
       expect(persistedState.players[0].isAlive).toBe(false); // player1 marked dead
       expect(persistedState.players[1].isAlive).toBe(true); // player2 still alive
@@ -453,7 +477,7 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
 
       await service.markPlayerDead(roomId, 'player1');
 
-      const persistedState = JSON.parse(mockRedisClient.hSet.mock.calls[0][2]);
+      const persistedState = JSON.parse(multiMock.hSet.mock.calls[0][2]);
 
       expect(persistedState.players[0].isAlive).toBe(false); // player1 marked dead
       expect(persistedState.players[1].isAlive).toBe(false); // player2 already dead
@@ -476,7 +500,7 @@ describe('GameStateService - markPlayerDead Winner/Loser Logic', () => {
 
       await service.markPlayerDead(roomId, 'player1');
 
-      const persistedState = JSON.parse(mockRedisClient.hSet.mock.calls[0][2]);
+      const persistedState = JSON.parse(multiMock.hSet.mock.calls[0][2]);
 
       expect(persistedState.players[0].isAlive).toBe(false); // player1 marked dead
       expect(persistedState.players[1].isAlive).toBe(true); // player2 still alive

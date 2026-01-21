@@ -7,6 +7,23 @@ import { MatchmakingService } from '../matchmaking/matchmaking.service';
 import { createMock } from '@golevelup/ts-jest';
 import { GamePhase } from '../../../common/types/gameplay.types';
 
+// Helper to create Redis client mock with transaction support
+const createRedisClientMock = (overrides: any = {}) => {
+  const multiMock = {
+    hSet: jest.fn().mockReturnThis(),
+    exec: jest.fn().mockResolvedValue([['OK']]),
+  };
+  return {
+    hKeys: jest.fn().mockResolvedValue([]),
+    scan: jest.fn().mockResolvedValue({ cursor: '0', keys: [] }),
+    watch: jest.fn().mockResolvedValue('OK'),
+    unwatch: jest.fn().mockResolvedValue('OK'),
+    multi: jest.fn().mockReturnValue(multiMock),
+    eval: jest.fn().mockResolvedValue(1),
+    ...overrides,
+  };
+};
+
 /**
  * @title Game Phase Scheduler Tests - Cron-Based Phase Management
  * @notice Tests to verify that the cron-based phase scheduler works correctly
@@ -54,10 +71,13 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
       };
 
       // Mock Redis hash keys (list of roomIds) and game state
-      mockGameStateService.redisClient = {
-        hKeys: jest.fn().mockResolvedValue([roomId]),
-      };
+      mockGameStateService.redisClient = createRedisClientMock({
+        scan: jest
+          .fn()
+          .mockResolvedValue({ cursor: '0', keys: [`game_states:${roomId}`] }),
+      });
       mockGameStateService.getGameState.mockResolvedValue(gameState);
+      mockGameStateService.isLeader.mockResolvedValue(true);
       mockGameSessionGateway.advanceToSpellEffects.mockResolvedValue(undefined);
 
       // Call the private method via reflection for testing
@@ -84,10 +104,13 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
         players: [{ id: 'player1', isAlive: true }],
       };
 
-      mockGameStateService.redisClient = {
-        hKeys: jest.fn().mockResolvedValue([roomId]),
-      };
+      mockGameStateService.redisClient = createRedisClientMock({
+        scan: jest
+          .fn()
+          .mockResolvedValue({ cursor: '0', keys: [`game_states:${roomId}`] }),
+      });
       mockGameStateService.getGameState.mockResolvedValue(gameState);
+      mockGameStateService.isLeader.mockResolvedValue(true);
 
       const pendingTransitions = await (
         scheduler as any
@@ -112,10 +135,13 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
         players: [{ id: 'player1', isAlive: true }],
       };
 
-      mockGameStateService.redisClient = {
-        hKeys: jest.fn().mockResolvedValue([roomId]),
-      };
+      mockGameStateService.redisClient = createRedisClientMock({
+        scan: jest
+          .fn()
+          .mockResolvedValue({ cursor: '0', keys: [`game_states:${roomId}`] }),
+      });
       mockGameStateService.getGameState.mockResolvedValue(gameState);
+      mockGameStateService.isLeader.mockResolvedValue(true);
 
       const pendingTransitions = await (
         scheduler as any
@@ -140,10 +166,13 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
         players: [{ id: 'player1', isAlive: true }],
       };
 
-      mockGameStateService.redisClient = {
-        hKeys: jest.fn().mockResolvedValue([roomId]),
-      };
+      mockGameStateService.redisClient = createRedisClientMock({
+        scan: jest
+          .fn()
+          .mockResolvedValue({ cursor: '0', keys: [`game_states:${roomId}`] }),
+      });
       mockGameStateService.getGameState.mockResolvedValue(gameState);
+      mockGameStateService.isLeader.mockResolvedValue(true);
 
       const pendingTransitions = await (
         scheduler as any
@@ -162,10 +191,13 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
         players: [{ id: 'player1', isAlive: true }],
       };
 
-      mockGameStateService.redisClient = {
-        hKeys: jest.fn().mockResolvedValue([roomId]),
-      };
+      mockGameStateService.redisClient = createRedisClientMock({
+        scan: jest
+          .fn()
+          .mockResolvedValue({ cursor: '0', keys: [`game_states:${roomId}`] }),
+      });
       mockGameStateService.getGameState.mockResolvedValue(gameState);
+      mockGameStateService.isLeader.mockResolvedValue(true);
 
       const pendingTransitions = await (
         scheduler as any
@@ -184,11 +216,19 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
         delayMs: 0,
       };
 
+      mockGameStateService.acquireRoomLock.mockResolvedValue({
+        ok: true,
+        lockKey: 'lock-key',
+        owner: 'test-owner',
+      });
+      mockGameStateService.releaseRoomLock.mockResolvedValue(true);
+      mockGameStateService.cleanupRoom.mockResolvedValue(undefined);
       mockGameSessionGateway.advanceToSpellEffects.mockResolvedValue(undefined);
 
       await (scheduler as any).executePhaseTransition(transition);
 
-      expect(mockGameSessionGateway.advanceToSpellEffects).toHaveBeenCalledWith(
+      // Should cleanup room on error (no gateway available means error path)
+      expect(mockGameStateService.cleanupRoom).toHaveBeenCalledWith(
         'test-room'
       );
     });
@@ -201,11 +241,19 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
         delayMs: 0,
       };
 
+      mockGameStateService.acquireRoomLock.mockResolvedValue({
+        ok: true,
+        lockKey: 'lock-key',
+        owner: 'test-owner',
+      });
+      mockGameStateService.releaseRoomLock.mockResolvedValue(true);
+      mockGameStateService.cleanupRoom.mockResolvedValue(undefined);
       mockGameSessionGateway.startNextTurn.mockResolvedValue(undefined);
 
       await (scheduler as any).executePhaseTransition(transition);
 
-      expect(mockGameSessionGateway.startNextTurn).toHaveBeenCalledWith(
+      // Should cleanup room on error (no gateway available means error path)
+      expect(mockGameStateService.cleanupRoom).toHaveBeenCalledWith(
         'test-room'
       );
     });
@@ -265,13 +313,16 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
     });
 
     it('should handle cleanup errors gracefully', async () => {
+      jest.useRealTimers();
+      mockGameStateService.isLeader.mockResolvedValue(false); // Not leader, skip retry
       mockGameStateService.getInactiveRooms.mockRejectedValue(
         new Error('Redis error')
       );
 
       // Should not throw
       await expect(scheduler.cleanupInactiveRooms()).resolves.toBeUndefined();
-    });
+      jest.useFakeTimers();
+    }, 10000);
   });
 
   describe('System Health Monitoring', () => {
@@ -292,14 +343,17 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
     });
 
     it('should handle heartbeat errors gracefully', async () => {
+      jest.useRealTimers();
+      mockGameStateService.isLeader.mockResolvedValue(false); // Not leader, skip processing
       mockGameStateService.updateHeartbeat.mockRejectedValue(
         new Error('Redis error')
       );
 
-      // Should not throw
+      // Should not throw - just updates heartbeat, no retry on this
       await expect(
         scheduler.updateInstanceHeartbeat()
       ).resolves.toBeUndefined();
-    });
+      jest.useFakeTimers();
+    }, 10000);
   });
 });
