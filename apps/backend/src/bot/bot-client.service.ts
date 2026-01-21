@@ -480,7 +480,10 @@ export class BotClient {
       trustedState,
     });
 
-    // Do not mark submitted until server acknowledges success
+    // Mark as submitted immediately to prevent duplicate submissions
+    // Server will send error if it fails, and we'll reset the flag then
+    this.hasSubmittedTrustedState = true;
+    this.stopPollingForEndOfRound();
 
     // If bot is dead (HP <= 0), report death after submitting trusted state
     try {
