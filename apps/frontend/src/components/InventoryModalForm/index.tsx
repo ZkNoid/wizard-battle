@@ -214,7 +214,7 @@ export function InventoryModalForm({
       </div>
       {/* Items */}
       <div className="px-13">
-        <div className="mb-2.5 flex flex-row gap-2.5">
+        <div className="mb-2.5 mt-5 flex flex-row gap-2.5">
           {filterBtns.map((btnProps, index) => (
             <InventoryFilterBtn
               key={`${btnProps.title}-${index}`}
@@ -223,7 +223,7 @@ export function InventoryModalForm({
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-2.5">
+        <div className="grid grid-cols-7 gap-2.5 mt-10">
           {paginatedItems.map((item) => (
             <InventoryItem
               key={item.id}

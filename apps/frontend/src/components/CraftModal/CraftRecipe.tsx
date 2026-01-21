@@ -16,7 +16,7 @@ export function CraftRecipe({ recipe, userInventory }: CraftRecipeProps) {
   };
 
   return (
-    <div className="flex flex-row items-center gap-6 text-[8px]">
+    <div className="flex flex-row items-center gap-6 text-[12px]">
       {recipe.map((item) => {
         const userAmount = getUserAmount(item.id);
         const hasEnoughAmount = hasEnough(item.id, item.requiredAmount);
