@@ -1,7 +1,7 @@
 name: Agent-ready bug
 description: Report a bug with clear reproduction steps and acceptance criteria
-title: "[Bug] "
-labels: ["agent-bug"]
+title: '[Bug] '
+labels: ['agent-bug']
 body:
   - type: textarea
     id: repro
@@ -28,7 +28,7 @@ body:
     id: done
     attributes:
       label: Definition of done (acceptance criteria)
-      description: Checklist: fix + edge cases + tests if relevant.
+      description: 'Checklist: fix + edge cases + tests if relevant.'
     validations: { required: true }
   - type: textarea
     id: constraints
