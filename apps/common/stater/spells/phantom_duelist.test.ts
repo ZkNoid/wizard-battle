@@ -318,10 +318,8 @@ describe('Phantom Duelist Spells', () => {
 
       ShadowVeilModifier(stater, spellCast, opponentState);
 
-      // Check that invisibility effect was applied
-      const invisibleEffectId = CircuitString.fromString(
-        'ShadowVeilInvisible'
-      ).hash();
+      // Check that invisibility effect was applied (using default invisibility effect)
+      const invisibleEffectId = Field(1);
       const hasInvisibleEffect = stater.state.publicStateEffects.some(
         (effect) =>
           effect.effectId.equals(invisibleEffectId).toBoolean() &&

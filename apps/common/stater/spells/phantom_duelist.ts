@@ -155,7 +155,7 @@ export const ShadowVeilModifier = (
   // Apply invisibility effect for 2 turns
   stater.state.pushEffect(
     new Effect({
-      effectId: CircuitString.fromString('ShadowVeilInvisible').hash(),
+      effectId: Field(1), // Use default invisibility effect
       duration: Field.from(2),
       param: Field(0),
     }),
