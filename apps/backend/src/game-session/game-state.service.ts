@@ -91,13 +91,17 @@ export class GameStateService {
       // Clear waiting queue to avoid dangling entries from prior runs
       try {
         await this.redisClient.del('waiting:queue');
-      } catch {}
+      } catch (e) {
+        console.error('Error deleting waiting queue:', e);
+      }
 
       // Load current socket mappings as a quick online presence signal
       let socketMappings: Record<string, string> = {};
       try {
         socketMappings = await this.redisClient.hGetAll('socket_mappings');
-      } catch {}
+      } catch (e) {
+        console.error('Error getting socket mappings:', e);
+      }
 
       const isSocketKnown = (socketId?: string): boolean => {
         if (!socketId) return false;
@@ -127,12 +131,18 @@ export class GameStateService {
                   if (map?.roomId === roomId) {
                     await this.redisClient.hDel('socket_mappings', sid);
                   }
-                } catch {}
+                } catch (e) {
+                  console.error('Error parsing socket mapping:', e);
+                }
               }
             }
-          } catch {}
+          } catch (e) {
+            console.error('Error parsing match during cleanup:', e);
+          }
         }
-      } catch {}
+      } catch (e) {
+        console.error('Error pruning matches:', e);
+      }
 
       // Prune very old or socket-less game states
       try {
@@ -153,9 +163,13 @@ export class GameStateService {
               await this.redisClient.del(`trusted_states:${roomId}`);
               await this.redisClient.del(`room_cleanup:${roomId}`);
             }
-          } catch {}
+          } catch (e) {
+            console.error('Error parsing game state during cleanup:', e);
+          }
         }
-      } catch {}
+      } catch (e) {
+        console.error('Error pruning game states:', e);
+      }
     } catch (e) {
       console.error('startupCleanup failed:', (e as Error).message);
     }
@@ -1368,7 +1382,9 @@ export class GameStateService {
         ) {
           inactiveRooms.push(roomId);
         }
-      } catch {}
+      } catch (e) {
+        console.error('Error parsing game state for inactive check:', e);
+      }
     }
 
     return inactiveRooms;
@@ -1399,7 +1415,9 @@ export class GameStateService {
           if (parsed?.roomId === roomId) {
             await this.redisClient.hDel('socket_mappings', socketId);
           }
-        } catch {}
+        } catch (e) {
+          console.error('Error parsing socket mapping during cleanup:', e);
+        }
       }
 
       // Notify other instances

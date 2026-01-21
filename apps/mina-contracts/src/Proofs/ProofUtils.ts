@@ -18,7 +18,7 @@ export function verifyStateInTree(
   stateWitness: MerkleMapWitness,
   stateHash: Field,
   expectedRoot: Field,
-  errorPrefix: string = 'State'
+  errorPrefix = 'State'
 ): Field {
   const [rootBefore, key] = stateWitness.computeRootAndKey(stateHash);
   rootBefore.assertEquals(

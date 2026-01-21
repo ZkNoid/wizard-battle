@@ -248,17 +248,19 @@ export class BotService {
   ): IUserActions {
     const actions: IUserAction[] = [];
 
-    // Bot decision logic - simple AI that casts 1-2 spells per turn
-    const numActions = 2; //Math.random() < 0.7 ? 1 : 2; // 70% chance for 1 action, 30% for 2
+    // Bot decision logic - first action is always teleport, second is random
+    const numActions = 2;
 
     let prevAction: IUserAction | null = null;
 
     for (let i = 0; i < numActions; i++) {
+      const forceTeleport = i === 0; // First action must be teleport
       const action = this.generateRandomAction(
         botId,
         currentState,
         opponentState,
-        prevAction
+        prevAction,
+        forceTeleport
       );
       if (action) {
         actions.push(action);
@@ -293,7 +295,8 @@ export class BotService {
     botId: string,
     currentState: IPublicState,
     opponentState?: IPublicState,
-    prevAction?: IUserAction | null
+    prevAction?: IUserAction | null,
+    forceTeleport: boolean = false
   ): IUserAction | null {
     // Parse the bot's current state to get available spells
     const stateData = State.fromJSON(JSON.parse(currentState.fields));
@@ -338,18 +341,29 @@ export class BotService {
 
     let filteredSpells = availableSpells;
 
-    // TODO: find better way to use type of spell oposit to prevAction spell type
-    // Example: if prevAction spell is Lightning, then pick Teleport or Heal
-    if (prevSpell && prevSpell.target === 'enemy') {
-      // Pick a random available spell Teleport or Heal
-      const allowedIds: string[] = [];
-      if (hasTeleport && TELEPORT_ID) allowedIds.push(TELEPORT_ID);
-      if (hasHeal && HEAL_ID) allowedIds.push(HEAL_ID);
-
-      if (allowedIds.length > 0) {
-        filteredSpells = availableSpells.filter((s) =>
-          allowedIds.includes(s.spellId.toString())
+    // If forceTeleport is true, only select teleport spell
+    if (forceTeleport) {
+      if (hasTeleport && TELEPORT_ID) {
+        filteredSpells = availableSpells.filter(
+          (s) => s.spellId.toString() === TELEPORT_ID
         );
+        if (filteredSpells.length === 0) {
+          console.log('🤖 Teleport spell not available or on cooldown');
+          return null;
+        }
+      } else {
+        console.log('🤖 Teleport spell not in bot spell list');
+        return null;
+      }
+    } else {
+      // For second action, exclude teleport from choices
+      filteredSpells = availableSpells.filter(
+        (s) => s.spellId.toString() !== TELEPORT_ID
+      );
+
+      if (filteredSpells.length === 0) {
+        console.log('🤖 No spells available (excluding teleport)');
+        return null;
       }
     }
 
@@ -498,7 +512,9 @@ export class BotService {
             const info = JSON.parse(action.spellCastInfo || '{}');
             targetX = parseInt(info?.position?.x?.magnitude ?? '0');
             targetY = parseInt(info?.position?.y?.magnitude ?? '0');
-          } catch {}
+          } catch (e) {
+            console.error('Error parsing spell cast info:', e);
+          }
 
           const distance = manhattan(preActionPos, { x: targetX, y: targetY });
 
@@ -538,7 +554,9 @@ export class BotService {
               botX = tx;
               botY = ty;
             }
-          } catch {}
+          } catch (e) {
+            console.error('Error parsing teleport info:', e);
+          }
         } else if (action.spellId === HEAL_ID) {
           // To make damage visible to clients/tests, skip immediate heal if bot took damage this round
           if (!damagedThisRound) {

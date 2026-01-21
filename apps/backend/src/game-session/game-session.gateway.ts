@@ -979,7 +979,7 @@ export class GameSessionGateway {
         }
         break;
 
-      case 'playerJoined':
+      case 'playerJoined': {
         // Handle player joined event from other instances
         // data.data contains { playerId, roomId } from publisher
         // Look up by socketId; if not provided, try playerId as fallback
@@ -998,8 +998,9 @@ export class GameSessionGateway {
           }
         }
         break;
+      }
 
-      case 'opponentDisconnected':
+      case 'opponentDisconnected': {
         // Handle opponent disconnection
         const gameState = await this.gameStateService.getGameState(data.roomId);
         if (gameState) {
@@ -1016,6 +1017,7 @@ export class GameSessionGateway {
           }
         }
         break;
+      }
 
       case 'allPlayerActions':
         // Broadcast all player actions to local sockets

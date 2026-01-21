@@ -360,7 +360,9 @@ export class BotClient {
     if (this.socket) {
       try {
         this.socket.disconnect();
-      } catch {}
+      } catch (e) {
+        console.error('Error disconnecting socket:', e);
+      }
       this.socket = null;
     }
   }

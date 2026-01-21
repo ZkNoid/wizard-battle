@@ -102,7 +102,9 @@ describe('GameSessionGateway - Room Cleanup Tests', () => {
       } else {
         jest.runOnlyPendingTimers();
       }
-    } catch {}
+    } catch (e) {
+      console.error('Error running pending timers:', e);
+    }
     jest.useRealTimers();
   });
 
@@ -306,7 +308,7 @@ describe('GameSessionGateway - Room Cleanup Tests', () => {
       ];
 
       let totalRoomsCreated = 0;
-      let totalRoomsCleanedUp = 0;
+      const totalRoomsCleanedUp = 0;
 
       for (const scenario of scenarios) {
         for (let i = 0; i < 50; i++) {
