@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { GameItemService } from '../game-item/services/game-item.service';
 import { UserInventoryService } from '../user-inventory/services/user-inventory.service';
 import { BlockchainService } from './blockchain.service';
+import { GameItem } from '../game-item/schemas/game-item.schema';
 import { error } from 'console';
 
 type GameElementStruct = {
@@ -27,14 +28,25 @@ export class GameCommitService {
    * @param userId - The user ID to check inventory for
    * @returns Object containing the resource, user has it status, and inventory details
    */
-  async loadAndVerifyResourceForUserFromDataBase(
+  async verifyUserHasItemResourceInDatabase(
     itemName: string,
-    userId: string
+    userId: string,
+    _isResource: boolean,
+    _isCraftable: boolean
   ) {
     try {
       // 1. Find the resource by name in the GameItem collection
-      const allItems = await this.gameItemService.findAll();
-      const resource = allItems.find((item) => item.name === itemName);
+      let allItemsResource: GameItem[] = [];
+      if (_isResource) {
+        allItemsResource = await this.gameItemService.findResources();
+      } else {
+        if (!_isCraftable) {
+          allItemsResource = await this.gameItemService.findItems();
+        } else {
+          allItemsResource = await this.gameItemService.findCraftableItems();
+        }
+      }
+      const resource = allItemsResource.find((item) => item.name === itemName);
 
       if (!resource) {
         console.log(`❌ Resource "${itemName}" not found in database`);
@@ -47,19 +59,20 @@ export class GameCommitService {
       }
 
       // 2. Print resource params to console
-      console.log(`📦 Resource loaded from database:`);
+      console.log(`📦 Item/Resource loaded from database:`);
       console.log(`   Name: ${resource.name}`);
       console.log(`   Rarity: ${resource.rarity}`);
       console.log(`   Origin: ${resource.origin}`);
       console.log(`   Description: ${resource.desc}`);
       console.log(`   Is Craftable: ${resource.isCraftable}`);
+      console.log(`   Is Resource: ${resource.isResource}`);
       console.log(`   Resource ID: ${(resource as any)._id}`);
 
       // 3. Check if user has this resource in their inventory
       const resourceId = (resource as any)._id.toString();
       console.log(`\n🔍 Checking user inventory:`);
       console.log(`   userId: ${userId}`);
-      console.log(`   resourceId: ${resourceId}`);
+      console.log(`   itemResourceId: ${resourceId}`);
 
       const userHasIt = await this.userInventoryService.hasItem(
         userId,
@@ -106,6 +119,7 @@ export class GameCommitService {
             origin: resource.origin,
             description: resource.desc,
             isCraftable: resource.isCraftable,
+            isResource: resource.isResource,
           },
           inventoryDetails: inventoryDetails
             ? {
@@ -127,6 +141,7 @@ export class GameCommitService {
             origin: resource.origin,
             description: resource.desc,
             isCraftable: resource.isCraftable,
+            isResource: resource.isResource,
           },
           inventoryDetails: null,
         };
@@ -139,24 +154,6 @@ export class GameCommitService {
     }
   }
 
-  async pullGameElemtentStructFromChain(
-    name: string
-  ): Promise<GameElementStruct | boolean> {
-    //const elementMetaData = await this.blockchainService.getGameElement(name);
-    const elementMetaData = {
-      // mocked data
-      tokenAddress: '0x1234567890abcdef1234567890abcdef12345678',
-      tokenId: 1,
-      requiresTokenId: true,
-    };
-
-    return {
-      tokenAddress: elementMetaData.tokenAddress,
-      tokenId: elementMetaData.tokenId,
-      requiresTokenId: elementMetaData.requiresTokenId,
-    };
-  }
-
   async commitResource(name: string, action: 'mint' | 'burn', payload: any) {
     console.log(
       `\n========== COMMIT RESOURCE CALLED (v2 with fixes) ==========`
@@ -164,9 +161,11 @@ export class GameCommitService {
     console.log(`Committing resource [${name}] - action: ${action}`, payload);
     try {
       // 1. We chek such resource exists and user has it in DB
-      const result = await this.loadAndVerifyResourceForUserFromDataBase(
+      const result = await this.verifyUserHasItemResourceInDatabase(
         name,
-        payload.playerAddress // assuming playerAddress is used as userId here
+        payload.playerAddress, // assuming playerAddress is used as userId here
+        true,
+        false
       );
       if (!result.found || !result.userHasIt) {
         throw new Error(`Resource ${name} not found or user does not have it.`);
@@ -229,9 +228,71 @@ export class GameCommitService {
     return { success: true, coin: name, action, payload };
   }
 
-  commitItem(name: string, action: 'mint' | 'burn', payload: any) {
-    console.log(`Committing item [${name}] - action: ${action}`, payload);
-    return { success: true, item: name, action, payload };
+  async commitItem(name: string, action: 'mint' | 'burn', payload: any) {
+    console.log(`\n========== COMMIT ITEMS ==========`);
+    console.log(`Committing resource [${name}] - action: ${action}`, payload);
+    try {
+      // 1. We chek such resource exists and user has it in DB
+      const result = await this.verifyUserHasItemResourceInDatabase(
+        name,
+        payload.playerAddress, // assuming playerAddress is used as userId here
+        false,
+        false
+      );
+      if (!result.found || !result.userHasIt) {
+        throw new Error(`Resource ${name} not found or user does not have it.`);
+      }
+
+      // 2. We pull GameElementStruct from chain and verify it is valid resource
+      const metaData = await this.blockchainService.getGameElement(name);
+
+      if (
+        !metaData ||
+        metaData.tokenAddress === '0x0000000000000000000000000000000000000000'
+      ) {
+        throw new Error(
+          `Game element metadata for resource ${name} is invalid.`
+        );
+      }
+
+      // 3. We call BlockchainService to generate signed mint/burn callData for the resource on-chain
+      let commitData;
+
+      switch (action) {
+        case 'mint':
+          console.log(`Generating mint callData for resource [${name}]...`);
+          commitData = await this.blockchainService.mintResource(
+            name,
+            payload.playerAddress,
+            metaData.tokenId,
+            result.inventoryDetails?.quantity || 1000
+          );
+          break;
+        case 'burn':
+          console.log(`Generating burn callData for resource [${name}]...`);
+          commitData = await this.blockchainService.burnResource(
+            name,
+            payload.playerAddress,
+            metaData.tokenId,
+            result.inventoryDetails?.quantity || 1000
+          );
+          break;
+        default:
+          throw new Error(`Unsupported action: ${action}`);
+      }
+
+      // 4. Return success signed callData to user for submission to blockchain
+      if (commitData && commitData.resourceHash.length > 0) {
+        console.log('✅ Generated callData for resource commit:', commitData);
+        return { success: true, resource: name, action, commit: commitData };
+      }
+    } catch (err) {
+      console.error(`❌ Crash committing resource [${name}]:`, err);
+    }
+
+    // In case of failure
+    console.log('❌ Failed to generate callData for resource commit');
+    return { success: false, resource: name, action, commit: null };
   }
 
   commitCharacter(name: string, action: 'mint' | 'burn', payload: any) {

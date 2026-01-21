@@ -14,6 +14,7 @@ const gameItemSchema = new mongoose.Schema(
     origin: { type: String, required: true },
     desc: { type: String, required: true },
     isCraftable: { type: Boolean, required: true, default: false },
+    isResource: { type: Boolean, required: true, default: false },
   },
   { timestamps: true }
 );
@@ -44,6 +45,7 @@ async function addWoodResource() {
       console.log('   Origin:', existingWood.origin);
       console.log('   Description:', existingWood.desc);
       console.log('   Is Craftable:', existingWood.isCraftable);
+      console.log('   Is Resource:', existingWood.isResource);
       await mongoose.connection.close();
       return;
     }
@@ -55,6 +57,7 @@ async function addWoodResource() {
       origin: 'nature',
       desc: 'Basic crafting material harvested from trees. Used in various recipes and constructions.',
       isCraftable: false, // Wood is a basic resource, not craftable
+      isResource: true, // Wood is a basic resource
     });
 
     // Save to database
@@ -66,6 +69,7 @@ async function addWoodResource() {
     console.log('   Origin:', savedWood.origin);
     console.log('   Description:', savedWood.desc);
     console.log('   Is Craftable:', savedWood.isCraftable);
+    console.log('   Is Resource:', savedWood.isResource);
 
     // Close connection
     await mongoose.connection.close();

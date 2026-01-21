@@ -640,9 +640,14 @@ describe('GameSessionGateway', () => {
         roomId: 'test-room',
         event: 'allPlayerActions',
         data: { player1: { actions: [], signature: 'sig' } },
-        originInstanceId: 'other-instance',
+        originInstanceId: '12345-1234567890',
         timestamp: Date.now(),
       };
+
+      // Mock hasLocalPlayersInRoom to return true so event gets processed
+      jest
+        .spyOn(gateway as any, 'hasLocalPlayersInRoom')
+        .mockResolvedValue(true);
 
       await (gateway as any).handleCrossInstanceEvent(data);
 
@@ -657,9 +662,14 @@ describe('GameSessionGateway', () => {
         roomId: 'test-room',
         event: 'gameEnd',
         data: { winnerId: 'player1' },
-        originInstanceId: 'other-instance',
+        originInstanceId: '12345-1234567890',
         timestamp: Date.now(),
       };
+
+      // Mock hasLocalPlayersInRoom to return true so event gets processed
+      jest
+        .spyOn(gateway as any, 'hasLocalPlayersInRoom')
+        .mockResolvedValue(true);
 
       await (gateway as any).handleCrossInstanceEvent(data);
 

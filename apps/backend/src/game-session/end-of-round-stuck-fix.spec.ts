@@ -42,9 +42,19 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
     getAllTrustedStates: jest.fn(),
     markPlayerDead: jest.fn(),
     getInstanceId: jest.fn().mockReturnValue('test-instance'),
-    redisClient: {
-      keys: jest.fn(),
-    },
+    redisClient: (() => {
+      const multiMock = {
+        hSet: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([['OK']]),
+      };
+      return {
+        keys: jest.fn(),
+        watch: jest.fn().mockResolvedValue('OK'),
+        unwatch: jest.fn().mockResolvedValue('OK'),
+        multi: jest.fn().mockReturnValue(multiMock),
+        eval: jest.fn().mockResolvedValue(1),
+      };
+    })(),
   });
 
   beforeEach(async () => {
@@ -201,20 +211,24 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
         playersReady: ['player2', 'player1'], // Both ready
       };
 
-      mockGameStateService.getGameState
-        .mockResolvedValueOnce(initialGameState)
-        .mockResolvedValueOnce(updatedGameState);
-      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue({
-        allReady: true,
-        allHaveTrustedStates: true,
-        updatedGameState: updatedGameState,
-      });
+      // Clear any previous mock setup
+      mockGameStateService.getGameState.mockReset();
+      mockGameStateService.storeTrustedStateAndMarkReady.mockReset();
 
       const advanceToStateUpdateSpy = jest.spyOn(
         gateway,
         'advanceToStateUpdate'
       );
       advanceToStateUpdateSpy.mockResolvedValue();
+
+      // First call returns initial state (player1 has no trusted state)
+      // This allows the handler to proceed
+      mockGameStateService.getGameState.mockResolvedValueOnce(initialGameState);
+      mockGameStateService.storeTrustedStateAndMarkReady.mockResolvedValue({
+        allReady: true,
+        allHaveTrustedStates: true,
+        updatedGameState: updatedGameState,
+      });
 
       await gateway.handleSubmitTrustedState(mockSocket as Socket, {
         roomId,
@@ -273,7 +287,7 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
         updatedGameState: gameState,
       });
 
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = jest.spyOn(console, 'log');
 
       await gateway.handleSubmitTrustedState(mockSocket as Socket, {
         roomId,
@@ -281,12 +295,18 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
       });
 
       // Should log detailed information about what's missing
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('END_OF_ROUND state BEFORE')
+      const logCalls = consoleSpy.mock.calls.map((call) => call[0]);
+      const hasBeforeLog = logCalls.some(
+        (log) =>
+          typeof log === 'string' && log.includes('END_OF_ROUND state BEFORE')
       );
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('END_OF_ROUND state AFTER')
+      const hasAfterLog = logCalls.some(
+        (log) =>
+          typeof log === 'string' && log.includes('END_OF_ROUND state AFTER')
       );
+
+      expect(hasBeforeLog).toBe(true);
+      expect(hasAfterLog).toBe(true);
 
       consoleSpy.mockRestore();
     });

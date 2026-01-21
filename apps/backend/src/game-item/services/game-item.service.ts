@@ -9,7 +9,7 @@ import { UpdateGameItemDto } from '../dto/update-game-item.dto';
 export class GameItemService {
   constructor(
     @InjectModel(GameItem.name)
-    private readonly gameItemModel: Model<GameItemDocument>,
+    private readonly gameItemModel: Model<GameItemDocument>
   ) {}
 
   /*//////////////////////////////////////////////////////////////
@@ -67,4 +67,13 @@ export class GameItemService {
     return this.gameItemModel.find({ isCraftable: false }).exec();
   }
 
+  /** Find all basic resources */
+  async findResources(): Promise<GameItem[]> {
+    return this.gameItemModel.find({ isResource: true }).exec();
+  }
+
+  /** Find all items (non-resources) */
+  async findItems(): Promise<GameItem[]> {
+    return this.gameItemModel.find({ isResource: false }).exec();
+  }
 }

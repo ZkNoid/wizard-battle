@@ -20,4 +20,8 @@ export class CreateGameItemDto {
   @IsBoolean()
   @IsOptional()
   isCraftable?: boolean; // true = can only be crafted via recipe, false = standalone resource/item (default: false)
+
+  @IsBoolean()
+  @IsOptional()
+  isResource?: boolean; // true = item is a basic resource, false = crafted item (default: false)
 }

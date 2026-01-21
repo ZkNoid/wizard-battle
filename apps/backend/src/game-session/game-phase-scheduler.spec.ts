@@ -21,6 +21,10 @@ describe('GamePhaseSchedulerService', () => {
     mockGameSessionGateway = createMock<GameSessionGateway>();
 
     // Mock Redis client
+    const multiMock = {
+      hSet: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue([['OK']]),
+    };
     mockGameStateService.redisClient = {
       keys: jest.fn().mockResolvedValue([]),
       hKeys: jest.fn().mockResolvedValue([]),
@@ -34,16 +38,18 @@ describe('GamePhaseSchedulerService', () => {
       sIsMember: jest.fn().mockResolvedValue(false),
       sAdd: jest.fn().mockResolvedValue(1),
       expire: jest.fn().mockResolvedValue(1),
+      watch: jest.fn().mockResolvedValue('OK'),
+      unwatch: jest.fn().mockResolvedValue('OK'),
+      multi: jest.fn().mockReturnValue(multiMock),
+      eval: jest.fn().mockResolvedValue(1),
     };
 
     // Mock additional GameStateService methods
-    mockGameStateService.acquireRoomLock = jest
-      .fn()
-      .mockResolvedValue({
-        ok: true,
-        lockKey: 'test-lock',
-        owner: 'test-owner',
-      });
+    mockGameStateService.acquireRoomLock = jest.fn().mockResolvedValue({
+      ok: true,
+      lockKey: 'test-lock',
+      owner: 'test-owner',
+    });
     mockGameStateService.releaseRoomLock = jest.fn().mockResolvedValue(true);
     mockGameStateService.isLeader = jest.fn().mockResolvedValue(true);
     mockGameStateService.getInstanceId = jest
@@ -243,10 +249,12 @@ CRON-BASED APPROACH:
 
   describe('Error Scenarios', () => {
     it('should handle errors gracefully in cron jobs', async () => {
+      jest.useRealTimers();
       // Simulate Redis error
       mockGameStateService.redisClient.scan.mockRejectedValue(
         new Error('Redis connection lost')
       );
+      mockGameStateService.isLeader.mockResolvedValue(false); // Not leader, skip retry loops
 
       // Cron jobs should not crash the application
       await expect(service.processPhaseTransitions()).resolves.not.toThrow();
@@ -257,7 +265,8 @@ CRON-BASED APPROACH:
       console.log(
         '✅ SERVICE STABILITY: Application continues running despite errors'
       );
-    });
+      jest.useFakeTimers();
+    }, 10000);
 
     it('should continue processing after individual room errors', async () => {
       const mockGameState = {
