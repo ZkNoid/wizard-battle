@@ -11,7 +11,7 @@ permissions:
 jobs:
   context_pack:
     # Run only for specific labels (so you don't spam every issue)
-    if: github.event.label.name == 'agent-ok' || github.event.label.name == 'agent-feature'
+    if: github.event.label.name == 'agent-bug' || github.event.label.name == 'agent-feature'
     runs-on: ubuntu-latest
 
     steps:
