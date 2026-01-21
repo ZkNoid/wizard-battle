@@ -1,5 +1,9 @@
 # Build output
 dist/
+*.js
+*.d.ts
+*.d.ts.map
+*.js.map
 
 # Dependencies
 node_modules/
