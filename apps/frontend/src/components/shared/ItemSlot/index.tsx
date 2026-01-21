@@ -164,7 +164,7 @@ export const ItemSlot = memo(function ItemSlot({
         />
       ) : null}
       {label && (
-        <div className="font-pixel absolute inset-x-0 bottom-0 mx-auto flex w-[75%] items-end justify-center pb-2 text-center text-[9px] font-bold text-[#747C8F]">
+        <div className="font-pixel absolute inset-x-0 bottom-1.5 mx-auto flex w-[75%] items-end justify-center pb-2 text-center text-[10px] font-bold text-[#747C8F]">
           {label}
         </div>
       )}

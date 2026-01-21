@@ -5,7 +5,7 @@ interface ColorScheme {
   main: string;
 }
 
-const colorSchemes: Record<
+export const colorSchemes: Record<
   'gray' | 'blue' | 'lightGray' | 'green' | 'red',
   ColorScheme
 > = {
@@ -52,11 +52,10 @@ export const ButtonBackground = ({
 
   return (
     <svg
-      width="210"
-      height="64"
       viewBox="0 0 210 64"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="none"
       className={className}
     >
       <path d="M200 0H10V5H200V0Z" fill="#070C19" />

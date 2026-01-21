@@ -219,29 +219,35 @@ export class BotClient {
 
     // Game phase events
     this.socket.on('newTurn', (data) => {
-      console.log(`🤖 Bot ${this.botId} new turn:`, data);
-      this.gamePhase = data.phase;
+      console.log(`🤖 Bot ${this.botId} NEW TURN DEBUG:`, {
+        phase: data.phase,
+        currentPhase: this.gamePhase,
+        hasSubmittedActions: this.hasSubmittedActions,
+        hasSubmittedTrustedState: this.hasSubmittedTrustedState,
+        roomId: this.currentRoomId,
+        pollingActive: !!this.endOfRoundPollingInterval,
+      });
 
-      // Clear match start guard timer on first turn
+      // FORCE CLEAN STATE - Stop everything from previous turn
+      this.stopPollingForEndOfRound();
       if (this.matchStartTimeout) {
         clearTimeout(this.matchStartTimeout);
         this.matchStartTimeout = null;
       }
 
-      // Stop any existing polling
-      this.stopPollingForEndOfRound();
+      // Update phase FIRST
+      this.gamePhase = data.phase;
 
-      // Reset submission flags for new turn
+      // Reset ALL flags for new turn
       this.hasSubmittedActions = false;
       this.hasSubmittedTrustedState = false;
+      this.lastAllActions = null;
 
       // If it's spell casting phase, submit actions immediately for responsiveness
-      if (data.phase === GamePhase.SPELL_CASTING) {
+      if (this.gamePhase === GamePhase.SPELL_CASTING) {
         console.log(`🤖 Bot ${this.botId} starting spell casting phase`);
-        if (
-          this.gamePhase === GamePhase.SPELL_CASTING &&
-          !this.hasSubmittedActions
-        ) {
+        // Submit immediately without delay - server advances phases quickly
+        if (!this.hasSubmittedActions) {
           this.submitActions();
         }
       }
@@ -378,25 +384,34 @@ export class BotClient {
       this.hasSubmittedActions
     ) {
       console.log(
-        `🤖 Bot ${this.botId} skipping action submission: phase=${this.gamePhase}, hasSubmitted=${this.hasSubmittedActions}`
+        `🤖 Bot ${this.botId} skipping action submission: socket=${!!this.socket}, roomId=${this.currentRoomId}, phase=${this.gamePhase}, hasSubmitted=${this.hasSubmittedActions}`
       );
       return;
     }
 
-    const actions = this.botService.generateBotActions(
-      this.botId,
-      this.currentState,
-      this.opponentState || undefined
-    );
+    try {
+      const actions = this.botService.generateBotActions(
+        this.botId,
+        this.currentState,
+        this.opponentState || undefined
+      );
 
-    console.log(`🤖 Bot ${this.botId} submitting actions:`, actions);
-    this.socket.emit('submitActions', {
-      roomId: this.currentRoomId,
-      actions,
-    });
+      console.log(`🤖 Bot ${this.botId} submitting actions:`, actions);
+      this.socket.emit('submitActions', {
+        roomId: this.currentRoomId,
+        actions,
+      });
 
-    // Mark as submitted to prevent duplicate submissions
-    this.hasSubmittedActions = true;
+      // Mark as submitted to prevent duplicate submissions
+      this.hasSubmittedActions = true;
+    } catch (error) {
+      console.error(
+        `🤖 Bot ${this.botId} error generating/submitting actions:`,
+        error
+      );
+      // Reset flag to allow retry
+      this.hasSubmittedActions = false;
+    }
   }
 
   /**
