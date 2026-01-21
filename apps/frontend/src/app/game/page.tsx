@@ -182,6 +182,14 @@ export default function GamePage() {
     [handleTileMouseEnter]
   );
 
+  const handleAllyMouseLeave = useCallback(() => {
+    setHighlightedAllyTiles([]);
+  }, []);
+
+  const handleEnemyMouseLeave = useCallback(() => {
+    setHighlightedEnemyTiles([]);
+  }, []);
+
   // Spell casting logic
   const createUserAction = useCallback(
     (
@@ -569,6 +577,7 @@ export default function GamePage() {
           tilemap={stater?.state?.map.map((tile) => +tile)}
           onTileClick={handleTilemapClick}
           onTileMouseEnter={handleAllyTileMouseEnter}
+          onMouseLeave={handleAllyMouseLeave}
           highlightedTiles={highlightedAllyTiles}
           defaultHighlight={{ color: 'rgba(255, 100, 100, 0.5)' }}
         />
@@ -598,6 +607,7 @@ export default function GamePage() {
           tilemap={opponentState?.map.map((tile) => +tile)}
           onTileClick={handleTilemapClickEnemy}
           onTileMouseEnter={handleEnemyTileMouseEnter}
+          onMouseLeave={handleEnemyMouseLeave}
           highlightedTiles={highlightedEnemyTiles}
           defaultHighlight={{ color: 'rgba(255, 100, 100, 0.5)' }}
         />

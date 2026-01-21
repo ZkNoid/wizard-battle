@@ -234,6 +234,7 @@ export interface TilemapProps {
   onTileMouseDown?: (index: number) => void;
   onTileMouseEnter?: (index: number) => void;
   onTileMouseUp?: (index: number) => void;
+  onMouseLeave?: () => void;
 }
 
 export function Tilemap({
@@ -248,6 +249,7 @@ export function Tilemap({
   onTileMouseDown,
   onTileMouseEnter,
   onTileMouseUp,
+  onMouseLeave,
 }: TilemapProps) {
   // Helper to check if a tile is highlighted and get its style
   const getHighlightStyle = (index: number): TileHighlight | null => {
@@ -306,6 +308,7 @@ export function Tilemap({
         gridTemplateColumns: `repeat(${width}, 1fr)`,
         gridTemplateRows: `repeat(${height}, 1fr)`,
       }}
+      onMouseLeave={onMouseLeave}
     >
       {megatiles.slice(0, width * height).map((megatile, index) => (
         <div
