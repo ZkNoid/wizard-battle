@@ -15,6 +15,7 @@ const gameItemSchema = new mongoose.Schema(
     origin: { type: String, required: true },
     desc: { type: String, required: true },
     isCraftable: { type: Boolean, required: true, default: false },
+    isResource: { type: Boolean, required: true, default: false },
   },
   { timestamps: true }
 );

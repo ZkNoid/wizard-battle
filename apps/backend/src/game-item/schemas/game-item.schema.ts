@@ -19,6 +19,9 @@ export class GameItem {
 
   @Prop({ required: true, default: false })
   isCraftable!: boolean; // true = can only be obtained via recipe, false = standalone resource/item
+
+  @Prop({ required: true, default: false })
+  isResource!: boolean; // true = item is a basic resource, false = crafted item
 }
 
 export const GameItemSchema = SchemaFactory.createForClass(GameItem);
