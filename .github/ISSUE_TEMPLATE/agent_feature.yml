@@ -1,4 +1,5 @@
 name: Agent-ready frontend feature
+description: Request a new frontend feature with clear acceptance criteria
 title: '[FE] '
 labels: ['agent-feature']
 body:
