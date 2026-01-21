@@ -1,0 +1,32 @@
+name: Agent-ready frontend feature
+title: '[FE] '
+labels: ['agent-feature']
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal (1–2 sentences)
+    validations: { required: true }
+  - type: textarea
+    id: ac
+    attributes:
+      label: Acceptance criteria (checklist)
+      description: Include states (loading/error/empty) + responsive behavior.
+    validations: { required: true }
+  - type: textarea
+    id: where
+    attributes:
+      label: Where to implement
+      description: Route/page + component/file hints if known.
+    validations: { required: true }
+  - type: textarea
+    id: verify
+    attributes:
+      label: How to verify manually
+    validations: { required: true }
+  - type: textarea
+    id: design
+    attributes:
+      label: Design reference (optional)
+      description: Figma link / screenshots.
+    validations: { required: false }

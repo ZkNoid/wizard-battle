@@ -13,7 +13,7 @@ Open small, safe PRs that pass CI. No unrelated refactors.
 ## Commands to run before you mark work complete
 
 - pnpm lint
-- pnpm typecheck (or pnpm tsc)
+- pnpm check-types
 - pnpm test (if present)
 - pnpm build
 

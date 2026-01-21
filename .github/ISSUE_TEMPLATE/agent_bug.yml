@@ -1,0 +1,37 @@
+name: Agent-ready bug
+title: "[Bug] "
+labels: ["agent-bug"]
+body:
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce (exact)
+      description: Include route/page, environment, and the minimal steps.
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations: { required: true }
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations: { required: true }
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / stack trace / screenshots
+    validations: { required: false }
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of done (acceptance criteria)
+      description: Checklist: fix + edge cases + tests if relevant.
+    validations: { required: true }
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints / out of scope
+      description: What must NOT be changed.
+    validations: { required: false }
