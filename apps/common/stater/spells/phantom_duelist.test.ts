@@ -329,6 +329,30 @@ describe('Phantom Duelist Spells', () => {
       expect(hasInvisibleEffect).toBe(true);
     });
 
+    it('should hide position in public state when invisible', () => {
+      // Set up a position for the player
+      stater.state.playerStats.position = new PositionOption({
+        value: new Position({ x: Int64.from(3), y: Int64.from(4) }),
+        isSome: Field(1),
+      });
+
+      // Cast Shadow Veil
+      const spellCast = new ShadowVeilSpellCast({
+        spellId: shadowVeilSpell.id,
+        caster: Field(42),
+        target: Field(42),
+        additionalData: new ShadowVeilData({}),
+      });
+
+      ShadowVeilModifier(stater, spellCast, opponentState);
+
+      // Generate public state
+      const publicState = stater.generatePublicState();
+
+      // Check that position is hidden in public state
+      expect(publicState.playerStats.position.isSome.toString()).toBe('0');
+    });
+
     it('should not affect HP', () => {
       const initialHp = stater.state.playerStats.hp.toString();
 
