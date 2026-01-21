@@ -42,6 +42,7 @@ export class GamePhaseManager {
   private opponentState: State;
   private lastActions?: IUserActions; // Add this property
   private setOpponentState: (state: State) => void;
+  private setPlayerState?: (stater: Stater) => void;
   private onNewTurnHook: (() => void) | null = null;
   private setCurrentPhaseCallback?: (phase: GamePhase) => void;
   private onGameEnd?: (winner: boolean) => void;
@@ -60,7 +61,8 @@ export class GamePhaseManager {
     opponentState: State,
     setOpponentState: (state: State) => void,
     setCurrentPhaseCallback?: (phase: GamePhase) => void,
-    onGameEnd?: (winner: boolean) => void
+    onGameEnd?: (winner: boolean) => void,
+    setPlayerState?: (stater: Stater) => void
   ) {
     console.log('Initializing GamePhaseManager');
     this.socket = socket;
@@ -68,6 +70,7 @@ export class GamePhaseManager {
     this.stater = stater;
     this.opponentState = opponentState;
     this.setOpponentState = setOpponentState;
+    this.setPlayerState = setPlayerState;
     this.setCurrentPhaseCallback = setCurrentPhaseCallback;
     this.setupSocketListeners();
 
@@ -470,6 +473,11 @@ export class GamePhaseManager {
 
     // Generate and cache trusted state for this round, but do not submit yet
     this.cachedTrustedStateForTurn = this.generateTrustedState();
+
+    // Trigger UI update after spell effects have been applied
+    if (this.setPlayerState) {
+      this.setPlayerState(this.stater);
+    }
   }
 
   // Phase 4: End of Round (handled by submitting trusted state above)
