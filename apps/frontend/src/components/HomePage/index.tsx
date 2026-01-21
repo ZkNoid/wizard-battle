@@ -122,10 +122,10 @@ export default function HomePage() {
             />
           </BoxButton>
         </div>
-        <div className="grid w-full grid-cols-3 items-center gap-10">
+        <div className="flex w-full items-center justify-between gap-5 px-10">
           <Button
             variant="gray"
-            className="w-70 h-15 flex items-center gap-2.5"
+            className="w-40 h-15 flex items-center justify-center gap-2.5"
           >
             <Image
               src={'/icons/gold-coin.png'}
@@ -140,7 +140,7 @@ export default function HomePage() {
           </Button>
           <Button
             variant="gray"
-            className="w-70 h-15 flex items-center gap-2.5"
+            className="w-40 h-15 flex items-center justify-center gap-2.5"
           >
             <Image
               src={'/icons/diamond.png'}
@@ -153,7 +153,8 @@ export default function HomePage() {
             />
             <span>1.25K</span>
           </Button>
-          <Wallet />
+          <Wallet className="w-50" />
+          
         </div>
       </div>
 
