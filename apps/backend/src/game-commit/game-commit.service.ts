@@ -21,6 +21,21 @@ export class GameCommitService {
 
   // Generic handler or specific logic per resource type
 
+  async _queryCharacters(characterName: string, userId: string) {
+    try {
+    } catch (error: any) {
+      console.error(
+        `❌ Error loading and verifying resource: ${error?.message || 'unknown error'}`
+      );
+      throw error;
+    }
+    return {
+      found: false,
+      userHasIt: false,
+      characters: null,
+    };
+  }
+
   /**
    * Helper function to load a resource from the database by name and userId.
    * Prints the resource parameters to console and verifies if the user has it.
@@ -28,7 +43,7 @@ export class GameCommitService {
    * @param userId - The user ID to check inventory for
    * @returns Object containing the resource, user has it status, and inventory details
    */
-  async verifyUserHasItemResourceInDatabase(
+  async _queryInventory(
     itemName: string,
     userId: string,
     _isResource: boolean,
@@ -59,7 +74,7 @@ export class GameCommitService {
       }
 
       // 2. Print resource params to console
-      console.log(`📦 Item/Resource loaded from database:`);
+      console.log(`📦 Item/Resource/Coins loaded from database:`);
       console.log(`   Name: ${resource.name}`);
       console.log(`   Rarity: ${resource.rarity}`);
       console.log(`   Origin: ${resource.origin}`);
@@ -161,7 +176,7 @@ export class GameCommitService {
     console.log(`Committing resource [${name}] - action: ${action}`, payload);
     try {
       // 1. We chek such resource exists and user has it in DB
-      const result = await this.verifyUserHasItemResourceInDatabase(
+      const result = await this._queryInventory(
         name,
         payload.playerAddress, // assuming playerAddress is used as userId here
         true,
@@ -223,9 +238,70 @@ export class GameCommitService {
     return { success: false, resource: name, action, commit: null };
   }
 
-  commitCoin(name: string, action: 'mint' | 'burn', payload: any) {
+  async commitCoin(name: string, action: 'mint' | 'burn', payload: any) {
     console.log(`Committing coin [${name}] - action: ${action}`, payload);
-    return { success: true, coin: name, action, payload };
+    try {
+      // 1. We chek such resource exists and user has it in DB
+      const result = await this._queryInventory(
+        name,
+        payload.playerAddress, // assuming playerAddress is used as userId here
+        true,
+        false
+      );
+      if (!result.found || !result.userHasIt) {
+        throw new Error(`Resource ${name} not found or user does not have it.`);
+      }
+
+      // 2. We pull GameElementStruct from chain and verify it is valid resource
+      const metaData = await this.blockchainService.getGameElement(name);
+
+      if (
+        !metaData ||
+        metaData.tokenAddress === '0x0000000000000000000000000000000000000000'
+      ) {
+        throw new Error(
+          `Game element metadata for resource ${name} is invalid.`
+        );
+      }
+
+      // 3. We call BlockchainService to generate signed mint/burn callData for the resource on-chain
+      let commitData;
+
+      switch (action) {
+        case 'mint':
+          console.log(`Generating mint callData for resource [${name}]...`);
+          commitData = await this.blockchainService.mintCoins(
+            name,
+            payload.playerAddress,
+            metaData.tokenId,
+            result.inventoryDetails?.quantity || 1000
+          );
+          break;
+        case 'burn':
+          console.log(`Generating burn callData for resource [${name}]...`);
+          commitData = await this.blockchainService.burnCoins(
+            name,
+            payload.playerAddress,
+            metaData.tokenId,
+            result.inventoryDetails?.quantity || 1000
+          );
+          break;
+        default:
+          throw new Error(`Unsupported action: ${action}`);
+      }
+
+      // 4. Return success signed callData to user for submission to blockchain
+      if (commitData && commitData.resourceHash.length > 0) {
+        console.log('✅ Generated callData for resource commit:', commitData);
+        return { success: true, resource: name, action, commit: commitData };
+      }
+    } catch (err) {
+      console.error(`❌ Crash committing resource [${name}]:`, err);
+    }
+
+    // In case of failure
+    console.log('❌ Failed to generate callData for resource commit');
+    return { success: false, resource: name, action, commit: null };
   }
 
   async commitItem(name: string, action: 'mint' | 'burn', payload: any) {
@@ -233,7 +309,7 @@ export class GameCommitService {
     console.log(`Committing resource [${name}] - action: ${action}`, payload);
     try {
       // 1. We chek such resource exists and user has it in DB
-      const result = await this.verifyUserHasItemResourceInDatabase(
+      const result = await this._queryInventory(
         name,
         payload.playerAddress, // assuming playerAddress is used as userId here
         false,
@@ -261,7 +337,7 @@ export class GameCommitService {
       switch (action) {
         case 'mint':
           console.log(`Generating mint callData for resource [${name}]...`);
-          commitData = await this.blockchainService.mintResource(
+          commitData = await this.blockchainService.mintItem(
             name,
             payload.playerAddress,
             metaData.tokenId,
@@ -270,7 +346,7 @@ export class GameCommitService {
           break;
         case 'burn':
           console.log(`Generating burn callData for resource [${name}]...`);
-          commitData = await this.blockchainService.burnResource(
+          commitData = await this.blockchainService.burnItem(
             name,
             payload.playerAddress,
             metaData.tokenId,
@@ -295,8 +371,65 @@ export class GameCommitService {
     return { success: false, resource: name, action, commit: null };
   }
 
-  commitCharacter(name: string, action: 'mint' | 'burn', payload: any) {
+  async commitCharacter(name: string, action: 'mint' | 'burn', payload: any) {
     console.log(`Committing character [${name}] - action: ${action}`, payload);
-    return { success: true, character: name, action, payload };
+    try {
+      // 1. We chek such resource exists and user has it in DB
+      const result = await this._queryCharacters(
+        name,
+        payload.playerAddress // assuming playerAddress is used as userId here
+      );
+      if (!result.found || !result.userHasIt) {
+        throw new Error(`Resource ${name} not found or user does not have it.`);
+      }
+
+      // 2. We pull GameElementStruct from chain and verify it is valid resource
+      const metaData = await this.blockchainService.getGameElement(name);
+
+      if (
+        !metaData ||
+        metaData.tokenAddress === '0x0000000000000000000000000000000000000000'
+      ) {
+        throw new Error(
+          `Game element metadata for resource ${name} is invalid.`
+        );
+      }
+
+      // 3. We call BlockchainService to generate signed mint/burn callData for the resource on-chain
+      let commitData;
+
+      switch (action) {
+        case 'mint':
+          console.log(`Generating mint callData for resource [${name}]...`);
+          commitData = await this.blockchainService.mintCharacter(
+            name,
+            payload.playerAddress,
+            metaData.tokenId
+          );
+          break;
+        case 'burn':
+          console.log(`Generating burn callData for resource [${name}]...`);
+          commitData = await this.blockchainService.burnCharacter(
+            name,
+            payload.playerAddress,
+            metaData.tokenId
+          );
+          break;
+        default:
+          throw new Error(`Unsupported action: ${action}`);
+      }
+
+      // 4. Return success signed callData to user for submission to blockchain
+      if (commitData && commitData.resourceHash.length > 0) {
+        console.log('✅ Generated callData for resource commit:', commitData);
+        return { success: true, resource: name, action, commit: commitData };
+      }
+    } catch (err) {
+      console.error(`❌ Crash committing resource [${name}]:`, err);
+    }
+
+    // In case of failure
+    console.log('❌ Failed to generate callData for resource commit');
+    return { success: false, resource: name, action, commit: null };
   }
 }
