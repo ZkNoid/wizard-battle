@@ -94,7 +94,7 @@ export class State extends Struct({
   }
 
   copy(): State {
-    return State.fromJSON(State.toJSON(this));
+    return new State(State.fromJSON(State.toJSON(this)));
   }
 
   getCommit() {
