@@ -146,7 +146,9 @@ export class Stater extends Struct({
       throw new Error('No such effectInfo');
     }
 
-    // Store original states before applying
+    // Store original private state before applying
+    // Note: publicState parameter is passed to effectInfo.apply but not separately restored
+    // because it's the same object as this.state when called from applyOnEndEffects()
     const originalState = this.state.copy();
 
     // Always apply the effect (computes new state)
