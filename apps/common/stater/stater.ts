@@ -148,7 +148,6 @@ export class Stater extends Struct({
 
     // Store original states before applying
     const originalState = this.state.copy();
-    const originalPublicState = publicState.copy();
 
     // Always apply the effect (computes new state)
     console.log('applyOnEndEffect', effectInfo.name);
@@ -177,24 +176,6 @@ export class Stater extends Struct({
       randomSeed: selectedState.randomSeed,
       signingKey: selectedState.signingKey,
     });
-
-    const selectedPublicState = Provable.if(
-      isExpired,
-      State,
-      publicState,
-      originalPublicState
-    );
-    // Update publicState fields in place
-    publicState.playerId = selectedPublicState.playerId;
-    publicState.wizardId = selectedPublicState.wizardId;
-    publicState.playerStats = selectedPublicState.playerStats;
-    publicState.spellStats = selectedPublicState.spellStats;
-    publicState.endOfRoundEffects = selectedPublicState.endOfRoundEffects;
-    publicState.publicStateEffects = selectedPublicState.publicStateEffects;
-    publicState.onEndEffects = selectedPublicState.onEndEffects;
-    publicState.map = selectedPublicState.map;
-    publicState.turnId = selectedPublicState.turnId;
-    publicState.randomSeed = selectedPublicState.randomSeed;
 
     effect.effectId = Provable.if(isExpired, Field(0), effect.effectId);
   }
@@ -248,11 +229,10 @@ export class Stater extends Struct({
     // Apply end of round effects
     this.applyEndOfRoundEffects();
 
-    // Generate public state before applying onEnd effects to prevent interference
-    const publicState = this.generatePublicState();
-
-    // Apply on end effects after public state generation
+    // Apply on end effects
     this.applyOnEndEffects();
+
+    const publicState = this.generatePublicState();
 
     // Public state effects are already applied inside generatePublicState()
     this.reduceSpellCooldowns();
