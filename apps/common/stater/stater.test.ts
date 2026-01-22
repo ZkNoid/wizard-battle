@@ -1,4 +1,4 @@
-import { Field, Int64, UInt64, PrivateKey } from 'o1js';
+import { Field, Int64, UInt64, PrivateKey, CircuitString, Bool } from 'o1js';
 import { Stater } from './stater';
 import { State } from './state';
 
@@ -9,7 +9,8 @@ import {
   PositionOption,
   SpellStats,
 } from './structs';
-import { WizardId } from '../wizards';
+import { WizardId, allWizards } from '../wizards';
+import { EffectsId } from './effects/effects';
 
 describe('Stater', () => {
   let initialState: State;
@@ -475,13 +476,9 @@ describe('Stater', () => {
 
   describe('wizard invisibility effect', () => {
     it('should apply permanent invisibility to public state for wizard', () => {
-      // Import wizard utilities
-      const { allWizards } = require('../wizards');
-      const { EffectsId } = require('./effects/effects');
-      
       // Create a wizard (Mage) with permanent invisibility
-      const mageWizard = allWizards.find((w: any) => w.name === 'Wizard');
-      const wizardState = mageWizard.defaultState();
+      const mageWizard = allWizards.find((w) => w.name === 'Wizard');
+      const wizardState = mageWizard!.defaultState();
       
       // Set a real position
       wizardState.playerStats.position.value.x = Int64.from(5);
@@ -492,7 +489,7 @@ describe('Stater', () => {
       
       // Verify invisibility effect is in publicStateEffects
       const invisibleEffect = wizardStater.state.publicStateEffects.find(
-        (e) => e.effectId.toString() === EffectsId.Invisible.toString()
+        (e) => e.effectId.toString() === EffectsId.Invisible!.toString()
       );
       expect(invisibleEffect).toBeDefined();
       expect(invisibleEffect!.duration.toString()).toBe(Field(-1).toString()); // Permanent effect
@@ -512,14 +509,9 @@ describe('Stater', () => {
     });
 
     it('should maintain invisibility when onEnd effects are present', () => {
-      // Import wizard utilities
-      const { allWizards } = require('../wizards');
-      const { EffectsId } = require('./effects/effects');
-      const { CircuitString } = require('o1js');
-      
       // Create a wizard (Mage) with permanent invisibility
-      const mageWizard = allWizards.find((w: any) => w.name === 'Wizard');
-      const wizardState = mageWizard.defaultState();
+      const mageWizard = allWizards.find((w) => w.name === 'Wizard');
+      const wizardState = mageWizard!.defaultState();
       
       // Set a real position
       wizardState.playerStats.position.value.x = Int64.from(7);
@@ -534,7 +526,7 @@ describe('Stater', () => {
           param: Field(0),
         }),
         'onEnd',
-        require('o1js').Bool(true)
+        Bool(true)
       );
       
       const wizardStater = new Stater({ state: wizardState });
