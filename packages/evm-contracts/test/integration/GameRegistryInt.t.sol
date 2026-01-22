@@ -5,11 +5,11 @@ import {Test, console} from "forge-std/Test.sol";
 import {GameRegistry} from "src/GameRegistry.sol";
 import {WBResources} from "src/tokens/ERC1155/WBResources.sol";
 import {WBCoin} from "src/tokens/ERC20/WBCoin.sol";
-import {WBCharacter} from "src/tokens/ERC721/WBCharacter.sol";
+import {WBCharacters} from "src/tokens/ERC721/WBCharacters.sol";
 import {DeployGameRegistry} from "script/DeployGameRegistry.s.sol";
 import {DeployWBResources} from "script/DeployWBResources.s.sol";
 import {DeployWBCoin} from "script/DeployWBCoin.s.sol";
-import {DeployWBCharacter} from "script/DeployWBCharacter.s.sol";
+import {DeployWBCharacters} from "script/DeployWBCharacters.s.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 contract GameRegistryIntTest is Test {
@@ -25,7 +25,7 @@ contract GameRegistryIntTest is Test {
     GameRegistry public gameRegistry;
     WBResources public wbResources;
     WBCoin public wBCoin;
-    WBCharacter public wbCharacter;
+    WBCharacters public wbCharacters;
 
     bytes32 private constant GAME_SIGNER_ROLE = keccak256("GAME_SIGNER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -64,9 +64,9 @@ contract GameRegistryIntTest is Test {
         wbResources.grantRole(MINTER_ROLE, gameRegistryAddress);
         wbResources.grantRole(MINTER_ROLE, GAME_SIGNER);
 
-        wbCharacter = WBCharacter(new DeployWBCharacter().deploy());
-        wbCharacter.grantRole(MINTER_ROLE, gameRegistryAddress);
-        wbCharacter.grantRole(MINTER_ROLE, GAME_SIGNER);
+        wbCharacters = WBCharacters(new DeployWBCharacters().deploy());
+        wbCharacters.grantRole(MINTER_ROLE, gameRegistryAddress);
+        wbCharacters.grantRole(MINTER_ROLE, GAME_SIGNER);
     }
 
     modifier addCoinResourceType() {
@@ -83,7 +83,7 @@ contract GameRegistryIntTest is Test {
 
     modifier addCharacterType() {
         vm.prank(GAME_SIGNER);
-        gameRegistry.addGameElement(GameRegistry.GameElementType.CHARACTER, "Wizard", address(wbCharacter), 0, false);
+        gameRegistry.addGameElement(GameRegistry.GameElementType.CHARACTER, "Wizard", address(wbCharacters), 0, false);
         _;
     }
 
@@ -174,17 +174,17 @@ contract GameRegistryIntTest is Test {
         console.log("Game signer:", GAME_SIGNER);
 
         bytes memory callData = abi.encodeWithSignature("mint(address)", PLAYER);
-        (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage("Wizard", address(wbCharacter), 0, callData);
+        (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage("Wizard", address(wbCharacters), 0, callData);
 
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
         gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
 
-        uint256 playerWBCCharacterBalance = wbCharacter.balanceOf(PLAYER);
-        assertEq(playerWBCCharacterBalance, 1);
+        uint256 playerWBCCharactersBalance = wbCharacters.balanceOf(PLAYER);
+        assertEq(playerWBCCharactersBalance, 1);
 
-        console.log("WBCharacter total supply:", wbCharacter.totalSupply());
-        console.log("PLAYER's WBCharacter balance:", playerWBCCharacterBalance);
+        console.log("WBCharacters total supply:", wbCharacters.totalSupply());
+        console.log("PLAYER's WBCharacters balance:", playerWBCCharactersBalance);
     }
 
     /*//////////////////////////////////////////////////////////////

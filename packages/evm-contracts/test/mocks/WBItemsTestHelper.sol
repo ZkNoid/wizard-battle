@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import {WBCharacter} from "../../src/tokens/ERC721/WBCharacter.sol";
-import {
-    ERC721EnumerableUpgradeable
-} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import {WBItems} from "../../src/tokens/ERC721/WBItems.sol";
+import {ERC721EnumerableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 
 // This contract is used to test internal functions
-// It inherits from WBCharacter and exposes _increaseBalance for testing
-contract WBCharacterTestHelper is WBCharacter {
+// It inherits from WBItems and exposes _increaseBalance for testing
+contract WBItemsTestHelper is WBItems {
     // Override constructor to allow initialization
     constructor() {
         // Don't call _disableInitializers() so we can initialize
@@ -23,7 +21,7 @@ contract WBCharacterTestHelper is WBCharacter {
         // This check matches ERC721Enumerable's behavior and is expected to revert for value > 0
         require(value == 0, "ERC721EnumerableForbiddenBatchMint");
         // This will call ERC721Enumerable's _increaseBalance, which calls super._increaseBalance
-        // which will call WBCharacter's _increaseBalance override
+        // which will call WBItems's _increaseBalance override
         _increaseBalance(account, value);
     }
 }
