@@ -248,10 +248,11 @@ export class Stater extends Struct({
     // Apply end of round effects
     this.applyEndOfRoundEffects();
 
-    // Apply on end effects
-    this.applyOnEndEffects();
-
+    // Generate public state before applying onEnd effects to prevent interference
     const publicState = this.generatePublicState();
+
+    // Apply on end effects after public state generation
+    this.applyOnEndEffects();
 
     // Public state effects are already applied inside generatePublicState()
     this.reduceSpellCooldowns();
