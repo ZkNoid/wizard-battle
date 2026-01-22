@@ -476,9 +476,12 @@ describe('Stater', () => {
 
   describe('wizard invisibility effect', () => {
     it('should apply permanent invisibility to public state for wizard', () => {
-      // Create a wizard (Mage) with permanent invisibility
+      // Create a Wizard with permanent invisibility
       const mageWizard = allWizards.find((w) => w.name === 'Wizard');
-      const wizardState = mageWizard!.defaultState();
+      if (!mageWizard) {
+        throw new Error('Wizard not found in allWizards');
+      }
+      const wizardState = mageWizard.defaultState();
       
       // Set a real position
       wizardState.playerStats.position.value.x = Int64.from(5);
@@ -509,9 +512,12 @@ describe('Stater', () => {
     });
 
     it('should maintain invisibility when onEnd effects are present', () => {
-      // Create a wizard (Mage) with permanent invisibility
+      // Create a Wizard with permanent invisibility
       const mageWizard = allWizards.find((w) => w.name === 'Wizard');
-      const wizardState = mageWizard!.defaultState();
+      if (!mageWizard) {
+        throw new Error('Wizard not found in allWizards');
+      }
+      const wizardState = mageWizard.defaultState();
       
       // Set a real position
       wizardState.playerStats.position.value.x = Int64.from(7);
