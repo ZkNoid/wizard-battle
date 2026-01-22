@@ -53,9 +53,9 @@ export default function GamePage() {
     spellCastDone: false,
   });
   const [preparedActions, setPreparedActions] = useState<IUserAction[]>([]);
-  const [highlightedAllyTiles, setHighlightedAllyTiles] = useState<number[]>(
-    []
-  );
+  const [highlightedAllyTiles, setHighlightedAllyTiles] = useState<
+    Map<number, { color: string }>
+  >(new Map());
   const [highlightedEnemyTiles, setHighlightedEnemyTiles] = useState<number[]>(
     []
   );
@@ -109,11 +109,32 @@ export default function GamePage() {
   const handleTileMouseEnter = useCallback(
     (index: number, isEnemy: boolean) => {
       if (!pickedSpellId) {
-        // Clear highlights when no spell is picked
-        if (isEnemy) {
-          setHighlightedEnemyTiles([]);
+        // Show movement range on ally map when no spell is picked
+        if (!isEnemy && stater?.state?.playerStats) {
+          const userX = +stater.state.playerStats.position.value.x;
+          const userY = +stater.state.playerStats.position.value.y;
+          const speed = +stater.state.playerStats.speed;
+
+          // Calculate tiles within movement range (Manhattan distance)
+          const movementTiles = new Map<number, { color: string }>();
+          for (let y = 0; y < GRID_HEIGHT; y++) {
+            for (let x = 0; x < GRID_WIDTH; x++) {
+              const distance = Math.abs(userX - x) + Math.abs(userY - y);
+              if (distance <= speed && distance > 0) {
+                movementTiles.set(coordinatesToIndex(x, y), {
+                  color: 'rgba(100, 255, 100, 0.5)',
+                });
+              }
+            }
+          }
+          setHighlightedAllyTiles(movementTiles);
         } else {
-          setHighlightedAllyTiles([]);
+          // Clear highlights on enemy map when no spell is picked
+          if (isEnemy) {
+            setHighlightedEnemyTiles([]);
+          } else {
+            setHighlightedAllyTiles(new Map());
+          }
         }
         return;
       }
@@ -126,7 +147,7 @@ export default function GamePage() {
         if (isEnemy) {
           setHighlightedEnemyTiles([]);
         } else {
-          setHighlightedAllyTiles([]);
+          setHighlightedAllyTiles(new Map());
         }
         return;
       }
@@ -140,7 +161,7 @@ export default function GamePage() {
         if (isEnemy) {
           setHighlightedEnemyTiles([]);
         } else {
-          setHighlightedAllyTiles([]);
+          setHighlightedAllyTiles(new Map());
         }
         return;
       }
@@ -162,10 +183,14 @@ export default function GamePage() {
       if (isEnemy) {
         setHighlightedEnemyTiles(indices);
       } else {
-        setHighlightedAllyTiles(indices);
+        const highlightMap = new Map<number, { color: string }>();
+        indices.forEach((idx) => {
+          highlightMap.set(idx, { color: 'rgba(255, 100, 100, 0.5)' });
+        });
+        setHighlightedAllyTiles(highlightMap);
       }
     },
-    [pickedSpellId, indexToCoordinates, coordinatesToIndex]
+    [pickedSpellId, indexToCoordinates, coordinatesToIndex, stater]
   );
 
   const handleAllyTileMouseEnter = useCallback(
@@ -183,7 +208,7 @@ export default function GamePage() {
   );
 
   const handleAllyMouseLeave = useCallback(() => {
-    setHighlightedAllyTiles([]);
+    setHighlightedAllyTiles(new Map());
   }, []);
 
   const handleEnemyMouseLeave = useCallback(() => {
@@ -440,7 +465,7 @@ export default function GamePage() {
   // Clear highlights when spell selection changes
   useEffect(() => {
     if (!pickedSpellId) {
-      setHighlightedAllyTiles([]);
+      setHighlightedAllyTiles(new Map());
       setHighlightedEnemyTiles([]);
     }
   }, [pickedSpellId]);
@@ -579,7 +604,6 @@ export default function GamePage() {
           onTileMouseEnter={handleAllyTileMouseEnter}
           onMouseLeave={handleAllyMouseLeave}
           highlightedTiles={highlightedAllyTiles}
-          defaultHighlight={{ color: 'rgba(255, 100, 100, 0.5)' }}
         />
         <EntityOverlay
           entities={entities.filter((entity) => entity.id !== 'enemy')}
