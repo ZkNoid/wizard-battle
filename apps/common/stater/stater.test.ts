@@ -472,4 +472,85 @@ describe('Stater', () => {
       expect(stater.state.randomSeed.toString()).toBe(originalSeed);
     });
   });
+
+  describe('wizard invisibility effect', () => {
+    it('should apply permanent invisibility to public state for wizard', () => {
+      // Import wizard utilities
+      const { allWizards } = require('../wizards');
+      const { EffectsId } = require('./effects/effects');
+      
+      // Create a wizard (Mage) with permanent invisibility
+      const mageWizard = allWizards.find((w: any) => w.name === 'Wizard');
+      const wizardState = mageWizard.defaultState();
+      
+      // Set a real position
+      wizardState.playerStats.position.value.x = Int64.from(5);
+      wizardState.playerStats.position.value.y = Int64.from(3);
+      wizardState.playerStats.position.isSome = Field(1);
+      
+      const wizardStater = new Stater({ state: wizardState });
+      
+      // Verify invisibility effect is in publicStateEffects
+      const invisibleEffect = wizardStater.state.publicStateEffects.find(
+        (e) => e.effectId.toString() === EffectsId.Invisible.toString()
+      );
+      expect(invisibleEffect).toBeDefined();
+      expect(invisibleEffect!.duration.toString()).toBe(Field(-1).toString()); // Permanent effect
+      
+      // Apply effects (no spells, just process effects)
+      const result = wizardStater.apply([], opponentState);
+      
+      // Private state should keep real position
+      expect(wizardStater.state.playerStats.position.value.x.toString()).toBe('5');
+      expect(wizardStater.state.playerStats.position.value.y.toString()).toBe('3');
+      expect(wizardStater.state.playerStats.position.isSome.toString()).toBe('1');
+      
+      // Public state should have invisible position
+      expect(result.publicState.playerStats.position.value.x.toString()).toBe('0');
+      expect(result.publicState.playerStats.position.value.y.toString()).toBe('0');
+      expect(result.publicState.playerStats.position.isSome.toString()).toBe('0');
+    });
+
+    it('should maintain invisibility when onEnd effects are present', () => {
+      // Import wizard utilities
+      const { allWizards } = require('../wizards');
+      const { EffectsId } = require('./effects/effects');
+      const { CircuitString } = require('o1js');
+      
+      // Create a wizard (Mage) with permanent invisibility
+      const mageWizard = allWizards.find((w: any) => w.name === 'Wizard');
+      const wizardState = mageWizard.defaultState();
+      
+      // Set a real position
+      wizardState.playerStats.position.value.x = Int64.from(7);
+      wizardState.playerStats.position.value.y = Int64.from(4);
+      wizardState.playerStats.position.isSome = Field(1);
+      
+      // Add an onEnd effect (e.g., SpectralProjectionReturn)
+      wizardState.pushEffect(
+        new Effect({
+          effectId: CircuitString.fromString('SpectralProjectionReturn').hash(),
+          duration: Field.from(2),
+          param: Field(0),
+        }),
+        'onEnd',
+        require('o1js').Bool(true)
+      );
+      
+      const wizardStater = new Stater({ state: wizardState });
+      
+      // Apply effects (no spells, just process effects)
+      const result = wizardStater.apply([], opponentState);
+      
+      // Private state should keep real position
+      expect(wizardStater.state.playerStats.position.value.x.toString()).toBe('7');
+      expect(wizardStater.state.playerStats.position.value.y.toString()).toBe('4');
+      expect(wizardStater.state.playerStats.position.isSome.toString()).toBe('1');
+      
+      // Public state should STILL have invisible position (this is where the bug might occur)
+      expect(result.publicState.playerStats.position.value.x.toString()).toBe('0');
+      expect(result.publicState.playerStats.position.value.y.toString()).toBe('0');
+      expect(result.publicState.playerStats.position.isSome.toString()).toBe('0');
+    });
+  });
 });
