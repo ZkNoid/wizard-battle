@@ -25,6 +25,7 @@
     "clsx": "^2.1.1",
     "copy-webpack-plugin": "^13.0.1",
     "formik": "^2.4.6",
+    "howler": "^2.2.4",
     "immer": "^10.1.1",
     "mina-appkit": "^1.0.0",
     "mongodb": "^6.18.0",
