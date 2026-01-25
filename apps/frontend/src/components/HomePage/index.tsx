@@ -53,7 +53,7 @@ export default function HomePage() {
   const { address, triggerWallet } = useMinaAppkit();
   const { hasShownWelcomeScreen, setHasShownWelcomeScreen } =
     useMiscellaneousSessionStore();
-  const { playMainTheme } = useBackgroundMusic();
+  const { playMainTheme, stopMusic } = useBackgroundMusic();
 
   // Initialize and play main theme on mount
   useEffect(() => {
@@ -72,8 +72,9 @@ export default function HomePage() {
     return () => {
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('keydown', handleFirstInteraction);
+      // stopMusic(0); // Stop music immediately on unmount
     };
-  }, [playMainTheme]);
+  }, [playMainTheme, stopMusic]);
 
   useEffect(() => {
     const handleResize = () => {
