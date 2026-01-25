@@ -26,6 +26,7 @@ import WelcomeScreen from '../WelcomeScreen';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 import CraftModal from '../CraftModal';
 import ExpeditionModal from '../ExpeditionModal';
+import { useBackgroundMusic } from '@/lib/hooks/useAudio';
 
 enum TabHover {
   CRAFT,
@@ -52,6 +53,27 @@ export default function HomePage() {
   const { address, triggerWallet } = useMinaAppkit();
   const { hasShownWelcomeScreen, setHasShownWelcomeScreen } =
     useMiscellaneousSessionStore();
+  const { playMainTheme } = useBackgroundMusic();
+
+  // Initialize and play main theme on mount
+  useEffect(() => {
+    playMainTheme();
+
+    // If autoplay is blocked, retry on first user interaction
+    const handleFirstInteraction = () => {
+      playMainTheme();
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('keydown', handleFirstInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+  }, [playMainTheme]);
 
   useEffect(() => {
     const handleResize = () => {

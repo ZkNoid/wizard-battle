@@ -3,22 +3,17 @@
 import BoxButton from '../shared/BoxButton';
 import { VolumeBar } from './assets/volume-bar';
 import { VolumeHandle } from './assets/volume-handle';
-import { useState } from 'react';
 import Image from 'next/image';
+import { useAudioControls } from '@/lib/hooks/useAudio';
 
 export default function AudioSelector() {
-  const [isActive, setIsActive] = useState<boolean>(true);
-  const [volume, setVolume] = useState<number>(50);
+  const { volume, isMuted, setVolume, toggleMute } = useAudioControls();
 
   return (
     <div className="flex items-center gap-4">
       {/* Audio On/Off button */}
-      <BoxButton
-        onClick={() => setIsActive(!isActive)}
-        color="blue"
-        className="size-16"
-      >
-        {isActive ? (
+      <BoxButton onClick={toggleMute} color="blue" className="size-16">
+        {!isMuted ? (
           <Image
             src={'/icons/sound-on.png'}
             width={30}

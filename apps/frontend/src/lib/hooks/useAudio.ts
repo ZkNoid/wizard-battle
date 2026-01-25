@@ -1,0 +1,117 @@
+import { useCallback } from 'react';
+import { useAudioStore } from '../store/audioStore';
+import { AUDIO_ASSETS } from '../constants/audioAssets';
+
+/**
+ * Hook for playing sound effects
+ *
+ * Usage:
+ * ```typescript
+ * const playSound = useSound();
+ *
+ * // Play UI sound
+ * playSound('ui-click');
+ *
+ * // Play spell sound
+ * playSound('spell-cast');
+ * ```
+ */
+export function useSound() {
+  const playSound = useAudioStore((state) => state.playSound);
+
+  return useCallback(
+    (soundKey: string) => {
+      // Helper to find sound in nested object
+      const findSound = (obj: any, key: string): string | null => {
+        for (const k in obj) {
+          if (k === key) return obj[k];
+          if (typeof obj[k] === 'object') {
+            const found = findSound(obj[k], key);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+
+      // Try to find the sound path
+      const soundPath = findSound(AUDIO_ASSETS.sfx, soundKey);
+      
+      if (soundPath) {
+        playSound(soundPath);
+      } else {
+        console.warn(`Sound not found: ${soundKey}`);
+      }
+    },
+    [playSound]
+  );
+}
+
+/**
+ * Hook for managing background music
+ *
+ * Usage:
+ * ```typescript
+ * const { playMainTheme, playBattleMusic, stopMusic } = useBackgroundMusic();
+ *
+ * // Play main theme
+ * playMainTheme();
+ *
+ * // Play battle music
+ * playBattleMusic();
+ * ```
+ */
+export function useBackgroundMusic() {
+  const playMusic = useAudioStore((state) => state.playMusic);
+  const stopMusic = useAudioStore((state) => state.stopMusic);
+
+  const playMainTheme = useCallback(
+    (fadeDuration = 500) => {
+      playMusic(AUDIO_ASSETS.music.background.fantasyVillage, fadeDuration);
+    },
+    [playMusic]
+  );
+
+  const playBattleMusic = useCallback(
+    (fadeDuration = 500) => {
+      playMusic(AUDIO_ASSETS.music.battle.deathTaker, fadeDuration);
+    },
+    [playMusic]
+  );
+
+  const stopCurrentMusic = useCallback(
+    (fadeDuration = 500) => {
+      stopMusic(fadeDuration);
+    },
+    [stopMusic]
+  );
+
+  return {
+    playMainTheme,
+    playBattleMusic,
+    stopMusic: stopCurrentMusic,
+  };
+}
+
+/**
+ * Hook for volume and mute controls
+ *
+ * Usage:
+ * ```typescript
+ * const { volume, isMuted, setVolume, toggleMute } = useAudioControls();
+ * ```
+ */
+export function useAudioControls() {
+  const volume = useAudioStore((state) => state.volume);
+  const isMuted = useAudioStore((state) => state.isMuted);
+  const setVolume = useAudioStore((state) => state.setVolume);
+  const toggleMute = useAudioStore((state) => state.toggleMute);
+  const setMuted = useAudioStore((state) => state.setMuted);
+
+  return {
+    volume,
+    isMuted,
+    setVolume,
+    toggleMute,
+    setMuted,
+  };
+}
