@@ -102,9 +102,17 @@ export class Stater extends Struct({
     // Calculate damage (damage * defense * crit * accuracy)
     const fullDamage = damage
       .mul(opponentState.playerStats.attack)
-      .mul(this.state.playerStats.defense)
-      .div(CALCULATION_PRECISION);
+      .mul(this.state.playerStats.defense.add(CALCULATION_PRECISION))
+      .div(CALCULATION_PRECISION * CALCULATION_PRECISION);
     const finalDamage = Provable.if(isHit, fullDamage, UInt64.from(0));
+
+    console.log('hitChance', hitChance);
+    console.log('dodgeRandomPercentage', dodgeRandomPercentage);
+    console.log('isHit', isHit);
+    console.log('damage', damage.toString());
+    console.log('defense', this.state.playerStats.defense.toString());
+    console.log('fullDamage', fullDamage);
+    console.log('finalDamage', finalDamage);
 
     this.state.playerStats.hp = this.state.playerStats.hp.sub(finalDamage);
   }

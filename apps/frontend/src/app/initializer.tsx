@@ -57,7 +57,7 @@ export default function Initializer() {
         }),
         speed: Int64.from(1),
         attack: UInt64.from(statsByWizard[defaultWizardId]?.atk ?? 100),
-        defense: UInt64.from(statsByWizard[defaultWizardId]?.def ?? 100),
+        defense: UInt64.from(statsByWizard[defaultWizardId]?.def ?? 0),
         critChance: UInt64.from(statsByWizard[defaultWizardId]?.crit ?? 0),
         dodgeChance: UInt64.from(statsByWizard[defaultWizardId]?.dodge ?? 0),
         accuracy: UInt64.from(statsByWizard[defaultWizardId]?.accuracy ?? 0),
