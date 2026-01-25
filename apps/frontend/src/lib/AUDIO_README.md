@@ -14,6 +14,17 @@ src/lib/
 │   └── useAudio.ts          # React hooks
 └── constants/
     └── audioAssets.ts       # Audio file paths
+
+public/audio/
+├── music/
+│   ├── background/          # Фоновая музыка (главное меню, лобби)
+│   │   └── fantasy-village-woods.mp3
+│   └── battle/              # Музыка битвы (во время игры)
+│       └── death-taker.mp3
+└── sfx/                     # Звуковые эффекты
+    ├── ui/
+    ├── spells/
+    └── archer/
 ```
 
 ## Использование
@@ -27,16 +38,31 @@ function MyComponent() {
   const { playMainTheme, playBattleMusic, stopMusic } = useBackgroundMusic();
 
   useEffect(() => {
-    // Запустить основную тему
+    // Запустить основную тему (главное меню, лобби)
     playMainTheme();
     
-    // Или музыку битвы
+    // Или музыку битвы (игровая сцена)
     // playBattleMusic();
     
     // Остановить музыку
     // stopMusic();
   }, []);
 }
+```
+
+**Пример: Автоматическое переключение при входе в игру**
+
+```typescript
+// В компоненте игровой страницы
+useEffect(() => {
+  // Включить battle музыку при входе
+  playBattleMusic();
+
+  // Вернуть фоновую музыку при выходе
+  return () => {
+    playMainTheme();
+  };
+}, [playBattleMusic, playMainTheme]);
 ```
 
 ### 2. Воспроизведение звуковых эффектов

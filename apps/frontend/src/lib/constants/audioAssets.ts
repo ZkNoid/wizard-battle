@@ -7,11 +7,9 @@ export const AUDIO_ASSETS = {
   music: {
     background: {
       fantasyVillage: '/audio/music/background/fantasy-village-woods.mp3',
-      // Добавим позже другие треки
     },
     battle: {
-      deathTaker: '/audio/music/battle/death-taker.mp3',
-      // Добавим позже другие треки
+      deathTaker: '/audio/music/battle/death-taker-battle-music-fanta.mp3',
     },
   },
   sfx: {

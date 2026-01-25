@@ -29,6 +29,7 @@ import {
   EntityType,
 } from '@/engine';
 import { WizardId } from '../../../../common/wizards';
+import { useBackgroundMusic } from '@/lib/hooks/useAudio';
 
 // Constants
 const GRID_WIDTH = 8;
@@ -44,6 +45,7 @@ export default function GamePage() {
   // Hooks
   const router = useRouter();
   const { address } = useMinaAppkit();
+  const { playBattleMusic, playMainTheme } = useBackgroundMusic();
   const [canPlayerAct, setCanPlayerAct] = useState<boolean>(false);
   const [actionInfo, setActionInfo] = useState<{
     movementDone: boolean;
@@ -435,6 +437,16 @@ export default function GamePage() {
   }, [setActionSend]);
 
   // Effects
+
+  // Switch to battle music when entering game
+  useEffect(() => {
+    playBattleMusic();
+
+    // Return to main theme when leaving game
+    return () => {
+      playMainTheme();
+    };
+  }, [playBattleMusic, playMainTheme]);
 
   useEffect(() => {
     if (gamePhaseManager) {
