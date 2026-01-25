@@ -38,8 +38,6 @@ export function useSound() {
       
       if (soundPath) {
         playSound(soundPath);
-      } else {
-        console.warn(`Sound not found: ${soundKey}`);
       }
     },
     [playSound]

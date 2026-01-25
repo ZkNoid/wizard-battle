@@ -21,8 +21,7 @@ class AudioService {
         loop: true,
         preload: true,
         html5: true, // Use HTML5 Audio for streaming large files
-        onplayerror: (id, error) => {
-          console.error('Audio play error:', error);
+        onplayerror: () => {
           // Try to unlock audio on next user interaction
           howl.once('unlock', () => {
             howl.play();
