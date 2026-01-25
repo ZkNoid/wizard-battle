@@ -93,8 +93,8 @@ export class Stater extends Struct({
 
   applyDamage(damage: UInt64, opponentState: State) {
     // Check dodge and accuracy
-    const hitChance = opponentState.playerStats.accuracy
-      .mul(this.state.playerStats.dodgeChance)
+    const hitChance = opponentState.playerStats.accuracy.add(CALCULATION_PRECISION)
+      .mul(UInt64.from(CALCULATION_PRECISION).sub(this.state.playerStats.dodgeChance))
       .div(CALCULATION_PRECISION);
     const dodgeRandomPercentage = this.getRandomPercentage();
     const isHit = dodgeRandomPercentage.lessThan(hitChance);
@@ -102,9 +102,17 @@ export class Stater extends Struct({
     // Calculate damage (damage * defense * crit * accuracy)
     const fullDamage = damage
       .mul(opponentState.playerStats.attack)
-      .mul(this.state.playerStats.defense)
-      .div(CALCULATION_PRECISION);
+      .mul(UInt64.from(CALCULATION_PRECISION).sub(this.state.playerStats.defense))
+      .div(CALCULATION_PRECISION * CALCULATION_PRECISION);
     const finalDamage = Provable.if(isHit, fullDamage, UInt64.from(0));
+
+    console.log('hitChance', hitChance);
+    console.log('dodgeRandomPercentage', dodgeRandomPercentage);
+    console.log('isHit', isHit);
+    console.log('damage', damage.toString());
+    console.log('defense', this.state.playerStats.defense.toString());
+    console.log('fullDamage', fullDamage);
+    console.log('finalDamage', finalDamage);
 
     this.state.playerStats.hp = this.state.playerStats.hp.sub(finalDamage);
   }
