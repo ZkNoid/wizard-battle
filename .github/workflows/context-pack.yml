@@ -1,0 +1,373 @@
+name: Context Pack
+
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  context_pack:
+    runs-on: ubuntu-latest
+
+    # Trigger when:
+    # - Issue gets a label starting with "agent-"
+    # - OR a comment contains "/context"
+    if: |
+      (github.event_name == 'issues' && startsWith(github.event.label.name, 'agent-')) ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '/context'))
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate Context Pack
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          LABEL_NAME: ${{ github.event.label.name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # ---------------------------
+          # Safely write issue content to file (avoid shell injection)
+          # ---------------------------
+          cat > issue.txt << 'ISSUE_EOF'
+          ${{ github.event.issue.title }}
+          
+          ${{ github.event.issue.body }}
+          
+          ${{ github.event.comment.body }}
+          ISSUE_EOF
+
+          # ---------------------------
+          # Start context pack
+          # ---------------------------
+          {
+            echo "# 📦 Context Pack"
+            echo ""
+            echo "> Auto-generated context for Copilot agents"
+            echo ""
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| Repo | \`${REPO}\` |"
+            echo "| Issue | #${ISSUE_NUMBER} |"
+            echo "| Trigger | \`${EVENT_NAME}\` |"
+            if [ -n "${LABEL_NAME:-}" ]; then
+              echo "| Label | \`${LABEL_NAME}\` |"
+            fi
+            echo ""
+          } > context_pack.md
+
+          # ---------------------------
+          # Repo map (general context)
+          # ---------------------------
+          {
+            echo "## 🗺️ Repo Map"
+            echo ""
+            echo "<details>"
+            echo "<summary>Directory structure (depth 4)</summary>"
+            echo ""
+            echo '```'
+          } >> context_pack.md
+
+          if command -v tree >/dev/null 2>&1; then
+            tree -L 4 -I 'node_modules|.git|.next|dist|build|coverage|.turbo|.cache' --noreport >> context_pack.md 2>/dev/null || true
+          else
+            find . -maxdepth 4 \( -type f -o -type d \) \
+              ! -path '*/.git/*' \
+              ! -path '*/node_modules/*' \
+              ! -path '*/.next/*' \
+              ! -path '*/dist/*' \
+              ! -path '*/build/*' \
+              ! -path '*/coverage/*' \
+              ! -path '*/.turbo/*' \
+              | sed 's|^\./||' | sort | head -n 300 >> context_pack.md || true
+          fi
+
+          {
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+          } >> context_pack.md
+
+          # ---------------------------
+          # Tooling / scripts context
+          # ---------------------------
+          {
+            echo "## 🛠️ Tooling & Scripts"
+            echo ""
+          } >> context_pack.md
+
+          if [ -f package.json ]; then
+            echo "### Root package.json scripts" >> context_pack.md
+            echo "" >> context_pack.md
+            echo '```json' >> context_pack.md
+            node -e '
+              const p = require("./package.json");
+              const s = p.scripts || {};
+              console.log(JSON.stringify(s, null, 2));
+            ' >> context_pack.md 2>/dev/null || echo '{}' >> context_pack.md
+            echo '```' >> context_pack.md
+          else
+            echo "_No root package.json found._" >> context_pack.md
+          fi
+
+          echo "" >> context_pack.md
+          echo "### Key config files" >> context_pack.md
+          echo "" >> context_pack.md
+          for f in next.config.* tsconfig.json vitest.config.* jest.config.* playwright.config.* turbo.json nx.json pnpm-workspace.yaml .nvmrc .tool-versions; do
+            [ -e "$f" ] && echo "- \`$f\`" >> context_pack.md
+          done 2>/dev/null || echo "_none_" >> context_pack.md
+
+          echo "" >> context_pack.md
+          echo "### App structure hints" >> context_pack.md
+          echo "" >> context_pack.md
+          [ -d app ] && echo "- \`app/\` (Next.js App Router)" >> context_pack.md
+          [ -d pages ] && echo "- \`pages/\` (Next.js Pages Router)" >> context_pack.md
+          [ -d src/app ] && echo "- \`src/app/\` (Next.js App Router)" >> context_pack.md
+          [ -d src/pages ] && echo "- \`src/pages/\` (Next.js Pages Router)" >> context_pack.md
+          [ -d apps ] && echo "- \`apps/\` (Monorepo apps)" >> context_pack.md
+          [ -d packages ] && echo "- \`packages/\` (Monorepo packages)" >> context_pack.md
+
+          # ---------------------------
+          # Extract $Markers (+ optional definitions)
+          # Supports:
+          #   "Problem with $InvisibilityEffect"
+          #   "$InvisibilityEffect = InvisibilityEffect, applyInvisibility | visibilityMask"
+          # ---------------------------
+          python3 << 'PY' > terms.txt
+import re
+import sys
+
+try:
+    text = open("issue.txt", "r", encoding="utf-8", errors="ignore").read()
+except:
+    sys.exit(0)
+
+terms = []
+defined = {}
+
+# Parse explicit definitions: $Name = term1, term2 | term3
+for line in text.splitlines():
+    m = re.match(r'^\s*\$([A-Za-z_]\w*)\s*[:=]\s*(.+?)\s*$', line)
+    if not m:
+        continue
+    key = m.group(1).lower()
+    rhs = m.group(2)
+    parts = re.split(r'[,\|]', rhs)
+    vals = [p.strip().strip('`"\'') for p in parts if p.strip()]
+    if vals:
+        defined[key] = vals
+
+# Collect all $Identifiers mentioned anywhere
+for m in re.findall(r'\$([A-Za-z_]\w*)', text):
+    k = m.lower()
+    if k in defined:
+        terms.extend(defined[k])
+    else:
+        terms.append(m)
+
+# Dedupe (preserve order), cap at 20
+seen = set()
+out = []
+for t in terms:
+    t = t.strip()
+    if not t or len(t) < 2:
+        continue
+    key = t.lower()
+    if key in seen:
+        continue
+    seen.add(key)
+    out.append(t)
+
+for t in out[:20]:
+    print(t)
+PY
+
+          echo "" >> context_pack.md
+          echo "## 🎯 Focus Terms" >> context_pack.md
+          echo "" >> context_pack.md
+
+          if [ ! -s terms.txt ]; then
+            {
+              echo "_No \$Markers found in issue._"
+              echo ""
+              echo "<details>"
+              echo "<summary>💡 How to use \$Markers</summary>"
+              echo ""
+              echo "Add \`\$Markers\` to your issue or comment to focus the context search:"
+              echo ""
+              echo "- Simple: \`The bug is in \$InvisibilityEffect\`"
+              echo "- With aliases: \`\$Effect = InvisibilityEffect, applyInvisibility, visibilityMask\`"
+              echo ""
+              echo "Then comment \`/context\` to regenerate this pack."
+              echo ""
+              echo "</details>"
+            } >> context_pack.md
+            
+            # Still post the general context
+            head -n 800 context_pack.md > context_pack_trimmed.md
+            mv context_pack_trimmed.md context_pack.md
+            exit 0
+          fi
+
+          echo "Searching for:" >> context_pack.md
+          sed 's/^/- `/' terms.txt | sed 's/$/`/' >> context_pack.md
+
+          # ---------------------------
+          # ripgrep for extracted terms
+          # ---------------------------
+          echo "" >> context_pack.md
+          echo "## 🔍 Search Results" >> context_pack.md
+
+          > hits.tsv
+          while IFS= read -r term || [ -n "$term" ]; do
+            [ -z "$term" ] && continue
+            rg -n --no-heading -S --fixed-strings -i "$term" \
+              --glob '!node_modules/**' \
+              --glob '!.next/**' \
+              --glob '!dist/**' \
+              --glob '!build/**' \
+              --glob '!coverage/**' \
+              --glob '!.git/**' \
+              --glob '!*.lock' \
+              --glob '!*-lock.*' \
+              --glob '!*.min.js' \
+              --glob '!*.min.css' \
+              --glob '!*.map' \
+              --glob '!*.svg' \
+              --glob '!*.png' \
+              --glob '!*.jpg' \
+              --glob '!*.gif' \
+              --glob '!*.ico' \
+              --glob '!*.woff*' \
+              --glob '!*.ttf' \
+              2>/dev/null \
+              | head -n 200 \
+              | awk -F: -v t="$term" 'NF>=2 {print $1"\t"$2"\t"t"\t"$0}' >> hits.tsv || true
+          done < terms.txt
+
+          if [ ! -s hits.tsv ]; then
+            echo "" >> context_pack.md
+            echo "_No matches found for focus terms._" >> context_pack.md
+            head -n 800 context_pack.md > context_pack_trimmed.md
+            mv context_pack_trimmed.md context_pack.md
+            exit 0
+          fi
+
+          # Rank top files by hit count
+          awk -F'\t' '{cnt[$1]++} END {for (f in cnt) print cnt[f] "\t" f}' hits.tsv \
+            | sort -t$'\t' -k1 -nr | head -n 15 > top_files.txt
+
+          echo "" >> context_pack.md
+          echo "### 📊 Top files by relevance" >> context_pack.md
+          echo "" >> context_pack.md
+          echo "| Hits | File |" >> context_pack.md
+          echo "|------|------|" >> context_pack.md
+          awk -F'\t' '{printf "| %s | `%s` |\n", $1, $2}' top_files.txt >> context_pack.md
+
+          # Sample hit lines
+          echo "" >> context_pack.md
+          echo "<details>" >> context_pack.md
+          echo "<summary>📝 Sample matches (first 40)</summary>" >> context_pack.md
+          echo "" >> context_pack.md
+          echo '```' >> context_pack.md
+          awk -F'\t' '{print $4}' hits.tsv | head -n 40 >> context_pack.md
+          echo '```' >> context_pack.md
+          echo "" >> context_pack.md
+          echo "</details>" >> context_pack.md
+
+          # ---------------------------
+          # Snippets from top files
+          # ---------------------------
+          echo "" >> context_pack.md
+          echo "## 📄 Code Snippets" >> context_pack.md
+          echo "" >> context_pack.md
+          echo "_Context around matches in top files:_" >> context_pack.md
+
+          snippet_count=0
+          max_snippets=8
+
+          while read -r count file; do
+            [ -f "$file" ] || continue
+            [ "$snippet_count" -ge "$max_snippets" ] && break
+
+            # Get file extension for syntax highlighting
+            ext="${file##*.}"
+            case "$ext" in
+              ts|tsx) lang="typescript" ;;
+              js|jsx) lang="javascript" ;;
+              py) lang="python" ;;
+              rs) lang="rust" ;;
+              go) lang="go" ;;
+              sol) lang="solidity" ;;
+              json) lang="json" ;;
+              yml|yaml) lang="yaml" ;;
+              md) lang="markdown" ;;
+              sh|bash) lang="bash" ;;
+              css|scss|sass) lang="css" ;;
+              html) lang="html" ;;
+              *) lang="" ;;
+            esac
+
+            echo "" >> context_pack.md
+            echo "### \`$file\` ($count hits)" >> context_pack.md
+
+            # Get first 2 unique hit locations
+            awk -F'\t' -v f="$file" '$1==f {print $2}' hits.tsv | sort -nu | head -n 2 > lines.txt
+
+            while read -r line; do
+              [ -z "$line" ] && continue
+              start=$((line - 10))
+              [ "$start" -lt 1 ] && start=1
+              end=$((line + 10))
+
+              echo "" >> context_pack.md
+              echo "**Lines ${start}-${end}** (match at line ${line}):" >> context_pack.md
+              echo "" >> context_pack.md
+              echo "\`\`\`${lang}" >> context_pack.md
+              sed -n "${start},${end}p" "$file" 2>/dev/null >> context_pack.md || true
+              echo '```' >> context_pack.md
+
+              snippet_count=$((snippet_count + 1))
+              [ "$snippet_count" -ge "$max_snippets" ] && break
+            done < lines.txt
+
+          done < top_files.txt
+
+          # ---------------------------
+          # Footer with regeneration hint
+          # ---------------------------
+          {
+            echo ""
+            echo "---"
+            echo ""
+            echo "_To regenerate this context pack, comment \`/context\` on this issue._"
+          } >> context_pack.md
+
+          # Final trim to keep comment readable
+          head -n 900 context_pack.md > context_pack_trimmed.md
+          mv context_pack_trimmed.md context_pack.md
+
+      - name: Post Context Pack as issue comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('context_pack.md', 'utf8');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body
+            });
+
