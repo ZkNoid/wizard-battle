@@ -80,6 +80,34 @@ function Button() {
 }
 ```
 
+### 2.1. Автоматические звуки модалей
+
+Для модальных окон используйте хук `useModalSound()`:
+
+```typescript
+import { useModalSound } from '@/lib/hooks/useAudio';
+
+function MyModal({ onClose }) {
+  // Автоматически играет звук открытия при монтировании
+  // и звук закрытия при размонтировании
+  useModalSound();
+
+  return (
+    <div>
+      <button onClick={onClose}>Закрыть</button>
+      {/* Ваш контент */}
+    </div>
+  );
+}
+```
+
+**Звуки уже интегрированы в:**
+- InventoryModal
+- CraftModal
+- ExpeditionModal
+- HowToPlay
+- Support
+
 ### 3. Управление громкостью и mute
 
 ```typescript

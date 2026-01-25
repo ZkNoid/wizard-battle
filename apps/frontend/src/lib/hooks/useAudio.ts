@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useAudioStore } from '../store/audioStore';
 import { AUDIO_ASSETS } from '../constants/audioAssets';
 
@@ -114,4 +114,30 @@ export function useAudioControls() {
     toggleMute,
     setMuted,
   };
+}
+
+/**
+ * Hook for playing modal open/close sounds automatically
+ *
+ * Usage:
+ * ```typescript
+ * function Modal({ onClose }) {
+ *   useModalSound(); // Автоматически играет звук при открытии/закрытии
+ *
+ *   return <div>...</div>;
+ * }
+ * ```
+ */
+export function useModalSound() {
+  const playSound = useAudioStore((state) => state.playSound);
+
+  useEffect(() => {
+    // Play open sound on mount
+    playSound(AUDIO_ASSETS.sfx.ui.modalOpen);
+
+    // Play close sound on unmount
+    return () => {
+      playSound(AUDIO_ASSETS.sfx.ui.modalClose);
+    };
+  }, [playSound]);
 }

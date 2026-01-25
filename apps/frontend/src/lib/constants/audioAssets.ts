@@ -16,8 +16,8 @@ export const AUDIO_ASSETS = {
     ui: {
       hover: '/audio/sfx/ui/hover.mp3',
       click: '/audio/sfx/ui/click.mp3',
-      open: '/audio/sfx/ui/open.mp3',
-      close: '/audio/sfx/ui/close.mp3',
+      modalOpen: '/audio/sfx/ui/modal-open.mp3',
+      modalClose: '/audio/sfx/ui/modal-close.mp3',
     },
     spells: {
       cast: {

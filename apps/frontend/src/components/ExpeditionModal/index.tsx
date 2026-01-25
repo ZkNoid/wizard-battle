@@ -5,8 +5,12 @@ import { Button } from '../shared/Button';
 import NewExpeditionForm from './NewExpeditionForm';
 import CurrentExpeditionsForm from './CurrentExpeditionsForm';
 import { ExpeditionsBg } from './assets/expeditions-bg';
+import { useModalSound } from '@/lib/hooks/useAudio';
 
 export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
+  // Play modal sounds
+  useModalSound();
+
   const [activeTab, setActiveTab] = useState<
     'new-expedition' | 'current-expedition'
   >('new-expedition');

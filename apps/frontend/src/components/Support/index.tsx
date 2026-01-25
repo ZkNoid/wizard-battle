@@ -8,6 +8,7 @@ import { motion } from 'motion/react';
 import * as Yup from 'yup';
 import { Cross } from './assets/cross';
 import { api } from '@/trpc/react';
+import { useModalSound } from '@/lib/hooks/useAudio';
 
 const validationSchema = Yup.object({
   issue: Yup.string()
@@ -22,6 +23,9 @@ const validationSchema = Yup.object({
 });
 
 export default function Support({ setTab }: { setTab: (tab: Tab) => void }) {
+  // Play modal sounds
+  useModalSound();
+
   const { mutate: createFeedback, isPending } =
     api.feedback.create.useMutation();
 

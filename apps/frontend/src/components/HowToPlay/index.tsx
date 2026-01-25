@@ -10,8 +10,12 @@ import { Page1 } from "./Page1";
 import { Page2 } from "./Page2";
 import { Page3 } from "./Page3";
 import { Page4 } from "./Page4";
+import { useModalSound } from "@/lib/hooks/useAudio";
 
 export default function HowToPlay({ setTab }: { setTab: (tab: Tab) => void }) {
+  // Play modal sounds
+  useModalSound();
+
   const [page, setPage] = useState<number>(1);
   return (
     <div className="w-291 h-172 relative flex flex-col items-center justify-center">

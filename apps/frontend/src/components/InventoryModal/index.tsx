@@ -21,6 +21,7 @@ import type { IHeroStatConfig, IHeroStats } from '@/lib/types/IHeroStat';
 import { api } from '@/trpc/react';
 import { useInventoryStore, type EquippedSlots } from '@/lib/store';
 import { WizardId } from '../../../../common/wizards';
+import { useModalSound } from '@/lib/hooks/useAudio';
 
 const MAX_ITEMS = 35;
 
@@ -43,6 +44,9 @@ const getWizardId = (wizard: Wizards): string => {
 };
 
 export default function InventoryModal({ onClose }: { onClose: () => void }) {
+  // Play modal sounds
+  useModalSound();
+
   // Request user XP (mock address for now)
   const { data: xp = 0 } = api.users.getXp.useQuery({
     address: 'mock-address',
