@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import { ButtonBackground } from './assets/button-background';
 import { LongButtonBackground } from './assets/long-button-background';
-import { useHoverSound } from '@/lib/hooks/useAudio';
+import { useHoverSound, useClickSound } from '@/lib/hooks/useAudio';
 
 export function Button({
   text,
@@ -15,6 +15,7 @@ export function Button({
   disabled,
   isLong,
   enableHoverSound = false,
+  enableClickSound = false,
 }: {
   variant: 'gray' | 'blue' | 'lightGray' | 'green' | 'red';
   text?: string;
@@ -25,8 +26,10 @@ export function Button({
   disabled?: boolean;
   isLong?: boolean;
   enableHoverSound?: boolean;
+  enableClickSound?: boolean;
 }) {
   const playHoverSound = useHoverSound();
+  const playClickSound = useClickSound();
   const textColor = variant === 'red' ? 'text-white' : 'text-main-gray';
 
   const handleMouseEnter = () => {
@@ -35,10 +38,19 @@ export function Button({
     }
   };
 
+  const handleClick = () => {
+    if (enableClickSound && !disabled) {
+      playClickSound();
+    }
+    if (onClick) {
+      onClick();
+    }
+  };
+
   return (
     <button
       type={type}
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
       onMouseEnter={handleMouseEnter}
       className={cn(

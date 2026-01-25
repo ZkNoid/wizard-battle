@@ -72,7 +72,7 @@ export default function HomePage() {
     return () => {
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('keydown', handleFirstInteraction);
-      // stopMusic(0); // Stop music immediately on unmount
+      // stopMusic(0);
     };
   }, [playMainTheme, stopMusic]);
 
@@ -99,6 +99,7 @@ export default function HomePage() {
             onClick={() => {}}
             className="size-16"
             enableHoverSound
+            enableClickSound
           >
             <Image
               src={'/icons/market.png'}
@@ -117,6 +118,7 @@ export default function HomePage() {
             }}
             className="size-16"
             enableHoverSound
+            enableClickSound
           >
             <Image
               src={'/icons/inventory.png'}
@@ -133,6 +135,7 @@ export default function HomePage() {
             onClick={() => {}}
             className="size-16"
             enableHoverSound
+            enableClickSound
           >
             <Image
               src={'/icons/mail.png'}
@@ -149,6 +152,7 @@ export default function HomePage() {
             onClick={() => {}}
             className="size-16"
             enableHoverSound
+            enableClickSound
           >
             <Image
               src={'/icons/tournaments.png'}

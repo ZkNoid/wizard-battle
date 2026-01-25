@@ -10,11 +10,13 @@ import { Page1 } from "./Page1";
 import { Page2 } from "./Page2";
 import { Page3 } from "./Page3";
 import { Page4 } from "./Page4";
-import { useModalSound } from "@/lib/hooks/useAudio";
+import { useModalSound, useClickSound, useHoverSound } from "@/lib/hooks/useAudio";
 
 export default function HowToPlay({ setTab }: { setTab: (tab: Tab) => void }) {
   // Play modal sounds
   useModalSound();
+  const playClickSound = useClickSound();
+  const playHoverSound = useHoverSound();
 
   const [page, setPage] = useState<number>(1);
   return (
@@ -35,7 +37,11 @@ export default function HowToPlay({ setTab }: { setTab: (tab: Tab) => void }) {
       </div>
       <div className="pt-12.5 pr-12.5 absolute right-0 top-0">
         <motion.button
-          onClick={() => setTab(Tab.HOME)}
+          onClick={() => {
+            playClickSound();
+            setTab(Tab.HOME);
+          }}
+          onMouseEnter={playHoverSound}
           className="flex cursor-pointer flex-col items-center justify-center"
           whileHover={{ rotate: 90 }}
           transition={{ duration: 0.25, ease: "easeInOut" }}

@@ -8,7 +8,7 @@ import { motion } from 'motion/react';
 import * as Yup from 'yup';
 import { Cross } from './assets/cross';
 import { api } from '@/trpc/react';
-import { useModalSound } from '@/lib/hooks/useAudio';
+import { useModalSound, useClickSound, useHoverSound } from '@/lib/hooks/useAudio';
 
 const validationSchema = Yup.object({
   issue: Yup.string()
@@ -25,6 +25,8 @@ const validationSchema = Yup.object({
 export default function Support({ setTab }: { setTab: (tab: Tab) => void }) {
   // Play modal sounds
   useModalSound();
+  const playClickSound = useClickSound();
+  const playHoverSound = useHoverSound();
 
   const { mutate: createFeedback, isPending } =
     api.feedback.create.useMutation();
@@ -113,6 +115,8 @@ export default function Support({ setTab }: { setTab: (tab: Tab) => void }) {
                   className="h-15 w-90 mx-auto"
                   type="submit"
                   disabled={isPending || !isValid}
+                  enableHoverSound
+                  enableClickSound
                 />
               </Form>
             )}
@@ -120,7 +124,11 @@ export default function Support({ setTab }: { setTab: (tab: Tab) => void }) {
         </div>
         <div className="pt-12.5 pr-12.5 absolute right-0 top-0">
           <motion.button
-            onClick={() => setTab(Tab.HOME)}
+            onClick={() => {
+              playClickSound();
+              setTab(Tab.HOME);
+            }}
+            onMouseEnter={playHoverSound}
             className="flex cursor-pointer flex-col items-center justify-center"
             whileHover={{ rotate: 90 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}

@@ -58,7 +58,14 @@ export default function CurrentExpeditionCard({
           </div>
 
           {/* Interrupt Button */}
-          <Button variant="blue" className="h-15 flex-1 min-w-0" isLong onClick={onInterruptExpedition}>
+          <Button 
+            variant="blue" 
+            className="h-15 flex-1 min-w-0" 
+            isLong 
+            onClick={onInterruptExpedition}
+            enableHoverSound
+            enableClickSound
+          >
             <span className="truncate">Interrupt Expedition</span>
           </Button>
         </div>

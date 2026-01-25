@@ -108,6 +108,65 @@ function MyModal({ onClose }) {
 - HowToPlay
 - Support
 
+### 2.2. Hover звуки (наведение на элементы)
+
+Используйте `enableHoverSound` prop на компонентах `BoxButton` и `Button`:
+
+```typescript
+<BoxButton 
+  onClick={handleClick}
+  enableHoverSound  // 🎵 Включить hover звук
+>
+  Наведи на меня!
+</BoxButton>
+
+<Button 
+  variant="blue"
+  onClick={handleClick}
+  enableHoverSound  // 🎵 Работает и с Button
+>
+  И на меня!
+</Button>
+```
+
+**Интегрировано в:**
+- Кнопки главного меню (Market, Inventory, Mail, Tournaments)
+- Кнопки настроек (Support, Settings, Audio)
+- Навигационные кнопки (Back, Next)
+- Кнопки модалей
+- Кнопки закрытия (Cross)
+
+### 2.3. Click звуки (клик по элементам)
+
+Используйте `enableClickSound` prop на компонентах `BoxButton` и `Button`:
+
+```typescript
+<BoxButton 
+  onClick={handleClick}
+  enableClickSound      // 🔊 Включить click звук
+  enableHoverSound      // 🎵 Можно комбинировать с hover!
+>
+  Кликни на меня!
+</BoxButton>
+
+<Button 
+  variant="blue"
+  onClick={handleClick}
+  enableClickSound      // 🔊 Работает и с Button
+  enableHoverSound      // 🎵 Полная аудио-интеграция
+>
+  И на меня тоже!
+</Button>
+```
+
+**Интегрировано в:**
+- Все кнопки главного меню (Market, Inventory, Mail, Tournaments)
+- Все кнопки настроек (Support, Settings, Audio/Mute)
+- Кнопки главного меню (Play, Tournaments, Customization, How to play, Support)
+- Навигационные кнопки (Back, Next, стрелки)
+- Кнопки модалей (Send, Start, Interrupt Expedition)
+- Кнопки закрытия (Cross в модалях)
+
 ### 3. Управление громкостью и mute
 
 ```typescript

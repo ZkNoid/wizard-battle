@@ -65,6 +65,26 @@ export function useHoverSound() {
 }
 
 /**
+ * Hook for playing click sound
+ * 
+ * Usage:
+ * ```typescript
+ * const playClickSound = useClickSound();
+ * 
+ * <button onClick={playClickSound}>
+ *   Click me
+ * </button>
+ * ```
+ */
+export function useClickSound() {
+  const playSound = useAudioStore((state) => state.playSound);
+
+  return useCallback(() => {
+    playSound(AUDIO_ASSETS.sfx.ui.click);
+  }, [playSound]);
+}
+
+/**
  * Hook for managing background music
  *
  * Usage:

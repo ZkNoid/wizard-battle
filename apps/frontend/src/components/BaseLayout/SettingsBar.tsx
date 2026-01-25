@@ -15,6 +15,7 @@ export function SettingsBar({ setTab }: { setTab: (tab: Tab) => void }) {
         color="gray"
         className="size-16"
         enableHoverSound
+        enableClickSound
       >
         <Image
           src={'/icons/question.png'}
@@ -32,6 +33,7 @@ export function SettingsBar({ setTab }: { setTab: (tab: Tab) => void }) {
         color="gray"
         className="size-16"
         enableHoverSound
+        enableClickSound
       >
         <Image
           src={'/icons/gear.png'}

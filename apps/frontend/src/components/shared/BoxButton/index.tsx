@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { BoxBg } from './assets/box-bg';
 import { cn } from '@/lib/utils';
-import { useHoverSound } from '@/lib/hooks/useAudio';
+import { useHoverSound, useClickSound } from '@/lib/hooks/useAudio';
 
 export default function BoxButton({
   onClick,
@@ -12,6 +12,7 @@ export default function BoxButton({
   color = 'blue',
   disabled,
   enableHoverSound = false,
+  enableClickSound = false,
 }: {
   onClick: () => void;
   children: ReactNode;
@@ -19,8 +20,10 @@ export default function BoxButton({
   color?: 'blue' | 'gray';
   disabled?: boolean;
   enableHoverSound?: boolean;
+  enableClickSound?: boolean;
 }) {
   const playHoverSound = useHoverSound();
+  const playClickSound = useClickSound();
 
   const handleMouseEnter = () => {
     if (enableHoverSound && !disabled) {
@@ -28,9 +31,16 @@ export default function BoxButton({
     }
   };
 
+  const handleClick = () => {
+    if (enableClickSound && !disabled) {
+      playClickSound();
+    }
+    onClick();
+  };
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
       onMouseEnter={handleMouseEnter}
       className={cn(

@@ -21,7 +21,7 @@ import type { IHeroStatConfig, IHeroStats } from '@/lib/types/IHeroStat';
 import { api } from '@/trpc/react';
 import { useInventoryStore, type EquippedSlots } from '@/lib/store';
 import { WizardId } from '../../../../common/wizards';
-import { useModalSound } from '@/lib/hooks/useAudio';
+import { useModalSound, useClickSound, useHoverSound } from '@/lib/hooks/useAudio';
 
 const MAX_ITEMS = 35;
 
@@ -46,6 +46,8 @@ const getWizardId = (wizard: Wizards): string => {
 export default function InventoryModal({ onClose }: { onClose: () => void }) {
   // Play modal sounds
   useModalSound();
+  const playClickSound = useClickSound();
+  const playHoverSound = useHoverSound();
 
   // Request user XP (mock address for now)
   const { data: xp = 0 } = api.users.getXp.useQuery({
@@ -626,7 +628,11 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
             height={32}
             alt="close"
             className="absolute right-5 top-5 size-8 cursor-pointer transition-transform duration-300 hover:rotate-90"
-            onClick={onClose}
+            onClick={() => {
+              playClickSound();
+              onClose();
+            }}
+            onMouseEnter={playHoverSound}
           />
           <InventoryBg className="-z-5 absolute inset-0 size-full" />
         </div>

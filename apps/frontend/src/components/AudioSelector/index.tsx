@@ -17,6 +17,7 @@ export default function AudioSelector() {
         color="blue"
         className="size-16"
         enableHoverSound
+        enableClickSound
       >
         {!isMuted ? (
           <Image
