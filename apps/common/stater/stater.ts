@@ -95,7 +95,7 @@ export class Stater extends Struct({
     // Check dodge and accuracy
     const hitChance = opponentState.playerStats.accuracy.add(CALCULATION_PRECISION)
       .mul(UInt64.from(CALCULATION_PRECISION).sub(this.state.playerStats.dodgeChance))
-      .div(CALCULATION_PRECISION * CALCULATION_PRECISION);
+      .div(CALCULATION_PRECISION);
     const dodgeRandomPercentage = this.getRandomPercentage();
     const isHit = dodgeRandomPercentage.lessThan(hitChance);
 
