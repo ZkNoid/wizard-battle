@@ -12,7 +12,12 @@ export default function AudioSelector() {
   return (
     <div className="flex items-center gap-4">
       {/* Audio On/Off button */}
-      <BoxButton onClick={toggleMute} color="blue" className="size-16">
+      <BoxButton
+        onClick={toggleMute}
+        color="blue"
+        className="size-16"
+        enableHoverSound
+      >
         {!isMuted ? (
           <Image
             src={'/icons/sound-on.png'}

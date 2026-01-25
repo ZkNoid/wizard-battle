@@ -14,6 +14,7 @@ export function SettingsBar({ setTab }: { setTab: (tab: Tab) => void }) {
         onClick={() => setTab(Tab.HOW_TO_PLAY)}
         color="gray"
         className="size-16"
+        enableHoverSound
       >
         <Image
           src={'/icons/question.png'}
@@ -26,7 +27,12 @@ export function SettingsBar({ setTab }: { setTab: (tab: Tab) => void }) {
         />
       </BoxButton>
       {/* Settings button */}
-      <BoxButton onClick={() => {}} color="gray" className="size-16">
+      <BoxButton
+        onClick={() => {}}
+        color="gray"
+        className="size-16"
+        enableHoverSound
+      >
         <Image
           src={'/icons/gear.png'}
           width={30}

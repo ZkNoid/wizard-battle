@@ -6,9 +6,9 @@
 
 ```
 apps/frontend/public/audio/sfx/ui/
-├── modal-open.mp3       ❌ НУЖНО ДОБАВИТЬ
-├── modal-close.mp3      ❌ НУЖНО ДОБАВИТЬ
-├── hover.mp3            ❌ Для будущего (Этап 4)
+├── modal-open.mp3       ✅ Добавлено (Этап 3)
+├── modal-close.mp3      ✅ Добавлено (Этап 3)
+├── hover.mp3            ❌ НУЖНО ДОБАВИТЬ (Этап 4)
 └── click.mp3            ❌ Для будущего (Этап 5)
 ```
 
@@ -18,11 +18,19 @@ apps/frontend/public/audio/sfx/ui/
 - **UI Medieval Menu Light Open**
   - Ссылка: https://www.pond5.com/ru/sound-effects/item/152697101-ui-medieval-menu-light-open-01
   - Файл: `modal-open.mp3`
+  - Статус: ✅ Добавлено
 
 ### Закрытие вкладок/модалей
 - **UI Medieval Menu Light Close**
   - Ссылка: https://www.pond5.com/ru/sound-effects/item/152697100-ui-medieval-menu-light-close-01
   - Файл: `modal-close.mp3`
+  - Статус: ✅ Добавлено
+
+### Наведение на кнопки (Этап 4)
+- **UI Hover/Rollover/Select**
+  - Ссылка: https://www.pond5.com/ru/sound-effects/item/192536642-ui-hover-rollover-select-10
+  - Файл: `hover.mp3`
+  - Статус: ❌ НУЖНО ДОБАВИТЬ
 
 ## ⚙️ Формат файлов
 
@@ -66,6 +74,32 @@ export default function MyModal({ onClose }) {
 - ✅ ExpeditionModal (экспедиции)
 - ✅ HowToPlay (руководство)
 - ✅ Support (поддержка)
+
+### Hover звуки (Этап 4)
+
+Hover звуки работают через prop `enableHoverSound`:
+
+```typescript
+<BoxButton 
+  onClick={handleClick}
+  enableHoverSound  // 🎵 Включаем hover звук
+>
+  Наведи на меня!
+</BoxButton>
+
+<Button 
+  variant="blue"
+  onClick={handleClick}
+  enableHoverSound  // 🎵 Тоже работает с Button
+>
+  И на меня!
+</Button>
+```
+
+**Интегрировано в:**
+- ✅ Кнопки главного меню (Market, Inventory, Mail, Tournaments)
+- ✅ Кнопки настроек (Support ?, Settings ⚙️, Audio 🔊)
+- ✅ Все поддерживают prop `enableHoverSound`
 
 ## 🧪 Тестирование
 

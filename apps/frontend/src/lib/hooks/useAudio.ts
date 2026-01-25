@@ -10,10 +10,10 @@ import { AUDIO_ASSETS } from '../constants/audioAssets';
  * const playSound = useSound();
  *
  * // Play UI sound
- * playSound('ui-click');
+ * playSound('click');
  *
  * // Play spell sound
- * playSound('spell-cast');
+ * playSound('magic');
  * ```
  */
 export function useSound() {
@@ -44,6 +44,26 @@ export function useSound() {
     },
     [playSound]
   );
+}
+
+/**
+ * Hook for playing hover sound
+ * 
+ * Usage:
+ * ```typescript
+ * const playHoverSound = useHoverSound();
+ * 
+ * <button onMouseEnter={playHoverSound}>
+ *   Hover me
+ * </button>
+ * ```
+ */
+export function useHoverSound() {
+  const playSound = useAudioStore((state) => state.playSound);
+
+  return useCallback(() => {
+    playSound(AUDIO_ASSETS.sfx.ui.hover);
+  }, [playSound]);
 }
 
 /**

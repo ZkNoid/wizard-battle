@@ -93,7 +93,12 @@ export default function HomePage() {
       <div className="z-1 absolute left-0 top-2.5 grid w-full grid-cols-3 items-center px-20">
         <SettingsBar setTab={setTab} />
         <div className="flex w-full items-center justify-center gap-5">
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
+          <BoxButton
+            color="gray"
+            onClick={() => {}}
+            className="size-16"
+            enableHoverSound
+          >
             <Image
               src={'/icons/market.png'}
               width={32}
@@ -110,6 +115,7 @@ export default function HomePage() {
               setIsInventoryModalOpen(true);
             }}
             className="size-16"
+            enableHoverSound
           >
             <Image
               src={'/icons/inventory.png'}
@@ -121,7 +127,12 @@ export default function HomePage() {
               className="h-8 w-7"
             />
           </BoxButton>
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
+          <BoxButton
+            color="gray"
+            onClick={() => {}}
+            className="size-16"
+            enableHoverSound
+          >
             <Image
               src={'/icons/mail.png'}
               width={32}
@@ -132,7 +143,12 @@ export default function HomePage() {
               className="h-6 w-8"
             />
           </BoxButton>
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
+          <BoxButton
+            color="gray"
+            onClick={() => {}}
+            className="size-16"
+            enableHoverSound
+          >
             <Image
               src={'/icons/tournaments.png'}
               width={36}
