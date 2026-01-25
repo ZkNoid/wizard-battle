@@ -153,7 +153,7 @@ describe('GameCommitService', () => {
       );
 
       // Act
-      const result = await service.verifyUserHasItemResourceInDatabase(
+      const result = await service._queryInventory(
         'Wood',
         'user123',
         true,
@@ -207,7 +207,7 @@ describe('GameCommitService', () => {
       userInventoryService.hasItem.mockResolvedValue(false);
 
       // Act
-      const result = await service.verifyUserHasItemResourceInDatabase(
+      const result = await service._queryInventory(
         'Wood',
         'user456',
         true,
@@ -248,7 +248,7 @@ describe('GameCommitService', () => {
       ] as any);
 
       // Act
-      const result = await service.verifyUserHasItemResourceInDatabase(
+      const result = await service._queryInventory(
         'Nonexistent Item',
         'user123',
         true,
@@ -287,7 +287,7 @@ describe('GameCommitService', () => {
       } as any);
 
       // Act
-      const result = await service.verifyUserHasItemResourceInDatabase(
+      const result = await service._queryInventory(
         'Wood Sword',
         'user123',
         false,
@@ -318,7 +318,7 @@ describe('GameCommitService', () => {
       );
 
       // Act
-      const result = await service.verifyUserHasItemResourceInDatabase(
+      const result = await service._queryInventory(
         'Wood',
         'user123',
         true,
@@ -348,7 +348,7 @@ describe('GameCommitService', () => {
       userInventoryService.hasItem.mockResolvedValue(false);
 
       // Act
-      const result = await service.verifyUserHasItemResourceInDatabase(
+      const result = await service._queryInventory(
         'Gold Ore',
         'user123',
         true,
@@ -370,12 +370,7 @@ describe('GameCommitService', () => {
 
       // Act & Assert
       await expect(
-        service.verifyUserHasItemResourceInDatabase(
-          'Wood',
-          'user123',
-          true,
-          false
-        )
+        service._queryInventory('Wood', 'user123', true, false)
       ).rejects.toThrow('Database error');
 
       expect(console.error).toHaveBeenCalledWith(
@@ -394,12 +389,7 @@ describe('GameCommitService', () => {
       );
 
       // Act
-      await service.verifyUserHasItemResourceInDatabase(
-        'Wood',
-        'user123',
-        true,
-        false
-      );
+      await service._queryInventory('Wood', 'user123', true, false);
 
       // Assert - verify all expected console logs were called
       expect(console.log).toHaveBeenCalledWith(
@@ -437,7 +427,7 @@ describe('GameCommitService', () => {
       } as any);
 
       // Act
-      const result = await service.verifyUserHasItemResourceInDatabase(
+      const result = await service._queryInventory(
         'Health Potion',
         'user123',
         false,
@@ -469,7 +459,7 @@ describe('GameCommitService', () => {
       );
 
       // Act
-      const result = await service.verifyUserHasItemResourceInDatabase(
+      const result = await service._queryInventory(
         'Wood',
         '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
         true,

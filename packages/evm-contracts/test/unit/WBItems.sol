@@ -2,18 +2,18 @@
 pragma solidity ^0.8.27;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {WBCharacters} from "../../src/tokens/ERC721/WBCharacters.sol";
-import {DeployWBCharacters} from "../../script/DeployWBCharacters.s.sol";
-import {WBCharactersV2Mock} from "../mocks/WBCharactersV2Mock.sol";
-import {WBCharactersTestHelper} from "../mocks/WBCharactersTestHelper.sol";
+import {WBItems} from "../../src/tokens/ERC721/WBItems.sol";
+import {DeployWBItems} from "../../script/DeployWBItems.s.sol";
+import {WBItemsV2Mock} from "../mocks/WBItemsV2Mock.sol";
+import {WBItemsTestHelper} from "../mocks/WBItemsTestHelper.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC721Enumerable} from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import {IERC721Metadata} from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
-contract WBCharactersTest is Test {
-    WBCharacters public wbCharacters;
+contract WBItemsTest is Test {
+    WBItems public wbItems;
     address public proxy;
 
     address public admin;
@@ -28,9 +28,9 @@ contract WBCharactersTest is Test {
     string public constant TOKEN_URI_2 = "ipfs://QmToken2";
 
     function setUp() public {
-        DeployWBCharacters deployer = new DeployWBCharacters();
+        DeployWBItems deployer = new DeployWBItems();
         proxy = deployer.deploy();
-        wbCharacters = WBCharacters(proxy);
+        wbItems = WBItems(proxy);
 
         admin = address(this);
         pauser = address(this);
@@ -43,13 +43,13 @@ contract WBCharactersTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_DeployDeploy() public {
-        DeployWBCharacters deployer = new DeployWBCharacters();
+        DeployWBItems deployer = new DeployWBItems();
         address deploy = deployer.deploy();
         assertNotEq(deploy, address(0));
     }
 
     function test_DeployRun() public {
-        DeployWBCharacters deployer = new DeployWBCharacters();
+        DeployWBItems deployer = new DeployWBItems();
         address run = deployer.run();
         assertNotEq(run, address(0));
     }
@@ -59,15 +59,15 @@ contract WBCharactersTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_Initialization() public view {
-        assertEq(wbCharacters.name(), "WBCharacters");
-        assertEq(wbCharacters.symbol(), "WBCH");
-        assertEq(wbCharacters.totalSupply(), 0);
-        assertFalse(wbCharacters.paused());
+        assertEq(wbItems.name(), "WBItems");
+        assertEq(wbItems.symbol(), "WBCH");
+        assertEq(wbItems.totalSupply(), 0);
+        assertFalse(wbItems.paused());
 
-        assertTrue(wbCharacters.hasRole(wbCharacters.DEFAULT_ADMIN_ROLE(), admin));
-        assertTrue(wbCharacters.hasRole(wbCharacters.PAUSER_ROLE(), pauser));
-        assertTrue(wbCharacters.hasRole(wbCharacters.MINTER_ROLE(), minter));
-        assertTrue(wbCharacters.hasRole(wbCharacters.UPGRADER_ROLE(), upgrader));
+        assertTrue(wbItems.hasRole(wbItems.DEFAULT_ADMIN_ROLE(), admin));
+        assertTrue(wbItems.hasRole(wbItems.PAUSER_ROLE(), pauser));
+        assertTrue(wbItems.hasRole(wbItems.MINTER_ROLE(), minter));
+        assertTrue(wbItems.hasRole(wbItems.UPGRADER_ROLE(), upgrader));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -76,7 +76,7 @@ contract WBCharactersTest is Test {
 
     function test_InitializeCannotBeCalledTwice() public {
         vm.expectRevert();
-        wbCharacters.initialize(admin, pauser, minter, upgrader);
+        wbItems.initialize(admin, pauser, minter, upgrader);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -85,31 +85,31 @@ contract WBCharactersTest is Test {
 
     function test_mintByMinter() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacters.mint(user1);
+        uint256 tokenId = wbItems.mint(user1);
 
         assertEq(tokenId, 0);
-        assertEq(wbCharacters.ownerOf(tokenId), user1);
-        assertEq(wbCharacters.balanceOf(user1), 1);
-        assertEq(wbCharacters.totalSupply(), 1);
-        console2.log("Token URI:", wbCharacters.tokenURI(tokenId));
-        //assertEq(wbCharacters.tokenURI(tokenId), TOKEN_URI_1);
+        assertEq(wbItems.ownerOf(tokenId), user1);
+        assertEq(wbItems.balanceOf(user1), 1);
+        assertEq(wbItems.totalSupply(), 1);
+        console2.log("Token URI:", wbItems.tokenURI(tokenId));
+        //assertEq(wbItems.tokenURI(tokenId), TOKEN_URI_1);
     }
 
     function test_mintMultipleTokens() public {
         vm.startPrank(minter);
-        uint256 tokenId1 = wbCharacters.mint(user1);
-        uint256 tokenId2 = wbCharacters.mint(user2);
+        uint256 tokenId1 = wbItems.mint(user1);
+        uint256 tokenId2 = wbItems.mint(user2);
         vm.stopPrank();
 
         assertEq(tokenId1, 0);
         assertEq(tokenId2, 1);
-        assertEq(wbCharacters.ownerOf(tokenId1), user1);
-        assertEq(wbCharacters.ownerOf(tokenId2), user2);
-        assertEq(wbCharacters.totalSupply(), 2);
+        assertEq(wbItems.ownerOf(tokenId1), user1);
+        assertEq(wbItems.ownerOf(tokenId2), user2);
+        assertEq(wbItems.totalSupply(), 2);
 
-        console2.log("Token URI:", wbCharacters.tokenURI(tokenId1));
-        // assertEq(wbCharacters.tokenURI(tokenId1), TOKEN_URI_1);
-        // assertEq(wbCharacters.tokenURI(tokenId2), TOKEN_URI_2);
+        console2.log("Token URI:", wbItems.tokenURI(tokenId1));
+        // assertEq(wbItems.tokenURI(tokenId1), TOKEN_URI_1);
+        // assertEq(wbItems.tokenURI(tokenId2), TOKEN_URI_2);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -118,8 +118,8 @@ contract WBCharactersTest is Test {
 
     function test_mintRevertsIfNotMinter() public {
         vm.startPrank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCharacters.MINTER_ROLE()));
-        wbCharacters.mint(user1);
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbItems.MINTER_ROLE()));
+        wbItems.mint(user1);
         vm.stopPrank();
     }
 
@@ -129,19 +129,19 @@ contract WBCharactersTest is Test {
 
     function test_PauseByPauser() public {
         vm.prank(pauser);
-        wbCharacters.pause();
+        wbItems.pause();
 
-        assertTrue(wbCharacters.paused());
+        assertTrue(wbItems.paused());
     }
 
     function test_UnpauseByPauser() public {
         vm.prank(pauser);
-        wbCharacters.pause();
+        wbItems.pause();
 
         vm.prank(pauser);
-        wbCharacters.unpause();
+        wbItems.unpause();
 
-        assertFalse(wbCharacters.paused());
+        assertFalse(wbItems.paused());
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -150,18 +150,18 @@ contract WBCharactersTest is Test {
 
     function test_PauseRevertsIfNotPauser() public {
         vm.startPrank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCharacters.PAUSER_ROLE()));
-        wbCharacters.pause();
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbItems.PAUSER_ROLE()));
+        wbItems.pause();
         vm.stopPrank();
     }
 
     function test_UnpauseRevertsIfNotPauser() public {
         vm.prank(pauser);
-        wbCharacters.pause();
+        wbItems.pause();
 
         vm.startPrank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCharacters.PAUSER_ROLE()));
-        wbCharacters.unpause();
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbItems.PAUSER_ROLE()));
+        wbItems.unpause();
         vm.stopPrank();
     }
 
@@ -171,44 +171,44 @@ contract WBCharactersTest is Test {
 
     function test_TransfersBlockedWhenPaused() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacters.mint(user1);
+        uint256 tokenId = wbItems.mint(user1);
 
         vm.prank(pauser);
-        wbCharacters.pause();
+        wbItems.pause();
 
         vm.prank(user1);
         vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("EnforcedPause()"))));
-        wbCharacters.transferFrom(user1, user2, tokenId);
+        wbItems.transferFrom(user1, user2, tokenId);
     }
 
     function test_TransfersAllowedWhenUnpaused() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacters.mint(user1);
+        uint256 tokenId = wbItems.mint(user1);
 
         vm.prank(pauser);
-        wbCharacters.pause();
+        wbItems.pause();
 
         vm.prank(pauser);
-        wbCharacters.unpause();
+        wbItems.unpause();
 
         vm.prank(user1);
-        wbCharacters.transferFrom(user1, user2, tokenId);
+        wbItems.transferFrom(user1, user2, tokenId);
 
-        assertEq(wbCharacters.ownerOf(tokenId), user2);
-        assertEq(wbCharacters.balanceOf(user1), 0);
-        assertEq(wbCharacters.balanceOf(user2), 1);
+        assertEq(wbItems.ownerOf(tokenId), user2);
+        assertEq(wbItems.balanceOf(user1), 0);
+        assertEq(wbItems.balanceOf(user2), 1);
     }
 
     function test_SafeTransferFrom() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacters.mint(user1);
+        uint256 tokenId = wbItems.mint(user1);
 
         vm.prank(user1);
-        wbCharacters.safeTransferFrom(user1, user2, tokenId);
+        wbItems.safeTransferFrom(user1, user2, tokenId);
 
-        assertEq(wbCharacters.ownerOf(tokenId), user2);
-        assertEq(wbCharacters.balanceOf(user1), 0);
-        assertEq(wbCharacters.balanceOf(user2), 1);
+        assertEq(wbItems.ownerOf(tokenId), user2);
+        assertEq(wbItems.balanceOf(user1), 0);
+        assertEq(wbItems.balanceOf(user2), 1);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -217,14 +217,14 @@ contract WBCharactersTest is Test {
 
     function test_Burn() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacters.mint(user1);
+        uint256 tokenId = wbItems.mint(user1);
         vm.prank(user1);
-        wbCharacters.burn(tokenId);
+        wbItems.burn(tokenId);
 
-        assertEq(wbCharacters.balanceOf(user1), 0);
-        assertEq(wbCharacters.totalSupply(), 0);
+        assertEq(wbItems.balanceOf(user1), 0);
+        assertEq(wbItems.totalSupply(), 0);
         vm.expectRevert();
-        wbCharacters.ownerOf(tokenId);
+        wbItems.ownerOf(tokenId);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -233,10 +233,10 @@ contract WBCharactersTest is Test {
 
     function test_BurnRevertsIfNotOwner() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacters.mint(user1);
+        uint256 tokenId = wbItems.mint(user1);
         vm.startPrank(attacker);
         vm.expectRevert();
-        wbCharacters.burn(tokenId);
+        wbItems.burn(tokenId);
         vm.stopPrank();
     }
 
@@ -246,51 +246,51 @@ contract WBCharactersTest is Test {
 
     function test_EnumerableFunctions() public {
         vm.startPrank(minter);
-        uint256 tokenId1 = wbCharacters.mint(user1);
-        uint256 tokenId2 = wbCharacters.mint(user1);
-        uint256 tokenId3 = wbCharacters.mint(user2);
+        uint256 tokenId1 = wbItems.mint(user1);
+        uint256 tokenId2 = wbItems.mint(user1);
+        uint256 tokenId3 = wbItems.mint(user2);
         vm.stopPrank();
 
-        assertEq(wbCharacters.totalSupply(), 3);
-        assertEq(wbCharacters.tokenByIndex(0), tokenId1);
-        assertEq(wbCharacters.tokenByIndex(1), tokenId2);
-        assertEq(wbCharacters.tokenByIndex(2), tokenId3);
+        assertEq(wbItems.totalSupply(), 3);
+        assertEq(wbItems.tokenByIndex(0), tokenId1);
+        assertEq(wbItems.tokenByIndex(1), tokenId2);
+        assertEq(wbItems.tokenByIndex(2), tokenId3);
 
-        assertEq(wbCharacters.balanceOf(user1), 2);
-        assertEq(wbCharacters.tokenOfOwnerByIndex(user1, 0), tokenId1);
-        assertEq(wbCharacters.tokenOfOwnerByIndex(user1, 1), tokenId2);
+        assertEq(wbItems.balanceOf(user1), 2);
+        assertEq(wbItems.tokenOfOwnerByIndex(user1, 0), tokenId1);
+        assertEq(wbItems.tokenOfOwnerByIndex(user1, 1), tokenId2);
 
-        assertEq(wbCharacters.balanceOf(user2), 1);
-        assertEq(wbCharacters.tokenOfOwnerByIndex(user2, 0), tokenId3);
+        assertEq(wbItems.balanceOf(user2), 1);
+        assertEq(wbItems.tokenOfOwnerByIndex(user2, 0), tokenId3);
     }
 
     function test_EnumerableAfterTransfer() public {
         vm.prank(minter);
-        uint256 tokenId1 = wbCharacters.mint(user1);
-        uint256 tokenId2 = wbCharacters.mint(user1);
+        uint256 tokenId1 = wbItems.mint(user1);
+        uint256 tokenId2 = wbItems.mint(user1);
 
         vm.prank(user1);
-        wbCharacters.transferFrom(user1, user2, tokenId1);
-        assertEq(wbCharacters.balanceOf(user1), 1);
-        assertEq(wbCharacters.tokenOfOwnerByIndex(user1, 0), tokenId2);
+        wbItems.transferFrom(user1, user2, tokenId1);
+        assertEq(wbItems.balanceOf(user1), 1);
+        assertEq(wbItems.tokenOfOwnerByIndex(user1, 0), tokenId2);
 
-        assertEq(wbCharacters.balanceOf(user2), 1);
-        assertEq(wbCharacters.tokenOfOwnerByIndex(user2, 0), tokenId1);
+        assertEq(wbItems.balanceOf(user2), 1);
+        assertEq(wbItems.tokenOfOwnerByIndex(user2, 0), tokenId1);
     }
 
     function test_EnumerableAfterBurn() public {
         vm.startPrank(minter);
-        uint256 tokenId1 = wbCharacters.mint(user1);
-        uint256 tokenId2 = wbCharacters.mint(user1);
+        uint256 tokenId1 = wbItems.mint(user1);
+        uint256 tokenId2 = wbItems.mint(user1);
         vm.stopPrank();
 
         vm.prank(user1);
-        wbCharacters.burn(tokenId1);
+        wbItems.burn(tokenId1);
 
-        assertEq(wbCharacters.totalSupply(), 1);
-        assertEq(wbCharacters.tokenByIndex(0), tokenId2);
-        assertEq(wbCharacters.balanceOf(user1), 1);
-        assertEq(wbCharacters.tokenOfOwnerByIndex(user1, 0), tokenId2);
+        assertEq(wbItems.totalSupply(), 1);
+        assertEq(wbItems.tokenByIndex(0), tokenId2);
+        assertEq(wbItems.balanceOf(user1), 1);
+        assertEq(wbItems.tokenOfOwnerByIndex(user1, 0), tokenId2);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -298,10 +298,10 @@ contract WBCharactersTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_SupportsInterface() public view {
-        assertTrue(wbCharacters.supportsInterface(type(IERC721).interfaceId));
-        assertTrue(wbCharacters.supportsInterface(type(IERC721Metadata).interfaceId));
-        assertTrue(wbCharacters.supportsInterface(type(IERC721Enumerable).interfaceId));
-        assertTrue(wbCharacters.supportsInterface(type(IAccessControl).interfaceId));
+        assertTrue(wbItems.supportsInterface(type(IERC721).interfaceId));
+        assertTrue(wbItems.supportsInterface(type(IERC721Metadata).interfaceId));
+        assertTrue(wbItems.supportsInterface(type(IERC721Enumerable).interfaceId));
+        assertTrue(wbItems.supportsInterface(type(IAccessControl).interfaceId));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -309,7 +309,7 @@ contract WBCharactersTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_UpgradeByUpgrader() public {
-        WBCharactersV2Mock v2 = new WBCharactersV2Mock();
+        WBItemsV2Mock v2 = new WBItemsV2Mock();
 
         // Verify mock version
         assertEq(v2.version(), 2);
@@ -317,14 +317,14 @@ contract WBCharactersTest is Test {
 
         bytes32 IMPLEMENTATION_SLOT = bytes32(uint256(0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc));
 
-        address currentImpl = address(uint160(uint256(vm.load(address(wbCharacters), IMPLEMENTATION_SLOT))));
+        address currentImpl = address(uint160(uint256(vm.load(address(wbItems), IMPLEMENTATION_SLOT))));
 
         console2.log("Current implementation (via slot):", currentImpl);
 
         vm.prank(upgrader);
-        wbCharacters.upgradeToAndCall(address(v2), "");
+        wbItems.upgradeToAndCall(address(v2), "");
 
-        address currentImplUpgraded = address(uint160(uint256(vm.load(address(wbCharacters), IMPLEMENTATION_SLOT))));
+        address currentImplUpgraded = address(uint160(uint256(vm.load(address(wbItems), IMPLEMENTATION_SLOT))));
 
         console2.log("Current implementation (via slot upgraded):", currentImplUpgraded);
 
@@ -337,11 +337,11 @@ contract WBCharactersTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_UpgradeRevertsIfNotUpgrader() public {
-        WBCharactersV2Mock v2 = new WBCharactersV2Mock();
+        WBItemsV2Mock v2 = new WBItemsV2Mock();
 
         vm.startPrank(attacker);
-        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbCharacters.UPGRADER_ROLE()));
-        wbCharacters.upgradeToAndCall(address(v2), "");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), attacker, wbItems.UPGRADER_ROLE()));
+        wbItems.upgradeToAndCall(address(v2), "");
         vm.stopPrank();
     }
 
@@ -351,14 +351,14 @@ contract WBCharactersTest is Test {
 
     function test_AdminCanGrantAndRevokeRoles() public {
         vm.prank(admin);
-        wbCharacters.grantRole(wbCharacters.MINTER_ROLE(), user1);
+        wbItems.grantRole(wbItems.MINTER_ROLE(), user1);
 
-        assertTrue(wbCharacters.hasRole(wbCharacters.MINTER_ROLE(), user1));
+        assertTrue(wbItems.hasRole(wbItems.MINTER_ROLE(), user1));
 
         vm.prank(admin);
-        wbCharacters.revokeRole(wbCharacters.MINTER_ROLE(), user1);
+        wbItems.revokeRole(wbItems.MINTER_ROLE(), user1);
 
-        assertFalse(wbCharacters.hasRole(wbCharacters.MINTER_ROLE(), user1));
+        assertFalse(wbItems.hasRole(wbItems.MINTER_ROLE(), user1));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -367,9 +367,9 @@ contract WBCharactersTest is Test {
 
     function test_NonAdminCannotGrantRoles() public {
         vm.startPrank(user1);
-        bytes32 role = wbCharacters.DEFAULT_ADMIN_ROLE();
+        bytes32 role = wbItems.DEFAULT_ADMIN_ROLE();
         vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AccessControlUnauthorizedAccount(address,bytes32)")), user1, role));
-        wbCharacters.grantRole(role, user2);
+        wbItems.grantRole(role, user2);
         vm.stopPrank();
     }
 
@@ -379,29 +379,29 @@ contract WBCharactersTest is Test {
 
     function test_Approve() public {
         vm.prank(minter);
-        uint256 tokenId = wbCharacters.mint(user1);
+        uint256 tokenId = wbItems.mint(user1);
 
         vm.prank(user1);
-        wbCharacters.approve(user2, tokenId);
+        wbItems.approve(user2, tokenId);
 
-        assertEq(wbCharacters.getApproved(tokenId), user2);
+        assertEq(wbItems.getApproved(tokenId), user2);
     }
 
     function test_SetApprovalForAll() public {
         vm.startPrank(minter);
-        uint256 tokenId1 = wbCharacters.mint(user1);
-        wbCharacters.mint(user1);
+        uint256 tokenId1 = wbItems.mint(user1);
+        wbItems.mint(user1);
         vm.stopPrank();
 
         vm.prank(user1);
-        wbCharacters.setApprovalForAll(user2, true);
+        wbItems.setApprovalForAll(user2, true);
 
-        assertTrue(wbCharacters.isApprovedForAll(user1, user2));
+        assertTrue(wbItems.isApprovedForAll(user1, user2));
 
         vm.prank(user2);
-        wbCharacters.transferFrom(user1, user2, tokenId1);
+        wbItems.transferFrom(user1, user2, tokenId1);
 
-        assertEq(wbCharacters.ownerOf(tokenId1), user2);
+        assertEq(wbItems.ownerOf(tokenId1), user2);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -410,18 +410,18 @@ contract WBCharactersTest is Test {
 
     function test_IncreaseBalance() public {
         // Deploy test helper implementation
-        WBCharactersTestHelper implementation = new WBCharactersTestHelper();
+        WBItemsTestHelper implementation = new WBItemsTestHelper();
 
         // Create proxy and initialize it
-        ERC1967Proxy helperProxy = new ERC1967Proxy(address(implementation), abi.encodeCall(WBCharacters.initialize, (admin, pauser, minter, upgrader)));
+        ERC1967Proxy helperProxy = new ERC1967Proxy(address(implementation), abi.encodeCall(wbItems.initialize, (admin, pauser, minter, upgrader)));
 
-        WBCharactersTestHelper helper = WBCharactersTestHelper(address(helperProxy));
+        WBItemsTestHelper helper = WBItemsTestHelper(address(helperProxy));
 
         // Get initial balance
         uint256 initialBalance = helper.balanceOf(user1);
 
         // Call _increaseBalance with amount 0 (this is what ERC721Enumerable allows)
-        // This will trigger WBCharacters's _increaseBalance override through ERC721Enumerable
+        // This will trigger wbItems's _increaseBalance override through ERC721Enumerable
         helper.exposeIncreaseBalance(user1, 0);
 
         // Verify the balance wasn't changed (since amount was 0)

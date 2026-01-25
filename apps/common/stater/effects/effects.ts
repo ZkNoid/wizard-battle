@@ -24,6 +24,21 @@ const invisibleEffect: IEffectInfo = {
   },
 };
 
+const shadowVeilInvisibleEffect: IEffectInfo = {
+  id: CircuitString.fromString('ShadowVeilInvisible').hash(),
+  name: 'ShadowVeilInvisible',
+  apply: (state: State, publicState: State, param: Field) => {
+    console.log('Applying ShadowVeilInvisible effect');
+    publicState.playerStats.position = new PositionOption({
+      value: new Position({
+        x: Int64.from(0),
+        y: Int64.from(0),
+      }),
+      isSome: Field(0),
+    });
+  },
+};
+
 const bleedingEffect: IEffectInfo = {
   id: CircuitString.fromString('Bleeding').hash(),
   name: 'Bleeding',
@@ -149,6 +164,7 @@ const spectralProjectionReturnEffect: IEffectInfo = {
 
 export const allEffectsInfo: IEffectInfo[] = [
   invisibleEffect,
+  shadowVeilInvisibleEffect,
   bleedingEffect,
   decoyEffect,
   cloudEffect,

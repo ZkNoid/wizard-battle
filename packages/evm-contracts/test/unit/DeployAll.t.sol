@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {DeployAll} from "script/DeployAll.s.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
 import {GameRegistry} from "src/GameRegistry.sol";
-import {WBCharacter} from "src/tokens/ERC721/WBCharacter.sol";
+import {WBCharacters} from "src/tokens/ERC721/WBCharacters.sol";
 import {WBResources} from "src/tokens/ERC1155/WBResources.sol";
 import {WBCoin} from "src/tokens/ERC20/WBCoin.sol";
 

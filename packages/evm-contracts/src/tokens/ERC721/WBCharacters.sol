@@ -13,7 +13,7 @@ import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.s
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 /**
- * @title WBCharacter
+ * @title WBCharacters
  * @author Alexander Scherbatyuk (http://x.com/AlexScherbatyuk)
  * @notice Wizard Battle Character - An upgradeable ERC721 NFT contract for game characters
  * @dev This contract implements an ERC721 token with the following features:
@@ -27,7 +27,7 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeab
  * - Upgrade capability restricted to UPGRADER_ROLE
  * - ERC7201 namespaced storage pattern for upgrade safety
  */
-contract WBCharacter is
+contract WBCharacters is
     Initializable,
     ERC721Upgradeable,
     ERC721EnumerableUpgradeable,
@@ -37,15 +37,15 @@ contract WBCharacter is
     UUPSUpgradeable
 {
     /**
-     * @dev Storage structure for WBCharacter contract state
+     * @dev Storage structure for WBCharacters contract state
      * @custom:storage-location erc7201:myProject.MyToken
      */
-    struct WBCharacterStorage {
+    struct WBCharactersStorage {
         /// @dev Counter for the next token ID to be minted
         uint256 _nextTokenId;
     }
 
-    /// @dev Storage slot location for WBCharacterStorage (ERC7201 pattern)
+    /// @dev Storage slot location for WBCharactersStorage (ERC7201 pattern)
     /// @dev keccak256(abi.encode(uint256(keccak256("myProject.MyToken")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant WB_CHARACTER_STORAGE_LOCATION = 0xfbb7c9e4123fcf4b1aad53c70358f7b1c1d7cf28092f5178b53e55db565e9200;
 
@@ -64,7 +64,7 @@ contract WBCharacter is
     }
 
     /**
-     * @notice Initializes the WBCharacter contract
+     * @notice Initializes the WBCharacters contract
      * @dev This function can only be called once due to the initializer modifier
      * @param defaultAdmin Address to be granted the default admin role
      * @param pauser Address to be granted the PAUSER_ROLE
@@ -72,7 +72,7 @@ contract WBCharacter is
      * @param upgrader Address to be granted the UPGRADER_ROLE
      */
     function initialize(address defaultAdmin, address pauser, address minter, address upgrader) public initializer {
-        __ERC721_init("WBCharacter", "WBCH");
+        __ERC721_init("WBCharacters", "WBCH");
         __ERC721Enumerable_init();
         __ERC721Pausable_init();
         __AccessControl_init();
@@ -107,7 +107,7 @@ contract WBCharacter is
      * @return uint256 The ID of the newly minted token
      */
     function mint(address to) public onlyRole(MINTER_ROLE) returns (uint256) {
-        WBCharacterStorage storage $ = _getWBCharacterStorage();
+        WBCharactersStorage storage $ = _getWBCharactersStorage();
         uint256 tokenId = $._nextTokenId++;
         _safeMint(to, tokenId);
         return tokenId;
@@ -115,9 +115,9 @@ contract WBCharacter is
 
     /**
      * @dev Retrieves the storage struct using ERC7201 namespaced storage pattern
-     * @return $ Storage reference to WBCharacterStorage struct
+     * @return $ Storage reference to WBCharactersStorage struct
      */
-    function _getWBCharacterStorage() private pure returns (WBCharacterStorage storage $) {
+    function _getWBCharactersStorage() private pure returns (WBCharactersStorage storage $) {
         assembly {
             $.slot := WB_CHARACTER_STORAGE_LOCATION
         }

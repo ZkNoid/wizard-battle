@@ -2,7 +2,8 @@
 pragma solidity ^0.8.27;
 import {Script} from "forge-std/Script.sol";
 import {GameRegistry} from "../src/GameRegistry.sol";
-import {WBCharacter} from "../src/tokens/ERC721/WBCharacter.sol";
+import {WBCharacters} from "../src/tokens/ERC721/WBCharacters.sol";
+import {WBItems} from "../src/tokens/ERC721/WBItems.sol";
 import {WBResources} from "../src/tokens/ERC1155/WBResources.sol";
 import {WBCoin} from "../src/tokens/ERC20/WBCoin.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -31,11 +32,11 @@ contract DeployAll is Script {
         vm.stopBroadcast();
     }
 
-    function _deployWBCharacter() internal returns (address wbCharacter) {
+    function _deployWBCharacters() internal returns (address wbCharacters) {
         vm.startBroadcast();
-        // Deploy WBCharacter
-        wbCharacter =
-            address(new ERC1967Proxy(address(new WBCharacter()), abi.encodeCall(WBCharacter.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))));
+        // Deploy WBCharacters
+        wbCharacters =
+            address(new ERC1967Proxy(address(new WBCharacters()), abi.encodeCall(WBCharacters.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))));
         vm.stopBroadcast();
     }
 
@@ -44,6 +45,13 @@ contract DeployAll is Script {
         // Deploy WBResources
         wbResources =
             address(new ERC1967Proxy(address(new WBResources()), abi.encodeCall(WBResources.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))));
+        vm.stopBroadcast();
+    }
+
+    function _deployWBItems() internal returns (address wbItems) {
+        vm.startBroadcast();
+        // Deploy WBItems
+        wbItems = address(new ERC1967Proxy(address(new WBItems()), abi.encodeCall(WBItems.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))));
         vm.stopBroadcast();
     }
 
@@ -64,22 +72,28 @@ contract DeployAll is Script {
             )
         );
 
-        address wbCharacter =
-            address(new ERC1967Proxy(address(new WBCharacter()), abi.encodeCall(WBCharacter.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))));
+        address wbCharacters =
+            address(new ERC1967Proxy(address(new WBCharacters()), abi.encodeCall(WBCharacters.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))));
 
         address wbResources =
             address(new ERC1967Proxy(address(new WBResources()), abi.encodeCall(WBResources.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))));
 
         address wbCoin = address(new ERC1967Proxy(address(new WBCoin()), abi.encodeCall(WBCoin.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))));
 
-        WBCoin(wbCoin).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
-        WBCoin(wbCoin).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
+        address wbItems =
+            address(new ERC1967Proxy(address(new WBItems()), abi.encodeCall(WBItems.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))));
 
-        WBCharacter(wbCharacter).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
-        WBCharacter(wbCharacter).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
+        WBCharacters(wbCharacters).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
+        WBCharacters(wbCharacters).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
 
         WBResources(wbResources).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
         WBResources(wbResources).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
+
+        WBCoin(wbCoin).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
+        WBCoin(wbCoin).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
+
+        WBItems(wbItems).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
+        WBItems(wbItems).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
 
         vm.stopBroadcast();
     }

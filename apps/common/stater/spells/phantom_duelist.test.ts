@@ -248,7 +248,7 @@ describe('Phantom Duelist Spells', () => {
         'Deal 50 damage to a single target.'
       );
       expect(spectralArrowSpell.image).toBe(
-        '/wizards/skills/spectral_arrow.png'
+        '/wizards/skills/spectralArrow.png'
       );
       expect(spectralArrowSpell.cooldown.toString()).toBe('1');
     });
@@ -304,7 +304,7 @@ describe('Phantom Duelist Spells', () => {
       expect(shadowVeilSpell.description).toBe(
         'Become invisible for 2 turns. Next attack deals +50% damage and reveals you.'
       );
-      expect(shadowVeilSpell.image).toBe('/wizards/skills/shadow_veil.png');
+      expect(shadowVeilSpell.image).toBe('/wizards/skills/shadowVeil.png');
       expect(shadowVeilSpell.cooldown.toString()).toBe('5');
     });
 
@@ -373,7 +373,7 @@ describe('Phantom Duelist Spells', () => {
         "Create a spectral projection on opponent's field for 3 turns, transforming skills into melee variants."
       );
       expect(spectralProjectionSpell.image).toBe(
-        '/wizards/skills/spectral_projection.png'
+        '/wizards/skills/spectralProjection.png'
       );
       expect(spectralProjectionSpell.cooldown.toString()).toBe('6');
     });
@@ -477,7 +477,7 @@ describe('Phantom Duelist Spells', () => {
       expect(dusksEmbraceSpell.description).toBe(
         'Deal 50 damage to a horizontal line and apply Weaken (-30% Defence) for 2 turns if hit.'
       );
-      expect(dusksEmbraceSpell.image).toBe('/wizards/skills/dusks_embrace.png');
+      expect(dusksEmbraceSpell.image).toBe('/wizards/skills/dusksEmbrace.png');
       expect(dusksEmbraceSpell.cooldown.toString()).toBe('2');
     });
 
@@ -555,7 +555,7 @@ describe('Phantom Duelist Spells', () => {
       expect(phantomEchoSpell.description).toBe(
         'Deal 30 damage to a diamond 3x3 area. If hit, opponent becomes visible and takes +50% damage for 1 turn.'
       );
-      expect(phantomEchoSpell.image).toBe('/wizards/skills/phantom_echo.png');
+      expect(phantomEchoSpell.image).toBe('/wizards/skills/phantomEcho.png');
       expect(phantomEchoSpell.cooldown.toString()).toBe('3');
     });
 
@@ -659,7 +659,7 @@ describe('Phantom Duelist Spells', () => {
       expect(shadowStrikeSpell.description).toBe(
         'Deal 50 damage with +20% critical chance. (Spectral Form)'
       );
-      expect(shadowStrikeSpell.image).toBe('/wizards/skills/shadow_strike.png');
+      expect(shadowStrikeSpell.image).toBe('/wizards/skills/shadowStrike.png');
       expect(shadowStrikeSpell.cooldown.toString()).toBe('1');
     });
 
@@ -717,7 +717,7 @@ describe('Phantom Duelist Spells', () => {
       expect(shadowDashSpell.description).toBe(
         'Dash at opponent dealing up to +100% extra damage depending on distance. (Spectral Form)'
       );
-      expect(shadowDashSpell.image).toBe('/wizards/skills/shadow_dash.png');
+      expect(shadowDashSpell.image).toBe('/wizards/skills/shadowDash.png');
       expect(shadowDashSpell.cooldown.toString()).toBe('2');
     });
 
@@ -909,7 +909,7 @@ describe('Phantom Duelist Spells', () => {
         'Deal 50 damage to a 3x3 area. (Spectral Form)'
       );
       expect(whirlingBladesSpell.image).toBe(
-        '/wizards/skills/whirling_blades.png'
+        '/wizards/skills/whirlingBlades.png'
       );
       expect(whirlingBladesSpell.cooldown.toString()).toBe('3');
     });

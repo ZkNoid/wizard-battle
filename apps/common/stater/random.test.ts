@@ -226,12 +226,12 @@ describe('Random Events', () => {
     });
 
     it('should scale damage with attack and defense', () => {
-      // fullDamage = damage * attack * defense / 100
+      // fullDamage = damage * opponentAttack * selfDefense / 100
       const state = createStateWithSeed(42, 123, 100, 100);
-      state.playerStats.attack = UInt64.from(20); // 2x attack
-      state.playerStats.defense = UInt64.from(10);
+      state.playerStats.defense = UInt64.from(10); // defender's defense
       const stater = new Stater({ state });
       const opponentState = createStateWithSeed(1, 456, 100, 100);
+      opponentState.playerStats.attack = UInt64.from(20); // attacker's attack
 
       const initialHp = parseInt(stater.state.playerStats.hp.toString());
 

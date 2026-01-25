@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import {WBCharacter} from "../../src/tokens/ERC721/WBCharacter.sol";
+import {WBCharacters} from "../../src/tokens/ERC721/WBCharacters.sol";
 
-contract WBCharacterV2Mock is WBCharacter {
+contract WBCharactersV2Mock is WBCharacters {
     uint256 public version = 2;
 
     function newFunction() external pure returns (string memory) {
