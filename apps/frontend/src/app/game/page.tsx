@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMinaAppkit } from 'mina-appkit';
-import { Int64 } from 'o1js';
+import { Int64, CircuitString } from 'o1js';
 
 import Game from '@/components/Game';
 import { api } from '@/trpc/react';
@@ -36,6 +36,8 @@ const GRID_HEIGHT = 8;
 const TILE_SIZE = 60;
 const DEFAULT_USER_POSITION = { x: 3, y: 3 };
 const SCENE_READY_DELAY = 100;
+const SPECTRAL_PROJECTION_EFFECT_ID = CircuitString.fromString('SpectralProjectionReturn').hash();
+const SPECTRAL_ENTITY_ID = 'spectral-user';
 
 // Types
 type MapType = 'ally' | 'enemy';
@@ -64,7 +66,7 @@ export default function GamePage() {
   const { stater, opponentState, gamePhaseManager, setActionSend, actionSend } =
     useUserInformationStore();
   const { pickedSpellId, setPickedSpellId } = useInGameStore();
-  const { addEntity, getAllEntities, initMovementHandler, clearEntities } =
+  const { addEntity, getAllEntities, initMovementHandler, clearEntities, removeEntity, getEntity } =
     useEngineStore();
 
   // Refs
@@ -77,6 +79,15 @@ export default function GamePage() {
   // Derived state
   const entities = getAllEntities();
 
+  // Check if spectral projection effect is active
+  const hasSpectralProjectionEffect = useCallback(() => {
+    if (!staterRef.current?.state?.onEndEffects) return false;
+    
+    return staterRef.current.state.onEndEffects.some(
+      (effect) => effect.effectId.equals(SPECTRAL_PROJECTION_EFFECT_ID).toBoolean()
+    );
+  }, []);
+
   const syncState = () => {
     // Sync player state
 
@@ -84,6 +95,9 @@ export default function GamePage() {
       const newXAlly = +staterRef.current.state.playerStats.position.value.x;
       const newYAlly = +staterRef.current.state.playerStats.position.value.y;
       gameEventEmitter.move('user', newXAlly, newYAlly);
+      
+      // Also sync spectral projection position if it exists
+      gameEventEmitter.move(SPECTRAL_ENTITY_ID, newXAlly, newYAlly);
     }
 
     // Sync opponent state
@@ -260,16 +274,20 @@ export default function GamePage() {
   const submitSpellAction = useCallback(
     (
       userAction: IUserAction | null,
-      updatedActionInfo: { movementDone: boolean; spellCastDone: boolean }
+      updatedActionInfo: { movementDone: boolean; spellCastDone: boolean },
+      companionAction?: IUserAction | null
     ) => {
       let actions = preparedActions;
       if (userAction) {
         actions = [...actions, userAction];
       }
+      if (companionAction) {
+        actions = [...actions, companionAction];
+      }
 
       if (!updatedActionInfo.movementDone || !updatedActionInfo.spellCastDone) {
         console.log('Adding to prepared actions');
-        if (userAction) {
+        if (userAction || companionAction) {
           setPreparedActions(actions);
         }
         return;
@@ -356,6 +374,24 @@ export default function GamePage() {
       let userAction = createUserAction(spellId.toString(), x, y, isEnemy);
       if (!userAction) return;
 
+      // Handle companion spell if present
+      let companionAction: IUserAction | null = null;
+      if (spell.companionSpellId) {
+        const companionSpell = allSpells.find(
+          (s) => s.id.toString() === spell.companionSpellId!.toString()
+        );
+        if (companionSpell) {
+          console.log('Creating companion spell action:', companionSpell.name);
+          // Companion spell targets self (ally) with the same position
+          companionAction = createUserAction(
+            companionSpell.id.toString(),
+            x,
+            y,
+            false // companion spell targets ally (self)
+          );
+        }
+      }
+
       setActionInfo(updatedActionInfo);
 
       console.log(
@@ -375,9 +411,27 @@ export default function GamePage() {
         }
       }
 
-      console.log('userAction:', userAction);
+      // Apply companion spell locally if it targets self
+      if (companionAction && companionAction.playerId === stater?.state?.playerId?.toString()) {
+        console.log('Apply companion spell locally');
+        stater.applyActionsLocally(
+          { actions: [companionAction], signature: '' },
+          opponentState!
+        );
+        syncState();
+        const companionSpell = allSpells.find(
+          (s) => s.id.toString() === spell.companionSpellId!.toString()
+        );
+        if (companionSpell?.globalStatus !== 'global') {
+          companionAction = null;
+        }
+      }
 
-      submitSpellAction(userAction, updatedActionInfo);
+      console.log('userAction:', userAction);
+      console.log('companionAction:', companionAction);
+
+      // Submit both main and companion actions
+      submitSpellAction(userAction, updatedActionInfo, companionAction);
 
       if (spell) {
         gameEventEmitter.playAnimationOneTime(
@@ -477,6 +531,31 @@ export default function GamePage() {
   useEffect(() => {
     opponentStateRef.current = opponentState;
   }, [opponentState]);
+
+  // Manage spectral projection entity based on effect presence
+  useEffect(() => {
+    const hasEffect = hasSpectralProjectionEffect();
+    const spectralEntity = getEntity(SPECTRAL_ENTITY_ID);
+    
+    if (hasEffect && !spectralEntity) {
+      // Effect is active but entity doesn't exist - create it
+      const userPosition = stater?.state?.playerStats?.position?.value;
+      const spectral = {
+        id: SPECTRAL_ENTITY_ID,
+        type: EntityType.SPECTRAL_WIZARD,
+        tilemapPosition: userPosition 
+          ? { x: +userPosition.x, y: +userPosition.y }
+          : DEFAULT_USER_POSITION,
+        mirrorEntityId: 'user', // Mirror animations from the user entity
+      };
+      addEntity(spectral);
+      console.log('👻 Created spectral projection entity');
+    } else if (!hasEffect && spectralEntity) {
+      // Effect is not active but entity exists - remove it
+      removeEntity(SPECTRAL_ENTITY_ID);
+      console.log('👻 Removed spectral projection entity');
+    }
+  }, [stater?.state?.onEndEffects, hasSpectralProjectionEffect, getEntity, addEntity, removeEntity, stater?.state?.playerStats?.position?.value]);
 
   useEffect(() => {
     const cleanupMovement = initMovementHandler();
@@ -606,7 +685,7 @@ export default function GamePage() {
           highlightedTiles={highlightedAllyTiles}
         />
         <EntityOverlay
-          entities={entities.filter((entity) => entity.id !== 'enemy')}
+          entities={entities.filter((entity) => entity.id !== 'enemy' && entity.id !== SPECTRAL_ENTITY_ID)}
           gridWidth={GRID_WIDTH}
           gridHeight={GRID_HEIGHT}
         />
