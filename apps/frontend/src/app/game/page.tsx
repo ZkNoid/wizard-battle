@@ -260,16 +260,20 @@ export default function GamePage() {
   const submitSpellAction = useCallback(
     (
       userAction: IUserAction | null,
-      updatedActionInfo: { movementDone: boolean; spellCastDone: boolean }
+      updatedActionInfo: { movementDone: boolean; spellCastDone: boolean },
+      companionAction?: IUserAction | null
     ) => {
       let actions = preparedActions;
       if (userAction) {
         actions = [...actions, userAction];
       }
+      if (companionAction) {
+        actions = [...actions, companionAction];
+      }
 
       if (!updatedActionInfo.movementDone || !updatedActionInfo.spellCastDone) {
         console.log('Adding to prepared actions');
-        if (userAction) {
+        if (userAction || companionAction) {
           setPreparedActions(actions);
         }
         return;
@@ -356,6 +360,24 @@ export default function GamePage() {
       let userAction = createUserAction(spellId.toString(), x, y, isEnemy);
       if (!userAction) return;
 
+      // Handle companion spell if present
+      let companionAction: IUserAction | null = null;
+      if (spell.companionSpellId) {
+        const companionSpell = allSpells.find(
+          (s) => s.id.toString() === spell.companionSpellId!.toString()
+        );
+        if (companionSpell) {
+          console.log('Creating companion spell action:', companionSpell.name);
+          // Companion spell targets self (ally) with the same position
+          companionAction = createUserAction(
+            companionSpell.id.toString(),
+            x,
+            y,
+            false // companion spell targets ally (self)
+          );
+        }
+      }
+
       setActionInfo(updatedActionInfo);
 
       console.log(
@@ -375,9 +397,27 @@ export default function GamePage() {
         }
       }
 
-      console.log('userAction:', userAction);
+      // Apply companion spell locally if it targets self
+      if (companionAction && companionAction.playerId === stater?.state?.playerId?.toString()) {
+        console.log('Apply companion spell locally');
+        stater.applyActionsLocally(
+          { actions: [companionAction], signature: '' },
+          opponentState!
+        );
+        syncState();
+        const companionSpell = allSpells.find(
+          (s) => s.id.toString() === spell.companionSpellId!.toString()
+        );
+        if (companionSpell?.globalStatus !== 'global') {
+          companionAction = null;
+        }
+      }
 
-      submitSpellAction(userAction, updatedActionInfo);
+      console.log('userAction:', userAction);
+      console.log('companionAction:', companionAction);
+
+      // Submit both main and companion actions
+      submitSpellAction(userAction, updatedActionInfo, companionAction);
 
       if (spell) {
         gameEventEmitter.playAnimationOneTime(
