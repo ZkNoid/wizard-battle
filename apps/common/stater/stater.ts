@@ -421,7 +421,7 @@ export class Stater extends Struct({
       signature: minaClient.signFields(
         [stateHash.toBigInt()],
         this.state.signingKey.toBase58()
-      ),
+      ).signature,
     };
   }
 }
