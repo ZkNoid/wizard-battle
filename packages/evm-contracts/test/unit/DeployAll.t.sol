@@ -16,14 +16,14 @@ contract DeployAllTest is Test {
         deployScript = new DeployAll();
     }
 
-    function test_DeployAllRunCoverage() public {
+    function test_DeployAllRunCoverage() public view {
         // This test just ensures the run function can be called
         // The actual deployment would fail without proper setup,
         // so we just verify the script compiles and can be instantiated
         assertTrue(address(deployScript) != address(0));
     }
 
-    function test_DeployAllDeployCoverage() public {
+    function test_DeployAllDeployCoverage() public view {
         // Similar to above - we're just ensuring the deploy function exists
         // and the script is properly structured
         assertTrue(address(deployScript) != address(0));

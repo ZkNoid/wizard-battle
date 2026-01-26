@@ -8,7 +8,7 @@ import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/Messa
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract GameRegistryTest is Test {
-    event CommitResources(bytes indexed commit);
+    event commitSingles(bytes indexed commit);
     event CommitBatch(uint256 indexed nonce, bytes[] indexed commits);
     event RevokeAdminRole(address indexed account);
     event GrantAdminRole(address indexed account);
@@ -241,7 +241,7 @@ contract GameRegistryTest is Test {
         // Use a nonce
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
         (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage(0, callData);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
 
         // Test used nonce
         assertTrue(gameRegistry.getIsNonceUsed(0), "Nonce 0 should be used");
@@ -381,46 +381,46 @@ contract GameRegistryTest is Test {
                       COMMIT RESOURCE - SUCCESS
     //////////////////////////////////////////////////////////////*/
 
-    function test_commitResource() public addGameElement {
+    function test_commitSingle() public addGameElement {
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
         (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage(0, callData);
 
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
 
     /*//////////////////////////////////////////////////////////////
                       COMMIT RESOURCE - REVERTS
     //////////////////////////////////////////////////////////////*/
 
-    function test_commitResourceWithZeroResourceHash() public addGameElement {
+    function test_commitSingleWithZeroResourceHash() public addGameElement {
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
         (, bytes memory commit, bytes memory signature) = getSignedMessage(0, callData);
 
         vm.expectRevert(GameRegistry.GameRegistry__InvalidCommitData.selector);
-        gameRegistry.commitResource({resourceHash: bytes32(0), commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: bytes32(0), commit: commit, signature: signature});
     }
 
-    function test_commitResourceWithEmptyCommit() public addGameElement {
+    function test_commitSingleWithEmptyCommit() public addGameElement {
         bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
         bytes memory emptyCommit = "";
         bytes memory signature = "0x123456";
 
         vm.expectRevert(GameRegistry.GameRegistry__InvalidCommitData.selector);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: emptyCommit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: emptyCommit, signature: signature});
     }
 
-    function test_commitResourceWithEmptySignature() public addGameElement {
+    function test_commitSingleWithEmptySignature() public addGameElement {
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
         (bytes32 resourceHash, bytes memory commit,) = getSignedMessage(0, callData);
         bytes memory emptySignature = "";
 
         vm.expectRevert(GameRegistry.GameRegistry__InvalidCommitData.selector);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: emptySignature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: emptySignature});
     }
 
-    function test_commitResourceWithInvalidTarget() public addGameElement {
+    function test_commitSingleWithInvalidTarget() public addGameElement {
         bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
 
@@ -436,10 +436,10 @@ contract GameRegistryTest is Test {
         bytes memory signature = abi.encodePacked(r, s, v);
 
         vm.expectRevert(GameRegistry.GameRegistry__InvalidTarget.selector);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
 
-    function test_commitResourceWhenCallFails() public addGameElement {
+    function test_commitSingleWhenCallFails() public addGameElement {
         bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
 
         // Create callData that will fail (invalid function signature)
@@ -457,22 +457,22 @@ contract GameRegistryTest is Test {
         bytes memory signature = abi.encodePacked(r, s, v);
 
         vm.expectRevert(GameRegistry.GameRegistry__CommitFailed.selector);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
 
-    function test_commitResourceWithUsedNonce() public addGameElement {
+    function test_commitSingleWithUsedNonce() public addGameElement {
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
         (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage(5, callData);
 
         // First commit - should succeed
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
 
         // Second commit with same nonce - should fail
         vm.expectRevert(GameRegistry.GameRegistry__NonceAlreadyUsed.selector);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
 
-    function test_commitResourceWithNonExistentResource() public {
+    function test_commitSingleWithNonExistentResource() public {
         bytes32 nonExistentResourceHash = keccak256(bytes("nonexistent"));
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
 
@@ -488,10 +488,10 @@ contract GameRegistryTest is Test {
         bytes memory signature = abi.encodePacked(r, s, v);
 
         vm.expectRevert(GameRegistry.GameRegistry__InvalidResource.selector);
-        gameRegistry.commitResource({resourceHash: nonExistentResourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: nonExistentResourceHash, commit: commit, signature: signature});
     }
 
-    function test_commitResourceWithMismatchedTarget() public addGameElement {
+    function test_commitSingleWithMismatchedTarget() public addGameElement {
         bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
 
@@ -507,10 +507,10 @@ contract GameRegistryTest is Test {
         bytes memory signature = abi.encodePacked(r, s, v);
 
         vm.expectRevert(GameRegistry.GameRegistry__UnknownTargetAddress.selector);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
 
-    function test_commitResourceWithZeroAccount() public addGameElement {
+    function test_commitSingleWithZeroAccount() public addGameElement {
         bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
 
@@ -526,10 +526,10 @@ contract GameRegistryTest is Test {
         bytes memory signature = abi.encodePacked(r, s, v);
 
         vm.expectRevert(GameRegistry.GameRegistry__InvalidPlayer.selector);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
 
-    function test_commitResourceWithInvalidSigner() public addGameElement {
+    function test_commitSingleWithInvalidSigner() public addGameElement {
         bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
 
@@ -548,10 +548,10 @@ contract GameRegistryTest is Test {
         bytes memory signature = abi.encodePacked(r, s, v);
 
         vm.expectRevert(GameRegistry.GameRegistry__InvalidSigner.selector);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
 
-    function test_commitResourceWithInvalidSignature() public addGameElement {
+    function test_commitSingleWithInvalidSignature() public addGameElement {
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
         (bytes32 resourceHash, bytes memory commit,) = getSignedMessage(0, callData);
 
@@ -559,10 +559,10 @@ contract GameRegistryTest is Test {
         bytes memory invalidSignature = abi.encodePacked(bytes32(uint256(1)), bytes32(uint256(2)), bytes1(uint8(27)));
 
         vm.expectRevert(GameRegistry.GameRegistry__NotSigner.selector);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: invalidSignature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: invalidSignature});
     }
 
-    function test_commitResourceSignerMismatch() public addGameElement {
+    function test_commitSingleSignerMismatch() public addGameElement {
         bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
 
@@ -581,7 +581,7 @@ contract GameRegistryTest is Test {
         bytes memory signature = abi.encodePacked(r, s, v);
 
         vm.expectRevert(GameRegistry.GameRegistry__NotAllowedToCommit.selector);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
 
     /*//////////////////////////////////////////////////////////////
