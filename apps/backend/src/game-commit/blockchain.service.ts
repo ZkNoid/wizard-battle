@@ -77,7 +77,7 @@ export class BlockchainService {
     const { nameHash, commit, signature } = await this._burn(
       resourceName,
       playerAddress,
-      this.wbItemsAddress,
+      this.wbResourcesAddress,
       tokenId,
       amount
     );
@@ -91,16 +91,12 @@ export class BlockchainService {
 
   async mintItem(
     itemName: string,
-    playerAddress: string,
-    tokenId: number,
-    amount: number
+    playerAddress: string
   ): Promise<{ itemHash: string; commit: string; signature: string }> {
-    const { nameHash, commit, signature } = await this._mint(
+    const { nameHash, commit, signature } = await this._mintERC721(
       itemName,
       playerAddress,
-      this.wbItemsAddress,
-      tokenId,
-      amount
+      this.wbItemsAddress
     );
     return { itemHash: nameHash, commit, signature };
   }
@@ -108,15 +104,20 @@ export class BlockchainService {
   async burnItem(
     itemName: string,
     playerAddress: string,
-    tokenId: number,
-    amount: number
+    tokenId: number
   ): Promise<{ itemHash: string; commit: string; signature: string }> {
-    const { nameHash, commit, signature } = await this._burn(
+    // For ERC721, query which tokenId the player actually owns
+    const actualTokenId = await this._getPlayerERC721TokenId(
+      this.wbItemsAddress,
+      playerAddress,
+      itemName
+    );
+
+    const { nameHash, commit, signature } = await this._burnERC721(
       itemName,
       playerAddress,
-      this.wbResourcesAddress,
-      tokenId,
-      amount
+      this.wbItemsAddress,
+      actualTokenId
     );
     return { itemHash: nameHash, commit, signature };
   }
@@ -126,12 +127,10 @@ export class BlockchainService {
     playerAddress: string,
     tokenId: number
   ): Promise<{ characterHash: string; commit: string; signature: string }> {
-    const { nameHash, commit, signature } = await this._mint(
+    const { nameHash, commit, signature } = await this._mintERC721(
       characterName,
       playerAddress,
-      this.wbCharactersAddress,
-      tokenId,
-      1
+      this.wbCharactersAddress
     );
     return { characterHash: nameHash, commit, signature };
   }
@@ -141,12 +140,18 @@ export class BlockchainService {
     playerAddress: string,
     tokenId: number
   ): Promise<{ characterHash: string; commit: string; signature: string }> {
-    const { nameHash, commit, signature } = await this._burn(
+    // For ERC721, query which tokenId the player actually owns
+    const actualTokenId = await this._getPlayerERC721TokenId(
+      this.wbCharactersAddress,
+      playerAddress,
+      characterName
+    );
+
+    const { nameHash, commit, signature } = await this._burnERC721(
       characterName,
       playerAddress,
       this.wbCharactersAddress,
-      tokenId,
-      1
+      actualTokenId
     );
 
     return { characterHash: nameHash, commit, signature };
@@ -369,6 +374,148 @@ export class BlockchainService {
       console.error('❌ Error minting resource:', error);
     }
     return { nameHash: '', commit: '', signature: '' };
+  }
+
+  private async _mintERC721(
+    name: string,
+    playerAddress: string,
+    contractAddress: string
+  ): Promise<{ nameHash: string; commit: string; signature: string }> {
+    try {
+      if (!this.signer) {
+        throw new Error(
+          'Blockchain service not initialized. Please set GAME_SIGNER_PRIVATE_KEY'
+        );
+      }
+
+      console.log(`🪙 Minting ${name} (ERC721) to player: ${playerAddress}`);
+
+      // Step 1: Encode callData for ERC721 mint function: mint(address to)
+      const contractInterface = new ethers.Interface([
+        'function mint(address to) returns (uint256)',
+      ]);
+
+      const callData = contractInterface.encodeFunctionData('mint', [
+        playerAddress, // address to
+      ]);
+
+      console.log('📦 Encoded callData:', callData);
+
+      // Step 2: Get signed message (nameHash, commit, signature)
+      // Generate unique nonce using timestamp to prevent replay attacks
+      const nonce = Date.now();
+
+      const { nameHash, commit, signature } = await this._getSignedMessage(
+        name,
+        contractAddress,
+        nonce,
+        callData,
+        playerAddress
+      );
+
+      console.log('🔐 Character hash:', nameHash);
+      console.log('📝 Commit:', commit);
+      console.log('✍️ Signature:', signature);
+
+      return { nameHash, commit, signature };
+    } catch (error) {
+      console.error('❌ Error minting character:', error);
+    }
+    return { nameHash: '', commit: '', signature: '' };
+  }
+
+  private async _burnERC721(
+    name: string,
+    playerAddress: string,
+    contractAddress: string,
+    tokenId: number
+  ): Promise<{ nameHash: string; commit: string; signature: string }> {
+    try {
+      if (!this.signer) {
+        throw new Error(
+          'Blockchain service not initialized. Please set GAME_SIGNER_PRIVATE_KEY'
+        );
+      }
+
+      console.log(
+        `🔥 Burning ${name} (ERC721) tokenId ${tokenId} from player: ${playerAddress}`
+      );
+
+      // Step 1: Encode callData for ERC721 burn function: burn(uint256 tokenId)
+      const contractInterface = new ethers.Interface([
+        'function burn(uint256 tokenId)',
+      ]);
+
+      const callData = contractInterface.encodeFunctionData('burn', [tokenId]);
+
+      console.log('📦 Encoded callData:', callData);
+
+      // Step 2: Get signed message (nameHash, commit, signature)
+      // Generate unique nonce using timestamp to prevent replay attacks
+      const nonce = Date.now();
+
+      const { nameHash, commit, signature } = await this._getSignedMessage(
+        name,
+        contractAddress,
+        nonce,
+        callData,
+        playerAddress
+      );
+
+      console.log('🔐 Character hash:', nameHash);
+      console.log('📝 Commit:', commit);
+      console.log('✍️ Signature:', signature);
+
+      return { nameHash, commit, signature };
+    } catch (error) {
+      console.error('❌ Error burning character:', error);
+    }
+    return { nameHash: '', commit: '', signature: '' };
+  }
+
+  /**
+   * Get the first tokenId owned by a player for a given ERC721 contract
+   * @param contractAddress ERC721 contract address
+   * @param playerAddress Player's address
+   * @param name Name of the item/character (for error messages)
+   * @returns The tokenId owned by the player
+   * TODO: replace with updating token id of item, resource, character in DB after minting
+   * read actual tokenId from DB before burning
+   */
+  private async _getPlayerERC721TokenId(
+    contractAddress: string,
+    playerAddress: string,
+    name: string
+  ): Promise<number> {
+    if (!this.provider) {
+      throw new Error('Provider not initialized');
+    }
+
+    const erc721Contract = new ethers.Contract(
+      contractAddress,
+      [
+        'function balanceOf(address owner) view returns (uint256)',
+        'function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)',
+      ],
+      this.provider
+    );
+
+    const balance = await erc721Contract.balanceOf!(playerAddress);
+
+    if (balance === 0n) {
+      throw new Error(
+        `Player ${playerAddress} does not own any ${name} tokens`
+      );
+    }
+
+    // Get the first token owned by the player
+    const tokenId = await erc721Contract.tokenOfOwnerByIndex!(playerAddress, 0);
+
+    console.log(
+      `🔍 Found tokenId ${tokenId} for ${name} owned by ${playerAddress}`
+    );
+
+    return Number(tokenId);
   }
 
   /**
