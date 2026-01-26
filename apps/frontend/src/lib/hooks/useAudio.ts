@@ -1,6 +1,8 @@
 import { useCallback, useEffect } from 'react';
 import { useAudioStore } from '../store/audioStore';
 import { AUDIO_ASSETS } from '../constants/audioAssets';
+import { EventBus } from '@/game/EventBus';
+import type { ISpell } from '../../../../common/stater/spells/interface';
 
 /**
  * Hook for playing sound effects
@@ -35,7 +37,7 @@ export function useSound() {
 
       // Try to find the sound path
       const soundPath = findSound(AUDIO_ASSETS.sfx, soundKey);
-      
+
       if (soundPath) {
         playSound(soundPath);
       }
@@ -46,11 +48,11 @@ export function useSound() {
 
 /**
  * Hook for playing hover sound
- * 
+ *
  * Usage:
  * ```typescript
  * const playHoverSound = useHoverSound();
- * 
+ *
  * <button onMouseEnter={playHoverSound}>
  *   Hover me
  * </button>
@@ -66,11 +68,11 @@ export function useHoverSound() {
 
 /**
  * Hook for playing click sound
- * 
+ *
  * Usage:
  * ```typescript
  * const playClickSound = useClickSound();
- * 
+ *
  * <button onClick={playClickSound}>
  *   Click me
  * </button>
@@ -178,4 +180,70 @@ export function useModalSound() {
       playSound(AUDIO_ASSETS.sfx.ui.modalClose);
     };
   }, [playSound]);
+}
+
+/**
+ * Maps spell names to their corresponding sound files.
+ * For spells without specific sounds, fallback to hero's default cast/shot sound.
+ */
+const SPELL_SOUND_MAP: Record<string, string> = {
+  // === MAGE SPELLS ===
+  // Все заклинания мага используют общий звук каста
+  Lightning: AUDIO_ASSETS.sfx.heroes.mage.cast,
+  FireBall: AUDIO_ASSETS.sfx.heroes.mage.cast,
+  Teleport: AUDIO_ASSETS.sfx.heroes.mage.cast,
+  Heal: AUDIO_ASSETS.sfx.heroes.mage.cast,
+  Laser: AUDIO_ASSETS.sfx.heroes.mage.cast,
+
+  // === ARCHER SPELLS ===
+  // Все заклинания лучника используют звук выстрела стрелы
+  Arrow: AUDIO_ASSETS.sfx.heroes.archer.shot,
+  AimingShot: AUDIO_ASSETS.sfx.heroes.archer.shot,
+  HailOfArrows: AUDIO_ASSETS.sfx.heroes.archer.shot,
+  Decoy: AUDIO_ASSETS.sfx.heroes.archer.shot,
+  Cloud: AUDIO_ASSETS.sfx.heroes.archer.shot,
+
+  // === PHANTOM DUELIST SPELLS ===
+  // Пока нет звуков - будет использоваться fallback
+};
+
+/**
+ * Hook for playing spell cast sounds via Phaser EventBus
+ * Automatically subscribes to spell cast events and plays corresponding sounds
+ *
+ * @param gameInstance - The Phaser game instance identifier
+ *
+ * Usage:
+ * ```typescript
+ * function GameComponent({ gameInstance }) {
+ *   useSpellSounds(gameInstance);
+ *   return <div>Game UI</div>;
+ * }
+ * ```
+ */
+export function useSpellSounds(gameInstance?: string) {
+  const playSound = useAudioStore((state) => state.playSound);
+
+  useEffect(() => {
+    const handleSpellCast = (x: number, y: number, spell: ISpell<any>) => {
+      const soundPath = SPELL_SOUND_MAP[spell.name];
+
+      if (soundPath) {
+        playSound(soundPath);
+      } else {
+        // Fallback to mage cast sound if spell sound not found
+        playSound(AUDIO_ASSETS.sfx.heroes.mage.cast);
+      }
+    };
+
+    const eventName = gameInstance
+      ? `cast-spell-${gameInstance}`
+      : 'cast-spell';
+
+    EventBus.on(eventName, handleSpellCast);
+
+    return () => {
+      EventBus.off(eventName, handleSpellCast);
+    };
+  }, [gameInstance, playSound]);
 }

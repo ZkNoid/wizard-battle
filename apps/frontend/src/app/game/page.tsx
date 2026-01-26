@@ -29,7 +29,7 @@ import {
   EntityType,
 } from '@/engine';
 import { WizardId } from '../../../../common/wizards';
-import { useBackgroundMusic } from '@/lib/hooks/useAudio';
+import { useBackgroundMusic, useSpellSounds } from '@/lib/hooks/useAudio';
 
 // Constants
 const GRID_WIDTH = 8;
@@ -46,6 +46,9 @@ export default function GamePage() {
   const router = useRouter();
   const { address } = useMinaAppkit();
   const { playBattleMusic, playMainTheme } = useBackgroundMusic();
+  
+  // Enable spell sounds for this game instance
+  useSpellSounds();
   const [canPlayerAct, setCanPlayerAct] = useState<boolean>(false);
   const [actionInfo, setActionInfo] = useState<{
     movementDone: boolean;

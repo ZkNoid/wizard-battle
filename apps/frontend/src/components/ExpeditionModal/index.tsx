@@ -46,6 +46,7 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
             variant={getButtonVariant('new-expedition')}
             className={buttonClassName}
             onClick={() => setActiveTab('new-expedition')}
+            enableClickSound
           >
             <span className={textClassName}>Start New Expedition</span>
           </Button>
@@ -53,6 +54,7 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
             variant={getButtonVariant('current-expedition')}
             className={buttonClassName}
             onClick={() => setActiveTab('current-expedition')}
+            enableClickSound
           >
             <span className={textClassName}>Current Expeditions</span>
           </Button>

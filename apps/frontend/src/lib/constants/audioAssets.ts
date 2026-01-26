@@ -13,27 +13,30 @@ export const AUDIO_ASSETS = {
     },
   },
   sfx: {
+    // UI звуки
     ui: {
       hover: '/audio/sfx/ui/hover.mp3',
       click: '/audio/sfx/ui/click.mp3',
       modalOpen: '/audio/sfx/ui/modal-open.mp3',
       modalClose: '/audio/sfx/ui/modal-close.mp3',
     },
-    spells: {
-      cast: {
-        magic: '/audio/sfx/spells/cast/magic-spell-cast.mp3',
+
+    // Звуки героев
+    heroes: {
+      // Mage - базовые звуки каста и попадания
+      mage: {
+        cast: '/audio/sfx/mage/cast.mp3',
+        impact: '/audio/sfx/mage/impact.mp3',
       },
-      impact: {
-        magic: '/audio/sfx/spells/impact/magic-spell-impact.mp3',
+
+      // Archer - выстрел и попадание стрелы
+      archer: {
+        shot: '/audio/sfx/archer/arrow-shot.mp3',
+        impact: '/audio/sfx/archer/arrow-impact.mp3',
       },
-    },
-    archer: {
-      shot: {
-        arrow: '/audio/sfx/archer/shot/arrow-shot.mp3',
-      },
-      impact: {
-        arrow: '/audio/sfx/archer/impact/arrow-impact.mp3',
-      },
+
+      // Phantom Duelist - пока пусто, для будущего расширения
+      phantomDuelist: {},
     },
   },
 } as const;
