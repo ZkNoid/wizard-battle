@@ -7,11 +7,18 @@ import Image from 'next/image';
 import { useAudioControls } from '@/lib/hooks/useAudio';
 
 export default function AudioSelector() {
-  const { volume, isMuted, setVolume, toggleMute } = useAudioControls();
+  const {
+    volume,
+    isMuted,
+    isMusicMuted,
+    setVolume,
+    toggleMute,
+    toggleMusicMute,
+  } = useAudioControls();
 
   return (
     <div className="flex items-center gap-4">
-      {/* Audio On/Off button */}
+      {/* All Audio On/Off button */}
       <BoxButton
         onClick={toggleMute}
         color="blue"
@@ -41,6 +48,7 @@ export default function AudioSelector() {
           />
         )}
       </BoxButton>
+
       {/* Volume Slider */}
       <div className="w-50 relative h-7">
         <VolumeBar className="pointer-events-none h-full w-full" />
@@ -62,6 +70,19 @@ export default function AudioSelector() {
           <VolumeHandle className="h-8 w-8" />
         </div>
       </div>
+
+      {/* Music Only On/Off button */}
+      <BoxButton
+        onClick={toggleMusicMute}
+        color="blue"
+        className="size-16"
+        enableHoverSound
+        enableClickSound
+      >
+        <div className="flex items-center justify-center text-2xl">
+          {!isMusicMuted ? '🎵' : '🔇'}
+        </div>
+      </BoxButton>
     </div>
   );
 }

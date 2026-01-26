@@ -37,6 +37,7 @@ interface AudioStore {
   // State
   volume: number; // 0-100
   isMuted: boolean;
+  isMusicMuted: boolean; // Separate mute for music only
   currentMusic: MusicTrack | null;
   isInitialized: boolean;
 
@@ -44,6 +45,8 @@ interface AudioStore {
   setVolume: (volume: number) => void;
   toggleMute: () => void;
   setMuted: (muted: boolean) => void;
+  toggleMusicMute: () => void;
+  setMusicMuted: (muted: boolean) => void;
   playMusic: (src: MusicTrack, fadeDuration?: number) => void;
   stopMusic: (fadeDuration?: number) => void;
   pauseMusic: () => void;
@@ -56,14 +59,19 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   // Initial state
   volume: 50,
   isMuted: false,
+  isMusicMuted: false,
   currentMusic: null,
   isInitialized: false,
 
   // Initialize audio system
   initialize: () => {
-    const { volume, isMuted } = get();
+    const { volume, isMuted, isMusicMuted } = get();
     audioService.setMasterVolume(volume);
     audioService.setMuted(isMuted);
+    // Only set music muted if it's actually muted (avoid unnecessary calls)
+    if (isMusicMuted) {
+      audioService.setMusicMuted(isMusicMuted);
+    }
     set({ isInitialized: true });
   },
 
@@ -86,6 +94,20 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   setMuted: (muted: boolean) => {
     audioService.setMuted(muted);
     set({ isMuted: muted });
+  },
+
+  // Toggle music mute state (only music, not SFX)
+  toggleMusicMute: () => {
+    const { isMusicMuted } = get();
+    const newMutedState = !isMusicMuted;
+    audioService.setMusicMuted(newMutedState);
+    set({ isMusicMuted: newMutedState });
+  },
+
+  // Set music mute state directly
+  setMusicMuted: (muted: boolean) => {
+    audioService.setMusicMuted(muted);
+    set({ isMusicMuted: muted });
   },
 
   // Play background music

@@ -143,16 +143,22 @@ export function useBackgroundMusic() {
 export function useAudioControls() {
   const volume = useAudioStore((state) => state.volume);
   const isMuted = useAudioStore((state) => state.isMuted);
+  const isMusicMuted = useAudioStore((state) => state.isMusicMuted);
   const setVolume = useAudioStore((state) => state.setVolume);
   const toggleMute = useAudioStore((state) => state.toggleMute);
   const setMuted = useAudioStore((state) => state.setMuted);
+  const toggleMusicMute = useAudioStore((state) => state.toggleMusicMute);
+  const setMusicMuted = useAudioStore((state) => state.setMusicMuted);
 
   return {
     volume,
     isMuted,
+    isMusicMuted,
     setVolume,
     toggleMute,
     setMuted,
+    toggleMusicMute,
+    setMusicMuted,
   };
 }
 

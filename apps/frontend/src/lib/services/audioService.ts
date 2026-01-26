@@ -10,6 +10,7 @@ class AudioService {
   private soundEffects: Map<string, Howl> = new Map();
   private currentMusic: Howl | null = null;
   private currentMusicKey: string | null = null;
+  private isMusicMuted: boolean = false;
 
   /**
    * Initialize or get a music track
@@ -28,6 +29,10 @@ class AudioService {
           });
         },
       });
+      // Apply current music mute state to new track (only if muted)
+      if (this.isMusicMuted) {
+        howl.mute(true);
+      }
       this.musicTracks.set(src, howl);
     }
     return this.musicTracks.get(src)!;
@@ -129,6 +134,18 @@ class AudioService {
    */
   setMuted(muted: boolean): void {
     Howler.mute(muted);
+  }
+
+  /**
+   * Mute/unmute only background music
+   */
+  setMusicMuted(muted: boolean): void {
+    this.isMusicMuted = muted;
+    if (this.currentMusic) {
+      this.currentMusic.mute(muted);
+    }
+    // Also mute all music tracks in cache
+    this.musicTracks.forEach((howl) => howl.mute(muted));
   }
 
   /**

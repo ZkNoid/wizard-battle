@@ -73,16 +73,42 @@ function HomePage() {
 import { useAudioControls } from '@/lib/hooks/useAudio';
 
 function AudioSettings() {
-  const { volume, isMuted, setVolume, toggleMute } = useAudioControls();
+  const {
+    volume,
+    isMuted,
+    isMusicMuted,
+    setVolume,
+    toggleMute,
+    toggleMusicMute,
+  } = useAudioControls();
 
   return (
     <>
+      {/* Громкость */}
       <input value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
-      <button onClick={toggleMute}>{isMuted ? 'Unmute' : 'Mute'}</button>
+
+      {/* Все звуки */}
+      <button onClick={toggleMute}>{isMuted ? 'Unmute All' : 'Mute All'}</button>
+
+      {/* Только музыка */}
+      <button onClick={toggleMusicMute}>
+        {isMusicMuted ? 'Unmute Music' : 'Mute Music'}
+      </button>
     </>
   );
 }
 ```
+
+**Доступные методы:**
+
+- `volume` - текущая громкость (0-100)
+- `isMuted` - все звуки выключены
+- `isMusicMuted` - только музыка выключена (SFX играют)
+- `setVolume(volume)` - установить громкость
+- `toggleMute()` - переключить все звуки
+- `toggleMusicMute()` - переключить только музыку
+- `setMuted(muted)` - установить mute всех звуков
+- `setMusicMuted(muted)` - установить mute только музыки
 
 ---
 
@@ -244,6 +270,9 @@ playSound('/audio/sfx/ui/click.mp3'); // Полный путь
 
 - **Музыка:** Зацикленная, только один трек одновременно, плавные fade-переходы (500ms)
 - **SFX:** Параллельное воспроизведение, без зацикливания
+- **Раздельное управление:** Можно выключить музыку отдельно от звуковых эффектов
+  - `toggleMute()` - выключает всё (музыка + SFX)
+  - `toggleMusicMute()` - выключает только музыку (SFX продолжают играть)
 - **Autoplay:** Обрабатывается автоматически (пользователь должен взаимодействовать со страницей)
 - **Volume/Mute:** Единый контроль для всех звуков, без сохранения в localStorage
 - **Singleton:** `audioService` - один экземпляр на всё приложение
