@@ -35,6 +35,7 @@ const GRID_WIDTH = 8;
 const GRID_HEIGHT = 8;
 const TILE_SIZE = 60;
 const DEFAULT_USER_POSITION = { x: 3, y: 3 };
+const DEFAULT_ENEMY_POSITION = { x: 3, y: 3 };
 const SCENE_READY_DELAY = 100;
 const SPECTRAL_PROJECTION_EFFECT_ID = CircuitString.fromString('SpectralProjectionReturn').hash();
 const SPECTRAL_ENTITY_ID = 'spectral-user';
@@ -583,7 +584,7 @@ export default function GamePage() {
         type: EntityType.SPECTRAL_WIZARD,
         tilemapPosition: opponentPosition 
           ? { x: +opponentPosition.x, y: +opponentPosition.y }
-          : DEFAULT_USER_POSITION,
+          : DEFAULT_ENEMY_POSITION,
         mirrorEntityId: 'enemy', // Mirror animations from the enemy entity
       };
       addEntity(spectral);
@@ -619,7 +620,7 @@ export default function GamePage() {
             : opponentState?.wizardId.toString() === WizardId.ARCHER.toString()
               ? EntityType.ARCHER
               : EntityType.WIZARD,
-        tilemapPosition: DEFAULT_USER_POSITION,
+        tilemapPosition: DEFAULT_ENEMY_POSITION,
       };
 
       addEntity(enemy);
