@@ -13,7 +13,12 @@ export function NavButton({
   className?: string;
 }) {
   return (
-    <BoxButton onClick={onClick} className={cn("h-20 w-20", className)}>
+    <BoxButton 
+      onClick={onClick} 
+      className={cn("h-20 w-20", className)}
+      enableHoverSound
+      enableClickSound
+    >
       {position === "left" ? (
         <ArrowLeft className="w-8.5 h-10" />
       ) : (

@@ -50,6 +50,8 @@ export function MainMenu({ setTab }: { setTab: (tab: Tab) => void }) {
               router.push('/play');
             }}
             className="w-88.5 h-15 text-2xl font-bold"
+            enableHoverSound
+            enableClickSound
           />
           <Button
             variant="gray"
@@ -60,6 +62,8 @@ export function MainMenu({ setTab }: { setTab: (tab: Tab) => void }) {
               return;
             }}
             className="w-88.5 h-15 text-2xl font-bold"
+            enableHoverSound
+            enableClickSound
           />
           <Button
             variant="gray"
@@ -70,18 +74,24 @@ export function MainMenu({ setTab }: { setTab: (tab: Tab) => void }) {
               return;
             }}
             className="w-88.5 h-15 text-2xl font-bold"
+            enableHoverSound
+            enableClickSound
           />
           <Button
             variant="gray"
             text="How to play"
             onClick={() => setTab(Tab.HOW_TO_PLAY)}
             className="w-88.5 h-15 text-2xl font-bold"
+            enableHoverSound
+            enableClickSound
           />
           <Button
             variant="gray"
             text="Support"
             onClick={() => setTab(Tab.SUPPORT)}
             className="w-88.5 h-15 text-2xl font-bold"
+            enableHoverSound
+            enableClickSound
           />
         </div>
         {/* Background */}

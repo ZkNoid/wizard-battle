@@ -4,8 +4,12 @@ import { CraftModalForm } from './CraftModalForm';
 import { InventoryModalForm } from '../InventoryModalForm';
 import { useState, useCallback } from 'react';
 import type { IInventoryItem } from '@/lib/types/Inventory';
+import { useModalSound } from '@/lib/hooks/useAudio';
 
 export default function CraftModal({ onClose }: { onClose: () => void }) {
+  // Play modal sounds
+  useModalSound();
+
   const [draggedItem, setDraggedItem] = useState<IInventoryItem | null>(null);
 
   const handleItemDragStart = useCallback((item: IInventoryItem) => {

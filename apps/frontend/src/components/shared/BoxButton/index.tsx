@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { BoxBg } from './assets/box-bg';
 import { cn } from '@/lib/utils';
+import { useHoverSound, useClickSound } from '@/lib/hooks/useAudio';
 
 export default function BoxButton({
   onClick,
@@ -10,17 +11,38 @@ export default function BoxButton({
   className,
   color = 'blue',
   disabled,
+  enableHoverSound = false,
+  enableClickSound = false,
 }: {
   onClick: () => void;
   children: ReactNode;
   className?: string;
   color?: 'blue' | 'gray';
   disabled?: boolean;
+  enableHoverSound?: boolean;
+  enableClickSound?: boolean;
 }) {
+  const playHoverSound = useHoverSound();
+  const playClickSound = useClickSound();
+
+  const handleMouseEnter = () => {
+    if (enableHoverSound && !disabled) {
+      playHoverSound();
+    }
+  };
+
+  const handleClick = () => {
+    if (enableClickSound && !disabled) {
+      playClickSound();
+    }
+    onClick();
+  };
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
+      onMouseEnter={handleMouseEnter}
       className={cn(
         'group/button not-disabled:hover:scale-105 relative z-[1] flex cursor-pointer items-center justify-center text-base transition-transform duration-300',
         className

@@ -26,6 +26,7 @@ import WelcomeScreen from '../WelcomeScreen';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 import CraftModal from '../CraftModal';
 import ExpeditionModal from '../ExpeditionModal';
+import { useBackgroundMusic } from '@/lib/hooks/useAudio';
 
 enum TabHover {
   CRAFT,
@@ -52,6 +53,28 @@ export default function HomePage() {
   const { address, triggerWallet } = useMinaAppkit();
   const { hasShownWelcomeScreen, setHasShownWelcomeScreen } =
     useMiscellaneousSessionStore();
+  const { playMainTheme, stopMusic } = useBackgroundMusic();
+
+  // Initialize and play main theme on mount
+  useEffect(() => {
+    playMainTheme();
+
+    // If autoplay is blocked, retry on first user interaction
+    const handleFirstInteraction = () => {
+      playMainTheme();
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('keydown', handleFirstInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+      // stopMusic(0);
+    };
+  }, [playMainTheme, stopMusic]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -71,7 +94,13 @@ export default function HomePage() {
       <div className="z-1 absolute left-0 top-2.5 grid w-full grid-cols-3 items-center px-20">
         <SettingsBar setTab={setTab} />
         <div className="flex w-full items-center justify-center gap-5">
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
+          <BoxButton
+            color="gray"
+            onClick={() => {}}
+            className="size-16"
+            enableHoverSound
+            enableClickSound
+          >
             <Image
               src={'/icons/market.png'}
               width={32}
@@ -88,6 +117,8 @@ export default function HomePage() {
               setIsInventoryModalOpen(true);
             }}
             className="size-16"
+            enableHoverSound
+            enableClickSound
           >
             <Image
               src={'/icons/inventory.png'}
@@ -99,7 +130,13 @@ export default function HomePage() {
               className="h-8 w-7"
             />
           </BoxButton>
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
+          <BoxButton
+            color="gray"
+            onClick={() => {}}
+            className="size-16"
+            enableHoverSound
+            enableClickSound
+          >
             <Image
               src={'/icons/mail.png'}
               width={32}
@@ -110,7 +147,13 @@ export default function HomePage() {
               className="h-6 w-8"
             />
           </BoxButton>
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
+          <BoxButton
+            color="gray"
+            onClick={() => {}}
+            className="size-16"
+            enableHoverSound
+            enableClickSound
+          >
             <Image
               src={'/icons/tournaments.png'}
               width={36}

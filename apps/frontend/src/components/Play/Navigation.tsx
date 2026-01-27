@@ -42,6 +42,8 @@ export function Navigation({
               if (prevStep) setPlayStep(prevStep);
             }
           }}
+          enableHoverSound
+          enableClickSound
         >
           Back
         </Button>
@@ -58,6 +60,8 @@ export function Navigation({
                 if (nextStep) setPlayStep(nextStep);
               }
             }}
+            enableHoverSound
+            enableClickSound
           >
             Next
           </Button>

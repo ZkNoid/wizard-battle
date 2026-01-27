@@ -3,22 +3,30 @@
 import BoxButton from '../shared/BoxButton';
 import { VolumeBar } from './assets/volume-bar';
 import { VolumeHandle } from './assets/volume-handle';
-import { useState } from 'react';
 import Image from 'next/image';
+import { useAudioControls } from '@/lib/hooks/useAudio';
 
 export default function AudioSelector() {
-  const [isActive, setIsActive] = useState<boolean>(true);
-  const [volume, setVolume] = useState<number>(50);
+  const {
+    volume,
+    isMuted,
+    isMusicMuted,
+    setVolume,
+    toggleMute,
+    toggleMusicMute,
+  } = useAudioControls();
 
   return (
     <div className="flex items-center gap-4">
-      {/* Audio On/Off button */}
+      {/* All Audio On/Off button */}
       <BoxButton
-        onClick={() => setIsActive(!isActive)}
+        onClick={toggleMute}
         color="blue"
         className="size-16"
+        enableHoverSound
+        enableClickSound
       >
-        {isActive ? (
+        {!isMuted ? (
           <Image
             src={'/icons/sound-on.png'}
             width={30}
@@ -40,6 +48,7 @@ export default function AudioSelector() {
           />
         )}
       </BoxButton>
+
       {/* Volume Slider */}
       <div className="w-50 relative h-7">
         <VolumeBar className="pointer-events-none h-full w-full" />
@@ -61,6 +70,19 @@ export default function AudioSelector() {
           <VolumeHandle className="h-8 w-8" />
         </div>
       </div>
+
+      {/* Music Only On/Off button */}
+      <BoxButton
+        onClick={toggleMusicMute}
+        color="blue"
+        className="size-16"
+        enableHoverSound
+        enableClickSound
+      >
+        <div className="flex items-center justify-center text-2xl">
+          {!isMusicMuted ? '🎵' : '🔇'}
+        </div>
+      </BoxButton>
     </div>
   );
 }
