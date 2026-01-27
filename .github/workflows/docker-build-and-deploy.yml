@@ -32,6 +32,8 @@ jobs:
           REDIS_URL: ${{ secrets.REDIS_URL }}
           WEBSOCKET_URL: ${{ secrets.WEBSOCKET_URL }}
           SPELL_CAST_TIMEOUT: ${{ secrets.SPELL_CAST_TIMEOUT }}
+          NEXT_PUBLIC_REOWN_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_REOWN_PROJECT_ID }}
+          NEXT_PUBLIC_PROJECT_URL: ${{ secrets.NEXT_PUBLIC_PROJECT_URL }}
         run: pnpm turbo run build
   deploy:
     needs: test-build
