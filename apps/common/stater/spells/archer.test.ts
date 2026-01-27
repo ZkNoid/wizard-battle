@@ -456,7 +456,7 @@ describe('Archer Spells', () => {
         spellId: decoySpell.id,
         caster: Field(42),
         target: Field(1),
-        additionalData: new DecoyData({}),
+        additionalData: new DecoyData({ x: Field(0), y: Field(0) }),
       });
 
       DecoyModifier(stater, spellCast, opponentState);
@@ -479,7 +479,7 @@ describe('Archer Spells', () => {
         spellId: decoySpell.id,
         caster: Field(42),
         target: Field(1),
-        additionalData: new DecoyData({}),
+        additionalData: new DecoyData({ x: Field(0), y: Field(0) }),
       });
 
       DecoyModifier(stater, spellCast, opponentState);
@@ -619,7 +619,7 @@ describe('Archer Spells', () => {
         spellId: decoySpell!.id,
         caster: Field(42),
         target: Field(42), // Target is the player
-        additionalData: new DecoyData({}),
+        additionalData: new DecoyData({ x: Field(0), y: Field(0) }),
       });
 
       const initialEffectLength = stater.state.getEffectLength('public');
@@ -724,7 +724,7 @@ describe('Archer Spells', () => {
         spellId: decoySpell!.id,
         caster: Field(42),
         target: Field(42),
-        additionalData: new DecoyData({}),
+        additionalData: new DecoyData({ x: Field(0), y: Field(0) }),
       });
       stater.applySpellCast(decoyCast, opponentState);
 
