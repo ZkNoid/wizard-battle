@@ -571,13 +571,14 @@ export default function GamePage() {
     }
   }, [stater?.state?.onEndEffects, hasSpectralProjectionEffect, getEntity, addEntity, removeEntity, stater?.state?.playerStats?.position?.value]);
 
-  // Manage opponent spectral projection entity based on effect presence
+  // Manage opponent spectral projection entity based on effect presence and visibility
   useEffect(() => {
     const hasEffect = hasOpponentSpectralProjectionEffect();
     const spectralEntity = getEntity(OPPONENT_SPECTRAL_ENTITY_ID);
+    const isOpponentVisible = opponentState?.playerStats?.position?.isSome && +opponentState.playerStats.position.isSome === 1;
     
-    if (hasEffect && !spectralEntity) {
-      // Effect is active but entity doesn't exist - create it
+    if (hasEffect && !spectralEntity && isOpponentVisible) {
+      // Effect is active, opponent is visible, but entity doesn't exist - create it
       const opponentPosition = opponentState?.playerStats?.position?.value;
       const spectral = {
         id: OPPONENT_SPECTRAL_ENTITY_ID,
@@ -589,12 +590,12 @@ export default function GamePage() {
       };
       addEntity(spectral);
       console.log('👻 Created opponent spectral projection entity');
-    } else if (!hasEffect && spectralEntity) {
-      // Effect is not active but entity exists - remove it
+    } else if (spectralEntity && (!hasEffect || !isOpponentVisible)) {
+      // Entity exists but effect is not active OR opponent is not visible - remove it
       removeEntity(OPPONENT_SPECTRAL_ENTITY_ID);
-      console.log('👻 Removed opponent spectral projection entity');
+      console.log('👻 Removed opponent spectral projection entity (effect:', hasEffect, ', visible:', isOpponentVisible, ')');
     }
-  }, [opponentState?.onEndEffects, hasOpponentSpectralProjectionEffect, getEntity, addEntity, removeEntity, opponentState?.playerStats?.position?.value]);
+  }, [opponentState?.onEndEffects, hasOpponentSpectralProjectionEffect, getEntity, addEntity, removeEntity, opponentState?.playerStats?.position?.value, opponentState?.playerStats?.position?.isSome]);
 
   useEffect(() => {
     const cleanupMovement = initMovementHandler();
@@ -724,7 +725,11 @@ export default function GamePage() {
           highlightedTiles={highlightedAllyTiles}
         />
         <EntityOverlay
-          entities={entities.filter((entity) => entity.id !== 'enemy' && entity.id !== SPECTRAL_ENTITY_ID)}
+          entities={entities.filter((entity) => 
+            entity.id !== 'enemy' && 
+            entity.id !== SPECTRAL_ENTITY_ID && 
+            entity.id !== OPPONENT_SPECTRAL_ENTITY_ID
+          )}
           gridWidth={GRID_WIDTH}
           gridHeight={GRID_HEIGHT}
         />
