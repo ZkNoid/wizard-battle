@@ -4,6 +4,7 @@ export enum EntityType {
   WIZARD = 'wizard',
   ARCHER = 'archer',
   SPECTRAL_WIZARD = 'spectral-wizard',
+  DECOY = 'decoy',
 }
 
 export interface IEntity {

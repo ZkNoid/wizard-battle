@@ -40,6 +40,8 @@ const SCENE_READY_DELAY = 100;
 const SPECTRAL_PROJECTION_EFFECT_ID = CircuitString.fromString('SpectralProjectionReturn').hash();
 const SPECTRAL_ENTITY_ID = 'spectral-user';
 const OPPONENT_SPECTRAL_ENTITY_ID = 'spectral-enemy';
+const DECOY_EFFECT_ID = CircuitString.fromString('Decoy').hash();
+const DECOY_ENTITY_ID = 'decoy-user';
 
 // Types
 type MapType = 'ally' | 'enemy';
@@ -97,6 +99,24 @@ export default function GamePage() {
     return opponentStateRef.current.onEndEffects.some(
       (effect) => effect.effectId.equals(SPECTRAL_PROJECTION_EFFECT_ID).toBoolean()
     );
+  }, []);
+
+  // Get decoy effect position if active (returns null if no decoy effect)
+  const getDecoyEffect = useCallback((): { x: number; y: number } | null => {
+    if (!staterRef.current?.state?.onEndEffects) return null;
+    
+    const effect = staterRef.current.state.onEndEffects.find(
+      (effect) => effect.effectId.equals(DECOY_EFFECT_ID).toBoolean()
+    );
+    
+    if (!effect) return null;
+    
+    // Decode position from param (x = number % 8, y = Math.floor(number / 8))
+    const param = +effect.param;
+    const x = param % 8;
+    const y = Math.floor(param / 8);
+    
+    return { x, y };
   }, []);
 
   const syncState = () => {
@@ -604,6 +624,33 @@ export default function GamePage() {
     }
   }, [opponentState?.onEndEffects, hasOpponentSpectralProjectionEffect, getEntity, addEntity, removeEntity, opponentState?.playerStats?.position?.value, opponentState?.playerStats?.position?.isSome]);
 
+  // Manage decoy entity based on effect presence
+  useEffect(() => {
+    const decoyPosition = getDecoyEffect();
+    const decoyEntity = getEntity(DECOY_ENTITY_ID);
+    
+    if (decoyPosition && !decoyEntity) {
+      // Effect is active but entity doesn't exist - create it
+      const decoy = {
+        id: DECOY_ENTITY_ID,
+        type: EntityType.DECOY,
+        tilemapPosition: { x: decoyPosition.x, y: decoyPosition.y },
+      };
+      addEntity(decoy);
+      console.log('🎭 Created decoy entity at', decoyPosition);
+    } else if (decoyPosition && decoyEntity) {
+      // Effect is active and entity exists - update position if changed
+      if (decoyEntity.tilemapPosition.x !== decoyPosition.x || 
+          decoyEntity.tilemapPosition.y !== decoyPosition.y) {
+        gameEventEmitter.move(DECOY_ENTITY_ID, decoyPosition.x, decoyPosition.y);
+      }
+    } else if (!decoyPosition && decoyEntity) {
+      // Effect is not active but entity exists - remove it
+      removeEntity(DECOY_ENTITY_ID);
+      console.log('🎭 Removed decoy entity');
+    }
+  }, [stater?.state?.onEndEffects, getDecoyEffect, getEntity, addEntity, removeEntity]);
+
   useEffect(() => {
     const cleanupMovement = initMovementHandler();
     if (!isInitialized.current) {
@@ -734,7 +781,8 @@ export default function GamePage() {
         <EntityOverlay
           entities={entities.filter((entity) => 
             entity.id !== 'enemy' && 
-            entity.id !== SPECTRAL_ENTITY_ID
+            entity.id !== SPECTRAL_ENTITY_ID &&
+            entity.id !== DECOY_ENTITY_ID
             // Show opponent's spectral projection on ally map (OPPONENT_SPECTRAL_ENTITY_ID)
           )}
           gridWidth={GRID_WIDTH}
