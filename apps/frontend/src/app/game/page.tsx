@@ -35,9 +35,11 @@ const GRID_WIDTH = 8;
 const GRID_HEIGHT = 8;
 const TILE_SIZE = 60;
 const DEFAULT_USER_POSITION = { x: 3, y: 3 };
+const DEFAULT_ENEMY_POSITION = { x: 3, y: 3 };
 const SCENE_READY_DELAY = 100;
 const SPECTRAL_PROJECTION_EFFECT_ID = CircuitString.fromString('SpectralProjectionReturn').hash();
 const SPECTRAL_ENTITY_ID = 'spectral-user';
+const OPPONENT_SPECTRAL_ENTITY_ID = 'spectral-enemy';
 
 // Types
 type MapType = 'ally' | 'enemy';
@@ -88,6 +90,15 @@ export default function GamePage() {
     );
   }, []);
 
+  // Check if opponent has spectral projection effect
+  const hasOpponentSpectralProjectionEffect = useCallback(() => {
+    if (!opponentStateRef.current?.onEndEffects) return false;
+    
+    return opponentStateRef.current.onEndEffects.some(
+      (effect) => effect.effectId.equals(SPECTRAL_PROJECTION_EFFECT_ID).toBoolean()
+    );
+  }, []);
+
   const syncState = () => {
     // Sync player state
 
@@ -105,6 +116,9 @@ export default function GamePage() {
       const newXEnemy = +opponentStateRef.current.playerStats.position.value.x;
       const newYEnemy = +opponentStateRef.current.playerStats.position.value.y;
       gameEventEmitter.move('enemy', newXEnemy, newYEnemy);
+      
+      // Also sync opponent spectral projection position if it exists
+      gameEventEmitter.move(OPPONENT_SPECTRAL_ENTITY_ID, newXEnemy, newYEnemy);
     }
   };
 
@@ -557,6 +571,31 @@ export default function GamePage() {
     }
   }, [stater?.state?.onEndEffects, hasSpectralProjectionEffect, getEntity, addEntity, removeEntity, stater?.state?.playerStats?.position?.value]);
 
+  // Manage opponent spectral projection entity based on effect presence
+  useEffect(() => {
+    const hasEffect = hasOpponentSpectralProjectionEffect();
+    const spectralEntity = getEntity(OPPONENT_SPECTRAL_ENTITY_ID);
+    
+    if (hasEffect && !spectralEntity) {
+      // Effect is active but entity doesn't exist - create it
+      const opponentPosition = opponentState?.playerStats?.position?.value;
+      const spectral = {
+        id: OPPONENT_SPECTRAL_ENTITY_ID,
+        type: EntityType.SPECTRAL_WIZARD,
+        tilemapPosition: opponentPosition 
+          ? { x: +opponentPosition.x, y: +opponentPosition.y }
+          : DEFAULT_ENEMY_POSITION,
+        mirrorEntityId: 'enemy', // Mirror animations from the enemy entity
+      };
+      addEntity(spectral);
+      console.log('👻 Created opponent spectral projection entity');
+    } else if (!hasEffect && spectralEntity) {
+      // Effect is not active but entity exists - remove it
+      removeEntity(OPPONENT_SPECTRAL_ENTITY_ID);
+      console.log('👻 Removed opponent spectral projection entity');
+    }
+  }, [opponentState?.onEndEffects, hasOpponentSpectralProjectionEffect, getEntity, addEntity, removeEntity, opponentState?.playerStats?.position?.value]);
+
   useEffect(() => {
     const cleanupMovement = initMovementHandler();
     if (!isInitialized.current) {
@@ -581,7 +620,7 @@ export default function GamePage() {
             : opponentState?.wizardId.toString() === WizardId.ARCHER.toString()
               ? EntityType.ARCHER
               : EntityType.WIZARD,
-        tilemapPosition: DEFAULT_USER_POSITION,
+        tilemapPosition: DEFAULT_ENEMY_POSITION,
       };
 
       addEntity(enemy);
