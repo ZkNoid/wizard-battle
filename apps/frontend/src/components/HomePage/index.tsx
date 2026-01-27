@@ -26,6 +26,7 @@ import WelcomeScreen from '../WelcomeScreen';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 import CraftModal from '../CraftModal';
 import ExpeditionModal from '../ExpeditionModal';
+import WalletReown from '../WalletReown';
 
 enum TabHover {
   CRAFT,
@@ -125,7 +126,7 @@ export default function HomePage() {
         <div className="flex w-full items-center justify-between gap-5 px-10">
           <Button
             variant="gray"
-            className="w-40 h-15 flex items-center justify-center gap-2.5"
+            className="h-15 flex w-40 items-center justify-center gap-2.5"
           >
             <Image
               src={'/icons/gold-coin.png'}
@@ -140,7 +141,7 @@ export default function HomePage() {
           </Button>
           <Button
             variant="gray"
-            className="w-40 h-15 flex items-center justify-center gap-2.5"
+            className="h-15 flex w-40 items-center justify-center gap-2.5"
           >
             <Image
               src={'/icons/diamond.png'}
@@ -153,8 +154,8 @@ export default function HomePage() {
             />
             <span>1.25K</span>
           </Button>
-          <Wallet className="w-50" />
-          
+          <Wallet className="w-25" />
+          <WalletReown className="w-25" />
         </div>
       </div>
 
