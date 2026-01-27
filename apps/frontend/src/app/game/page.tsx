@@ -40,6 +40,8 @@ const SCENE_READY_DELAY = 100;
 const SPECTRAL_PROJECTION_EFFECT_ID = CircuitString.fromString('SpectralProjectionReturn').hash();
 const SPECTRAL_ENTITY_ID = 'spectral-user';
 const OPPONENT_SPECTRAL_ENTITY_ID = 'spectral-enemy';
+const DECOY_EFFECT_ID = CircuitString.fromString('Decoy').hash();
+const DECOY_ENTITY_ID = 'decoy-user';
 
 // Types
 type MapType = 'ally' | 'enemy';
@@ -99,6 +101,24 @@ export default function GamePage() {
     );
   }, []);
 
+  // Get decoy effect position if active (returns null if no decoy effect)
+  const getDecoyEffect = useCallback((): { x: number; y: number } | null => {
+    if (!staterRef.current?.state?.onEndEffects) return null;
+    
+    const effect = staterRef.current.state.onEndEffects.find(
+      (effect) => effect.effectId.equals(DECOY_EFFECT_ID).toBoolean()
+    );
+    
+    if (!effect) return null;
+    
+    // Decode position from param (x = number % 8, y = Math.floor(number / 8))
+    const param = +effect.param;
+    const x = param % 8;
+    const y = Math.floor(param / 8);
+    
+    return { x, y };
+  }, []);
+
   const syncState = () => {
     // Sync player state
 
@@ -136,6 +156,13 @@ export default function GamePage() {
   // Tile hover handler for spell affected area highlighting
   const handleTileMouseEnter = useCallback(
     (index: number, isEnemy: boolean) => {
+      // Only show highlights when player can act
+      if (!canPlayerAct) {
+        setHighlightedAllyTiles(new Map());
+        setHighlightedEnemyTiles([]);
+        return;
+      }
+
       if (!pickedSpellId) {
         // Show movement range on ally map when no spell is picked
         if (!isEnemy && stater?.state?.playerStats) {
@@ -148,7 +175,7 @@ export default function GamePage() {
           for (let y = 0; y < GRID_HEIGHT; y++) {
             for (let x = 0; x < GRID_WIDTH; x++) {
               const distance = Math.abs(userX - x) + Math.abs(userY - y);
-              if (distance <= speed && distance > 0) {
+              if (distance <= speed) {
                 movementTiles.set(coordinatesToIndex(x, y), {
                   color: 'rgba(100, 255, 100, 0.5)',
                 });
@@ -218,7 +245,7 @@ export default function GamePage() {
         setHighlightedAllyTiles(highlightMap);
       }
     },
-    [pickedSpellId, indexToCoordinates, coordinatesToIndex, stater]
+    [canPlayerAct, pickedSpellId, indexToCoordinates, coordinatesToIndex, stater]
   );
 
   const handleAllyTileMouseEnter = useCallback(
@@ -597,6 +624,33 @@ export default function GamePage() {
     }
   }, [opponentState?.onEndEffects, hasOpponentSpectralProjectionEffect, getEntity, addEntity, removeEntity, opponentState?.playerStats?.position?.value, opponentState?.playerStats?.position?.isSome]);
 
+  // Manage decoy entity based on effect presence
+  useEffect(() => {
+    const decoyPosition = getDecoyEffect();
+    const decoyEntity = getEntity(DECOY_ENTITY_ID);
+    
+    if (decoyPosition && !decoyEntity) {
+      // Effect is active but entity doesn't exist - create it
+      const decoy = {
+        id: DECOY_ENTITY_ID,
+        type: EntityType.DECOY,
+        tilemapPosition: { x: decoyPosition.x, y: decoyPosition.y },
+      };
+      addEntity(decoy);
+      console.log('🎭 Created decoy entity at', decoyPosition);
+    } else if (decoyPosition && decoyEntity) {
+      // Effect is active and entity exists - update position if changed
+      if (decoyEntity.tilemapPosition.x !== decoyPosition.x || 
+          decoyEntity.tilemapPosition.y !== decoyPosition.y) {
+        gameEventEmitter.move(DECOY_ENTITY_ID, decoyPosition.x, decoyPosition.y);
+      }
+    } else if (!decoyPosition && decoyEntity) {
+      // Effect is not active but entity exists - remove it
+      removeEntity(DECOY_ENTITY_ID);
+      console.log('🎭 Removed decoy entity');
+    }
+  }, [stater?.state?.onEndEffects, getDecoyEffect, getEntity, addEntity, removeEntity]);
+
   useEffect(() => {
     const cleanupMovement = initMovementHandler();
     if (!isInitialized.current) {
@@ -727,8 +781,9 @@ export default function GamePage() {
         <EntityOverlay
           entities={entities.filter((entity) => 
             entity.id !== 'enemy' && 
-            entity.id !== SPECTRAL_ENTITY_ID && 
-            entity.id !== OPPONENT_SPECTRAL_ENTITY_ID
+            entity.id !== SPECTRAL_ENTITY_ID &&
+            entity.id !== DECOY_ENTITY_ID
+            // Show opponent's spectral projection on ally map (OPPONENT_SPECTRAL_ENTITY_ID)
           )}
           gridWidth={GRID_WIDTH}
           gridHeight={GRID_HEIGHT}
@@ -759,13 +814,19 @@ export default function GamePage() {
           defaultHighlight={{ color: 'rgba(255, 100, 100, 0.5)' }}
         />
         <EntityOverlay
-          entities={
-            opponentState &&
-            opponentState.playerStats.position &&
-            +opponentState.playerStats.position.isSome
-              ? entities.filter((entity) => entity.id !== 'user')
-              : []
-          }
+          entities={entities.filter((entity) => {
+            // Never show user on enemy map
+            if (entity.id === 'user') return false;
+            // Never show opponent's spectral on enemy map (it shows on ally map)
+            if (entity.id === OPPONENT_SPECTRAL_ENTITY_ID) return false;
+            // Show enemy only when opponent is visible
+            if (entity.id === 'enemy') {
+              return opponentState?.playerStats?.position?.isSome && 
+                     +opponentState.playerStats.position.isSome === 1;
+            }
+            // Always show user's spectral projection on enemy map (when it exists)
+            return true;
+          })}
           gridWidth={GRID_WIDTH}
           gridHeight={GRID_HEIGHT}
         />

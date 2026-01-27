@@ -5,6 +5,7 @@ import { BlueSquare } from '../entities/BlueSquare';
 import { AnimatedWizard } from '../entities/AnimatedWizard';
 import { AnimatedArcher } from '../entities/AnimatedArcher';
 import { SpectralWizard } from '../entities/SpectralWizard';
+import { Decoy } from '../entities/Decoy';
 import { EntityType } from '../types/IEntity';
 
 interface EntityOverlayProps {
@@ -70,6 +71,9 @@ export function EntityOverlay({
             )}
             {entity.type === EntityType.SPECTRAL_WIZARD && (
               <SpectralWizard entity={entity} />
+            )}
+            {entity.type === EntityType.DECOY && (
+              <Decoy entity={entity} />
             )}
           </div>
         );
