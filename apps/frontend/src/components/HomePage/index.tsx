@@ -123,7 +123,7 @@ export default function HomePage() {
             />
           </BoxButton>
         </div>
-        <div className="flex w-full items-center justify-between gap-5 px-10">
+        <div className="flex w-[calc(100%+5rem)] items-center justify-end gap-1">
           <Button
             variant="gray"
             className="h-15 flex w-40 items-center justify-center gap-2.5"
@@ -154,8 +154,8 @@ export default function HomePage() {
             />
             <span>1.25K</span>
           </Button>
-          <Wallet className="w-25" />
-          <WalletReown className="w-25" />
+          <Wallet className="flex-shrink-0" />
+          <WalletReown className="flex-shrink-0" />
         </div>
       </div>
 
