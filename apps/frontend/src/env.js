@@ -19,9 +19,11 @@ export const env = createEnv({
    */
   client: {
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
-    NEXT_PUBLIC_PROJECT_NAME: z.string(),
+    NEXT_PUBLIC_PROJECT_NAME: z.string().default('Wizard Battle'),
     NEXT_PUBLIC_PROJECT_URL: z.string(),
-    NEXT_PUBLIC_PROJECT_DESCRIPTION: z.string(),
+    NEXT_PUBLIC_PROJECT_DESCRIPTION: z
+      .string()
+      .default('An epic wizard battle game'),
     NEXT_PUBLIC_REOWN_PROJECT_ID: z.string(),
   },
 
