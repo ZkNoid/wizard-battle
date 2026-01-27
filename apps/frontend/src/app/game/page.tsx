@@ -136,6 +136,13 @@ export default function GamePage() {
   // Tile hover handler for spell affected area highlighting
   const handleTileMouseEnter = useCallback(
     (index: number, isEnemy: boolean) => {
+      // Only show highlights when player can act
+      if (!canPlayerAct) {
+        setHighlightedAllyTiles(new Map());
+        setHighlightedEnemyTiles([]);
+        return;
+      }
+
       if (!pickedSpellId) {
         // Show movement range on ally map when no spell is picked
         if (!isEnemy && stater?.state?.playerStats) {
@@ -218,7 +225,7 @@ export default function GamePage() {
         setHighlightedAllyTiles(highlightMap);
       }
     },
-    [pickedSpellId, indexToCoordinates, coordinatesToIndex, stater]
+    [canPlayerAct, pickedSpellId, indexToCoordinates, coordinatesToIndex, stater]
   );
 
   const handleAllyTileMouseEnter = useCallback(
