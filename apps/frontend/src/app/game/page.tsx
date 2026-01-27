@@ -155,7 +155,7 @@ export default function GamePage() {
           for (let y = 0; y < GRID_HEIGHT; y++) {
             for (let x = 0; x < GRID_WIDTH; x++) {
               const distance = Math.abs(userX - x) + Math.abs(userY - y);
-              if (distance <= speed && distance > 0) {
+              if (distance <= speed) {
                 movementTiles.set(coordinatesToIndex(x, y), {
                   color: 'rgba(100, 255, 100, 0.5)',
                 });
