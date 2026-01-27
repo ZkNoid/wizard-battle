@@ -144,53 +144,53 @@ jobs:
           #   "$InvisibilityEffect = InvisibilityEffect, applyInvisibility | visibilityMask"
           # ---------------------------
           python3 << 'PY' > terms.txt
-import re
-import sys
+          import re
+          import sys
 
-try:
-    text = open("issue.txt", "r", encoding="utf-8", errors="ignore").read()
-except:
-    sys.exit(0)
+          try:
+              text = open("issue.txt", "r", encoding="utf-8", errors="ignore").read()
+          except:
+              sys.exit(0)
 
-terms = []
-defined = {}
+          terms = []
+          defined = {}
 
-# Parse explicit definitions: $Name = term1, term2 | term3
-for line in text.splitlines():
-    m = re.match(r'^\s*\$([A-Za-z_]\w*)\s*[:=]\s*(.+?)\s*$', line)
-    if not m:
-        continue
-    key = m.group(1).lower()
-    rhs = m.group(2)
-    parts = re.split(r'[,\|]', rhs)
-    vals = [p.strip().strip('`"\'') for p in parts if p.strip()]
-    if vals:
-        defined[key] = vals
+          # Parse explicit definitions: $Name = term1, term2 | term3
+          for line in text.splitlines():
+              m = re.match(r'^\s*\$([A-Za-z_]\w*)\s*[:=]\s*(.+?)\s*$', line)
+              if not m:
+                  continue
+              key = m.group(1).lower()
+              rhs = m.group(2)
+              parts = re.split(r'[,\|]', rhs)
+              vals = [p.strip().strip('`"\'') for p in parts if p.strip()]
+              if vals:
+                  defined[key] = vals
 
-# Collect all $Identifiers mentioned anywhere
-for m in re.findall(r'\$([A-Za-z_]\w*)', text):
-    k = m.lower()
-    if k in defined:
-        terms.extend(defined[k])
-    else:
-        terms.append(m)
+          # Collect all $Identifiers mentioned anywhere
+          for m in re.findall(r'\$([A-Za-z_]\w*)', text):
+              k = m.lower()
+              if k in defined:
+                  terms.extend(defined[k])
+              else:
+                  terms.append(m)
 
-# Dedupe (preserve order), cap at 20
-seen = set()
-out = []
-for t in terms:
-    t = t.strip()
-    if not t or len(t) < 2:
-        continue
-    key = t.lower()
-    if key in seen:
-        continue
-    seen.add(key)
-    out.append(t)
+          # Dedupe (preserve order), cap at 20
+          seen = set()
+          out = []
+          for t in terms:
+              t = t.strip()
+              if not t or len(t) < 2:
+                  continue
+              key = t.lower()
+              if key in seen:
+                  continue
+              seen.add(key)
+              out.append(t)
 
-for t in out[:20]:
-    print(t)
-PY
+          for t in out[:20]:
+              print(t)
+          PY
 
           echo "" >> context_pack.md
           echo "## 🎯 Focus Terms" >> context_pack.md
