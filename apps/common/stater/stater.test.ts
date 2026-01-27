@@ -486,9 +486,19 @@ describe('Stater', () => {
      */
 
     describe('damage calculation (fullDamage formula)', () => {
-      it('should calculate base damage correctly with 100% attack and 0% defense', () => {
-        // Setup: attack = 100 (100%), defense = 0 (0%)
-        // Expected: fullDamage = 100 * 100 * (100 - 0) / 10000 = 100
+      /**
+       * NEW FORMULA: fullDamage = damage * attack / defense
+       * 
+       * All values are percentages where 100 = base (100%):
+       * - defense = 100 (100%): full damage taken (base)
+       * - defense = 200 (200%): 50% damage taken (tank)
+       * - defense = 50 (50%): 200% damage taken (vulnerable)
+       * - attack = 100: base damage, attack = 150: 150% damage
+       */
+
+      it('should calculate base damage correctly with 100% attack and 100% defense', () => {
+        // Setup: attack = 100 (100%), defense = 100 (100% = base)
+        // Expected: fullDamage = 100 * 100 / 100 = 100
         const attackerState = createState({
           playerId: 1,
           attack: 100,
@@ -498,18 +508,18 @@ describe('Stater', () => {
         const defenderStater = createStater({
           playerId: 42,
           hp: 100,
-          defense: 0,
+          defense: 100, // 100% = base defense
           dodgeChance: 0,
           randomSeed: Field(0), // Deterministic seed that produces low random (ensures hit)
         });
 
         defenderStater.applyDamage(UInt64.from(100), attackerState);
 
-        // With 0 defense and 100 attack, 100 damage should deal 100 damage
+        // With 100 defense and 100 attack, 100 damage should deal 100 damage
         expect(defenderStater.state.playerStats.hp.toString()).toBe('0');
       });
 
-      it('should reduce damage by 50% with 50% defense', () => {
+      it('should reduce damage by 50% with 200% defense (tank)', () => {
         const attackerState = createState({
           playerId: 1,
           attack: 100,
@@ -519,14 +529,14 @@ describe('Stater', () => {
         const defenderStater = createStater({
           playerId: 42,
           hp: 100,
-          defense: 50, // 50% defense
+          defense: 200, // 200% defense = takes 50% damage (tank)
           dodgeChance: 0,
           randomSeed: Field(0),
         });
 
         defenderStater.applyDamage(UInt64.from(100), attackerState);
 
-        // fullDamage = 100 * 100 * 50 / 10000 = 50
+        // fullDamage = 100 * 100 / 200 = 50
         expect(defenderStater.state.playerStats.hp.toString()).toBe('50');
       });
 
@@ -540,14 +550,14 @@ describe('Stater', () => {
         const defenderStater = createStater({
           playerId: 42,
           hp: 200,
-          defense: 0,
+          defense: 100, // 100% = base defense
           dodgeChance: 0,
           randomSeed: Field(0),
         });
 
         defenderStater.applyDamage(UInt64.from(100), attackerState);
 
-        // fullDamage = 100 * 150 * 100 / 10000 = 150
+        // fullDamage = 100 * 150 / 100 = 150
         expect(defenderStater.state.playerStats.hp.toString()).toBe('50');
       });
 
@@ -561,18 +571,18 @@ describe('Stater', () => {
         const defenderStater = createStater({
           playerId: 42,
           hp: 200,
-          defense: 20, // 20% defense (reduces to 80%)
+          defense: 125, // 125% defense (reduces damage)
           dodgeChance: 0,
           randomSeed: Field(0),
         });
 
         defenderStater.applyDamage(UInt64.from(100), attackerState);
 
-        // fullDamage = 100 * 150 * 80 / 10000 = 120
+        // fullDamage = 100 * 150 / 125 = 120
         expect(defenderStater.state.playerStats.hp.toString()).toBe('80');
       });
 
-      it('should deal 0 damage with 100% defense', () => {
+      it('should amplify damage with defense < 100% (vulnerable)', () => {
         const attackerState = createState({
           playerId: 1,
           attack: 100,
@@ -581,15 +591,15 @@ describe('Stater', () => {
 
         const defenderStater = createStater({
           playerId: 42,
-          hp: 100,
-          defense: 100, // 100% defense
+          hp: 300,
+          defense: 50, // 50% defense = takes 200% damage (vulnerable)
           dodgeChance: 0,
           randomSeed: Field(0),
         });
 
         defenderStater.applyDamage(UInt64.from(100), attackerState);
 
-        // fullDamage = 100 * 100 * 0 / 10000 = 0
+        // fullDamage = 100 * 100 / 50 = 200
         expect(defenderStater.state.playerStats.hp.toString()).toBe('100');
       });
 
@@ -603,40 +613,32 @@ describe('Stater', () => {
         const defenderStater = createStater({
           playerId: 42,
           hp: 500,
-          defense: 0,
+          defense: 100, // 100% = base defense
           dodgeChance: 0,
           randomSeed: Field(0),
         });
 
         defenderStater.applyDamage(UInt64.from(250), attackerState);
 
-        // fullDamage = 250 * 100 * 100 / 10000 = 250
+        // fullDamage = 250 * 100 / 100 = 250
         expect(defenderStater.state.playerStats.hp.toString()).toBe('250');
       });
     });
 
     describe('hit/dodge calculation (hitChance formula)', () => {
       /**
-       * KNOWN ISSUE: The current hitChance formula has a bug.
-       * 
-       * Current formula: hitChance = (accuracy + 100) * (100 - dodgeChance) / 10000
-       * This produces values like 1 for base stats, but getRandomPercentage() returns 0-99.
+       * Hit chance formula: hitChance = (accuracy + 100) * (100 - dodgeChance) / 100
        * 
        * With accuracy=0, dodgeChance=0:
-       *   hitChance = 100 * 100 / 10000 = 1
-       *   isHit = random < 1 → only true when random = 0 (1% chance)
-       * 
-       * Expected behavior: Base stats should give ~100% hit rate.
-       * 
-       * Suggested fix: Use single division by CALCULATION_PRECISION:
-       *   hitChance = (accuracy + 100) * (100 - dodgeChance) / 100
-       *   → gives hitChance = 100 for base stats (100% hit rate)
+       *   hitChance = 100 * 100 / 100 = 100 (always hits, random 0-99 < 100)
+       * With accuracy=100, dodgeChance=0:
+       *   hitChance = 200 * 100 / 100 = 200 (always hits)
+       * With accuracy=0, dodgeChance=100:
+       *   hitChance = 100 * 0 / 100 = 0 (always misses)
        */
 
       it('should miss when random roll exceeds hitChance (current behavior)', () => {
-        // With current formula, hitChance is very low
-        // accuracy = 0, dodgeChance = 0 → hitChance = 1
-        // Most random values (1-99) will exceed this, causing misses
+        // With high dodge chance, hitChance is reduced
         const attackerState = createState({
           playerId: 1,
           attack: 100,
@@ -646,15 +648,14 @@ describe('Stater', () => {
         const defenderStater = createStater({
           playerId: 42,
           hp: 100,
-          defense: 0,
-          dodgeChance: 0, // No dodge
+          defense: 100, // 100% = base defense
+          dodgeChance: 99, // 99% dodge = hitChance = 100 * 1 / 100 = 1
           randomSeed: Field(999), // Seed that likely produces high random value
         });
 
         defenderStater.applyDamage(UInt64.from(100), attackerState);
 
-        // Due to the hitChance bug, this will likely miss (HP unchanged)
-        // This documents current (buggy) behavior
+        // With 99% dodge, most attacks will miss
         const hp = parseInt(defenderStater.state.playerStats.hp.toString());
         // HP should either be 100 (miss) or 0 (hit) depending on random
         expect(hp === 100 || hp === 0).toBe(true);
@@ -667,14 +668,12 @@ describe('Stater', () => {
           accuracy: 0,
         });
 
-        // Find a seed that produces a miss
-        // getRandomPercentage uses Poseidon hash of randomSeed, mod 100
-        // We need random >= hitChance (which is 1 with base stats)
+        // With 100% dodge, always misses (hitChance = 0)
         const defenderStater = createStater({
           playerId: 42,
           hp: 100,
-          defense: 0,
-          dodgeChance: 0,
+          defense: 100, // 100% = base defense
+          dodgeChance: 100, // 100% dodge = always miss
           randomSeed: Field(123), // Test seed
         });
 
@@ -682,14 +681,8 @@ describe('Stater', () => {
         defenderStater.applyDamage(UInt64.from(100), attackerState);
         const finalHp = defenderStater.state.playerStats.hp.toString();
 
-        // If it was a miss, HP should be unchanged
-        // If it was a hit, HP should be reduced
-        const wasHit = initialHp !== finalHp;
-        if (!wasHit) {
-          expect(finalHp).toBe('100'); // Miss - no damage
-        } else {
-          expect(finalHp).toBe('0'); // Hit - full damage
-        }
+        // 100% dodge should always miss
+        expect(finalHp).toBe('100');
       });
 
       it('should account for dodge chance in hitChance calculation', () => {
@@ -703,17 +696,15 @@ describe('Stater', () => {
         const defenderStater = createStater({
           playerId: 42,
           hp: 100,
-          defense: 0,
+          defense: 100, // 100% = base defense
           dodgeChance: 50, // 50% dodge
           randomSeed: Field(0),
         });
 
-        // hitChance = (0 + 100) * (100 - 50) / 10000 = 100 * 50 / 10000 = 0 (integer division)
-        // However, lessThan comparison may have edge case behavior with 0
+        // hitChance = (0 + 100) * (100 - 50) / 100 = 100 * 50 / 100 = 50
         defenderStater.applyDamage(UInt64.from(100), attackerState);
 
-        // The attack outcome depends on the random seed and hitChance calculation
-        // With seed Field(0), the comparison behavior may vary
+        // The attack outcome depends on the random seed
         const hp = parseInt(defenderStater.state.playerStats.hp.toString());
         expect(hp === 100 || hp === 0).toBe(true);
       });
@@ -728,17 +719,16 @@ describe('Stater', () => {
         const defenderStater = createStater({
           playerId: 42,
           hp: 100,
-          defense: 0,
+          defense: 100, // 100% = base defense
           dodgeChance: 0,
           randomSeed: Field(0),
         });
 
-        // hitChance = (100 + 100) * (100 - 0) / 10000 = 200 * 100 / 10000 = 2
+        // hitChance = (100 + 100) * (100 - 0) / 100 = 200 (always hits)
         defenderStater.applyDamage(UInt64.from(100), attackerState);
 
-        // hitChance = 2, so random must be < 2 to hit (0 or 1)
-        const hp = parseInt(defenderStater.state.playerStats.hp.toString());
-        expect(hp === 100 || hp === 0).toBe(true);
+        // With 200% hit chance (>100), should always hit
+        expect(defenderStater.state.playerStats.hp.toString()).toBe('0');
       });
     });
 
@@ -753,14 +743,14 @@ describe('Stater', () => {
         const defenderStater = createStater({
           playerId: 42,
           hp: 150,
-          defense: 50, // 50% defense
+          defense: 200, // 200% defense = takes 50% damage (tank)
           dodgeChance: 0,
           randomSeed: Field(0),
         });
 
         defenderStater.applyDamage(UInt64.from(100), attackerState);
 
-        // fullDamage = 100 * 100 * 50 / 10000 = 50
+        // fullDamage = 100 * 100 / 200 = 50
         // HP: 150 - 50 = 100
         expect(defenderStater.state.playerStats.hp.toString()).toBe('100');
       });
@@ -775,14 +765,14 @@ describe('Stater', () => {
         const defenderStater = createStater({
           playerId: 42,
           hp: 50,
-          defense: 0,
+          defense: 100, // 100% = base defense
           dodgeChance: 0,
           randomSeed: Field(0),
         });
 
         defenderStater.applyDamage(UInt64.from(100), attackerState);
 
-        // fullDamage = 100 * 200 * 100 / 10000 = 200
+        // fullDamage = 100 * 200 / 100 = 200
         // HP: 50 - 200 = -150
         expect(defenderStater.state.playerStats.hp.toString()).toBe('-150');
       });
@@ -799,7 +789,7 @@ describe('Stater', () => {
         const defenderStater = createStater({
           playerId: 42,
           hp: 100,
-          defense: 0,
+          defense: 100, // 100% = base defense
           dodgeChance: 0,
           randomSeed: Field(0),
         });
@@ -819,14 +809,14 @@ describe('Stater', () => {
         const defenderStater = createStater({
           playerId: 42,
           hp: 1000,
-          defense: 0,
+          defense: 100, // 100% = base defense
           dodgeChance: 0,
           randomSeed: Field(0),
         });
 
         defenderStater.applyDamage(UInt64.from(100), attackerState);
 
-        // fullDamage = 100 * 500 * 100 / 10000 = 500
+        // fullDamage = 100 * 500 / 100 = 500
         expect(defenderStater.state.playerStats.hp.toString()).toBe('500');
       });
     });

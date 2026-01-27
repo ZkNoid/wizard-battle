@@ -44,7 +44,7 @@ describe('Random Events', () => {
         }),
         speed: Int64.from(1),
         attack: UInt64.from(10),
-        defense: UInt64.from(10),
+        defense: UInt64.from(100), // 100 = base (100%), >100 = tank, <100 = vulnerable
         critChance: UInt64.from(0),
         dodgeChance: UInt64.from(dodgeChance),
         accuracy: UInt64.from(accuracy),
@@ -154,21 +154,34 @@ describe('Random Events', () => {
   });
 
   describe('applyDamage with dodge/accuracy', () => {
-    it('should always hit when hitChance is 100 (dodgeChance=100, accuracy=100)', () => {
-      const state = createStateWithSeed(42, 123, 100, 100);
-      const stater = new Stater({ state });
-      const opponentState = createStateWithSeed(1, 456, 100, 100);
+    // Formula: hitChance = (accuracy + 100) * (100 - dodgeChance) / 100
+    // - dodgeChance=0: no dodging, hitChance = (accuracy + 100)
+    // - dodgeChance=100: maximum dodging, hitChance = 0
+    // - accuracy=0: base hit rate, accuracy=100: +100% hit bonus
+    //
+    // Damage formula: fullDamage = damage * attack / defense
+    // All values are percentages where 100 = base (100%)
+    // - defense=100: full damage, defense=150: 67% damage (tank), defense=50: 200% damage (vulnerable)
 
-      const initialHp = parseInt(stater.state.playerStats.hp.toString());
-
-      stater.applyDamage(UInt64.from(50), opponentState);
-
-      const finalHp = parseInt(stater.state.playerStats.hp.toString());
-      expect(finalHp).toBe(initialHp - 50);
-    });
-
-    it('should never hit when hitChance is 0 (dodgeChance=0)', () => {
+    it('should always hit when dodgeChance is 0 (no dodge)', () => {
+      // hitChance = (100 + 100) * (100 - 0) / 100 = 200 (always > random 0-99)
       const state = createStateWithSeed(42, 123, 0, 100); // dodgeChance=0
+      state.playerStats.defense = UInt64.from(100); // 100% = base defense
+      const stater = new Stater({ state });
+      const opponentState = createStateWithSeed(1, 456, 100, 100); // accuracy=100
+
+      const initialHp = parseInt(stater.state.playerStats.hp.toString());
+
+      stater.applyDamage(UInt64.from(50), opponentState);
+
+      const finalHp = parseInt(stater.state.playerStats.hp.toString());
+      // fullDamage = 50 * 10 / 100 = 5 (damage * attack / defense)
+      expect(finalHp).toBe(initialHp - 5);
+    });
+
+    it('should never hit when dodgeChance is 100 (max dodge)', () => {
+      // hitChance = (100 + 100) * (100 - 100) / 100 = 0 (never > random 0-99)
+      const state = createStateWithSeed(42, 123, 100, 100); // dodgeChance=100
       const stater = new Stater({ state });
       const opponentState = createStateWithSeed(1, 456, 100, 100);
 
@@ -177,13 +190,15 @@ describe('Random Events', () => {
       stater.applyDamage(UInt64.from(50), opponentState);
 
       const finalHp = parseInt(stater.state.playerStats.hp.toString());
-      expect(finalHp).toBe(initialHp); // No damage dealt
+      expect(finalHp).toBe(initialHp); // No damage dealt due to dodge
     });
 
-    it('should never hit when accuracy is 0', () => {
-      const state = createStateWithSeed(42, 123, 100, 100);
+    it('should still hit sometimes with accuracy overcoming dodge', () => {
+      // hitChance = (0 + 100) * (100 - 100) / 100 = 0
+      // Even with 100% accuracy bonus, 100% dodge wins
+      const state = createStateWithSeed(42, 123, 100, 100); // dodgeChance=100
       const stater = new Stater({ state });
-      const opponentState = createStateWithSeed(1, 456, 100, 0); // accuracy=0
+      const opponentState = createStateWithSeed(1, 456, 100, 0); // accuracy=0 (base)
 
       const initialHp = parseInt(stater.state.playerStats.hp.toString());
 
@@ -193,10 +208,12 @@ describe('Random Events', () => {
       expect(finalHp).toBe(initialHp); // No damage dealt
     });
 
-    it('should have partial hit chance with intermediate values', () => {
-      // hitChance = accuracy * dodgeChance / 100
-      // With accuracy=50, dodgeChance=50: hitChance = 50*50/100 = 25
-      // So hits should occur ~25% of the time
+    it('should have partial hit chance with intermediate dodge values', () => {
+      // hitChance = (accuracy + 100) * (100 - dodgeChance) / 100
+      // With accuracy=100, dodgeChance=50: hitChance = 200 * 50 / 100 = 100
+      // So hits should occur when random < 100, which is always (0-99)
+      // With accuracy=0, dodgeChance=50: hitChance = 100 * 50 / 100 = 50
+      // So hits should occur ~50% of the time
 
       let hits = 0;
       let misses = 0;
@@ -204,8 +221,9 @@ describe('Random Events', () => {
 
       for (let seed = 0; seed < totalTrials; seed++) {
         const state = createStateWithSeed(42, seed, 50, 100); // dodgeChance=50
+        state.playerStats.defense = UInt64.from(100); // base defense
         const stater = new Stater({ state });
-        const opponentState = createStateWithSeed(1, 456, 50, 50); // accuracy=50
+        const opponentState = createStateWithSeed(1, 456 + seed, 50, 0); // accuracy=0 (base)
 
         const initialHp = parseInt(stater.state.playerStats.hp.toString());
         stater.applyDamage(UInt64.from(50), opponentState);
@@ -218,28 +236,29 @@ describe('Random Events', () => {
         }
       }
 
-      // With hitChance=25, we expect roughly 25 hits out of 100
-      // Allow for variance: expect between 10-40 hits
-      expect(hits).toBeGreaterThan(5);
-      expect(hits).toBeLessThan(50);
-      expect(misses).toBeGreaterThan(50);
+      // With hitChance=50, we expect roughly 50% hits
+      // Allow for variance: expect between 30-70 hits
+      expect(hits).toBeGreaterThan(25);
+      expect(hits).toBeLessThan(75);
     });
 
     it('should scale damage with attack and defense', () => {
-      // fullDamage = damage * opponentAttack * selfDefense / 100
-      const state = createStateWithSeed(42, 123, 100, 100);
-      state.playerStats.defense = UInt64.from(10); // defender's defense
+      // fullDamage = damage * attack / defense
+      // - defense > 100 reduces damage (tanky)
+      // - defense < 100 amplifies damage (vulnerable)
+      const state = createStateWithSeed(42, 123, 0, 100); // dodgeChance=0 to ensure hit
+      state.playerStats.defense = UInt64.from(200); // defender has 200% defense (takes 50% damage)
       const stater = new Stater({ state });
       const opponentState = createStateWithSeed(1, 456, 100, 100);
-      opponentState.playerStats.attack = UInt64.from(20); // attacker's attack
+      opponentState.playerStats.attack = UInt64.from(200); // attacker's attack (200%)
 
       const initialHp = parseInt(stater.state.playerStats.hp.toString());
 
       stater.applyDamage(UInt64.from(50), opponentState);
 
       const finalHp = parseInt(stater.state.playerStats.hp.toString());
-      // Expected: 50 * 20 * 10 / 100 = 100
-      expect(finalHp).toBe(initialHp - 100);
+      // Expected: 50 * 200 / 200 = 50
+      expect(finalHp).toBe(initialHp - 50);
     });
   });
 
@@ -319,9 +338,11 @@ describe('Random Events', () => {
       const aimingShotSpellId = CircuitString.fromString('AimingShot').hash();
 
       for (let seed = 0; seed < totalTrials; seed++) {
-        const state = createStateWithSeed(42, seed, 100, 100);
+        // dodgeChance=0 to ensure hits, defense=100 (base) for normal damage
+        const state = createStateWithSeed(42, seed, 0, 100);
+        state.playerStats.defense = UInt64.from(100); // 100% defense = base damage
         const stater = new Stater({ state });
-        const opponentState = createStateWithSeed(1, 456 + seed, 100, 100);
+        const opponentState = createStateWithSeed(1, 456 + seed, 0, 100);
 
         const initialHp = parseInt(stater.state.playerStats.hp.toString());
 
@@ -339,10 +360,12 @@ describe('Random Events', () => {
         const finalHp = parseInt(stater.state.playerStats.hp.toString());
         const damageTaken = initialHp - finalHp;
 
-        // Normal damage: 100, Critical: 200
-        if (damageTaken === 200) {
+        // With defense=100, attack=10: fullDamage = baseDamage * 10 / 100 = baseDamage / 10
+        // AimingShot base damage = 100, Normal damage: 100 * 10 / 100 = 10
+        // Critical: 200 * 10 / 100 = 20
+        if (damageTaken === 20) {
           criticalHits++;
-        } else if (damageTaken === 100) {
+        } else if (damageTaken === 10) {
           normalHits++;
         }
       }
