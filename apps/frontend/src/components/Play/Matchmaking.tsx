@@ -11,9 +11,12 @@ import { useInGameStore } from '@/lib/store/inGameStore';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Stater } from '../../../../common/stater/stater';
-import type { IPublicState } from '../../../../common/types/matchmaking.types';
+import type {
+  IPublicState,
+  IFoundMatch,
+  IUpdateQueue,
+} from '../../../../common/types/matchmaking.types';
 import { State } from '../../../../common/stater/state';
-import type { IFoundMatch } from '../../../../common/types/matchmaking.types';
 import { GamePhaseManager } from '@/game/GamePhaseManager';
 import { Field, Int64 } from 'o1js';
 
@@ -31,6 +34,7 @@ export default function Matchmaking({
 
   const sendRequest = useRef(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [queuePosition, setQueuePosition] = useState<number | null>(null);
 
   const onGameEnd = (winner: boolean) => {
     setTimeout(() => {
@@ -70,8 +74,15 @@ export default function Matchmaking({
       router.push(`/game`);
     };
 
-    // Always register the listener (runs every time effect executes)
+    // Handler for queue updates
+    const handleUpdateQueue = (data: IUpdateQueue) => {
+      console.log('📊 Queue update received:', data);
+      setQueuePosition(data.playersAmount);
+    };
+
+    // Always register the listeners (runs every time effect executes)
     socket.on('matchFound', handleMatchFound);
+    socket.on('updateQueue', handleUpdateQueue);
 
     // Only send matchmaking request once
     if (!sendRequest.current) {
@@ -117,9 +128,10 @@ export default function Matchmaking({
       }
     }
 
-    // Always cleanup: removes listener on unmount or before re-run
+    // Always cleanup: removes listeners on unmount or before re-run
     return () => {
       socket.off('matchFound', handleMatchFound);
+      socket.off('updateQueue', handleUpdateQueue);
     };
   }, [socket, stater]);
 
@@ -156,7 +168,9 @@ export default function Matchmaking({
           <QueueIcon className="h-20 w-20" />
           <div className="font-pixel text-main-gray flex flex-col gap-1">
             <span className="text-xl">Place in Queue:</span>
-            <span className="text-3xl">1</span>
+            <span className="text-3xl">
+              {queuePosition !== null ? queuePosition : '...'}
+            </span>
           </div>
         </div>
       </div>
