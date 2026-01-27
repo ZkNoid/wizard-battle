@@ -46,7 +46,7 @@ export default function GamePage() {
   const router = useRouter();
   const { address } = useMinaAppkit();
   const { playBattleMusic, playMainTheme } = useBackgroundMusic();
-  
+
   // Enable spell sounds for this game instance
   useSpellSounds();
   const [canPlayerAct, setCanPlayerAct] = useState<boolean>(false);
@@ -342,6 +342,11 @@ export default function GamePage() {
       const spell = allSpells.find(
         (s) => s.id.toString() === spellId.toString()
       );
+
+      if (spell) {
+        // Emit spell cast event for audio
+        EventBus.emit('cast-spell', x, y, spell);
+      }
 
       if (!spell) {
         console.log('Spell not found');
