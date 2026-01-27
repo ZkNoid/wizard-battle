@@ -37,8 +37,9 @@ describe('Archer Spells', () => {
   beforeEach(() => {
     // Create initial state with a player at position (5, 5) with 100 HP
     // Note: For damage calculation to work correctly:
-    // - dodgeChance=100 and accuracy=100 ensures hitChance = 100 (always hits)
-    // - attack=10 and defense=10 ensures fullDamage = damage * 10 * 10 / 100 = damage
+    // - dodgeChance=0 ensures attacks always hit (hitChance = (accuracy + 100) * 100 / 100 = high)
+    // - defense=100 (100%) means full damage taken: fullDamage = damage * attack / 100
+    // - attack=100 (100%) means base damage: fullDamage = damage * 100 / 100 = damage
     const playerStats = new PlayerStats({
       hp: Int64.from(100),
       maxHp: Int64.from(100),
@@ -50,10 +51,10 @@ describe('Archer Spells', () => {
         isSome: Field(1),
       }),
       speed: Int64.from(1),
-      attack: UInt64.from(10),
-      defense: UInt64.from(10),
+      attack: UInt64.from(100),
+      defense: UInt64.from(100),
       critChance: UInt64.from(0),
-      dodgeChance: UInt64.from(100),
+      dodgeChance: UInt64.from(0),
       accuracy: UInt64.from(100),
     });
 
@@ -135,10 +136,10 @@ describe('Archer Spells', () => {
           isSome: Field(1),
         }),
         speed: Int64.from(1),
-        attack: UInt64.from(10),
-        defense: UInt64.from(10),
+        attack: UInt64.from(100),
+        defense: UInt64.from(100),
         critChance: UInt64.from(0),
-        dodgeChance: UInt64.from(100),
+        dodgeChance: UInt64.from(0),
         accuracy: UInt64.from(100),
       }),
       spellStats: Array(5)

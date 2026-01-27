@@ -3,7 +3,7 @@
 import type { IExpedition } from '@/lib/types/Expedition';
 import Image from 'next/image';
 import WizardImageMini from './components/WizardImageMini';
-import { State } from '../../../../common/stater/state';
+import { allWizards } from '../../../../common/wizards';
 import WizardRole from './components/WizardRole';
 import { Button } from '../shared/Button';
 import TimeToComplete from './components/TimeToComplete';
@@ -28,12 +28,9 @@ export default function CurrentExpeditionCard({
           {/* Column 1 - Character Avatar */}
           <div className="w-36 h-36 flex-shrink-0">
             <WizardImageMini
-              wizard={{
-                id: expedition.characterId,
-                name: expedition.characterRole,
-                defaultHealth: 100,
-                defaultState: () => State.default(),
-              }}
+              wizard={allWizards.find(
+                (w) => w.id.toString() === expedition.characterId.toString()
+              ) ?? allWizards[0]!}
             />
           </div>
 
