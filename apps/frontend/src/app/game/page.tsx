@@ -734,8 +734,8 @@ export default function GamePage() {
         <EntityOverlay
           entities={entities.filter((entity) => 
             entity.id !== 'enemy' && 
-            entity.id !== SPECTRAL_ENTITY_ID && 
-            entity.id !== OPPONENT_SPECTRAL_ENTITY_ID
+            entity.id !== SPECTRAL_ENTITY_ID
+            // Show opponent's spectral projection on ally map (OPPONENT_SPECTRAL_ENTITY_ID)
           )}
           gridWidth={GRID_WIDTH}
           gridHeight={GRID_HEIGHT}
@@ -766,13 +766,19 @@ export default function GamePage() {
           defaultHighlight={{ color: 'rgba(255, 100, 100, 0.5)' }}
         />
         <EntityOverlay
-          entities={
-            opponentState &&
-            opponentState.playerStats.position &&
-            +opponentState.playerStats.position.isSome
-              ? entities.filter((entity) => entity.id !== 'user')
-              : []
-          }
+          entities={entities.filter((entity) => {
+            // Never show user on enemy map
+            if (entity.id === 'user') return false;
+            // Never show opponent's spectral on enemy map (it shows on ally map)
+            if (entity.id === OPPONENT_SPECTRAL_ENTITY_ID) return false;
+            // Show enemy only when opponent is visible
+            if (entity.id === 'enemy') {
+              return opponentState?.playerStats?.position?.isSome && 
+                     +opponentState.playerStats.position.isSome === 1;
+            }
+            // Always show user's spectral projection on enemy map (when it exists)
+            return true;
+          })}
           gridWidth={GRID_WIDTH}
           gridHeight={GRID_HEIGHT}
         />
