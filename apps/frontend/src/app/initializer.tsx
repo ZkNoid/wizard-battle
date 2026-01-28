@@ -18,6 +18,7 @@ export default function Initializer() {
   const { socket, setSocket, setStater, isBootstrapped, setBootstrapped } =
     useUserInformationStore();
   const statsByWizard = useInventoryStore((state) => state.statsByWizard);
+  const loadUserInventory = useInventoryStore((state) => state.loadUserInventory);
 
   useEffect(() => {
     if (isBootstrapped) return;
@@ -67,8 +68,11 @@ export default function Initializer() {
     setStater(stater);
     setBootstrapped(true);
 
+    // Fetch user inventory from database
+    void loadUserInventory(stablePlayerId);
+
     s.on('connect', () => console.log('socket connected'));
-  }, [isBootstrapped, setBootstrapped, setSocket, setStater]);
+  }, [isBootstrapped, setBootstrapped, setSocket, setStater, loadUserInventory]);
 
   return null;
 }
