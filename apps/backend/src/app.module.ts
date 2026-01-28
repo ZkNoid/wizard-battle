@@ -12,6 +12,7 @@ import { GameCommitModule } from './game-commit/game-commit.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserInventoryModule } from './user-inventory/user-inventory.module';
 import { GameCharacterModule } from './game-character/game-character.module';
+import { ExpeditionModule } from './expedition/expedition.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { GameCharacterModule } from './game-character/game-character.module';
     GameCommitModule,
     UserInventoryModule,
     GameCharacterModule,
+    ExpeditionModule,
     MongooseModule.forRoot(
       process.env.MONGODB_URI || 'mongodb://localhost:27017/wizardbattle',
       {
