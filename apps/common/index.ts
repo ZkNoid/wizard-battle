@@ -5,3 +5,4 @@ export * from "./stater/spells";
 export * from "./stater/effects/effects";
 export * from "./stater/stater";
 export * from "./types/matchmaking.types";
+export * from "./types/inventory.types";

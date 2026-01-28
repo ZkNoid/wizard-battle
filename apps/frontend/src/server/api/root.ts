@@ -1,5 +1,6 @@
 import { createCallerFactory, createTRPCRouter } from '@/server/api/trpc';
 import { feedbackRouter } from './routers/feedback';
+import { itemsRouter } from './routers/items';
 import { tilemapRouter } from './routers/tilemap';
 import { usersRouter } from './routers/users';
 
@@ -10,6 +11,7 @@ import { usersRouter } from './routers/users';
  */
 export const appRouter = createTRPCRouter({
   feedback: feedbackRouter,
+  items: itemsRouter,
   tilemap: tilemapRouter,
   users: usersRouter,
 });
