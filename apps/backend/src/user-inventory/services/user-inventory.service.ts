@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import {
   UserInventory,
   UserInventoryDocument,
@@ -16,7 +16,7 @@ import { UpdateInventoryItemDto } from '../dto/update-inventory-item.dto';
 export class UserInventoryService {
   constructor(
     @InjectModel(UserInventory.name)
-    private readonly inventoryModel: Model<UserInventoryDocument>
+    private readonly inventoryModel: Model<UserInventoryDocument>,
   ) {}
 
   /**
@@ -51,10 +51,7 @@ export class UserInventoryService {
    * Get all items in a user's inventory
    */
   async getUserInventory(userId: string): Promise<UserInventory[]> {
-    return this.inventoryModel
-      .find({ userId })
-      .populate('itemId') // Populate full item details
-      .exec();
+    return this.inventoryModel.find({ userId }).exec();
   }
 
   /**
@@ -62,16 +59,13 @@ export class UserInventoryService {
    */
   async getUserInventoryItem(
     userId: string,
-    itemId: string
+    itemId: string,
   ): Promise<UserInventory> {
-    const item = await this.inventoryModel
-      .findOne({ userId, itemId })
-      .populate('itemId')
-      .exec();
+    const item = await this.inventoryModel.findOne({ userId, itemId }).exec();
 
     if (!item) {
       throw new NotFoundException(
-        `Item ${itemId} not found in user ${userId}'s inventory`
+        `Item ${itemId} not found in user ${userId}'s inventory`,
       );
     }
 
@@ -84,13 +78,13 @@ export class UserInventoryService {
   async removeItem(
     userId: string,
     itemId: string,
-    quantity: number = 1
+    quantity: number = 1,
   ): Promise<UserInventory | null> {
     const item = await this.inventoryModel.findOne({ userId, itemId });
 
     if (!item) {
       throw new NotFoundException(
-        `Item ${itemId} not found in user ${userId}'s inventory`
+        `Item ${itemId} not found in user ${userId}'s inventory`,
       );
     }
 
@@ -100,7 +94,7 @@ export class UserInventoryService {
 
     if (item.quantity < quantity) {
       throw new BadRequestException(
-        `Cannot remove ${quantity} items. User only has ${item.quantity}`
+        `Cannot remove ${quantity} items. User only has ${item.quantity}`,
       );
     }
 
@@ -121,29 +115,10 @@ export class UserInventoryService {
   async hasItem(
     userId: string,
     itemId: string,
-    quantity: number = 1
+    quantity: number = 1,
   ): Promise<boolean> {
-    console.log('🔍 [hasItem] Called with:', { userId, itemId, quantity });
-
-    // Convert string itemId to ObjectId for proper comparison
-    const itemObjectId = Types.ObjectId.isValid(itemId)
-      ? new Types.ObjectId(itemId)
-      : itemId;
-
-    console.log('🔍 [hasItem] Converted itemId to:', itemObjectId);
-
-    const item = await this.inventoryModel.findOne({
-      userId,
-      itemId: itemObjectId,
-    });
-
-    console.log(
-      '🔍 [hasItem] Query result:',
-      item ? `Found (quantity: ${item.quantity})` : 'Not found'
-    );
-    const result = item ? item.quantity >= quantity : false;
-    console.log('🔍 [hasItem] Returning:', result);
-    return result;
+    const item = await this.inventoryModel.findOne({ userId, itemId });
+    return item ? item.quantity >= quantity : false;
   }
 
   /**
@@ -152,7 +127,7 @@ export class UserInventoryService {
    */
   async hasItems(
     userId: string,
-    requirements: Array<{ itemId: string; quantity: number }>
+    requirements: Array<{ itemId: string; quantity: number }>,
   ): Promise<boolean> {
     for (const req of requirements) {
       const hasItem = await this.hasItem(userId, req.itemId, req.quantity);
@@ -164,21 +139,20 @@ export class UserInventoryService {
   }
 
   /**
-   * Update inventory item properties (e.g., isEquipped)
+   * Update inventory item properties (e.g., isEquipped, equippedToWizardId)
    */
   async updateInventoryItem(
     userId: string,
     itemId: string,
-    updateDto: UpdateInventoryItemDto
+    updateDto: UpdateInventoryItemDto,
   ): Promise<UserInventory> {
     const item = await this.inventoryModel
       .findOneAndUpdate({ userId, itemId }, updateDto, { new: true })
-      .populate('itemId')
       .exec();
 
     if (!item) {
       throw new NotFoundException(
-        `Item ${itemId} not found in user ${userId}'s inventory`
+        `Item ${itemId} not found in user ${userId}'s inventory`,
       );
     }
 
@@ -186,12 +160,49 @@ export class UserInventoryService {
   }
 
   /**
+   * Equip an item to a specific wizard
+   */
+  async equipItem(
+    userId: string,
+    itemId: string,
+    wizardId: string,
+  ): Promise<UserInventory> {
+    return this.updateInventoryItem(userId, itemId, {
+      isEquipped: true,
+      equippedToWizardId: wizardId,
+    });
+  }
+
+  /**
+   * Unequip an item
+   */
+  async unequipItem(userId: string, itemId: string): Promise<UserInventory> {
+    return this.updateInventoryItem(userId, itemId, {
+      isEquipped: false,
+      equippedToWizardId: undefined,
+    });
+  }
+
+  /**
    * Get all equipped items for a user
    */
   async getEquippedItems(userId: string): Promise<UserInventory[]> {
+    return this.inventoryModel.find({ userId, isEquipped: true }).exec();
+  }
+
+  /**
+   * Get equipped items for a specific wizard
+   */
+  async getEquippedItemsForWizard(
+    userId: string,
+    wizardId: string,
+  ): Promise<UserInventory[]> {
     return this.inventoryModel
-      .find({ userId, isEquipped: true })
-      .populate('itemId')
+      .find({
+        userId,
+        isEquipped: true,
+        equippedToWizardId: wizardId,
+      })
       .exec();
   }
 
@@ -208,5 +219,21 @@ export class UserInventoryService {
    */
   async getInventoryCount(userId: string): Promise<number> {
     return this.inventoryModel.countDocuments({ userId }).exec();
+  }
+
+  /**
+   * Get user's inventory filtered by item type
+   * Note: Requires joining with InventoryItem collection
+   */
+  async getUserInventoryByItemIds(
+    userId: string,
+    itemIds: string[],
+  ): Promise<UserInventory[]> {
+    return this.inventoryModel
+      .find({
+        userId,
+        itemId: { $in: itemIds },
+      })
+      .exec();
   }
 }

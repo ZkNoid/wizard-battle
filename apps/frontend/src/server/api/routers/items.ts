@@ -9,55 +9,72 @@ import type {
   IInventoryArmorItemDB,
   AnyInventoryItem,
   AnyInventoryItemDB,
+  IUserInventoryRecord,
+  IUserInventoryItem,
 } from '@/lib/types/Inventory';
 
 const client = await clientPromise;
 const db = client?.db(env.MONGODB_DB);
 
-const collectionName = 'inventoryitems';
+const itemsCollection = 'inventoryitems';
+const userInventoryCollection = 'userinventory';
 
-// Helper function to populate improvement requirements
+// ============================================
+// Helper functions for item population
+// ============================================
+
 async function populateArmorItem(
   item: IInventoryArmorItemDB,
-  allItems: IInventoryItem[]
+  allCraftItems: IInventoryItem[]
 ): Promise<IInventoryArmorItem> {
   return {
     ...item,
     improvementRequirements: (item.improvementRequirements ?? []).map((req) => ({
-      item: allItems.find((i) => i.id === req.itemId)!,
+      item: allCraftItems.find((i) => i.id === req.itemId)!,
       amount: req.amount,
     })),
   };
 }
 
-// Helper to check if item is armor type
 function isArmorItemDB(item: AnyInventoryItemDB): item is IInventoryArmorItemDB {
   return item.type === 'armor' && 'wearableSlot' in item;
 }
 
-// Helper function to populate any item
 async function populateItem(
   item: AnyInventoryItemDB,
-  allItems: IInventoryItem[]
+  allCraftItems: IInventoryItem[]
 ): Promise<AnyInventoryItem> {
   if (isArmorItemDB(item)) {
-    return populateArmorItem(item, allItems);
+    return populateArmorItem(item, allCraftItems);
   }
   return item as IInventoryItem;
 }
 
-// Helper to get all craft items for population
 async function getCraftItemsForPopulation(): Promise<IInventoryItem[]> {
   if (!db) return [];
   const items = await db
-    .collection(collectionName)
+    .collection(itemsCollection)
     .find({ type: 'craft' })
     .toArray();
   return items as unknown as IInventoryItem[];
 }
 
+async function getAllItemDefinitions(): Promise<AnyInventoryItemDB[]> {
+  if (!db) return [];
+  const items = await db.collection(itemsCollection).find({}).toArray();
+  return items as unknown as AnyInventoryItemDB[];
+}
+
+// ============================================
+// Item Definitions Router (global item catalog)
+// ============================================
+
 export const itemsRouter = createTRPCRouter({
-  // Get all items (populated)
+  // ==========================================
+  // ITEM DEFINITIONS (global catalog)
+  // ==========================================
+
+  // Get all item definitions (populated)
   getAll: publicProcedure.query(async () => {
     if (!db) {
       throw new TRPCError({
@@ -67,7 +84,7 @@ export const itemsRouter = createTRPCRouter({
     }
 
     const items = (await db
-      .collection(collectionName)
+      .collection(itemsCollection)
       .find({})
       .toArray()) as unknown as AnyInventoryItemDB[];
 
@@ -80,7 +97,7 @@ export const itemsRouter = createTRPCRouter({
     return populatedItems;
   }),
 
-  // Get a single item by id (populated)
+  // Get a single item definition by id (populated)
   getOne: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
@@ -92,7 +109,7 @@ export const itemsRouter = createTRPCRouter({
       }
 
       const item = (await db
-        .collection(collectionName)
+        .collection(itemsCollection)
         .findOne({ id: input.id })) as unknown as AnyInventoryItemDB | null;
 
       if (!item) {
@@ -106,7 +123,7 @@ export const itemsRouter = createTRPCRouter({
       return populateItem(item, craftItems);
     }),
 
-  // Get items by type (populated)
+  // Get item definitions by type (populated)
   getByType: publicProcedure
     .input(z.object({ type: z.enum(['armor', 'craft', 'gems']) }))
     .query(async ({ input }) => {
@@ -118,7 +135,7 @@ export const itemsRouter = createTRPCRouter({
       }
 
       const items = (await db
-        .collection(collectionName)
+        .collection(itemsCollection)
         .find({ type: input.type })
         .toArray()) as unknown as AnyInventoryItemDB[];
 
@@ -131,7 +148,7 @@ export const itemsRouter = createTRPCRouter({
       return populatedItems;
     }),
 
-  // Get all craft items (no population needed)
+  // Get all craft item definitions (no population needed)
   getCraftItems: publicProcedure.query(async () => {
     if (!db) {
       throw new TRPCError({
@@ -141,14 +158,14 @@ export const itemsRouter = createTRPCRouter({
     }
 
     const items = await db
-      .collection(collectionName)
+      .collection(itemsCollection)
       .find({ type: 'craft' })
       .toArray();
 
     return items as unknown as IInventoryItem[];
   }),
 
-  // Get all armor items (arms, legs, belt) - populated
+  // Get all armor item definitions - populated
   getArmorItems: publicProcedure.query(async () => {
     if (!db) {
       throw new TRPCError({
@@ -158,7 +175,7 @@ export const itemsRouter = createTRPCRouter({
     }
 
     const items = (await db
-      .collection(collectionName)
+      .collection(itemsCollection)
       .find({
         type: 'armor',
         wearableSlot: { $in: ['arms', 'legs', 'belt'] },
@@ -174,7 +191,7 @@ export const itemsRouter = createTRPCRouter({
     return populatedItems;
   }),
 
-  // Get all accessories (necklace, gem, ring) - populated
+  // Get all accessory definitions - populated
   getAccessories: publicProcedure.query(async () => {
     if (!db) {
       throw new TRPCError({
@@ -184,7 +201,7 @@ export const itemsRouter = createTRPCRouter({
     }
 
     const items = (await db
-      .collection(collectionName)
+      .collection(itemsCollection)
       .find({
         type: 'armor',
         wearableSlot: { $in: ['necklace', 'gem', 'ring'] },
@@ -200,7 +217,7 @@ export const itemsRouter = createTRPCRouter({
     return populatedItems;
   }),
 
-  // Get all armor and accessories combined - populated
+  // Get all armor and accessories definitions - populated
   getAllArmorAndAccessories: publicProcedure.query(async () => {
     if (!db) {
       throw new TRPCError({
@@ -210,7 +227,7 @@ export const itemsRouter = createTRPCRouter({
     }
 
     const items = (await db
-      .collection(collectionName)
+      .collection(itemsCollection)
       .find({ type: 'armor' })
       .toArray()) as unknown as IInventoryArmorItemDB[];
 
@@ -223,11 +240,70 @@ export const itemsRouter = createTRPCRouter({
     return populatedItems;
   }),
 
-  // Get items by slot - populated
-  getBySlot: publicProcedure
+  // ==========================================
+  // USER INVENTORY (user-owned items)
+  // ==========================================
+
+  // Get all items owned by a user (populated)
+  getUserInventory: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ input }) => {
+      if (!db) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database not connected',
+        });
+      }
+
+      // Get user's inventory records
+      const userRecords = (await db
+        .collection(userInventoryCollection)
+        .find({ userId: input.userId })
+        .toArray()) as unknown as IUserInventoryRecord[];
+
+      if (userRecords.length === 0) {
+        return [];
+      }
+
+      // Get all item definitions and craft items for population
+      const [allItems, craftItems] = await Promise.all([
+        getAllItemDefinitions(),
+        getCraftItemsForPopulation(),
+      ]);
+
+      // Populate each user inventory record with full item data
+      const populatedInventory: IUserInventoryItem[] = await Promise.all(
+        userRecords.map(async (record) => {
+          const itemDef = allItems.find((i) => i.id === record.itemId);
+          if (!itemDef) {
+            throw new TRPCError({
+              code: 'NOT_FOUND',
+              message: `Item definition for "${record.itemId}" not found`,
+            });
+          }
+
+          const populatedItem = await populateItem(itemDef, craftItems);
+
+          return {
+            item: populatedItem,
+            quantity: record.quantity,
+            isEquipped: record.isEquipped,
+            equippedToWizardId: record.equippedToWizardId,
+            acquiredAt: record.acquiredAt,
+            acquiredFrom: record.acquiredFrom,
+          };
+        })
+      );
+
+      return populatedInventory;
+    }),
+
+  // Get user's inventory filtered by item type
+  getUserInventoryByType: publicProcedure
     .input(
       z.object({
-        slot: z.enum(['arms', 'legs', 'belt', 'necklace', 'gem', 'ring']),
+        userId: z.string(),
+        type: z.enum(['armor', 'craft', 'gems']),
       })
     )
     .query(async ({ input }) => {
@@ -238,23 +314,64 @@ export const itemsRouter = createTRPCRouter({
         });
       }
 
-      const items = (await db
-        .collection(collectionName)
-        .find({ wearableSlot: input.slot })
-        .toArray()) as unknown as IInventoryArmorItemDB[];
+      // Get item IDs of the requested type
+      const itemsOfType = (await db
+        .collection(itemsCollection)
+        .find({ type: input.type })
+        .toArray()) as unknown as AnyInventoryItemDB[];
+
+      const itemIds = itemsOfType.map((i) => i.id);
+
+      // Get user's inventory records for those items
+      const userRecords = (await db
+        .collection(userInventoryCollection)
+        .find({
+          userId: input.userId,
+          itemId: { $in: itemIds },
+        })
+        .toArray()) as unknown as IUserInventoryRecord[];
+
+      if (userRecords.length === 0) {
+        return [];
+      }
 
       const craftItems = await getCraftItemsForPopulation();
 
-      const populatedItems = await Promise.all(
-        items.map((item) => populateArmorItem(item, craftItems))
+      // Populate
+      const populatedInventory: IUserInventoryItem[] = await Promise.all(
+        userRecords.map(async (record) => {
+          const itemDef = itemsOfType.find((i) => i.id === record.itemId);
+          if (!itemDef) {
+            throw new TRPCError({
+              code: 'NOT_FOUND',
+              message: `Item definition for "${record.itemId}" not found`,
+            });
+          }
+
+          const populatedItem = await populateItem(itemDef, craftItems);
+
+          return {
+            item: populatedItem,
+            quantity: record.quantity,
+            isEquipped: record.isEquipped,
+            equippedToWizardId: record.equippedToWizardId,
+            acquiredAt: record.acquiredAt,
+            acquiredFrom: record.acquiredFrom,
+          };
+        })
       );
 
-      return populatedItems;
+      return populatedInventory;
     }),
 
-  // Get items by rarity - populated
-  getByRarity: publicProcedure
-    .input(z.object({ rarity: z.enum(['common', 'uncommon', 'unique']) }))
+  // Get user's equipped items for a specific wizard
+  getUserEquippedItems: publicProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        wizardId: z.string(),
+      })
+    )
     .query(async ({ input }) => {
       if (!db) {
         throw new TRPCError({
@@ -263,18 +380,80 @@ export const itemsRouter = createTRPCRouter({
         });
       }
 
-      const items = (await db
-        .collection(collectionName)
-        .find({ rarity: input.rarity })
-        .toArray()) as unknown as AnyInventoryItemDB[];
+      // Get equipped records for this wizard
+      const userRecords = (await db
+        .collection(userInventoryCollection)
+        .find({
+          userId: input.userId,
+          isEquipped: true,
+          equippedToWizardId: input.wizardId,
+        })
+        .toArray()) as unknown as IUserInventoryRecord[];
 
-      const craftItems = await getCraftItemsForPopulation();
+      if (userRecords.length === 0) {
+        return [];
+      }
 
-      const populatedItems = await Promise.all(
-        items.map((item) => populateItem(item, craftItems))
+      const [allItems, craftItems] = await Promise.all([
+        getAllItemDefinitions(),
+        getCraftItemsForPopulation(),
+      ]);
+
+      const populatedInventory: IUserInventoryItem[] = await Promise.all(
+        userRecords.map(async (record) => {
+          const itemDef = allItems.find((i) => i.id === record.itemId);
+          if (!itemDef) {
+            throw new TRPCError({
+              code: 'NOT_FOUND',
+              message: `Item definition for "${record.itemId}" not found`,
+            });
+          }
+
+          const populatedItem = await populateItem(itemDef, craftItems);
+
+          return {
+            item: populatedItem,
+            quantity: record.quantity,
+            isEquipped: record.isEquipped,
+            equippedToWizardId: record.equippedToWizardId,
+            acquiredAt: record.acquiredAt,
+            acquiredFrom: record.acquiredFrom,
+          };
+        })
       );
 
-      return populatedItems;
+      return populatedInventory;
+    }),
+
+  // Check if user owns a specific item
+  userHasItem: publicProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        itemId: z.string(),
+      })
+    )
+    .query(async ({ input }) => {
+      if (!db) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database not connected',
+        });
+      }
+
+      const record = await db.collection(userInventoryCollection).findOne({
+        userId: input.userId,
+        itemId: input.itemId,
+      });
+
+      if (!record) {
+        return { owned: false, quantity: 0 };
+      }
+
+      return {
+        owned: true,
+        quantity: (record as unknown as IUserInventoryRecord).quantity,
+      };
     }),
 });
 

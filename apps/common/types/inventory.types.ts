@@ -73,3 +73,40 @@ export type AnyInventoryItemDB = IInventoryItem | IInventoryArmorItemDB;
 export function isArmorItem(item: IInventoryItem): item is IInventoryArmorItem {
   return item.type === 'armor' && 'wearableSlot' in item;
 }
+
+// ============================================
+// User Inventory Types (ownership records)
+// ============================================
+
+export type ItemAcquiredFrom = 'crafted' | 'loot' | 'trade' | 'drop' | 'reward' | 'purchase';
+
+// Database record for user's owned item
+export interface IUserInventoryRecord {
+  userId: string;
+  itemId: string; // Reference to InventoryItem.id
+  quantity: number;
+  isEquipped?: boolean;
+  equippedToWizardId?: string; // Which wizard has this equipped
+  acquiredAt?: string;
+  acquiredFrom?: ItemAcquiredFrom;
+}
+
+// Populated user inventory item (with full item data)
+export interface IUserInventoryItem {
+  item: AnyInventoryItem;
+  quantity: number;
+  isEquipped?: boolean;
+  equippedToWizardId?: string;
+  acquiredAt?: string;
+  acquiredFrom?: ItemAcquiredFrom;
+}
+
+// Populated user inventory armor item
+export interface IUserInventoryArmorItem {
+  item: IInventoryArmorItem;
+  quantity: number;
+  isEquipped?: boolean;
+  equippedToWizardId?: string;
+  acquiredAt?: string;
+  acquiredFrom?: ItemAcquiredFrom;
+}

@@ -14,4 +14,9 @@ export {
   type AnyInventoryItem,
   type AnyInventoryItemDB,
   isArmorItem,
+  // User inventory types
+  type ItemAcquiredFrom,
+  type IUserInventoryRecord,
+  type IUserInventoryItem,
+  type IUserInventoryArmorItem,
 } from '@wizard-battle/common';
