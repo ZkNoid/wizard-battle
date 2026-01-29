@@ -18,7 +18,7 @@ export function ModeSelect({
       <div className="px-15 py-13.5 w-143 h-143 relative flex flex-col items-center">
         <PvpIcon className="w-66 h-54" />
         <span className="font-pixel text-main-gray mt-7 text-3xl">PvP</span>
-        <span className="font-pixel text-main-gray mt-4 text-center text-xl">
+        <span className="font-pixel-klein text-main-gray mt-4 text-center text-xl leading-6">
           Engage in duels against other players. Show all your magical prowess
           and strategic skills to overpower your opponent and earn experience
           for each win.
@@ -41,7 +41,7 @@ export function ModeSelect({
       <div className="px-15 py-13.5 w-143 h-143 relative flex flex-col items-center">
         <PveIcon className="w-71 h-52" />
         <span className="font-pixel text-main-gray mt-7 text-3xl">PvE</span>
-        <span className="font-pixel text-main-gray mt-4 text-center text-xl">
+        <span className="font-pixel-klein text-main-gray mt-4 text-center text-xl leading-6">
           Battle against a computer enemy to hone your skills in the Wizard
           training grounds.
         </span>
