@@ -44,9 +44,6 @@ const calculateStats = (equippedSlots: EquippedSlots): IHeroStats => {
 };
 
 interface InventoryStore {
-  // Current user ID
-  userId: string | null;
-
   // Loading state
   isLoading: boolean;
   error: string | null;
@@ -60,9 +57,8 @@ interface InventoryStore {
   // User's inventory items (from database)
   inventoryItems: IUserInventoryItem[];
 
-  // Actions
-  setUserId: (userId: string | null) => void;
-  loadUserInventory: (userId: string) => Promise<void>;
+  // Actions - address comes from useMinaAppkit hook in components
+  loadUserInventory: (address: string) => Promise<void>;
   getEquippedItems: (wizardId: string) => EquippedSlots;
   getStats: (wizardId: string) => IHeroStats;
   equipItem: (
@@ -84,22 +80,19 @@ interface InventoryStore {
 export const useInventoryStore = create<InventoryStore>()(
   persist(
     (set, get) => ({
-      userId: null,
       isLoading: false,
       error: null,
       equippedItemsByWizard: {},
       statsByWizard: {},
       inventoryItems: [],
 
-      setUserId: (userId: string | null) => set({ userId }),
-
-      loadUserInventory: async (userId: string) => {
-        set({ isLoading: true, error: null, userId });
+      loadUserInventory: async (address: string) => {
+        set({ isLoading: true, error: null });
 
         try {
-          // Fetch user's inventory from database
+          // Fetch user's inventory from database (using wallet address as userId)
           const inventory = await trpcClient.items.getUserInventory.query({
-            userId,
+            userId: address,
           });
 
           // Separate equipped and non-equipped items
@@ -307,7 +300,6 @@ export const useInventoryStore = create<InventoryStore>()(
     {
       name: 'wizard-battle-inventory',
       partialize: (state) => ({
-        userId: state.userId,
         equippedItemsByWizard: state.equippedItemsByWizard,
         statsByWizard: state.statsByWizard,
         inventoryItems: state.inventoryItems,

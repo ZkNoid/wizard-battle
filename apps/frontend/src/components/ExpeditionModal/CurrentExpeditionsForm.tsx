@@ -5,22 +5,24 @@ import { useExpeditionStore } from '@/lib/store/expeditionStore';
 import CurrentExpeditionCard from './CurrentExpeditionCard';
 import ExpeditionModalTitle from './components/ExpeditionModalTitle';
 import ConfirmModal from '../shared/ConfirmModal';
+import { useMinaAppkit } from 'mina-appkit';
 
 export default function CurrentExpeditionsForm({
   onClose,
 }: {
   onClose: () => void;
 }) {
-  const { expeditions, isLoading, interruptExpedition, loadUserExpeditions, userId } = useExpeditionStore();
+  const { address } = useMinaAppkit();
+  const { expeditions, isLoading, interruptExpedition, loadUserExpeditions } = useExpeditionStore();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedExpeditionId, setSelectedExpeditionId] = useState<string | null>(null);
 
-  // Load expeditions when component mounts
+  // Load expeditions when component mounts or address changes
   useEffect(() => {
-    if (userId) {
-      loadUserExpeditions(userId);
+    if (address) {
+      loadUserExpeditions(address);
     }
-  }, [userId, loadUserExpeditions]);
+  }, [address, loadUserExpeditions]);
 
   // Filter to show active expeditions
   const activeExpeditions = expeditions.filter((exp) => exp.status === 'active');
@@ -31,8 +33,8 @@ export default function CurrentExpeditionsForm({
   };
 
   const handleConfirmInterrupt = async () => {
-    if (selectedExpeditionId) {
-      await interruptExpedition(selectedExpeditionId);
+    if (selectedExpeditionId && address) {
+      await interruptExpedition(address, selectedExpeditionId);
     }
     setShowConfirmModal(false);
     setSelectedExpeditionId(null);

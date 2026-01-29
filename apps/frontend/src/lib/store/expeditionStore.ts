@@ -8,9 +8,6 @@ import type {
 import { trpcClient } from '@/trpc/vanilla';
 
 interface ExpeditionStore {
-  // Current user ID
-  userId: string | null;
-
   // Loading states
   isLoading: boolean;
   isCreating: boolean;
@@ -20,19 +17,21 @@ interface ExpeditionStore {
   expeditions: IExpedition[];
   locations: ILocation[];
 
-  // Actions
-  setUserId: (userId: string | null) => void;
-  loadUserExpeditions: (userId: string) => Promise<void>;
+  // Actions - address comes from useMinaAppkit hook in components
+  loadUserExpeditions: (address: string) => Promise<void>;
   loadLocations: () => Promise<void>;
-  createExpedition: (input: {
-    characterId: string;
-    characterRole: string;
-    characterImage: string;
-    locationId: string;
-    timePeriod: ExpeditionTimePeriod;
-  }) => Promise<IExpedition | null>;
-  completeExpedition: (expeditionId: string) => Promise<IExpedition | null>;
-  interruptExpedition: (expeditionId: string) => Promise<IExpedition | null>;
+  createExpedition: (
+    address: string,
+    input: {
+      characterId: string;
+      characterRole: string;
+      characterImage: string;
+      locationId: string;
+      timePeriod: ExpeditionTimePeriod;
+    }
+  ) => Promise<IExpedition | null>;
+  completeExpedition: (address: string, expeditionId: string) => Promise<IExpedition | null>;
+  interruptExpedition: (address: string, expeditionId: string) => Promise<IExpedition | null>;
   clearExpeditions: () => void;
 
   // Selectors
@@ -45,21 +44,18 @@ interface ExpeditionStore {
 export const useExpeditionStore = create<ExpeditionStore>()(
   persist(
     (set, get) => ({
-      userId: null,
       isLoading: false,
       isCreating: false,
       error: null,
       expeditions: [],
       locations: [],
 
-      setUserId: (userId: string | null) => set({ userId }),
-
-      loadUserExpeditions: async (userId: string) => {
-        set({ isLoading: true, error: null, userId });
+      loadUserExpeditions: async (address: string) => {
+        set({ isLoading: true, error: null });
 
         try {
           const expeditions = await trpcClient.expeditions.getUserExpeditions.query({
-            userId,
+            userId: address,
           });
 
           set({
@@ -85,10 +81,10 @@ export const useExpeditionStore = create<ExpeditionStore>()(
         }
       },
 
-      createExpedition: async (input) => {
-        const { userId } = get();
-        if (!userId) {
-          set({ error: 'User not logged in' });
+      createExpedition: async (address, input) => {
+        if (!address) {
+          console.log('Wallet not connected');
+          set({ error: 'Wallet not connected' });
           return null;
         }
 
@@ -96,7 +92,7 @@ export const useExpeditionStore = create<ExpeditionStore>()(
 
         try {
           const newExpedition = await trpcClient.expeditions.createExpedition.mutate({
-            userId,
+            userId: address,
             ...input,
           });
 
@@ -115,17 +111,16 @@ export const useExpeditionStore = create<ExpeditionStore>()(
         }
       },
 
-      completeExpedition: async (expeditionId: string) => {
-        const { userId } = get();
-        if (!userId) {
-          set({ error: 'User not logged in' });
+      completeExpedition: async (address: string, expeditionId: string) => {
+        if (!address) {
+          set({ error: 'Wallet not connected' });
           return null;
         }
 
         try {
           const completedExpedition = await trpcClient.expeditions.completeExpedition.mutate({
             id: expeditionId,
-            userId,
+            userId: address,
           });
 
           set((state) => ({
@@ -143,17 +138,16 @@ export const useExpeditionStore = create<ExpeditionStore>()(
         }
       },
 
-      interruptExpedition: async (expeditionId: string) => {
-        const { userId } = get();
-        if (!userId) {
-          set({ error: 'User not logged in' });
+      interruptExpedition: async (address: string, expeditionId: string) => {
+        if (!address) {
+          set({ error: 'Wallet not connected' });
           return null;
         }
 
         try {
           const interruptedExpedition = await trpcClient.expeditions.interruptExpedition.mutate({
             id: expeditionId,
-            userId,
+            userId: address,
           });
 
           set((state) => ({
@@ -174,7 +168,6 @@ export const useExpeditionStore = create<ExpeditionStore>()(
       clearExpeditions: () =>
         set({
           expeditions: [],
-          userId: null,
         }),
 
       // Selectors
@@ -197,7 +190,6 @@ export const useExpeditionStore = create<ExpeditionStore>()(
     {
       name: 'wizard-battle-expeditions',
       partialize: (state) => ({
-        userId: state.userId,
         expeditions: state.expeditions,
         locations: state.locations,
       }),

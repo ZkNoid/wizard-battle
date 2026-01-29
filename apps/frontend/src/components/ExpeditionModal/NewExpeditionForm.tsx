@@ -10,12 +10,14 @@ import type { Field } from 'o1js';
 import type { ExpeditionTimePeriod } from '@wizard-battle/common';
 import { useExpeditionStore } from '@/lib/store/expeditionStore';
 import { allWizards } from '../../../../common/wizards';
+import { useMinaAppkit } from 'mina-appkit';
 
 export default function NewExpeditionForm({
   onClose,
 }: {
   onClose: () => void;
 }) {
+  const { address } = useMinaAppkit();
   const { createExpedition, isCreating } = useExpeditionStore();
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [selectedCharacter, setSelectedCharacter] = useState<Field | string | null>(null);
@@ -34,12 +36,14 @@ export default function NewExpeditionForm({
   };
 
   const handleStartExpedition = async () => {
-    if (!selectedLocation || !selectedCharacter || !selectedTimePeriod) return;
+    if (!selectedLocation || !selectedCharacter || !selectedTimePeriod || !address) return;
 
     const wizard = allWizards.find((w) => w.id.toString() === selectedCharacter.toString());
     if (!wizard) return;
 
-    await createExpedition({
+    console.log("Creating expedition with character:", wizard.name, "and location:", selectedLocation);
+
+    await createExpedition(address, {
       characterId: selectedCharacter.toString(),
       characterRole: wizard.name,
       characterImage: wizard.imageURL || '',
@@ -50,7 +54,7 @@ export default function NewExpeditionForm({
     onClose();
   };
 
-  const disabled = !selectedLocation || !selectedCharacter || !selectedTimePeriod || isCreating;
+  const disabled = !selectedLocation || !selectedCharacter || !selectedTimePeriod || isCreating || !address;
 
   return (
     <div className="flex h-full flex-col">

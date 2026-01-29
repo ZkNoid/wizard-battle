@@ -13,13 +13,18 @@ import {
   PositionOption,
 } from '../../../common/stater/structs';
 import { useInventoryStore } from '@/lib/store';
+import { useExpeditionStore } from '@/lib/store/expeditionStore';
+import { useMinaAppkit } from 'mina-appkit';
 
 export default function Initializer() {
+  const { address } = useMinaAppkit();
   const { socket, setSocket, setStater, isBootstrapped, setBootstrapped } =
     useUserInformationStore();
   const statsByWizard = useInventoryStore((state) => state.statsByWizard);
   const loadUserInventory = useInventoryStore((state) => state.loadUserInventory);
+  const loadUserExpeditions = useExpeditionStore((state) => state.loadUserExpeditions);
 
+  // Initialize socket and stater
   useEffect(() => {
     if (isBootstrapped) return;
 
@@ -68,11 +73,16 @@ export default function Initializer() {
     setStater(stater);
     setBootstrapped(true);
 
-    // Fetch user inventory from database
-    void loadUserInventory(stablePlayerId);
-
     s.on('connect', () => console.log('socket connected'));
-  }, [isBootstrapped, setBootstrapped, setSocket, setStater, loadUserInventory]);
+  }, [isBootstrapped, setBootstrapped, setSocket, setStater]);
+
+  // Load user data when wallet is connected
+  useEffect(() => {
+    if (address) {
+      void loadUserInventory(address);
+      void loadUserExpeditions(address);
+    }
+  }, [address, loadUserInventory, loadUserExpeditions]);
 
   return null;
 }
