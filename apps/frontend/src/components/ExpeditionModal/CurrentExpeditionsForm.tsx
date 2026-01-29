@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { CURRENT_EXPEDITIONS } from '@/lib/constants/expedition';
+import { useState, useEffect } from 'react';
+import { useExpeditionStore } from '@/lib/store/expeditionStore';
 import CurrentExpeditionCard from './CurrentExpeditionCard';
-import Image from 'next/image';
 import ExpeditionModalTitle from './components/ExpeditionModalTitle';
 import ConfirmModal from '../shared/ConfirmModal';
 
@@ -12,18 +11,28 @@ export default function CurrentExpeditionsForm({
 }: {
   onClose: () => void;
 }) {
+  const { expeditions, isLoading, interruptExpedition, loadUserExpeditions, userId } = useExpeditionStore();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedExpeditionId, setSelectedExpeditionId] = useState<string | null>(null);
+
+  // Load expeditions when component mounts
+  useEffect(() => {
+    if (userId) {
+      loadUserExpeditions(userId);
+    }
+  }, [userId, loadUserExpeditions]);
+
+  // Filter to show active expeditions
+  const activeExpeditions = expeditions.filter((exp) => exp.status === 'active');
 
   const onInterruptExpedition = (expeditionId: string) => {
     setSelectedExpeditionId(expeditionId);
     setShowConfirmModal(true);
   };
 
-  const handleConfirmInterrupt = () => {
+  const handleConfirmInterrupt = async () => {
     if (selectedExpeditionId) {
-      console.log(`Interrupting expedition ${selectedExpeditionId}`);
-      // Здесь будет логика прерывания экспедиции
+      await interruptExpedition(selectedExpeditionId);
     }
     setShowConfirmModal(false);
     setSelectedExpeditionId(null);
@@ -41,8 +50,14 @@ export default function CurrentExpeditionsForm({
       {/* Scrollable Expeditions List */}
       <div className="flex-1 overflow-y-auto pb-2 pr-2">
         <div className="flex flex-col gap-2">
-          {CURRENT_EXPEDITIONS.length > 0 ? (
-            CURRENT_EXPEDITIONS.map((expedition) => (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <span className="font-['Press_Start_2P'] text-xl text-gray-500">
+                Loading...
+              </span>
+            </div>
+          ) : activeExpeditions.length > 0 ? (
+            activeExpeditions.map((expedition) => (
               <CurrentExpeditionCard
                 key={expedition.id}
                 expedition={expedition}

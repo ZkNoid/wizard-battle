@@ -2,3 +2,4 @@
 export * from './matchmaking.types'; 
 export * from './gameplay.types';
 export * from './inventory.types';
+export * from './expedition.types';

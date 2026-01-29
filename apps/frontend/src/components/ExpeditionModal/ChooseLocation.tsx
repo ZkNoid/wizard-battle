@@ -1,28 +1,33 @@
 'use client';
 
-import { LOCATIONS } from '@/lib/constants/expedition';
 import { useEffect, useState } from 'react';
 import { SelectableImage } from '@/components/shared/SelectableImage';
+import { useExpeditionStore } from '@/lib/store/expeditionStore';
 
 export default function ChooseLocation({
   onSelectLocation,
 }: {
-  onSelectLocation: (location: number | null) => void;
+  onSelectLocation: (location: string | null) => void;
 }) {
-  const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
+  const { locations, loadLocations } = useExpeditionStore();
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
 
-  const handleSelectLocation = (location: number) => {
-    if (location === selectedLocation) {
+  // Load locations from store on mount
+  useEffect(() => {
+    loadLocations();
+  }, [loadLocations]);
+
+  const handleSelectLocation = (locationId: string) => {
+    if (locationId === selectedLocation) {
       setSelectedLocation(null);
-      
       return;
     }
-    setSelectedLocation(location);
+    setSelectedLocation(locationId);
   };
 
   useEffect(() => {
     onSelectLocation(selectedLocation);
-  }, [selectedLocation]);
+  }, [selectedLocation, onSelectLocation]);
 
   return (
     <div className="mt-4 flex flex-col gap-2.5">
@@ -30,7 +35,7 @@ export default function ChooseLocation({
         Choose location
       </span>
       <div className="flex flex-row justify-center gap-3 flex-wrap">
-        {LOCATIONS.map((location) => (
+        {locations.map((location) => (
           <SelectableImage
             key={location.id}
             src={location.image}
