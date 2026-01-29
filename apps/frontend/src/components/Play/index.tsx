@@ -12,6 +12,8 @@ import Matchmaking from './Matchmaking';
 import GameResult from '../GameResult';
 import { allWizards } from '../../../../common/wizards';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
+import Header from '../Header';
+import Modals from '../Header/Modals';
 
 export default function Play() {
   const [playStep, setPlayStep] = useState<PlaySteps>(PlaySteps.SELECT_MODE);
@@ -31,8 +33,10 @@ export default function Play() {
     playStep === PlaySteps.WIN;
 
   return (
-    <section className="flex h-full w-full flex-col items-center justify-center">
-      <div className="flex flex-col gap-2.5">
+    <main className="relative flex h-screen w-full overflow-hidden">
+      <Header />
+      <section className="flex h-full w-full flex-col items-center justify-center">
+        <div className="flex flex-col gap-2.5">
         {!noNavigation && (
           <Navigation
             playStep={playStep}
@@ -70,7 +74,9 @@ export default function Play() {
             setPlayStep={setPlayStep}
           />
         )}
-      </div>
-    </section>
+        </div>
+      </section>
+      <Modals />
+    </main>
   );
 }

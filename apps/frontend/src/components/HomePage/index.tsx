@@ -5,28 +5,14 @@ import { useEffect, useState } from 'react';
 import { Tab } from '@/lib/enums/Tab';
 import HowToPlay from '../HowToPlay';
 import Support from '../Support';
-import { TopBarIcon } from '../BaseLayout/assets/top-bar-icon';
 import Image from 'next/image';
-// import background from '../../../public/menu/background.svg';
-// import hoverCraft from '../../../public/menu/hover-craft.png';
-// import hoverExpeditions from '../../../public/menu/hover-expeditions.png';
-// import hoverPVP from '../../../public/menu/hover-pvp.png';
-// import hoverMarket from '../../../public/menu/hover-market.png';
-// import hoverMarketSmall from '../../../public/menu/hover-market-small.svg';
-// import hoverCharacters from '../../../public/menu/hover-characters.png';
-import { SettingsBar } from '../BaseLayout/SettingsBar';
-import Wallet from '../Wallet';
-import { Button } from '../shared/Button';
-import BoxButton from '../shared/BoxButton';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useMinaAppkit } from 'mina-appkit';
-import InventoryModal from '../InventoryModal';
 import WelcomeScreen from '../WelcomeScreen';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
-import CraftModal from '../CraftModal';
-import ExpeditionModal from '../ExpeditionModal';
-import WalletReown from '../WalletReown';
+import Header from '../Header';
+import Modals from '../Header/Modals';
 
 enum TabHover {
   CRAFT,
@@ -41,18 +27,15 @@ export default function HomePage() {
   const [tabHover, setTabHover] = useState<TabHover | undefined>(undefined);
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(false);
 
-  const [isInventoryModalOpen, setIsInventoryModalOpen] =
-    useState<boolean>(false);
-
-  const [isCraftModalOpen, setIsCraftModalOpen] = useState<boolean>(false);
-
-  const [isExpeditionModalOpen, setIsExpeditionModalOpen] =
-    useState<boolean>(false);
-
   const router = useRouter();
   const { address, triggerWallet } = useMinaAppkit();
-  const { hasShownWelcomeScreen, setHasShownWelcomeScreen } =
-    useMiscellaneousSessionStore();
+  const {
+    hasShownWelcomeScreen,
+    setHasShownWelcomeScreen,
+    setIsInventoryModalOpen,
+    setIsCraftModalOpen,
+    setIsExpeditionModalOpen,
+  } = useMiscellaneousSessionStore();
 
   useEffect(() => {
     const handleResize = () => {
@@ -69,95 +52,7 @@ export default function HomePage() {
 
   return (
     <main className="relative flex h-screen w-full overflow-hidden">
-      <div className="z-1 absolute left-0 top-2.5 grid w-full grid-cols-3 items-center px-20">
-        <SettingsBar setTab={setTab} />
-        <div className="flex w-full items-center justify-center gap-5">
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
-            <Image
-              src={'/icons/market.png'}
-              width={32}
-              height={32}
-              quality={100}
-              unoptimized={true}
-              alt="market"
-              className="h-8 w-8"
-            />
-          </BoxButton>
-          <BoxButton
-            color="gray"
-            onClick={() => {
-              setIsInventoryModalOpen(true);
-            }}
-            className="size-16"
-          >
-            <Image
-              src={'/icons/inventory.png'}
-              width={28}
-              height={32}
-              quality={100}
-              unoptimized={true}
-              alt="inventory"
-              className="h-8 w-7"
-            />
-          </BoxButton>
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
-            <Image
-              src={'/icons/mail.png'}
-              width={32}
-              height={23}
-              quality={100}
-              unoptimized={true}
-              alt="mail"
-              className="h-6 w-8"
-            />
-          </BoxButton>
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
-            <Image
-              src={'/icons/tournaments.png'}
-              width={36}
-              height={32}
-              quality={100}
-              unoptimized={true}
-              alt="tournaments"
-              className="h-8 w-9"
-            />
-          </BoxButton>
-        </div>
-        <div className="flex w-full items-center justify-between gap-5 px-10">
-          <Button
-            variant="gray"
-            className="h-15 flex w-40 items-center justify-center gap-2.5"
-          >
-            <Image
-              src={'/icons/gold-coin.png'}
-              width={32}
-              height={32}
-              unoptimized={true}
-              alt="gold-coin"
-              quality={100}
-              className="h-8 w-8"
-            />
-            <span>100M</span>
-          </Button>
-          <Button
-            variant="gray"
-            className="h-15 flex w-40 items-center justify-center gap-2.5"
-          >
-            <Image
-              src={'/icons/diamond.png'}
-              width={32}
-              height={28}
-              unoptimized={true}
-              quality={100}
-              alt="diamond"
-              className="h-7 w-8"
-            />
-            <span>1.25K</span>
-          </Button>
-          <Wallet className="w-25" />
-          <WalletReown className="w-25" />
-        </div>
-      </div>
+      <Header onTabChange={setTab} />
 
       {/* Main section */}
       <section
@@ -177,11 +72,6 @@ export default function HomePage() {
 
       <div className="bottom-12.5 absolute right-20 w-[20%]">
         {tab === Tab.HOME && <SocialLinks />}
-      </div>
-
-      {/* Top bar */}
-      <div className="-z-48 absolute inset-0 h-fit w-full">
-        <TopBarIcon className="pixel-art h-full w-full object-cover object-center" />
       </div>
 
       {/* Background */}
@@ -270,19 +160,9 @@ export default function HomePage() {
         />
       </div>
 
-      {isInventoryModalOpen && (
-        <InventoryModal onClose={() => setIsInventoryModalOpen(false)} />
-      )}
+      <Modals />
       {!hasShownWelcomeScreen && (
         <WelcomeScreen onClick={() => setHasShownWelcomeScreen(true)} />
-      )}
-
-      {isCraftModalOpen && (
-        <CraftModal onClose={() => setIsCraftModalOpen(false)} />
-      )}
-
-      {isExpeditionModalOpen && (
-        <ExpeditionModal onClose={() => setIsExpeditionModalOpen(false)} />
       )}
     </main>
   );
