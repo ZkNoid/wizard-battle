@@ -41,6 +41,10 @@ export class Expedition {
 
   @Prop({ required: true })
   timeToComplete!: number; // Duration in milliseconds
+
+  // Timestamps (automatically managed by Mongoose)
+  createdAt!: Date;
+  updatedAt!: Date;
 }
 
 export const ExpeditionSchema = SchemaFactory.createForClass(Expedition);
