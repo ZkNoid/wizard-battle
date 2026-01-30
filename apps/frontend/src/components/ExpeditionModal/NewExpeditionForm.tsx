@@ -74,6 +74,7 @@ export default function NewExpeditionForm({
           onClick={handleStartExpedition}
           className="w-full flex h-15 flex-row items-center justify-center gap-2.5"
           isLong
+          disabled={disabled}
         >
           <span className="font-pixel text-main-gray whitespace-nowrap text-lg font-bold">
             {isCreating ? 'Starting...' : 'Start Expedition'}
