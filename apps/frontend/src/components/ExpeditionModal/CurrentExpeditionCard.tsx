@@ -1,6 +1,6 @@
 'use client';
 
-import type { IExpedition } from '@/lib/types/Expedition';
+import type { IExpedition } from '@wizard-battle/common';
 import Image from 'next/image';
 import WizardImageMini from './components/WizardImageMini';
 import { allWizards } from '../../../../common/wizards';

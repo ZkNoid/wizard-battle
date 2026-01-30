@@ -4,9 +4,9 @@ import { InventoryBg } from './assets/inventory-bg';
 import Image from 'next/image';
 import type {
   IInventoryArmorItem,
-  IInventoryItem,
   InventoryFilterType,
   InventoryItemWearableArmorSlot,
+  IUserInventoryItem,
 } from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
 import { useState, useMemo } from 'react';
@@ -49,7 +49,9 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   });
 
   const [currentWizard, setCurrentWizard] = useState<Wizards>(Wizards.MAGE);
-  const [draggedItem, setDraggedItem] = useState<IInventoryItem | null>(null);
+  const [draggedItem, setDraggedItem] = useState<IUserInventoryItem | null>(
+    null
+  );
   const [activeFilter, setActiveFilter] = useState<InventoryFilterType>('all');
 
   // Get inventory data from store
@@ -152,8 +154,8 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     return Math.min(100, Math.max(0, progress));
   };
 
-  const handleDragStart = (item: IInventoryItem) => {
-    setDraggedItem(item);
+  const handleDragStart = (userItem: IUserInventoryItem) => {
+    setDraggedItem(userItem);
   };
 
   const handleDragEnd = () => {
@@ -164,12 +166,12 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     if (!draggedItem) return;
 
     // Check if dragged item can be equipped in this slot
-    if (draggedItem.type !== 'armor') {
+    if (draggedItem.item.type !== 'armor') {
       setDraggedItem(null);
       return;
     }
 
-    const wearableItem = draggedItem as IInventoryArmorItem;
+    const wearableItem = draggedItem.item as IInventoryArmorItem;
     if (wearableItem.wearableSlot !== slotId) {
       setDraggedItem(null);
       return;
@@ -185,8 +187,8 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   };
 
   const handleUnequip = (slotId: InventoryItemWearableArmorSlot) => {
-    const item = equippedItems[slotId];
-    if (!item) return;
+    const userItem = equippedItems[slotId];
+    if (!userItem) return;
 
     // Use store action to unequip item
     unequipItem(currentWizardId, slotId);
@@ -195,7 +197,9 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const filteredItems =
     activeFilter === 'all'
       ? inventoryItems
-      : inventoryItems.filter((item) => item.type === activeFilter);
+      : inventoryItems.filter(
+          (userItem) => userItem.item.type === activeFilter
+        );
 
   const handleChangeFilter = (filterMode: InventoryFilterType) => {
     setActiveFilter(filterMode);
@@ -345,12 +349,12 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   onClick={() => handleUnequip('gem')}
                 >
                   {equippedItems.gem ? (
-                    <InventoryTooltip item={equippedItems.gem}>
+                    <InventoryTooltip userItem={equippedItems.gem}>
                       <Image
-                        src={`/items/${equippedItems.gem.image}`}
+                        src={`/items/${equippedItems.gem.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.gem.title}
+                        alt={equippedItems.gem.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -374,12 +378,12 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   onClick={() => handleUnequip('ring')}
                 >
                   {equippedItems.ring ? (
-                    <InventoryTooltip item={equippedItems.ring}>
+                    <InventoryTooltip userItem={equippedItems.ring}>
                       <Image
-                        src={`/items/${equippedItems.ring.image}`}
+                        src={`/items/${equippedItems.ring.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.ring.title}
+                        alt={equippedItems.ring.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -403,12 +407,12 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   onClick={() => handleUnequip('necklace')}
                 >
                   {equippedItems.necklace ? (
-                    <InventoryTooltip item={equippedItems.necklace}>
+                    <InventoryTooltip userItem={equippedItems.necklace}>
                       <Image
-                        src={`/items/${equippedItems.necklace.image}`}
+                        src={`/items/${equippedItems.necklace.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.necklace.title}
+                        alt={equippedItems.necklace.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -460,12 +464,12 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   onClick={() => handleUnequip('arms')}
                 >
                   {equippedItems.arms ? (
-                    <InventoryTooltip item={equippedItems.arms}>
+                    <InventoryTooltip userItem={equippedItems.arms}>
                       <Image
-                        src={`/items/${equippedItems.arms.image}`}
+                        src={`/items/${equippedItems.arms.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.arms.title}
+                        alt={equippedItems.arms.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -489,12 +493,12 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   onClick={() => handleUnequip('legs')}
                 >
                   {equippedItems.legs ? (
-                    <InventoryTooltip item={equippedItems.legs}>
+                    <InventoryTooltip userItem={equippedItems.legs}>
                       <Image
-                        src={`/items/${equippedItems.legs.image}`}
+                        src={`/items/${equippedItems.legs.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.legs.title}
+                        alt={equippedItems.legs.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -518,12 +522,12 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   onClick={() => handleUnequip('belt')}
                 >
                   {equippedItems.belt ? (
-                    <InventoryTooltip item={equippedItems.belt}>
+                    <InventoryTooltip userItem={equippedItems.belt}>
                       <Image
-                        src={`/items/${equippedItems.belt.image}`}
+                        src={`/items/${equippedItems.belt.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.belt.title}
+                        alt={equippedItems.belt.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -583,32 +587,32 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                 />
               ))}
             </div>
-            {filteredItems.map((item) => (
+            {filteredItems.map((userItem) => (
               <div
-                key={item.id}
+                key={userItem.item.id}
                 className="size-25 relative cursor-grab p-6 active:cursor-grabbing"
                 draggable
-                onDragStart={() => handleDragStart(item)}
+                onDragStart={() => handleDragStart(userItem)}
                 onDragEnd={handleDragEnd}
               >
-                <InventoryTooltip item={item}>
+                <InventoryTooltip userItem={userItem}>
                   <Image
-                    src={`/items/${item.image}`}
+                    src={`/items/${userItem.item.image}`}
                     width={100}
                     height={100}
-                    alt={item.title}
+                    alt={userItem.item.title}
                     quality={100}
                     unoptimized={true}
                     className="size-full object-contain object-center"
                   />
                 </InventoryTooltip>
                 <div className="font-pixel text-main-gray absolute bottom-2 right-2 text-sm font-bold">
-                  {item.amount}
+                  {userItem.quantity}
                 </div>
                 <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
               </div>
             ))}
-            {Array.from({ length: MAX_ITEMS - inventoryItems.length }).map(
+            {Array.from({ length: MAX_ITEMS - filteredItems.length }).map(
               (_, index) => (
                 <div key={index} className="size-25 relative p-6">
                   <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />

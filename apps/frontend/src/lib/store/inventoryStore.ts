@@ -1,17 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
-  IInventoryItem,
   IInventoryArmorItem,
   InventoryItemWearableArmorSlot,
+  IUserInventoryItem,
+  AnyInventoryItem,
 } from '@/lib/types/Inventory';
 import type { IHeroStats } from '@/lib/types/IHeroStat';
-import { ALL_ITEMS } from '@/lib/constants/items';
 import { defaultHeroStats } from '@/lib/constants/stat';
+import { trpcClient } from '@/trpc/vanilla';
 
 export type EquippedSlots = Record<
   InventoryItemWearableArmorSlot,
-  IInventoryItem | null
+  IUserInventoryItem | null
 >;
 
 const defaultEquippedSlots: EquippedSlots = {
@@ -27,10 +28,10 @@ const defaultEquippedSlots: EquippedSlots = {
 const calculateStats = (equippedSlots: EquippedSlots): IHeroStats => {
   const stats: IHeroStats = { ...defaultHeroStats };
 
-  Object.values(equippedSlots).forEach((item) => {
-    if (item && item.type === 'armor') {
-      const wearableItem = item as IInventoryArmorItem;
-      wearableItem.buff.forEach((buff) => {
+  Object.values(equippedSlots).forEach((userItem) => {
+    if (userItem && userItem.item.type === 'armor') {
+      const armorItem = userItem.item as IInventoryArmorItem;
+      armorItem.buff.forEach((buff) => {
         const statKey = buff.effect as keyof IHeroStats;
         if (statKey in stats) {
           stats[statKey] += buff.value;
@@ -43,38 +44,97 @@ const calculateStats = (equippedSlots: EquippedSlots): IHeroStats => {
 };
 
 interface InventoryStore {
-  // Equipped items per wizard (wizard ID as string key, e.g. Field.toString())
+  // Loading state
+  isLoading: boolean;
+  error: string | null;
+
+  // Equipped items per wizard (wizard ID as string key)
   equippedItemsByWizard: Record<string, EquippedSlots>;
 
   // Stats per wizard (calculated from equipped items)
   statsByWizard: Record<string, IHeroStats>;
 
-  // User's inventory items (not equipped)
-  inventoryItems: (IInventoryItem | IInventoryArmorItem)[];
+  // User's inventory items (from database)
+  inventoryItems: IUserInventoryItem[];
 
-  // Actions
+  // Actions - address comes from useMinaAppkit hook in components
+  loadUserInventory: (address: string) => Promise<void>;
   getEquippedItems: (wizardId: string) => EquippedSlots;
   getStats: (wizardId: string) => IHeroStats;
   equipItem: (
     wizardId: string,
     slotId: InventoryItemWearableArmorSlot,
-    item: IInventoryItem
+    userItem: IUserInventoryItem
   ) => void;
   unequipItem: (
     wizardId: string,
     slotId: InventoryItemWearableArmorSlot
   ) => void;
-  setInventoryItems: (items: (IInventoryItem | IInventoryArmorItem)[]) => void;
-  addToInventory: (item: IInventoryItem | IInventoryArmorItem) => void;
+  setInventoryItems: (items: IUserInventoryItem[]) => void;
+  addToInventory: (item: IUserInventoryItem) => void;
   removeFromInventory: (itemId: string) => void;
+  updateItemQuantity: (itemId: string, quantity: number) => void;
+  clearInventory: () => void;
 }
 
 export const useInventoryStore = create<InventoryStore>()(
   persist(
     (set, get) => ({
+      isLoading: false,
+      error: null,
       equippedItemsByWizard: {},
       statsByWizard: {},
-      inventoryItems: [...ALL_ITEMS],
+      inventoryItems: [],
+
+      loadUserInventory: async (address: string) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          // Fetch user's inventory from database (using wallet address as userId)
+          const inventory = await trpcClient.items.getUserInventory.query({
+            userId: address,
+          });
+
+          // Separate equipped and non-equipped items
+          const equippedByWizard: Record<string, EquippedSlots> = {};
+          const nonEquippedItems: IUserInventoryItem[] = [];
+
+          inventory.forEach((userItem) => {
+            if (userItem.isEquipped && userItem.equippedToWizardId) {
+              const wizardId = userItem.equippedToWizardId;
+              if (!equippedByWizard[wizardId]) {
+                equippedByWizard[wizardId] = { ...defaultEquippedSlots };
+              }
+
+              // Get the slot from the item
+              if (userItem.item.type === 'armor') {
+                const armorItem = userItem.item as IInventoryArmorItem;
+                equippedByWizard[wizardId][armorItem.wearableSlot] = userItem;
+              }
+            } else {
+              nonEquippedItems.push(userItem);
+            }
+          });
+
+          // Calculate stats for each wizard
+          const statsByWizard: Record<string, IHeroStats> = {};
+          Object.entries(equippedByWizard).forEach(([wizardId, slots]) => {
+            statsByWizard[wizardId] = calculateStats(slots);
+          });
+
+          set({
+            inventoryItems: nonEquippedItems,
+            equippedItemsByWizard: equippedByWizard,
+            statsByWizard,
+            isLoading: false,
+          });
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to load inventory',
+            isLoading: false,
+          });
+        }
+      },
 
       getEquippedItems: (wizardId: string): EquippedSlots => {
         const state = get();
@@ -93,7 +153,7 @@ export const useInventoryStore = create<InventoryStore>()(
       equipItem: (
         wizardId: string,
         slotId: InventoryItemWearableArmorSlot,
-        item: IInventoryItem
+        userItem: IUserInventoryItem
       ) =>
         set((state) => {
           // Get current equipped items for this wizard
@@ -106,23 +166,33 @@ export const useInventoryStore = create<InventoryStore>()(
           const updatedEquipped = { ...currentEquipped };
           Object.keys(updatedEquipped).forEach((key) => {
             const slot = key as InventoryItemWearableArmorSlot;
-            if (updatedEquipped[slot]?.id === item.id) {
+            if (updatedEquipped[slot]?.item.id === userItem.item.id) {
               updatedEquipped[slot] = null;
             }
           });
 
-          // Equip the new item
-          updatedEquipped[slotId] = item;
+          // Equip the new item with updated metadata
+          const equippedItem: IUserInventoryItem = {
+            ...userItem,
+            isEquipped: true,
+            equippedToWizardId: wizardId,
+          };
+          updatedEquipped[slotId] = equippedItem;
 
           // Recalculate stats for this wizard
           const newStats = calculateStats(updatedEquipped);
 
           // Update inventory: remove the equipped item, add back the previously equipped item if any
           let newInventory = state.inventoryItems.filter(
-            (i) => i.id !== item.id
+            (i) => i.item.id !== userItem.item.id
           );
           if (previousItem) {
-            newInventory = [...newInventory, previousItem];
+            const unequippedItem: IUserInventoryItem = {
+              ...previousItem,
+              isEquipped: false,
+              equippedToWizardId: undefined,
+            };
+            newInventory = [...newInventory, unequippedItem];
           }
 
           return {
@@ -143,9 +213,9 @@ export const useInventoryStore = create<InventoryStore>()(
           const currentEquipped = state.equippedItemsByWizard[wizardId] ?? {
             ...defaultEquippedSlots,
           };
-          const item = currentEquipped[slotId];
+          const userItem = currentEquipped[slotId];
 
-          if (!item) return state;
+          if (!userItem) return state;
 
           // Remove item from slot
           const updatedEquipped = { ...currentEquipped };
@@ -155,6 +225,12 @@ export const useInventoryStore = create<InventoryStore>()(
           const newStats = calculateStats(updatedEquipped);
 
           // Add item back to inventory
+          const unequippedItem: IUserInventoryItem = {
+            ...userItem,
+            isEquipped: false,
+            equippedToWizardId: undefined,
+          };
+
           return {
             equippedItemsByWizard: {
               ...state.equippedItemsByWizard,
@@ -164,22 +240,62 @@ export const useInventoryStore = create<InventoryStore>()(
               ...state.statsByWizard,
               [wizardId]: newStats,
             },
-            inventoryItems: [...state.inventoryItems, item],
+            inventoryItems: [...state.inventoryItems, unequippedItem],
           };
         }),
 
-      setInventoryItems: (items: (IInventoryItem | IInventoryArmorItem)[]) =>
+      setInventoryItems: (items: IUserInventoryItem[]) =>
         set({ inventoryItems: items }),
 
-      addToInventory: (item: IInventoryItem | IInventoryArmorItem) =>
-        set((state) => ({
-          inventoryItems: [...state.inventoryItems, item],
-        })),
+      addToInventory: (item: IUserInventoryItem) =>
+        set((state) => {
+          // Check if item already exists, if so increase quantity
+          const existingIndex = state.inventoryItems.findIndex(
+            (i) => i.item.id === item.item.id
+          );
+
+          if (existingIndex >= 0) {
+            const updatedItems = [...state.inventoryItems];
+            updatedItems[existingIndex] = {
+              ...updatedItems[existingIndex]!,
+              quantity: updatedItems[existingIndex]!.quantity + item.quantity,
+            };
+            return { inventoryItems: updatedItems };
+          }
+
+          return { inventoryItems: [...state.inventoryItems, item] };
+        }),
 
       removeFromInventory: (itemId: string) =>
         set((state) => ({
-          inventoryItems: state.inventoryItems.filter((i) => i.id !== itemId),
+          inventoryItems: state.inventoryItems.filter(
+            (i) => i.item.id !== itemId
+          ),
         })),
+
+      updateItemQuantity: (itemId: string, quantity: number) =>
+        set((state) => {
+          if (quantity <= 0) {
+            return {
+              inventoryItems: state.inventoryItems.filter(
+                (i) => i.item.id !== itemId
+              ),
+            };
+          }
+
+          return {
+            inventoryItems: state.inventoryItems.map((i) =>
+              i.item.id === itemId ? { ...i, quantity } : i
+            ),
+          };
+        }),
+
+      clearInventory: () =>
+        set({
+          inventoryItems: [],
+          equippedItemsByWizard: {},
+          statsByWizard: {},
+        }),
     }),
     {
       name: 'wizard-battle-inventory',

@@ -2,10 +2,9 @@
 
 import Image from 'next/image';
 import type {
-  IInventoryItem,
   InventoryFilterType,
+  IUserInventoryItem,
 } from '@/lib/types/Inventory';
-import { ALL_ITEMS } from '@/lib/constants/items';
 import { useState, useCallback, useMemo, memo } from 'react';
 import { InventoryTooltip } from '../InventoryModal/InventoryTooltip';
 import type { IInventoryFilterBtnProps } from '../InventoryModal/InventoryFilterBtn';
@@ -13,6 +12,7 @@ import InventoryFilterBtn from '../InventoryModal/InventoryFilterBtn';
 import { ItemBg } from '../InventoryModal/assets/item-bg';
 import { InventoryModalFormBg } from './assets/inventory-bg';
 import { Button } from '../shared/Button';
+import { useInventoryStore } from '@/lib/store';
 
 const ITEMS_PER_PAGE = 28; // 7 columns × 4 rows
 const ROWS = 4;
@@ -23,47 +23,47 @@ const MOCK_PAGINATION = true;
 const MOCK_TOTAL_PAGES = 2;
 
 // Memoized component for inventory item
-const InventoryItem = memo(({ 
-  item, 
-  isDragged, 
-  onDragStart, 
-  onDragEnd 
-}: {
-  item: IInventoryItem;
-  isDragged: boolean;
-  onDragStart: (item: IInventoryItem, e: React.DragEvent) => void;
-  onDragEnd: () => void;
-}) => (
-  <div
-    key={item.id}
-    className={`size-25 relative p-6 transition-opacity duration-200 ${
-      isDragged
-        ? 'cursor-grabbing opacity-50'
-        : 'cursor-grab opacity-100'
-    }`}
-    draggable
-    onDragStart={(e) => onDragStart(item, e)}
-    onDragEnd={onDragEnd}
-    data-item-id={item.id}
-    data-item-type={item.type}
-  >
-    <InventoryTooltip item={item}>
-      <Image
-        src={`/items/${item.image}`}
-        width={100}
-        height={100}
-        alt={item.title}
-        quality={100}
-        unoptimized={true}
-        className="size-full object-contain object-center"
-      />
-    </InventoryTooltip>
-    <div className="font-pixel text-main-gray absolute bottom-2 right-2 text-sm font-bold">
-      {item.amount}
+const InventoryItem = memo(
+  ({
+    userItem,
+    isDragged,
+    onDragStart,
+    onDragEnd,
+  }: {
+    userItem: IUserInventoryItem;
+    isDragged: boolean;
+    onDragStart: (userItem: IUserInventoryItem, e: React.DragEvent) => void;
+    onDragEnd: () => void;
+  }) => (
+    <div
+      key={userItem.item.id}
+      className={`size-25 relative p-6 transition-opacity duration-200 ${
+        isDragged ? 'cursor-grabbing opacity-50' : 'cursor-grab opacity-100'
+      }`}
+      draggable
+      onDragStart={(e) => onDragStart(userItem, e)}
+      onDragEnd={onDragEnd}
+      data-item-id={userItem.item.id}
+      data-item-type={userItem.item.type}
+    >
+      <InventoryTooltip userItem={userItem}>
+        <Image
+          src={`/items/${userItem.item.image}`}
+          width={100}
+          height={100}
+          alt={userItem.item.title}
+          quality={100}
+          unoptimized={true}
+          className="size-full object-contain object-center"
+        />
+      </InventoryTooltip>
+      <div className="font-pixel text-main-gray absolute bottom-2 right-2 text-sm font-bold">
+        {userItem.quantity}
+      </div>
+      <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
     </div>
-    <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
-  </div>
-));
+  )
+);
 
 InventoryItem.displayName = 'InventoryItem';
 
@@ -72,19 +72,19 @@ export interface IInventoryModalFormProps {
   /**
    * Callback called when item drag starts
    */
-  onItemDragStart?: (item: IInventoryItem) => void;
+  onItemDragStart?: (userItem: IUserInventoryItem) => void;
   /**
    * Callback called when item drag ends
    */
-  onItemDragEnd?: (item: IInventoryItem | null) => void;
+  onItemDragEnd?: (userItem: IUserInventoryItem | null) => void;
   /**
    * Callback called when item is removed from inventory
    */
-  onItemRemove?: (item: IInventoryItem) => void;
+  onItemRemove?: (userItem: IUserInventoryItem) => void;
   /**
    * External control of dragged item (optional)
    */
-  draggedItem?: IInventoryItem | null;
+  draggedItem?: IUserInventoryItem | null;
 }
 
 export function InventoryModalForm({
@@ -94,9 +94,14 @@ export function InventoryModalForm({
   onItemRemove,
   draggedItem: externalDraggedItem,
 }: IInventoryModalFormProps) {
-  const [items, setItems] = useState<IInventoryItem[]>([...ALL_ITEMS]);
+  // Get items from store
+  const inventoryItems = useInventoryStore((state) => state.inventoryItems);
+  const removeFromInventory = useInventoryStore(
+    (state) => state.removeFromInventory
+  );
+
   const [internalDraggedItem, setInternalDraggedItem] =
-    useState<IInventoryItem | null>(null);
+    useState<IUserInventoryItem | null>(null);
   const [activeFilter, setActiveFilter] = useState<InventoryFilterType>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -106,12 +111,15 @@ export function InventoryModalForm({
       ? externalDraggedItem
       : internalDraggedItem;
 
-  const handleDragStart = useCallback((item: IInventoryItem) => {
-    if (externalDraggedItem === undefined) {
-      setInternalDraggedItem(item);
-    }
-    onItemDragStart?.(item);
-  }, [externalDraggedItem, onItemDragStart]);
+  const handleDragStart = useCallback(
+    (userItem: IUserInventoryItem) => {
+      if (externalDraggedItem === undefined) {
+        setInternalDraggedItem(userItem);
+      }
+      onItemDragStart?.(userItem);
+    },
+    [externalDraggedItem, onItemDragStart]
+  );
 
   const handleDragEnd = useCallback(() => {
     const previousDraggedItem = draggedItem;
@@ -123,9 +131,11 @@ export function InventoryModalForm({
 
   const filteredItems = useMemo(() => {
     return activeFilter === 'all'
-      ? items
-      : items.filter((item) => item.type === activeFilter);
-  }, [items, activeFilter]);
+      ? inventoryItems
+      : inventoryItems.filter(
+          (userItem) => userItem.item.type === activeFilter
+        );
+  }, [inventoryItems, activeFilter]);
 
   const totalPages = useMemo(() => {
     return MOCK_PAGINATION
@@ -152,52 +162,58 @@ export function InventoryModalForm({
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
   }, []);
 
-  const handleDeleteItem = useCallback((item: IInventoryItem) => {
-    // Remove item from local state
-    setItems((prevItems) => prevItems.filter((i) => i.id !== item.id));
-    // Notify parent component
-    onItemRemove?.(item);
-  }, [onItemRemove]);
+  const handleDeleteItem = useCallback(
+    (userItem: IUserInventoryItem) => {
+      // Remove item from store
+      removeFromInventory(userItem.item.id);
+      // Notify parent component
+      onItemRemove?.(userItem);
+    },
+    [removeFromInventory, onItemRemove]
+  );
 
-  const handleItemDragStart = useCallback((item: IInventoryItem, e: React.DragEvent) => {
-    handleDragStart(item);
-    // Add data for transfer between components
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData(
-      'application/json',
-      JSON.stringify(item)
-    );
-    e.dataTransfer.setData('text/plain', item.id);
-  }, [handleDragStart]);
+  const handleItemDragStart = useCallback(
+    (userItem: IUserInventoryItem, e: React.DragEvent) => {
+      handleDragStart(userItem);
+      // Add data for transfer between components
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('application/json', JSON.stringify(userItem));
+      e.dataTransfer.setData('text/plain', userItem.item.id);
+    },
+    [handleDragStart]
+  );
 
-  const filterBtns: IInventoryFilterBtnProps[] = useMemo(() => [
-    {
-      isActiveFilter: activeFilter === 'all',
-      title: 'All',
-      handleChangeFilter: () => handleChangeFilter('all'),
-    },
-    {
-      isActiveFilter: activeFilter === 'armor',
-      title: 'Armor',
-      imgSrc: '/icons/armor.png',
-      alt: 'armor',
-      handleChangeFilter: () => handleChangeFilter('armor'),
-    },
-    {
-      isActiveFilter: activeFilter === 'craft',
-      title: 'Craft',
-      imgSrc: '/icons/pickaxe.png',
-      alt: 'pickaxe',
-      handleChangeFilter: () => handleChangeFilter('craft'),
-    },
-    {
-      isActiveFilter: activeFilter === 'gems',
-      title: 'Gems',
-      imgSrc: '/icons/gem.png',
-      alt: 'gem',
-      handleChangeFilter: () => handleChangeFilter('gems'),
-    },
-  ], [activeFilter, handleChangeFilter]);
+  const filterBtns: IInventoryFilterBtnProps[] = useMemo(
+    () => [
+      {
+        isActiveFilter: activeFilter === 'all',
+        title: 'All',
+        handleChangeFilter: () => handleChangeFilter('all'),
+      },
+      {
+        isActiveFilter: activeFilter === 'armor',
+        title: 'Armor',
+        imgSrc: '/icons/armor.png',
+        alt: 'armor',
+        handleChangeFilter: () => handleChangeFilter('armor'),
+      },
+      {
+        isActiveFilter: activeFilter === 'craft',
+        title: 'Craft',
+        imgSrc: '/icons/pickaxe.png',
+        alt: 'pickaxe',
+        handleChangeFilter: () => handleChangeFilter('craft'),
+      },
+      {
+        isActiveFilter: activeFilter === 'gems',
+        title: 'Gems',
+        imgSrc: '/icons/gem.png',
+        alt: 'gem',
+        handleChangeFilter: () => handleChangeFilter('gems'),
+      },
+    ],
+    [activeFilter, handleChangeFilter]
+  );
 
   return (
     <div className="w-230 h-199 relative px-5 pt-5">
@@ -223,12 +239,12 @@ export function InventoryModalForm({
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-2.5 mt-10">
-          {paginatedItems.map((item) => (
+        <div className="mt-10 grid grid-cols-7 gap-2.5">
+          {paginatedItems.map((userItem) => (
             <InventoryItem
-              key={item.id}
-              item={item}
-              isDragged={draggedItem?.id === item.id}
+              key={userItem.item.id}
+              userItem={userItem}
+              isDragged={draggedItem?.item.id === userItem.item.id}
               onDragStart={handleItemDragStart}
               onDragEnd={handleDragEnd}
             />

@@ -1,38 +1,22 @@
-export interface IInventoryItem {
-  id: string;
-  title: string;
-  description: string;
-  image: string;
-  rarity: 'common' | 'uncommon' | 'unique';
-  type: 'armor' | 'craft' | 'gems';
-  amount: number;
-  price: number;
-}
-
-export interface IInventoryArmorItem extends IInventoryItem {
-  type: 'armor';
-  wearableSlot: InventoryItemWearableArmorSlot;
-  level: number;
-  buff: {
-    effect: string;
-    value: number;
-  }[];
-  improvementRequirements: {
-    item: IInventoryItem;
-    amount: number;
-  }[];
-  wearRequirements: {
-    requirement: string;
-    value: number;
-  }[];
-}
-
-export type InventoryItemWearableArmorSlot =
-  | 'arms'
-  | 'legs'
-  | 'belt'
-  | 'necklace'
-  | 'gem'
-  | 'ring';
-
-export type InventoryFilterType = 'all' | 'armor' | 'craft' | 'gems';
+// Re-export inventory types from shared common package
+export {
+  type ItemRarity,
+  type ItemType,
+  type InventoryItemWearableArmorSlot,
+  type InventoryFilterType,
+  type IItemBuff,
+  type IImprovementRequirement,
+  type IImprovementRequirementDB,
+  type IWearRequirement,
+  type IInventoryItem,
+  type IInventoryArmorItem,
+  type IInventoryArmorItemDB,
+  type AnyInventoryItem,
+  type AnyInventoryItemDB,
+  isArmorItem,
+  // User inventory types
+  type ItemAcquiredFrom,
+  type IUserInventoryRecord,
+  type IUserInventoryItem,
+  type IUserInventoryArmorItem,
+} from '@wizard-battle/common';

@@ -1,13 +1,12 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, Min, IsEnum } from 'class-validator';
-
-export enum AcquiredFrom {
-  CRAFTED = 'crafted',
-  LOOT = 'loot',
-  DROP = 'drop',
-  TRADE = 'trade',
-  REWARD = 'reward',
-  PURCHASE = 'purchase',
-}
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Min,
+  IsIn,
+} from 'class-validator';
+import type { ItemAcquiredFrom } from '@wizard-battle/common';
 
 export class AddItemToInventoryDto {
   @IsString()
@@ -16,14 +15,15 @@ export class AddItemToInventoryDto {
 
   @IsString()
   @IsNotEmpty()
-  itemId!: string;
+  itemId!: string; // Reference to InventoryItem.id
 
   @IsNumber()
   @IsOptional()
   @Min(1)
   quantity?: number;
 
-  @IsEnum(AcquiredFrom)
+  @IsString()
+  @IsIn(['crafted', 'loot', 'trade', 'drop', 'reward', 'purchase'])
   @IsOptional()
-  acquiredFrom?: AcquiredFrom;
+  acquiredFrom?: ItemAcquiredFrom;
 }
