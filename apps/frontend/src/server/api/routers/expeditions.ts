@@ -258,65 +258,64 @@ export const expeditionsRouter = createTRPCRouter({
         });
       }
 
-      const expedition = (await db
-        .collection(expeditionsCollection)
-        .findOne({ id: input.id, userId: input.userId })) as unknown as IExpeditionDB | null;
-
-      if (!expedition) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: `Expedition with id "${input.id}" not found`,
-        });
-      }
-
-      if (expedition.status === 'completed') {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Expedition already completed',
-        });
-      }
-
-      // Update expedition status
-      await db.collection(expeditionsCollection).updateOne(
-        { id: input.id },
-        {
-          $set: {
-            status: 'completed',
-            updatedAt: new Date(),
-          },
-        }
-      );
-
-      // Add rewards to user inventory
-      for (const reward of expedition.rewards) {
-        const existingItem = await db.collection('userinventory').findOne({
-          userId: input.userId,
-          itemId: reward.itemId,
-        });
-
-        if (existingItem) {
-          await db.collection('userinventory').updateOne(
-            { userId: input.userId, itemId: reward.itemId },
-            { $inc: { quantity: reward.amount } }
+      // Start a session for transaction
+      const session = client!.startSession();
+      
+      try {
+        // Use a transaction to ensure atomicity of expedition completion and reward claiming
+        const result = await session.withTransaction(async () => {
+          // Atomically update expedition status from active to completed
+          // This prevents double-claiming by ensuring only one request can successfully update
+          const updateResult = await db.collection(expeditionsCollection).findOneAndUpdate(
+            { 
+              id: input.id, 
+              userId: input.userId,
+              status: { $ne: 'completed' } // Only update if not already completed
+            },
+            {
+              $set: {
+                status: 'completed',
+                updatedAt: new Date(),
+              },
+            },
+            { 
+              returnDocument: 'after',
+              session 
+            }
           );
-        } else {
-          await db.collection('userinventory').insertOne({
-            userId: input.userId,
-            itemId: reward.itemId,
-            quantity: reward.amount,
-            acquiredAt: new Date(),
-            acquiredFrom: 'reward',
-          });
-        }
+
+          if (!updateResult) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Expedition not found or already completed',
+            });
+          }
+
+          const expedition = updateResult as unknown as IExpeditionDB;
+
+          // Add rewards to user inventory within the transaction
+          for (const reward of expedition.rewards) {
+            // Use upsert with $inc to handle both new and existing items atomically
+            await db.collection('userinventory').updateOne(
+              { userId: input.userId, itemId: reward.itemId },
+              { 
+                $inc: { quantity: reward.amount },
+                $setOnInsert: {
+                  acquiredAt: new Date(),
+                  acquiredFrom: 'reward',
+                }
+              },
+              { upsert: true, session }
+            );
+          }
+
+          return expedition;
+        });
+
+        return populateExpedition(result as IExpeditionDB);
+      } finally {
+        await session.endSession();
       }
-
-      const updatedExpedition: IExpeditionDB = {
-        ...expedition,
-        status: 'completed',
-        updatedAt: new Date(),
-      };
-
-      return populateExpedition(updatedExpedition);
     }),
 
   // Interrupt/cancel an expedition
