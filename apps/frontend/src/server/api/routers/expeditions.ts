@@ -37,8 +37,11 @@ async function populateExpeditionRewards(
     .find({ id: { $in: itemIds } })
     .toArray();
 
+  // Build a Map for O(1) lookups instead of O(n) linear search
+  const itemsMap = new Map(items.map((item) => [item.id, item]));
+
   return rewards.map((reward) => {
-    const item = items.find((i) => i.id === reward.itemId);
+    const item = itemsMap.get(reward.itemId);
     return {
       id: reward.itemId,
       name: item?.title ?? 'Unknown Item',
