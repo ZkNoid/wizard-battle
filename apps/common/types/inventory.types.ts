@@ -87,7 +87,7 @@ export interface IUserInventoryRecord {
   quantity: number;
   isEquipped?: boolean;
   equippedToWizardId?: string; // Which wizard has this equipped
-  acquiredAt?: string;
+  acquiredAt?: Date;
   acquiredFrom?: ItemAcquiredFrom;
 }
 
@@ -97,7 +97,7 @@ export interface IUserInventoryItem {
   quantity: number;
   isEquipped?: boolean;
   equippedToWizardId?: string;
-  acquiredAt?: string;
+  acquiredAt?: Date;
   acquiredFrom?: ItemAcquiredFrom;
 }
 
@@ -107,6 +107,6 @@ export interface IUserInventoryArmorItem {
   quantity: number;
   isEquipped?: boolean;
   equippedToWizardId?: string;
-  acquiredAt?: string;
+  acquiredAt?: Date;
   acquiredFrom?: ItemAcquiredFrom;
 }
