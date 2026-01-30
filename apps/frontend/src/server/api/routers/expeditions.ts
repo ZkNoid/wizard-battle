@@ -251,7 +251,7 @@ export const expeditionsRouter = createTRPCRouter({
   completeExpedition: publicProcedure
     .input(z.object({ id: z.string(), userId: z.string() }))
     .mutation(async ({ input }) => {
-      if (!db) {
+      if (!db || !client) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Database not connected',
@@ -259,7 +259,7 @@ export const expeditionsRouter = createTRPCRouter({
       }
 
       // Start a session for transaction
-      const session = client!.startSession();
+      const session = client.startSession();
       
       try {
         // Use a transaction to ensure atomicity of expedition completion and reward claiming
