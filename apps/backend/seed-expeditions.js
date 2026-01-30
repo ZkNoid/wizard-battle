@@ -89,7 +89,7 @@ const LOCATIONS = [
 // ============================================================================
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-const MONGODB_DB = process.env.MONGODB_DB || 'wizard-battle';
+const MONGODB_DB = process.env.MONGODB_DB || 'wizardbattle';
 
 async function seedLocations() {
   try {
