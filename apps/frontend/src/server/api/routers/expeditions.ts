@@ -10,6 +10,7 @@ import type {
   ILocation,
   ILocationDB,
   ExpeditionTimePeriod,
+  AnyInventoryItemDB,
 } from '@wizard-battle/common';
 
 const client = await clientPromise;
@@ -28,7 +29,7 @@ function timePeriodToMs(timePeriod: ExpeditionTimePeriod): number {
 // Helper to populate expedition rewards with item data using a pre-built items map
 function populateExpeditionRewardsWithMap(
   rewards: { itemId: string; amount: number }[],
-  itemsMap: Map<string, any>
+  itemsMap: Map<string, AnyInventoryItemDB>
 ): IExpeditionReward[] {
   return rewards.map((reward) => {
     const item = itemsMap.get(reward.itemId);
@@ -55,14 +56,20 @@ async function populateExpeditions(
     }
   }
 
-  // Fetch all items in a single query
-  const items = await db
-    .collection(itemsCollection)
-    .find({ id: { $in: Array.from(allItemIds) } })
-    .toArray();
+  // Skip database query if there are no items to fetch
+  let itemsMap = new Map<string, AnyInventoryItemDB>();
+  if (allItemIds.size > 0) {
+    // Fetch all items in a single query
+    const items = await db
+      .collection(itemsCollection)
+      .find({ id: { $in: Array.from(allItemIds) } })
+      .toArray();
 
-  // Build a Map once for O(1) lookups
-  const itemsMap = new Map(items.map((item) => [item.id, item]));
+    // Build a Map once for O(1) lookups
+    itemsMap = new Map(
+      items.map((item) => [item.id as string, item as AnyInventoryItemDB])
+    );
+  }
 
   // Populate all expeditions using the same map
   return expeditions.map((exp) => ({
@@ -74,8 +81,9 @@ async function populateExpeditions(
 // Helper to populate a single expedition
 async function populateExpedition(exp: IExpeditionDB): Promise<IExpedition> {
   // For single expedition, use the batch function
-  const [populated] = await populateExpeditions([exp]);
-  return populated!;
+  const populated = await populateExpeditions([exp]);
+  // populateExpeditions returns an array, get the first (and only) element
+  return populated[0] ?? { ...exp, rewards: [] };
 }
 
 export const expeditionsRouter = createTRPCRouter({
