@@ -177,10 +177,24 @@ export class UserInventoryService {
    * Unequip an item
    */
   async unequipItem(userId: string, itemId: string): Promise<UserInventory> {
-    return this.updateInventoryItem(userId, itemId, {
-      isEquipped: false,
-      equippedToWizardId: undefined,
-    });
+    const item = await this.inventoryModel
+      .findOneAndUpdate(
+        { userId, itemId },
+        {
+          isEquipped: false,
+          $unset: { equippedToWizardId: 1 },
+        },
+        { new: true },
+      )
+      .exec();
+
+    if (!item) {
+      throw new NotFoundException(
+        `Item ${itemId} not found in user ${userId}'s inventory`,
+      );
+    }
+
+    return item;
   }
 
   /**
