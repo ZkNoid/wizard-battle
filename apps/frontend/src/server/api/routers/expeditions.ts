@@ -25,21 +25,11 @@ function timePeriodToMs(timePeriod: ExpeditionTimePeriod): number {
   return hours * 60 * 60 * 1000;
 }
 
-// Helper to populate expedition rewards with item data
-async function populateExpeditionRewards(
-  rewards: { itemId: string; amount: number }[]
-): Promise<IExpeditionReward[]> {
-  if (!db) return [];
-
-  const itemIds = rewards.map((r) => r.itemId);
-  const items = await db
-    .collection(itemsCollection)
-    .find({ id: { $in: itemIds } })
-    .toArray();
-
-  // Build a Map for O(1) lookups instead of O(n) linear search
-  const itemsMap = new Map(items.map((item) => [item.id, item]));
-
+// Helper to populate expedition rewards with item data using a pre-built items map
+function populateExpeditionRewardsWithMap(
+  rewards: { itemId: string; amount: number }[],
+  itemsMap: Map<string, any>
+): IExpeditionReward[] {
   return rewards.map((reward) => {
     const item = itemsMap.get(reward.itemId);
     return {
@@ -51,13 +41,41 @@ async function populateExpeditionRewards(
   });
 }
 
+// Helper to populate multiple expeditions efficiently
+async function populateExpeditions(
+  expeditions: IExpeditionDB[]
+): Promise<IExpedition[]> {
+  if (!db || expeditions.length === 0) return [];
+
+  // Collect all unique item IDs from all expeditions
+  const allItemIds = new Set<string>();
+  for (const exp of expeditions) {
+    for (const reward of exp.rewards) {
+      allItemIds.add(reward.itemId);
+    }
+  }
+
+  // Fetch all items in a single query
+  const items = await db
+    .collection(itemsCollection)
+    .find({ id: { $in: Array.from(allItemIds) } })
+    .toArray();
+
+  // Build a Map once for O(1) lookups
+  const itemsMap = new Map(items.map((item) => [item.id, item]));
+
+  // Populate all expeditions using the same map
+  return expeditions.map((exp) => ({
+    ...exp,
+    rewards: populateExpeditionRewardsWithMap(exp.rewards, itemsMap),
+  }));
+}
+
 // Helper to populate a single expedition
 async function populateExpedition(exp: IExpeditionDB): Promise<IExpedition> {
-  const populatedRewards = await populateExpeditionRewards(exp.rewards);
-  return {
-    ...exp,
-    rewards: populatedRewards,
-  };
+  // For single expedition, use the batch function
+  const [populated] = await populateExpeditions([exp]);
+  return populated!;
 }
 
 export const expeditionsRouter = createTRPCRouter({
@@ -124,11 +142,7 @@ export const expeditionsRouter = createTRPCRouter({
         .sort({ createdAt: -1 })
         .toArray()) as unknown as IExpeditionDB[];
 
-      const populatedExpeditions = await Promise.all(
-        expeditions.map((exp) => populateExpedition(exp))
-      );
-
-      return populatedExpeditions;
+      return populateExpeditions(expeditions);
     }),
 
   // Get active expeditions for a user
@@ -148,11 +162,7 @@ export const expeditionsRouter = createTRPCRouter({
         .sort({ createdAt: -1 })
         .toArray()) as unknown as IExpeditionDB[];
 
-      const populatedExpeditions = await Promise.all(
-        expeditions.map((exp) => populateExpedition(exp))
-      );
-
-      return populatedExpeditions;
+      return populateExpeditions(expeditions);
     }),
 
   // Get a single expedition by id
