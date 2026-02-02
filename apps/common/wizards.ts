@@ -62,7 +62,7 @@ export const allWizards: Wizard[] = [
     name: 'Wizard',
     defaultHealth: 100,
     publicFields: ['map', 'health'],
-    imageURL: '/wizards/base-wizard.svg',
+    imageURL: '/wizards/mage-hero.png',
     defaultState: mageDefaultState,
   },
   {
@@ -70,7 +70,7 @@ export const allWizards: Wizard[] = [
     name: 'Archer',
     defaultHealth: 100,
     publicFields: ['map', 'health'],
-    imageURL: '/wizards/archer.svg',
+    imageURL: '/wizards/archer-hero.png',
     defaultState: archerDefaultState,
   },
   {
@@ -78,7 +78,7 @@ export const allWizards: Wizard[] = [
     name: 'Phantom Duelist',
     defaultHealth: 100,
     publicFields: ['map', 'health'],
-    imageURL: '/wizards/phantom_duelist.png',
+    imageURL: '/wizards/duelist-hero.png',
     defaultState: phantomDuelistDefaultState,
   },
   // {
