@@ -69,10 +69,12 @@ export default function CharacterSelect({
                 <div className="relative z-10 size-full">
                   <Image
                     className={cn(
-                      'size-full border-4 border-black',
+                      'size-full border-4',
                       selectedSkills.some(
                         (s) => s.spellId.toString() === spell.id.toString()
-                      ) && 'scale-110',
+                      )
+                        ? 'scale-110 border-red-600'
+                        : 'border-black',
                       !selectedSkills.some(
                         (s) => s.spellId.toString() === spell.id.toString()
                       ) &&
