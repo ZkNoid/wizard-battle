@@ -136,6 +136,7 @@ export default function CharacterSelect({
             onClick={() => {
               setPlayStep(PlaySteps.SELECT_MAP);
             }}
+            isLong={true}
           >
             Apply
           </Button>
