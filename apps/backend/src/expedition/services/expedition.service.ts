@@ -9,7 +9,6 @@ import { Model } from 'mongoose';
 import { Expedition, ExpeditionDocument } from '../schemas/expedition.schema';
 import { ExpeditionDto } from '../dto/expedition.dto';
 import { UserInventoryService } from '../../user-inventory/services/user-inventory.service';
-import { AcquiredFrom } from '../../user-inventory/dto/add-item-to-inventory.dto';
 
 // Location-based loot tables
 const LOCATION_LOOT_TABLES: Record<
@@ -176,7 +175,7 @@ export class ExpeditionService {
         userId: dto.userId,
         itemId: reward.itemId,
         quantity: reward.amount,
-        acquiredFrom: AcquiredFrom.REWARD,
+        acquiredFrom: 'reward',
       });
       addedItems.push({ itemId: reward.itemId, amount: reward.amount });
     }
