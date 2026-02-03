@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { motion } from 'motion/react';
+import { useState, useEffect } from 'react';
 
 export function FullscreenLoader({
   text = 'Loading',
@@ -12,8 +13,23 @@ export function FullscreenLoader({
   showWizard?: boolean;
   showTitle?: boolean;
 }) {
+  const [imagesLoaded, setImagesLoaded] = useState({
+    background: false,
+    wizard: false,
+    title: false,
+  });
+
+  // Подсчитываем, сколько изображений нужно загрузить
+  const totalImages = 1 + (showWizard ? 1 : 0) + (showTitle ? 1 : 0);
+  const loadedImages =
+    (imagesLoaded.background ? 1 : 0) +
+    (showWizard && imagesLoaded.wizard ? 1 : 0) +
+    (showTitle && imagesLoaded.title ? 1 : 0);
+
+  const allImagesLoaded = loadedImages === totalImages;
+
   return (
-    <div className="absolute inset-0 z-[9999] h-screen w-full overflow-hidden">
+    <div className="absolute inset-0 z-[9999] h-screen w-full overflow-hidden bg-black">
       {showTitle && (
         <Image
           src="/loading/title.png"
@@ -22,7 +38,10 @@ export function FullscreenLoader({
           quality={100}
           width={3840}
           height={2160}
-          className="z-2 pixel-art absolute inset-0 size-full object-fill object-center"
+          className={`z-2 pixel-art absolute inset-0 size-full object-fill object-center transition-opacity duration-300 ${
+            allImagesLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={() => setImagesLoaded((prev) => ({ ...prev, title: true }))}
         />
       )}
       {showWizard && (
@@ -33,7 +52,10 @@ export function FullscreenLoader({
           quality={100}
           width={3840}
           height={2160}
-          className="z-1 pixel-art absolute inset-0 size-full object-fill object-center"
+          className={`z-1 pixel-art absolute inset-0 size-full object-fill object-center transition-opacity duration-300 ${
+            allImagesLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={() => setImagesLoaded((prev) => ({ ...prev, wizard: true }))}
         />
       )}
       <Image
@@ -43,7 +65,12 @@ export function FullscreenLoader({
         quality={100}
         width={3840}
         height={2160}
-        className="-z-1 pixel-art absolute inset-0 size-full object-fill object-center"
+        className={`-z-1 pixel-art absolute inset-0 size-full object-fill object-center transition-opacity duration-300 ${
+          allImagesLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
+        onLoad={() =>
+          setImagesLoaded((prev) => ({ ...prev, background: true }))
+        }
       />
       <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center justify-center gap-1">
         <span className="font-pixel text-4xl font-bold text-[#ACB0BC]">
