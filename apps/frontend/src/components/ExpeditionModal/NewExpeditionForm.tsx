@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
 import ChooseLocation from './ChooseLocation';
 import ChooseCharacter from './ChooseCharacter';
@@ -8,33 +7,54 @@ import RewardsSection from './RewardsSection';
 import { Button } from '../shared/Button';
 import ExpeditionModalTitle from './components/ExpeditionModalTitle';
 import type { Field } from 'o1js';
-import type { ExpeditionTimePeriod } from '@/lib/types/Expedition';
+import type { ExpeditionTimePeriod } from '@wizard-battle/common';
+import { useExpeditionStore } from '@/lib/store/expeditionStore';
+import { allWizards } from '../../../../common/wizards';
+import { useMinaAppkit } from 'mina-appkit';
 
 export default function NewExpeditionForm({
   onClose,
 }: {
   onClose: () => void;
 }) {
-  const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
+  const { address } = useMinaAppkit();
+  const { createExpedition, isCreating } = useExpeditionStore();
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [selectedCharacter, setSelectedCharacter] = useState<Field | string | null>(null);
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<ExpeditionTimePeriod | null>(null);
 
-  const handleSelectLocation = (location: number | null) => {
+  const handleSelectLocation = (location: string | null) => {
     setSelectedLocation(location);
-    console.log(location);
   };
 
   const handleSelectCharacter = (character: Field | string | null) => {
     setSelectedCharacter(character);
-    console.log(character);
   };
 
   const handleSelectTimePeriod = (timePeriod: ExpeditionTimePeriod | null) => {
     setSelectedTimePeriod(timePeriod);
-    console.log(timePeriod);
   };
 
-  const disabled = !selectedLocation || !selectedCharacter || !selectedTimePeriod;
+  const handleStartExpedition = async () => {
+    if (!selectedLocation || !selectedCharacter || !selectedTimePeriod || !address) return;
+
+    const wizard = allWizards.find((w) => w.id.toString() === selectedCharacter.toString());
+    if (!wizard) return;
+
+    console.log("Creating expedition with character:", wizard.name, "and location:", selectedLocation);
+
+    await createExpedition(address, {
+      characterId: selectedCharacter.toString(),
+      characterRole: wizard.name,
+      characterImage: wizard.imageURL || '',
+      locationId: selectedLocation,
+      timePeriod: selectedTimePeriod,
+    });
+
+    onClose();
+  };
+
+  const disabled = !selectedLocation || !selectedCharacter || !selectedTimePeriod || isCreating || !address;
 
   return (
     <div className="flex h-full flex-col">
@@ -51,13 +71,13 @@ export default function NewExpeditionForm({
       <div className="mb-1 pt-2">
         <Button
           variant={disabled ? 'gray' : 'blue'}  
-          onClick={() => {}}
+          onClick={handleStartExpedition}
           className="w-full flex h-15 flex-row items-center justify-center gap-2.5"
           isLong
           disabled={disabled}
         >
           <span className="font-pixel text-main-gray whitespace-nowrap text-lg font-bold">
-            Start Expedition
+            {isCreating ? 'Starting...' : 'Start Expedition'}
           </span>
         </Button>
       </div>

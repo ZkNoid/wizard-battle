@@ -31,6 +31,7 @@
     "start:instances": "./start-instances-only.sh"
   },
   "dependencies": {
+    "@wizard-battle/common": "workspace:*",
     "@golevelup/ts-jest": "^0.7.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",

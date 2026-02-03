@@ -1,16 +1,18 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '../shared/Tooltip';
 import type { ReactNode } from 'react';
-import type { IInventoryItem } from '@/lib/types/Inventory';
+import type { IUserInventoryItem } from '@/lib/types/Inventory';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 export function InventoryTooltip({
-  item,
+  userItem,
   children,
 }: {
-  item: IInventoryItem;
+  userItem: IUserInventoryItem;
   children: ReactNode;
 }) {
+  const item = userItem.item;
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
@@ -49,7 +51,7 @@ export function InventoryTooltip({
         <div className="my-2 h-px w-full bg-black" />
         <div className="flex w-full flex-row items-center justify-between">
           <span className="font-pixel text-main-gray text-sm">
-            Quantity {item.amount}
+            Quantity {userItem.quantity}
           </span>
           <div className="flex flex-row items-center gap-1">
             <span className="font-pixel text-main-gray text-base font-bold">
