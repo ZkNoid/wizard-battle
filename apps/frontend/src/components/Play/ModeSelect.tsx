@@ -31,6 +31,7 @@ export function ModeSelect({
               setPlayStep(PlaySteps.SELECT_CHARACTER);
               setPlayMode(PlayMode.PVP);
             }}
+            isLong={true}
           >
             Start
           </Button>
@@ -53,6 +54,7 @@ export function ModeSelect({
               setPlayStep(PlaySteps.SELECT_CHARACTER);
               setPlayMode(PlayMode.PVE);
             }}
+            isLong={true}
           >
             Start
           </Button>
