@@ -780,7 +780,7 @@ export const ActionsBg = ({
               <path d="M33 67H31V68H33V67Z" fill="#BE8E18" />
             </g>
           </TooltipTrigger>
-          <TooltipContent className="flex flex-col gap-2 p-3">
+          <TooltipContent className="max-w-100 flex flex-col gap-2 p-3">
             <div className="flex items-center gap-2">
               <Image
                 src={tooltipItems.topLeft.iconUrl}
@@ -1004,7 +1004,7 @@ export const ActionsBg = ({
               <path d="M54 46H52V47H54V46Z" fill="#003400" />
             </g>
           </TooltipTrigger>
-          <TooltipContent className="flex flex-col gap-2 p-3">
+          <TooltipContent className="max-w-100 flex flex-col gap-2 p-3">
             <div className="flex items-center gap-2">
               <Image
                 src={tooltipItems.topRight.iconUrl}
@@ -1215,7 +1215,7 @@ export const ActionsBg = ({
               <path d="M74 67H72V68H74V67Z" fill="#2F3A56" />
             </g>
           </TooltipTrigger>
-          <TooltipContent className="flex flex-col gap-2 p-3">
+          <TooltipContent className="max-w-100 flex flex-col gap-2 p-3">
             <div className="flex items-center gap-2">
               <Image
                 src={tooltipItems.bottomRight.iconUrl}
@@ -1426,7 +1426,7 @@ export const ActionsBg = ({
               <path d="M54 87H52V88H54V87Z" fill="#2F3A56" />
             </g>
           </TooltipTrigger>
-          <TooltipContent className="flex flex-col gap-2 p-3">
+          <TooltipContent className="max-w-100 flex flex-col gap-2 p-3">
             <div className="flex items-center gap-2">
               <Image
                 src={tooltipItems.bottomLeft.iconUrl}
