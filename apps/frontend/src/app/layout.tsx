@@ -2,7 +2,12 @@ import '@/styles/globals.css';
 
 import { type Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/next';
-import { dePixel } from '@/lib/fonts/dePixel';
+import {
+  dePixel,
+  dePixelBreit,
+  dePixelKlein,
+  dePixelSchmal,
+} from '@/lib/fonts/dePixel';
 import { headers } from 'next/headers';
 import ReownContext from './context/ReownContext';
 
@@ -21,7 +26,10 @@ export default async function RootLayout({
   const headersObj = await headers();
   const cookies = headersObj.get('cookie');
   return (
-    <html lang="en" className={`${dePixel.variable}`}>
+    <html
+      lang="en"
+      className={`${dePixel.variable} ${dePixelBreit.variable} ${dePixelKlein.variable} ${dePixelSchmal.variable}`}
+    >
       <body>
         <ReownContext cookies={cookies}>
           <ClientInitializer />
