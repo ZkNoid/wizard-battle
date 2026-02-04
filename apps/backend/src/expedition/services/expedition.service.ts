@@ -2,233 +2,280 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Expedition, ExpeditionDocument } from '../schemas/expedition.schema';
-import { ExpeditionDto } from '../dto/expedition.dto';
+import { Location, LocationDocument } from '../schemas/location.schema';
+import { CreateExpeditionDto } from '../dto/create-expedition.dto';
+import { UpdateExpeditionDto } from '../dto/update-expedition.dto';
 import { UserInventoryService } from '../../user-inventory/services/user-inventory.service';
-
-// Location-based loot tables
-const LOCATION_LOOT_TABLES: Record<
-  number,
-  Array<{ itemId: string; weight: number }>
-> = {
-  1: [
-    // Serpentwater Basin
-    { itemId: '1', weight: 30 }, // Common water items
-    { itemId: '2', weight: 25 },
-    { itemId: '3', weight: 20 },
-    { itemId: '4', weight: 15 },
-    { itemId: '5', weight: 10 },
-  ],
-  2: [
-    // Mount Avalon
-    { itemId: '6', weight: 30 },
-    { itemId: '7', weight: 25 },
-    { itemId: '8', weight: 20 },
-    { itemId: '9', weight: 15 },
-    { itemId: '10', weight: 10 },
-  ],
-  3: [
-    // Whisperwood Grove
-    { itemId: '11', weight: 30 },
-    { itemId: '12', weight: 25 },
-    { itemId: '13', weight: 20 },
-    { itemId: '14', weight: 15 },
-    { itemId: '15', weight: 10 },
-  ],
-  4: [
-    // Blackfin Hollow
-    { itemId: '16', weight: 30 },
-    { itemId: '17', weight: 25 },
-    { itemId: '18', weight: 20 },
-    { itemId: '19', weight: 15 },
-    { itemId: '20', weight: 10 },
-  ],
-};
+import type {
+  ExpeditionTimePeriod,
+  IExpeditionRewardDB,
+} from '@wizard-battle/common';
 
 @Injectable()
 export class ExpeditionService {
   constructor(
     @InjectModel(Expedition.name)
     private readonly expeditionModel: Model<ExpeditionDocument>,
-    private readonly inventoryService: UserInventoryService
+    @InjectModel(Location.name)
+    private readonly locationModel: Model<LocationDocument>,
+    private readonly userInventoryService: UserInventoryService
   ) {}
 
   /**
-   * Generate random loot based on location
+   * Convert time period (hours) to milliseconds
    */
-  private generateLoot(
-    locationId: number
-  ): Array<{ itemId: string; amount: number }> {
-    const lootTable = LOCATION_LOOT_TABLES[locationId];
-    if (!lootTable) {
-      throw new BadRequestException(`Invalid location ID: ${locationId}`);
-    }
-
-    const rewards: Array<{ itemId: string; amount: number }> = [];
-    const numRewards = Math.floor(Math.random() * 3) + 3; // 3-5 items
-
-    for (let i = 0; i < numRewards; i++) {
-      const totalWeight = lootTable.reduce((sum, item) => sum + item.weight, 0);
-      let random = Math.random() * totalWeight;
-
-      for (const item of lootTable) {
-        random -= item.weight;
-        if (random <= 0) {
-          const amount = Math.floor(Math.random() * 10) + 1; // 1-10 items
-          rewards.push({ itemId: item.itemId, amount });
-          break;
-        }
-      }
-    }
-
-    return rewards;
+  private timePeriodToMs(timePeriod: ExpeditionTimePeriod): number {
+    return timePeriod * 60 * 60 * 1000;
   }
 
   /**
-   * Launch a new expedition
-   * POST /expedition/launch
+   * Generate a unique expedition ID
    */
-  async launchExpedition(dto: ExpeditionDto): Promise<Expedition> {
-    // Check if user already has an active expedition with this character
-    const activeExpedition = await this.expeditionModel.findOne({
-      userId: dto.userId,
-      characterId: dto.characterId,
-      status: 'active',
-    });
+  private generateExpeditionId(): string {
+    return `exp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
 
-    if (activeExpedition) {
-      throw new ConflictException(
-        `Character ${dto.characterId} is already on an expedition`
+  /**
+   * Generate random rewards from location's possible rewards
+   */
+  private generateRewards(
+    possibleRewards: IExpeditionRewardDB[],
+    minRewards: number,
+    maxRewards: number
+  ): IExpeditionRewardDB[] {
+    const numRewards =
+      Math.floor(Math.random() * (maxRewards - minRewards + 1)) + minRewards;
+    const shuffled = [...possibleRewards].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, numRewards).map((r) => ({
+      itemId: r.itemId,
+      amount: Math.floor(Math.random() * 10) + 1, // Random amount 1-10
+    }));
+  }
+
+  /**
+   * Create a new expedition
+   */
+  async createExpedition(dto: CreateExpeditionDto): Promise<Expedition> {
+    // Get location data
+    const location = await this.locationModel.findOne({ id: dto.locationId });
+    if (!location) {
+      throw new NotFoundException(
+        `Location with id "${dto.locationId}" not found`
       );
     }
 
-    // Generate random location (1-4)
-    const locationId = Math.floor(Math.random() * 4) + 1;
+    const timeToComplete = this.timePeriodToMs(dto.timePeriod);
+    const now = new Date();
 
-    // Generate loot for this expedition
-    const rewards = this.generateLoot(locationId);
-
-    // Static time to complete: 1 hour (in milliseconds)
-    const timeToComplete = 3600000;
-
-    // Create new expedition
-    const expedition = new this.expeditionModel({
+    const newExpedition = new this.expeditionModel({
+      id: this.generateExpeditionId(),
       userId: dto.userId,
       characterId: dto.characterId,
-      locationId,
+      characterRole: dto.characterRole,
+      characterImage: dto.characterImage,
+      locationId: dto.locationId,
+      locationName: location.name,
+      rewards: this.generateRewards(
+        location.possibleRewards,
+        location.minRewards,
+        location.maxRewards
+      ),
       status: 'active',
-      rewards,
-      startedAt: new Date(),
+      startedAt: now,
+      completesAt: new Date(now.getTime() + timeToComplete),
       timeToComplete,
     });
 
-    return expedition.save();
+    return newExpedition.save();
   }
 
   /**
-   * Complete an expedition and add loot to user inventory
-   * POST /expedition/complete
+   * Get all expeditions for a user
    */
-  async completeExpedition(dto: ExpeditionDto): Promise<{
-    expedition: Expedition;
-    addedItems: Array<{ itemId: string; amount: number }>;
-  }> {
-    // Find the expedition
-    const expedition = await this.expeditionModel.findOne({
-      _id: dto.expeditionId,
-      userId: dto.userId,
-    });
-
-    if (!expedition) {
-      throw new NotFoundException(
-        `Expedition ${dto.expeditionId} not found for user ${dto.userId}`
-      );
-    }
-
-    if (expedition.status !== 'active') {
-      throw new BadRequestException(
-        `Expedition ${dto.expeditionId} is not active`
-      );
-    }
-
-    // Check if expedition time has elapsed
-    const now = new Date();
-    const expeditionEndTime = new Date(
-      expedition.startedAt.getTime() + expedition.timeToComplete
-    );
-
-    if (now < expeditionEndTime) {
-      const remainingTime = expeditionEndTime.getTime() - now.getTime();
-      throw new BadRequestException(
-        `Expedition is not complete yet. Remaining time: ${Math.ceil(remainingTime / 1000)} seconds`
-      );
-    }
-
-    // Add rewards to user inventory
-    const addedItems: Array<{ itemId: string; amount: number }> = [];
-    for (const reward of expedition.rewards) {
-      await this.inventoryService.addItem({
-        userId: dto.userId,
-        itemId: reward.itemId,
-        quantity: reward.amount,
-        acquiredFrom: 'reward',
-      });
-      addedItems.push({ itemId: reward.itemId, amount: reward.amount });
-    }
-
-    // Update expedition status
-    expedition.status = 'completed';
-    expedition.completedAt = now;
-    await expedition.save();
-
-    return {
-      expedition,
-      addedItems,
-    };
-  }
-
-  /**
-   * Get user's active expeditions
-   */
-  async getUserActiveExpeditions(userId: string): Promise<Expedition[]> {
-    return this.expeditionModel.find({ userId, status: 'active' }).exec();
-  }
-
-  /**
-   * Get user's expedition history
-   */
-  async getUserExpeditionHistory(userId: string): Promise<Expedition[]> {
+  async getUserExpeditions(userId: string): Promise<Expedition[]> {
     return this.expeditionModel.find({ userId }).sort({ createdAt: -1 }).exec();
   }
 
   /**
-   * Cancel an active expedition (optional)
+   * Get active expeditions for a user
    */
-  async cancelExpedition(
+  async getActiveExpeditions(userId: string): Promise<Expedition[]> {
+    return this.expeditionModel
+      .find({ userId, status: 'active' })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  /**
+   * Get a single expedition by id
+   */
+  async getExpeditionById(id: string): Promise<Expedition> {
+    const expedition = await this.expeditionModel.findOne({ id }).exec();
+    if (!expedition) {
+      throw new NotFoundException(`Expedition with id "${id}" not found`);
+    }
+    return expedition;
+  }
+
+  /**
+   * Get a single expedition by id for a specific user
+   */
+  async getUserExpedition(
     userId: string,
     expeditionId: string
   ): Promise<Expedition> {
-    const expedition = await this.expeditionModel.findOne({
-      _id: expeditionId,
-      userId,
-      status: 'active',
-    });
+    const expedition = await this.expeditionModel
+      .findOne({ id: expeditionId, userId })
+      .exec();
+    if (!expedition) {
+      throw new NotFoundException(
+        `Expedition with id "${expeditionId}" not found`
+      );
+    }
+    return expedition;
+  }
+
+  /**
+   * Update an expedition's status
+   */
+  async updateExpedition(
+    userId: string,
+    expeditionId: string,
+    updateDto: UpdateExpeditionDto
+  ): Promise<Expedition> {
+    const expedition = await this.expeditionModel
+      .findOneAndUpdate(
+        { id: expeditionId, userId },
+        { ...updateDto, updatedAt: new Date() },
+        { new: true }
+      )
+      .exec();
 
     if (!expedition) {
       throw new NotFoundException(
-        `Active expedition ${expeditionId} not found`
+        `Expedition with id "${expeditionId}" not found`
       );
     }
 
-    expedition.status = 'completed';
-    expedition.completedAt = new Date();
-    // Clear rewards since it was cancelled
-    expedition.rewards = [];
+    return expedition;
+  }
 
-    return expedition.save();
+  /**
+   * Complete an expedition and add rewards to user inventory
+   */
+  async completeExpedition(
+    userId: string,
+    expeditionId: string
+  ): Promise<Expedition> {
+    const expedition = await this.getUserExpedition(userId, expeditionId);
+
+    if (expedition.status === 'completed') {
+      throw new BadRequestException('Expedition already completed');
+    }
+
+    // Add rewards to user inventory
+    for (const reward of expedition.rewards) {
+      await this.userInventoryService.addItem({
+        userId,
+        itemId: reward.itemId,
+        quantity: reward.amount,
+        acquiredFrom: 'reward',
+      });
+    }
+
+    // Update expedition status
+    return this.updateExpedition(userId, expeditionId, { status: 'completed' });
+  }
+
+  /**
+   * Interrupt an expedition and add partial rewards
+   */
+  async interruptExpedition(
+    userId: string,
+    expeditionId: string
+  ): Promise<Expedition> {
+    const expedition = await this.getUserExpedition(userId, expeditionId);
+
+    if (expedition.status !== 'active') {
+      throw new BadRequestException('Can only interrupt active expeditions');
+    }
+
+    // Calculate progress
+    const now = new Date();
+    const startedAt = expedition.startedAt ?? expedition.createdAt;
+    const elapsed = now.getTime() - new Date(startedAt).getTime();
+    const progress = Math.min(elapsed / expedition.timeToComplete, 1);
+
+    // Calculate partial rewards (50% of what would have been earned based on progress)
+    const partialRewards = expedition.rewards.map((r) => ({
+      itemId: r.itemId,
+      amount: Math.max(1, Math.floor(r.amount * progress * 0.5)),
+    }));
+
+    // Add partial rewards to user inventory
+    for (const reward of partialRewards) {
+      await this.userInventoryService.addItem({
+        userId,
+        itemId: reward.itemId,
+        quantity: reward.amount,
+        acquiredFrom: 'reward',
+      });
+    }
+
+    // Update expedition with partial rewards and completed status
+    const updated = await this.expeditionModel
+      .findOneAndUpdate(
+        { id: expeditionId, userId },
+        {
+          status: 'completed',
+          rewards: partialRewards,
+          updatedAt: now,
+        },
+        { new: true }
+      )
+      .exec();
+
+    if (!updated) {
+      throw new NotFoundException(
+        `Expedition with id "${expeditionId}" not found`
+      );
+    }
+
+    return updated;
+  }
+
+  /**
+   * Delete an expedition
+   */
+  async deleteExpedition(userId: string, expeditionId: string): Promise<void> {
+    const result = await this.expeditionModel
+      .deleteOne({ id: expeditionId, userId })
+      .exec();
+
+    if (result.deletedCount === 0) {
+      throw new NotFoundException(
+        `Expedition with id "${expeditionId}" not found`
+      );
+    }
+  }
+
+  /**
+   * Get expedition count for a user
+   */
+  async getExpeditionCount(userId: string): Promise<number> {
+    return this.expeditionModel.countDocuments({ userId }).exec();
+  }
+
+  /**
+   * Get active expedition count for a user
+   */
+  async getActiveExpeditionCount(userId: string): Promise<number> {
+    return this.expeditionModel
+      .countDocuments({ userId, status: 'active' })
+      .exec();
   }
 }
