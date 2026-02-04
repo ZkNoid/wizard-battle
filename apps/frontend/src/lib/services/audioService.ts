@@ -6,11 +6,11 @@ import type { MusicTrack, SoundEffect } from '../constants/audioAssets';
  * Handles background music and sound effects
  */
 class AudioService {
-  private musicTracks: Map<string, Howl> = new Map();
-  private soundEffects: Map<string, Howl> = new Map();
+  private musicTracks = new Map<string, Howl>();
+  private soundEffects = new Map<string, Howl>();
   private currentMusic: Howl | null = null;
   private currentMusicKey: string | null = null;
-  private isMusicMuted: boolean = false;
+  private isMusicMuted = false;
 
   /**
    * Initialize or get a music track
@@ -56,7 +56,7 @@ class AudioService {
   /**
    * Play background music with optional fade
    */
-  playMusic(src: MusicTrack, fadeDuration: number = 500): void {
+  playMusic(src: MusicTrack, fadeDuration = 500): void {
     const newMusic = this.getOrCreateMusic(src);
 
     // If the same music is already playing, do nothing
@@ -84,7 +84,7 @@ class AudioService {
   /**
    * Stop current background music
    */
-  stopMusic(fadeDuration: number = 500): void {
+  stopMusic(fadeDuration = 500): void {
     if (this.currentMusic && this.currentMusic.playing()) {
       this.currentMusic.fade(this.currentMusic.volume(), 0, fadeDuration);
       this.currentMusic.once('fade', () => {

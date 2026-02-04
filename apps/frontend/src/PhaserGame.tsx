@@ -22,7 +22,7 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
     { currentActiveScene, container, isEnemy, tilemapData, onMapClick },
     ref
   ) {
-    const game = useRef<Phaser.Game | null>(null!);
+    const game = useRef<Phaser.Game | null>(null);
     const previousTilemapData = useRef<number[] | undefined>(undefined);
 
     useLayoutEffect(() => {
@@ -46,7 +46,7 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
           }
         }
       };
-    }, [ref, container, isEnemy]); // Removed tilemapData from dependencies
+    }, [ref, container, isEnemy, onMapClick, tilemapData]);
 
     // Handle tilemap data updates separately
     useEffect(() => {
@@ -55,9 +55,9 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
         tilemapData &&
         previousTilemapData.current !== tilemapData
       ) {
-        const scene = game.current.scene.getScene('Game') as any;
-        if (scene && scene.loadTilemap) {
-          scene.loadTilemap(tilemapData);
+        const scene = game.current.scene.getScene('Game');
+        if (scene && 'loadTilemap' in scene) {
+          (scene as { loadTilemap: (data: number[]) => void }).loadTilemap(tilemapData);
         }
         previousTilemapData.current = tilemapData;
       }
@@ -65,8 +65,8 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(
 
     // Handle onMapClick updates
     useEffect(() => {
-      if (game.current) {
-        (game.current as any).onMapClick = onMapClick;
+      if (game.current && 'onMapClick' in game.current) {
+        (game.current as { onMapClick?: (x: number, y: number) => void }).onMapClick = onMapClick;
       }
     }, [onMapClick]);
 
