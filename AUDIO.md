@@ -1,29 +1,29 @@
 # 🎵 Audio System
 
-Аудио-система на базе Howler.js и Zustand для управления музыкой и звуковыми эффектами.
+Audio system based on Howler.js and Zustand for managing music and sound effects.
 
-## 📁 Структура файлов
+## 📁 File Structure
 
 ```
 public/audio/
 ├── music/
-│   ├── background/fantasy-village-woods.mp3   # Главное меню
-│   └── battle/death-taker.mp3                 # Битва
+│   ├── background/fantasy-village-woods.mp3   # Main menu
+│   └── battle/death-taker.mp3                 # Battle
 └── sfx/
-    ├── ui/                                    # UI звуки
+    ├── ui/                                    # UI sounds
     │   ├── hover.mp3
     │   ├── click.mp3
     │   ├── modal-open.mp3
     │   └── modal-close.mp3
-    ├── mage/                                  # Звуки мага
+    ├── mage/                                  # Mage sounds
     │   ├── cast.mp3
     │   └── impact.mp3
-    └── archer/                                # Звуки лучника
+    └── archer/                                # Archer sounds
         ├── arrow-shot.mp3
         └── arrow-impact.mp3
 ```
 
-## 📦 Конфигурация (audioAssets.ts)
+## 📦 Configuration (audioAssets.ts)
 
 ```typescript
 AUDIO_ASSETS = {
@@ -36,15 +36,15 @@ AUDIO_ASSETS = {
     heroes: {
       mage: { cast, impact },
       archer: { shot, impact },
-      phantomDuelist: {}, // Для будущего расширения
+      phantomDuelist: {}, // For future expansion
     },
   },
 };
 ```
 
-## 🎮 Хуки
+## 🎮 Hooks
 
-### 1. Фоновая музыка
+### 1. Background Music
 
 ```typescript
 import { useBackgroundMusic } from '@/lib/hooks/useAudio';
@@ -53,21 +53,21 @@ function HomePage() {
   const { playMainTheme, playBattleMusic, stopMusic } = useBackgroundMusic();
 
   useEffect(() => {
-    playMainTheme(); // Запустить фоновую музыку
+    playMainTheme(); // Start background music
     return () => stopMusic(0);
   }, []);
 }
 ```
 
-**Доступные методы:**
+**Available methods:**
 
-- `playMainTheme()` - главное меню / лобби
-- `playBattleMusic()` - музыка битвы
-- `stopMusic(fadeDuration?)` - остановить с fade-out
+- `playMainTheme()` - main menu / lobby
+- `playBattleMusic()` - battle music
+- `stopMusic(fadeDuration?)` - stop with fade-out
 
 ---
 
-### 2. Управление громкостью
+### 2. Volume Control
 
 ```typescript
 import { useAudioControls } from '@/lib/hooks/useAudio';
@@ -84,13 +84,13 @@ function AudioSettings() {
 
   return (
     <>
-      {/* Громкость */}
+      {/* Volume */}
       <input value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
 
-      {/* Все звуки */}
+      {/* All sounds */}
       <button onClick={toggleMute}>{isMuted ? 'Unmute All' : 'Mute All'}</button>
 
-      {/* Только музыка */}
+      {/* Music only */}
       <button onClick={toggleMusicMute}>
         {isMusicMuted ? 'Unmute Music' : 'Mute Music'}
       </button>
@@ -99,22 +99,22 @@ function AudioSettings() {
 }
 ```
 
-**Доступные методы:**
+**Available methods:**
 
-- `volume` - текущая громкость (0-100)
-- `isMuted` - все звуки выключены
-- `isMusicMuted` - только музыка выключена (SFX играют)
-- `setVolume(volume)` - установить громкость
-- `toggleMute()` - переключить все звуки
-- `toggleMusicMute()` - переключить только музыку
-- `setMuted(muted)` - установить mute всех звуков
-- `setMusicMuted(muted)` - установить mute только музыки
+- `volume` - current volume (0-100)
+- `isMuted` - all sounds are muted
+- `isMusicMuted` - only music is muted (SFX still play)
+- `setVolume(volume)` - set volume
+- `toggleMute()` - toggle all sounds
+- `toggleMusicMute()` - toggle music only
+- `setMuted(muted)` - set mute for all sounds
+- `setMusicMuted(muted)` - set mute for music only
 
 ---
 
-### 3. UI звуки
+### 3. UI Sounds
 
-#### Hover (наведение)
+#### Hover
 
 ```typescript
 import { useHoverSound } from '@/lib/hooks/useAudio';
@@ -126,14 +126,14 @@ function MyButton() {
 }
 ```
 
-Или через пропс:
+Or via props:
 
 ```typescript
 <Button enableHoverSound>Hover me</Button>
 <BoxButton enableHoverSound>Or me</BoxButton>
 ```
 
-#### Click (клик)
+#### Click
 
 ```typescript
 import { useClickSound } from '@/lib/hooks/useAudio';
@@ -145,20 +145,20 @@ function MyButton() {
 }
 ```
 
-Или через пропс:
+Or via props:
 
 ```typescript
 <Button enableClickSound>Click me</Button>
 <BoxButton enableClickSound>Or me</BoxButton>
 ```
 
-#### Modal (открытие/закрытие)
+#### Modal (open/close)
 
 ```typescript
 import { useModalSound } from '@/lib/hooks/useAudio';
 
 function MyModal() {
-  useModalSound();  // Автоматически играет звуки при mount/unmount
+  useModalSound();  // Automatically plays sounds on mount/unmount
 
   return <div>Modal content</div>;
 }
@@ -166,25 +166,25 @@ function MyModal() {
 
 ---
 
-### 4. Звуки заклинаний (автоматические)
+### 4. Spell Sounds (automatic)
 
 ```typescript
 import { useSpellSounds } from '@/lib/hooks/useAudio';
 
 function GamePage() {
-  useSpellSounds();  // Автоматически играет звуки заклинаний через EventBus
+  useSpellSounds();  // Automatically plays spell sounds via EventBus
 
   return <Game />;
 }
 ```
 
-**Как это работает:**
+**How it works:**
 
-1. Phaser emit'ит `EventBus.emit('cast-spell', x, y, spell)`
-2. `useSpellSounds` перехватывает событие
-3. Автоматически играет звук через `SPELL_SOUND_MAP`
+1. Phaser emits `EventBus.emit('cast-spell', x, y, spell)`
+2. `useSpellSounds` intercepts the event
+3. Automatically plays sound via `SPELL_SOUND_MAP`
 
-**Текущие маппинги:**
+**Current mappings:**
 
 - Mage: Lightning, FireBall, Teleport, Heal, Laser → `mage/cast.mp3`
 - Archer: Arrow, AimingShot, HailOfArrows, Decoy, Cloud → `archer/arrow-shot.mp3`
@@ -192,7 +192,7 @@ function GamePage() {
 
 ---
 
-### 5. Прямое использование
+### 5. Direct Usage
 
 ```typescript
 import { useSound } from '@/lib/hooks/useAudio';
@@ -201,38 +201,38 @@ function MyComponent() {
   const playSound = useSound();
 
   const handleAction = () => {
-    playSound('click'); // Ключ из AUDIO_ASSETS.sfx
+    playSound('click'); // Key from AUDIO_ASSETS.sfx
   };
 }
 ```
 
-Или через store:
+Or via store:
 
 ```typescript
 import { useAudioStore } from '@/lib/store/audioStore';
 
 const playSound = useAudioStore((state) => state.playSound);
-playSound('/audio/sfx/ui/click.mp3'); // Полный путь
+playSound('/audio/sfx/ui/click.mp3'); // Full path
 ```
 
 ---
 
-## ➕ Добавление новых звуков
+## ➕ Adding New Sounds
 
-### Для нового героя (например, Phantom Duelist):
+### For a new hero (e.g., Phantom Duelist):
 
-## Лучше использовать mp3, потому что wav весят существенно больше.
+## It's better to use mp3 because wav files are significantly larger.
 
-## Я использовал сервис https://cloudconvert.com/wav-to-mp3 для конвертации
+## I used the service https://cloudconvert.com/wav-to-mp3 for conversion
 
-1. **Добавить файлы:**
+1. **Add files:**
 
    ```bash
    mkdir -p apps/frontend/public/audio/sfx/phantom
-   # Добавить: cast.mp3, impact.mp3
+   # Add: cast.mp3, impact.mp3
    ```
 
-2. **Обновить `audioAssets.ts`:**
+2. **Update `audioAssets.ts`:**
 
    ```typescript
    phantomDuelist: {
@@ -241,47 +241,47 @@ playSound('/audio/sfx/ui/click.mp3'); // Полный путь
    },
    ```
 
-3. **Обновить `SPELL_SOUND_MAP` в `useAudio.ts`:**
+3. **Update `SPELL_SOUND_MAP` in `useAudio.ts`:**
    ```typescript
    'SpectralArrow': AUDIO_ASSETS.sfx.heroes.phantomDuelist.cast,
    'ShadowVeil': AUDIO_ASSETS.sfx.heroes.phantomDuelist.cast,
-   // ... и т.д.
+   // ... etc.
    ```
 
-### Для уникального звука заклинания:
+### For a unique spell sound:
 
-1. **Добавить файл:** `lightning.mp3`
-2. **Обновить `audioAssets.ts`:**
+1. **Add file:** `lightning.mp3`
+2. **Update `audioAssets.ts`:**
    ```typescript
    mage: {
      cast: '/audio/sfx/mage/cast.mp3',
      impact: '/audio/sfx/mage/impact.mp3',
-     lightning: '/audio/sfx/mage/lightning.mp3',  // ← новый
+     lightning: '/audio/sfx/mage/lightning.mp3',  // ← new
    },
    ```
-3. **Обновить маппинг:**
+3. **Update mapping:**
    ```typescript
    'Lightning': AUDIO_ASSETS.sfx.heroes.mage.lightning,
    ```
 
 ---
 
-## 🎛️ Особенности
+## 🎛️ Features
 
-- **Музыка:** Зацикленная, только один трек одновременно, плавные fade-переходы (500ms)
-- **SFX:** Параллельное воспроизведение, без зацикливания
-- **Раздельное управление:** Можно выключить музыку отдельно от звуковых эффектов
-  - `toggleMute()` - выключает всё (музыка + SFX)
-  - `toggleMusicMute()` - выключает только музыку (SFX продолжают играть)
-- **Autoplay:** Обрабатывается автоматически (пользователь должен взаимодействовать со страницей)
-- **Volume/Mute:** Единый контроль для всех звуков, без сохранения в localStorage
-- **Singleton:** `audioService` - один экземпляр на всё приложение
+- **Music:** Looped, only one track at a time, smooth fade transitions (500ms)
+- **SFX:** Parallel playback, no looping
+- **Separate control:** Music can be muted separately from sound effects
+  - `toggleMute()` - mutes everything (music + SFX)
+  - `toggleMusicMute()` - mutes only music (SFX continue playing)
+- **Autoplay:** Handled automatically (user must interact with the page)
+- **Volume/Mute:** Unified control for all sounds, no localStorage persistence
+- **Singleton:** `audioService` - one instance for the entire application
 
 ---
 
-## 📂 Исходный код
+## 📂 Source Code
 
 - `src/lib/services/audioService.ts` - Howler.js wrapper
 - `src/lib/store/audioStore.ts` - Zustand state management
 - `src/lib/hooks/useAudio.ts` - React hooks
-- `src/lib/constants/audioAssets.ts` - Пути к файлам
+- `src/lib/constants/audioAssets.ts` - File paths
