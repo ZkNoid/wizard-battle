@@ -2,6 +2,7 @@
 
 import type { IExpedition } from '@wizard-battle/common';
 import Image from 'next/image';
+import { useState } from 'react';
 import WizardImageMini from './components/WizardImageMini';
 import { allWizards } from '../../../../common/wizards';
 import WizardRole from './components/WizardRole';
@@ -14,31 +15,41 @@ import { ExpeditionCardBg } from './assets/expedition-card-bg';
 interface CurrentExpeditionCardProps {
   expedition: IExpedition;
   onInterruptExpedition: () => void;
+  onCompleteExpedition: () => void;
 }
 
 export default function CurrentExpeditionCard({
   expedition,
   onInterruptExpedition,
+  onCompleteExpedition,
 }: CurrentExpeditionCardProps) {
+  const [expedionPeriodHasEnded, setExpedionPeriodHasEnded] = useState(false);
+
   return (
     <div className="relative">
-      <div className="w-full relative z-[1] flex flex-col gap-2 p-3">
+      <div className="relative z-[1] flex w-full flex-col gap-2 p-3">
         {/* First Row - Avatar and Info Column */}
         <div className="flex gap-2">
           {/* Column 1 - Character Avatar */}
-          <div className="w-36 h-36 flex-shrink-0">
+          <div className="h-36 w-36 flex-shrink-0">
             <WizardImageMini
-              wizard={allWizards.find(
-                (w) => w.id.toString() === expedition.characterId.toString()
-              ) ?? allWizards[0]!}
+              wizard={
+                allWizards.find(
+                  (w) => w.id.toString() === expedition.characterId.toString()
+                ) ?? allWizards[0]!
+              }
             />
           </div>
 
           {/* Column 2 - Info Rows */}
-          <div className="flex flex-1 flex-col gap-1 min-w-0 justify-between mb-1">
+          <div className="mb-1 flex min-w-0 flex-1 flex-col justify-between gap-1">
             {/* Row 1 - Timer and Location */}
             <div className="flex gap-1">
-              <TimeToComplete timeToComplete={expedition.timeToComplete} />
+              <TimeToComplete
+                timeToComplete={expedition.timeToComplete}
+                startedAt={expedition.startedAt}
+                onExpeditionPeriodEnded={setExpedionPeriodHasEnded}
+              />
               <ExpeditionLocation location={expedition.locationName} />
             </div>
 
@@ -55,9 +66,25 @@ export default function CurrentExpeditionCard({
           </div>
 
           {/* Interrupt Button */}
-          <Button variant="blue" className="h-15 flex-1 min-w-0" isLong onClick={onInterruptExpedition}>
-            <span className="truncate">Interrupt Expedition</span>
-          </Button>
+          {expedionPeriodHasEnded ? (
+            <Button
+              variant="blue"
+              className="h-15 min-w-0 flex-1"
+              isLong
+              onClick={onCompleteExpedition}
+            >
+              <span className="truncate">Complete Expedition</span>
+            </Button>
+          ) : (
+            <Button
+              variant="blue"
+              className="h-15 min-w-0 flex-1"
+              isLong
+              onClick={onInterruptExpedition}
+            >
+              <span className="truncate">Interrupt Expedition</span>
+            </Button>
+          )}
         </div>
       </div>
 
