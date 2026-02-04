@@ -90,10 +90,11 @@ export class GamePhaseSchedulerService {
         const timeSincePhaseStart = now - gameState.phaseStartTime;
         if (timeSincePhaseStart < configuredTimeout) continue;
 
+        const timeoutMarker = `${roomId}:${gameState.turn}`;
         const isProcessed = await this.withRetry(() =>
           this.gameStateService.redisClient.sIsMember(
             this.processedTimeoutsKey,
-            roomId
+            timeoutMarker
           )
         );
         if (isProcessed) continue;
@@ -109,7 +110,7 @@ export class GamePhaseSchedulerService {
         await this.withRetry(() =>
           this.gameStateService.redisClient.sAdd(
             this.processedTimeoutsKey,
-            roomId
+            timeoutMarker
           )
         );
 
@@ -364,12 +365,15 @@ export class GamePhaseSchedulerService {
     const roomIds: string[] = [];
     let cursor = '0';
     do {
-      const reply = await this.gameStateService.redisClient.scan(cursor, {
-        MATCH: 'game_states:*',
-        COUNT: 1000,
-      });
+      const reply = await this.gameStateService.redisClient.hScan(
+        'game_states',
+        cursor,
+        { COUNT: 1000 }
+      );
       cursor = reply.cursor;
-      roomIds.push(...reply.keys.map((key) => key.replace('game_states:', '')));
+      for (const entry of reply.entries) {
+        roomIds.push(entry.field as string);
+      }
     } while (cursor !== '0');
     return roomIds;
   }

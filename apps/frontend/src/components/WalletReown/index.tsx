@@ -59,7 +59,7 @@ export default function WalletReown({ className }: WalletReownProps = {}) {
         variant="blue"
         text={displayText}
         onClick={handleButtonClick}
-        className="w-70 h-15 text-base font-bold"
+        className="w-50 h-15 text-base font-bold"
       />
     </motion.div>
   );

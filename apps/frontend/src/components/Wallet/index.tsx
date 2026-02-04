@@ -160,14 +160,14 @@ export default function Wallet({ className }: WalletProps = {}) {
           variant="blue"
           text={`${displayName}`}
           onClick={disconnect}
-          className="w-70 h-15 text-base font-bold"
+          className="w-50 h-15 text-base font-bold"
         />
       ) : (
         <Button
           variant="blue"
           text="Connect Wallet"
           onClick={triggerWallet}
-          className="w-70 h-15 text-base font-bold"
+          className="w-50 h-15 text-base font-bold"
         />
       )}
     </motion.div>
