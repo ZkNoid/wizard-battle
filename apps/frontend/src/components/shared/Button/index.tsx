@@ -60,7 +60,17 @@ export function Button({
       )}
     >
       {children ? children : <span className={textColor}>{text}</span>}
-      {isLong ? <LongButtonBackground color={variant} className="absolute inset-0 -z-[1] h-full w-full" /> : <ButtonBackground color={variant} className="absolute inset-0 -z-[1] h-full w-full" />}
+      {isLong ? (
+        <LongButtonBackground
+          color={variant}
+          className="absolute inset-0 -z-[1] h-full w-full"
+        />
+      ) : (
+        <ButtonBackground
+          color={variant}
+          className="absolute inset-0 -z-[1] h-full w-full"
+        />
+      )}
     </button>
   );
 }

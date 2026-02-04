@@ -1,12 +1,12 @@
-import { MongoClient } from "mongodb";
-import { env } from "@/env";
+import { MongoClient } from 'mongodb';
+import { env } from '@/env';
 
 if (!env.MONGODB_URI) {
-  console.log("Invalid/Missing environment variable: MONGODB_URI");
+  console.log('Invalid/Missing environment variable: MONGODB_URI');
 }
 
 if (!env.MONGODB_DB) {
-  console.log("Invalid/Missing environment variable: MONGODB_DB");
+  console.log('Invalid/Missing environment variable: MONGODB_DB');
 }
 
 const uri = env.MONGODB_URI;
@@ -17,7 +17,7 @@ let clientPromise: Promise<MongoClient> | undefined;
 
 if (!env.MONGODB_URI || !env.MONGODB_DB) {
   clientPromise = undefined;
-} else if (env.NODE_ENV === "development") {
+} else if (env.NODE_ENV === 'development') {
   // In development mode, use a global variable so that the value
   // is preserved across module reloads caused by HMR (Hot Module Replacement).
   let globalWithMongo = global as typeof globalThis & {

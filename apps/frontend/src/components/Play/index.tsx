@@ -37,43 +37,43 @@ export default function Play() {
       <Header />
       <section className="flex h-full w-full flex-col items-center justify-center">
         <div className="flex flex-col gap-2.5">
-        {!noNavigation && (
-          <Navigation
-            playStep={playStep}
-            setPlayStep={setPlayStep}
-            className={cn(playStep === PlaySteps.SELECT_CHARACTER && 'pl-25')}
-          />
-        )}
-        {playStep === PlaySteps.SELECT_MODE && (
-          <ModeSelect setPlayStep={setPlayStep} setPlayMode={setPlayMode} />
-        )}
-        {playStep === PlaySteps.SELECT_CHARACTER && (
-          <CharacterSelect
-            setPlayStep={setPlayStep}
-            currentWizard={
-              allWizards.find(
-                (wizard) =>
-                  wizard.id.toString() === stater?.state.wizardId.toString()
-              )!
-            }
-            setCurrentWizard={(wizard) => setCurrentWizard(wizard.id)}
-            selectedSkills={stater?.state.spellStats ?? []}
-            setSelectedSkills={setSelectedSkills}
-          />
-        )}
-        {playStep === PlaySteps.SELECT_MAP && <MapEditor />}
-        {playStep === PlaySteps.MATCHMAKING && (
-          <Matchmaking
-            setPlayStep={setPlayStep}
-            playMode={playMode ?? PlayMode.PVP}
-          />
-        )}
-        {(playStep === PlaySteps.LOSE || playStep === PlaySteps.WIN) && (
-          <GameResult
-            type={playStep === PlaySteps.LOSE ? 'lose' : 'win'}
-            setPlayStep={setPlayStep}
-          />
-        )}
+          {!noNavigation && (
+            <Navigation
+              playStep={playStep}
+              setPlayStep={setPlayStep}
+              className={cn(playStep === PlaySteps.SELECT_CHARACTER && 'pl-25')}
+            />
+          )}
+          {playStep === PlaySteps.SELECT_MODE && (
+            <ModeSelect setPlayStep={setPlayStep} setPlayMode={setPlayMode} />
+          )}
+          {playStep === PlaySteps.SELECT_CHARACTER && (
+            <CharacterSelect
+              setPlayStep={setPlayStep}
+              currentWizard={
+                allWizards.find(
+                  (wizard) =>
+                    wizard.id.toString() === stater?.state.wizardId.toString()
+                )!
+              }
+              setCurrentWizard={(wizard) => setCurrentWizard(wizard.id)}
+              selectedSkills={stater?.state.spellStats ?? []}
+              setSelectedSkills={setSelectedSkills}
+            />
+          )}
+          {playStep === PlaySteps.SELECT_MAP && <MapEditor />}
+          {playStep === PlaySteps.MATCHMAKING && (
+            <Matchmaking
+              setPlayStep={setPlayStep}
+              playMode={playMode ?? PlayMode.PVP}
+            />
+          )}
+          {(playStep === PlaySteps.LOSE || playStep === PlaySteps.WIN) && (
+            <GameResult
+              type={playStep === PlaySteps.LOSE ? 'lose' : 'win'}
+              setPlayStep={setPlayStep}
+            />
+          )}
         </div>
       </section>
       <Modals />

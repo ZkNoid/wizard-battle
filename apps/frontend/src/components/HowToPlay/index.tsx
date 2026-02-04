@@ -1,16 +1,20 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Background } from "./assets/background";
-import { Navigation } from "./Navigation";
-import { Cross } from "./assets/cross";
-import { Tab } from "@/lib/enums/Tab";
-import { motion } from "motion/react";
-import { Page1 } from "./Page1";
-import { Page2 } from "./Page2";
-import { Page3 } from "./Page3";
-import { Page4 } from "./Page4";
-import { useModalSound, useClickSound, useHoverSound } from "@/lib/hooks/useAudio";
+import { useState } from 'react';
+import { Background } from './assets/background';
+import { Navigation } from './Navigation';
+import { Cross } from './assets/cross';
+import { Tab } from '@/lib/enums/Tab';
+import { motion } from 'motion/react';
+import { Page1 } from './Page1';
+import { Page2 } from './Page2';
+import { Page3 } from './Page3';
+import { Page4 } from './Page4';
+import {
+  useModalSound,
+  useClickSound,
+  useHoverSound,
+} from '@/lib/hooks/useAudio';
 
 export default function HowToPlay({ setTab }: { setTab: (tab: Tab) => void }) {
   // Play modal sounds
@@ -44,7 +48,7 @@ export default function HowToPlay({ setTab }: { setTab: (tab: Tab) => void }) {
           onMouseEnter={playHoverSound}
           className="flex cursor-pointer flex-col items-center justify-center"
           whileHover={{ rotate: 90 }}
-          transition={{ duration: 0.25, ease: "easeInOut" }}
+          transition={{ duration: 0.25, ease: 'easeInOut' }}
         >
           <Cross className="h-9 w-9" />
         </motion.button>

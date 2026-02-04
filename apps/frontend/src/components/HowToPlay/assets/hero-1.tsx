@@ -11,7 +11,7 @@ export const Hero1 = ({ className }: { className: string }) => {
     >
       <mask
         id="mask0_42_18074"
-        style={{ maskType: "alpha" }}
+        style={{ maskType: 'alpha' }}
         maskUnits="userSpaceOnUse"
         x="0"
         y="0"

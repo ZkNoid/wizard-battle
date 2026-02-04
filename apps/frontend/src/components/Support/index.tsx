@@ -8,7 +8,11 @@ import { motion } from 'motion/react';
 import * as Yup from 'yup';
 import { Cross } from './assets/cross';
 import { api } from '@/trpc/react';
-import { useModalSound, useClickSound, useHoverSound } from '@/lib/hooks/useAudio';
+import {
+  useModalSound,
+  useClickSound,
+  useHoverSound,
+} from '@/lib/hooks/useAudio';
 
 const validationSchema = Yup.object({
   issue: Yup.string()

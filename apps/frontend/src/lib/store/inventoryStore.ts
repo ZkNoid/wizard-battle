@@ -130,7 +130,10 @@ export const useInventoryStore = create<InventoryStore>()(
           });
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : 'Failed to load inventory',
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to load inventory',
             isLoading: false,
           });
         }

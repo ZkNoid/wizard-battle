@@ -29,7 +29,7 @@ export default function Header({ onTabChange }: HeaderProps) {
       </div>
 
       {/* Header content */}
-      <div className="z-50 absolute left-0 top-2.5 grid w-full grid-cols-3 items-center px-20">
+      <div className="absolute left-0 top-2.5 z-50 grid w-full grid-cols-3 items-center px-20">
         <SettingsBar setTab={onTabChange} />
         <div className="flex w-full items-center justify-center gap-5">
           <BoxButton color="gray" onClick={() => {}} className="size-16">

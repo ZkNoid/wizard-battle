@@ -29,14 +29,18 @@ async function populateArmorItem(
 ): Promise<IInventoryArmorItem> {
   return {
     ...item,
-    improvementRequirements: (item.improvementRequirements ?? []).map((req) => ({
-      item: allCraftItems.find((i) => i.id === req.itemId)!,
-      amount: req.amount,
-    })),
+    improvementRequirements: (item.improvementRequirements ?? []).map(
+      (req) => ({
+        item: allCraftItems.find((i) => i.id === req.itemId)!,
+        amount: req.amount,
+      })
+    ),
   };
 }
 
-function isArmorItemDB(item: AnyInventoryItemDB): item is IInventoryArmorItemDB {
+function isArmorItemDB(
+  item: AnyInventoryItemDB
+): item is IInventoryArmorItemDB {
   return item.type === 'armor' && 'wearableSlot' in item;
 }
 

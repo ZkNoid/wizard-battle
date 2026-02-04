@@ -11,4 +11,3 @@ export {
   type ICreateExpeditionInput,
   type ILocationDB,
 } from '@wizard-battle/common';
-

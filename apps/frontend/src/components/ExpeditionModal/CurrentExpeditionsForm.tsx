@@ -13,9 +13,12 @@ export default function CurrentExpeditionsForm({
   onClose: () => void;
 }) {
   const { address } = useMinaAppkit();
-  const { expeditions, isLoading, interruptExpedition, loadUserExpeditions } = useExpeditionStore();
+  const { expeditions, isLoading, interruptExpedition, loadUserExpeditions } =
+    useExpeditionStore();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [selectedExpeditionId, setSelectedExpeditionId] = useState<string | null>(null);
+  const [selectedExpeditionId, setSelectedExpeditionId] = useState<
+    string | null
+  >(null);
 
   // Load expeditions when component mounts or address changes
   useEffect(() => {
@@ -25,7 +28,9 @@ export default function CurrentExpeditionsForm({
   }, [address, loadUserExpeditions]);
 
   // Filter to show active expeditions
-  const activeExpeditions = expeditions.filter((exp) => exp.status === 'active');
+  const activeExpeditions = expeditions.filter(
+    (exp) => exp.status === 'active'
+  );
 
   const onInterruptExpedition = (expeditionId: string) => {
     setSelectedExpeditionId(expeditionId);
@@ -63,7 +68,9 @@ export default function CurrentExpeditionsForm({
               <CurrentExpeditionCard
                 key={expedition.id}
                 expedition={expedition}
-                onInterruptExpedition={() => onInterruptExpedition(expedition.id)}
+                onInterruptExpedition={() =>
+                  onInterruptExpedition(expedition.id)
+                }
               />
             ))
           ) : (

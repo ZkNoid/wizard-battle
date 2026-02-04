@@ -21,7 +21,11 @@ import type { IHeroStatConfig, IHeroStats } from '@/lib/types/IHeroStat';
 import { api } from '@/trpc/react';
 import { useInventoryStore, type EquippedSlots } from '@/lib/store';
 import { WizardId } from '../../../../common/wizards';
-import { useModalSound, useClickSound, useHoverSound } from '@/lib/hooks/useAudio';
+import {
+  useModalSound,
+  useClickSound,
+  useHoverSound,
+} from '@/lib/hooks/useAudio';
 
 const MAX_ITEMS = 35;
 

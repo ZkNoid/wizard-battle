@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Button } from "../shared/Button";
+import { Button } from '../shared/Button';
 
 export function Page2() {
   return (
@@ -19,7 +19,7 @@ export function Page2() {
             </span>
             {/* Map tile previews */}
             <div className="gap-7.5 flex flex-row items-center">
-              {["Lakes", "Mountains", "Meadows"].map((title, index) => (
+              {['Lakes', 'Mountains', 'Meadows'].map((title, index) => (
                 <div
                   key={index}
                   className="flex flex-col items-center justify-center gap-1"

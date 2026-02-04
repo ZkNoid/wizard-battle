@@ -20,8 +20,11 @@ export default function NewExpeditionForm({
   const { address } = useMinaAppkit();
   const { createExpedition, isCreating } = useExpeditionStore();
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
-  const [selectedCharacter, setSelectedCharacter] = useState<Field | string | null>(null);
-  const [selectedTimePeriod, setSelectedTimePeriod] = useState<ExpeditionTimePeriod | null>(null);
+  const [selectedCharacter, setSelectedCharacter] = useState<
+    Field | string | null
+  >(null);
+  const [selectedTimePeriod, setSelectedTimePeriod] =
+    useState<ExpeditionTimePeriod | null>(null);
 
   const handleSelectLocation = (location: string | null) => {
     setSelectedLocation(location);
@@ -36,12 +39,25 @@ export default function NewExpeditionForm({
   };
 
   const handleStartExpedition = async () => {
-    if (!selectedLocation || !selectedCharacter || !selectedTimePeriod || !address) return;
+    if (
+      !selectedLocation ||
+      !selectedCharacter ||
+      !selectedTimePeriod ||
+      !address
+    )
+      return;
 
-    const wizard = allWizards.find((w) => w.id.toString() === selectedCharacter.toString());
+    const wizard = allWizards.find(
+      (w) => w.id.toString() === selectedCharacter.toString()
+    );
     if (!wizard) return;
 
-    console.log("Creating expedition with character:", wizard.name, "and location:", selectedLocation);
+    console.log(
+      'Creating expedition with character:',
+      wizard.name,
+      'and location:',
+      selectedLocation
+    );
 
     await createExpedition(address, {
       characterId: selectedCharacter.toString(),
@@ -54,7 +70,12 @@ export default function NewExpeditionForm({
     onClose();
   };
 
-  const disabled = !selectedLocation || !selectedCharacter || !selectedTimePeriod || isCreating || !address;
+  const disabled =
+    !selectedLocation ||
+    !selectedCharacter ||
+    !selectedTimePeriod ||
+    isCreating ||
+    !address;
 
   return (
     <div className="flex h-full flex-col">
@@ -63,16 +84,19 @@ export default function NewExpeditionForm({
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
         <ChooseLocation onSelectLocation={handleSelectLocation} />
 
-        <ChooseCharacter onSelectCharacter={handleSelectCharacter} onSelectTimePeriod={handleSelectTimePeriod} />
+        <ChooseCharacter
+          onSelectCharacter={handleSelectCharacter}
+          onSelectTimePeriod={handleSelectTimePeriod}
+        />
 
         <RewardsSection />
       </div>
 
       <div className="mb-1 pt-2">
         <Button
-          variant={disabled ? 'gray' : 'blue'}  
+          variant={disabled ? 'gray' : 'blue'}
           onClick={handleStartExpedition}
-          className="w-full flex h-15 flex-row items-center justify-center gap-2.5"
+          className="h-15 flex w-full flex-row items-center justify-center gap-2.5"
           isLong
           disabled={disabled}
         >

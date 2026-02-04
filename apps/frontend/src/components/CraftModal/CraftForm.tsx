@@ -18,7 +18,7 @@ export function CraftForm({ onCancel }: CraftFormProps) {
       <CraftFormBg className="absolute inset-0 -top-5 z-0 h-full w-full" />
 
       {/* Content */}
-      <div className="relative z-10 flex h-full w-full flex-col gap-5 pt-2 pl-2">
+      <div className="relative z-10 flex h-full w-full flex-col gap-5 pl-2 pt-2">
         {/* Scrollable Content */}
         <div className="text-main-gray font-pixel flex flex-1 flex-col overflow-hidden">
           <Scroll height="100%" className="w-full" alwaysShowScrollbar={true}>

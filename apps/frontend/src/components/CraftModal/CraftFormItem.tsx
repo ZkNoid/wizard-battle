@@ -35,7 +35,7 @@ export function CraftFormItem({ item }: { item: ICraftItem }) {
         alt={item.title}
         width={40}
         height={40}
-        className="shrink-0 bg-gray-400 size-10"
+        className="size-10 shrink-0 bg-gray-400"
       />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <span className="font-pixel truncate font-bold">{item.title}</span>
