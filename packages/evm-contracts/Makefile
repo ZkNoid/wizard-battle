@@ -66,8 +66,22 @@ test-anvil:
 # GameSigner has GameSigner Role
 	cast call 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "hasRole(bytes32,address)" 0xf7a14a339431c5b75d52ee00990f12734fece07deb6cc21a89286e2664bf2fcb 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 --rpc-url $(ANVIL_RPC_URL)
 
+# Check added elements
+
+	cast call 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "getGameElement(bytes32)" 0x5ba3d4ce716a8ffcb210154ac5bac60752c9c70c3f74eadda59afd15baab58c0 --rpc-url $(ANVIL_RPC_URL)
+	cast call 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "getGameElement(bytes32)" 0x5c2a483917f813cae9aa0b117bb5174c08e555dc395b5279997860c781885560 --rpc-url $(ANVIL_RPC_URL)
+	cast call 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "getGameElement(bytes32)" 0x757e6d9d3125f5eeded46c70842b9da6b025feca97f4e2f325e9bb90662815a5 --rpc-url $(ANVIL_RPC_URL)
+	cast call 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "getGameElement(bytes32)" 0x7298456b584cdea77ec4a7b227e5942619968aebef05e137d56f0c9ae28074bd --rpc-url $(ANVIL_RPC_URL)
+	cast call 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "getGameElement(bytes32)" 0xa0077870448ce39d817bf61c413e6668cffbdbea297c57dfbb2c21d5be4d46c7 --rpc-url $(ANVIL_RPC_URL)
+#	cast call 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "hasRole(bytes32,address)" 0xf7a14a339431c5b75d52ee00990f12734fece07deb6cc21a89286e2664bf2fcb 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 --rpc-url $(ANVIL_RPC_URL)
+#   cast keccak "$(cast --from-utf8 'Wizard')"  
 # AddGameEllements
+add-anvil-elements:
 	cast send 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "addGameElement(uint8,string,address,uint256,bool)" 1 'Wood' 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707 1 true --rpc-url $(ANVIL_RPC_URL) --account defaultKey -vvvv
+	cast send 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "addGameElement(uint8,string,address,uint256,bool)" 3 'LegendarySword' 0x8A791620dd6260079BF849Dc5567aDC3F2FdC318 1 true --rpc-url $(ANVIL_RPC_URL) --account defaultKey -vvvv
+	cast send 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "addGameElement(uint8,string,address,uint256,bool)" 2 'Wizard' 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 1 true --rpc-url $(ANVIL_RPC_URL) --account defaultKey -vvvv
+	cast send 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "addGameElement(uint8,string,address,uint256,bool)" 2 'Archer' 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 2 true --rpc-url $(ANVIL_RPC_URL) --account defaultKey -vvvv
+	cast send 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "addGameElement(uint8,string,address,uint256,bool)" 2 'Duelist' 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 3 true --rpc-url $(ANVIL_RPC_URL) --account defaultKey -vvvv
 
 #Anvil
 # GameRegestry implementation: 	0x5FbDB2315678afecb367f032d93F642f64180aa3

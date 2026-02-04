@@ -294,7 +294,10 @@ const HailOfArrowsSceneEffect = (
   });
 };
 
-export class DecoyData extends Struct({}) {}
+export class DecoyData extends Struct({
+  x: Field,
+  y: Field,
+}) {}
 
 export class DecoySpellCast
   extends Struct({
@@ -306,20 +309,30 @@ export class DecoySpellCast
   implements SpellCast<DecoyData>
 {
   hash(): Field {
-    return Poseidon.hash([this.caster, this.spellId, this.target]);
+    return Poseidon.hash([
+      this.caster,
+      this.spellId,
+      this.target,
+      this.additionalData.x,
+      this.additionalData.y,
+    ]);
   }
 }
 
 export const DecoyCast = (
   state: State,
   caster: Field,
-  target: Field
+  target: Field,
+  position: Position
 ): SpellCast<DecoyData> => {
   return new DecoySpellCast({
     spellId: CircuitString.fromString('Decoy').hash(),
     caster,
     target,
-    additionalData: {},
+    additionalData: new DecoyData({
+      x: position.x.toField(),
+      y: position.y.toField(),
+    }),
   });
 };
 
@@ -332,7 +345,7 @@ export const DecoyModifier = (
     new Effect({
       effectId: CircuitString.fromString('Decoy').hash(),
       duration: Field.from(2),
-      param: Field(0),
+      param: Field(spellCast.additionalData.x.toBigInt() + spellCast.additionalData.y.toBigInt() * 8n),
     }),
     'public',
     Bool(true)

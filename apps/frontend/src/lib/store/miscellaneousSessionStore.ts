@@ -4,6 +4,12 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 export interface MiscellaneousSessionStore {
   hasShownWelcomeScreen: boolean;
   setHasShownWelcomeScreen: (hasShownWelcomeScreen: boolean) => void;
+  isInventoryModalOpen: boolean;
+  setIsInventoryModalOpen: (isInventoryModalOpen: boolean) => void;
+  isCraftModalOpen: boolean;
+  setIsCraftModalOpen: (isCraftModalOpen: boolean) => void;
+  isExpeditionModalOpen: boolean;
+  setIsExpeditionModalOpen: (isExpeditionModalOpen: boolean) => void;
 }
 
 export const useMiscellaneousSessionStore = create<
@@ -15,6 +21,18 @@ export const useMiscellaneousSessionStore = create<
       hasShownWelcomeScreen: false,
       setHasShownWelcomeScreen: (hasShownWelcomeScreen: boolean) => {
         set({ hasShownWelcomeScreen });
+      },
+      isInventoryModalOpen: false,
+      setIsInventoryModalOpen: (isInventoryModalOpen: boolean) => {
+        set({ isInventoryModalOpen });
+      },
+      isCraftModalOpen: false,
+      setIsCraftModalOpen: (isCraftModalOpen: boolean) => {
+        set({ isCraftModalOpen });
+      },
+      isExpeditionModalOpen: false,
+      setIsExpeditionModalOpen: (isExpeditionModalOpen: boolean) => {
+        set({ isExpeditionModalOpen });
       },
     }),
     {

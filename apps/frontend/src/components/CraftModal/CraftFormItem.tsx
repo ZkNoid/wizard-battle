@@ -11,11 +11,11 @@ export function CraftFormItem({ item }: { item: ICraftItem }) {
 
   const inventoryItems = useInventoryStore((state) => state.inventoryItems);
 
-  // Create a map of item id to amount for quick lookup
+  // Create a map of item id to quantity for quick lookup
   const inventoryMap = useMemo(() => {
     const map = new Map<string, number>();
-    inventoryItems.forEach((invItem) => {
-      map.set(invItem.id, invItem.amount);
+    inventoryItems.forEach((userItem) => {
+      map.set(userItem.item.id, userItem.quantity);
     });
     return map;
   }, [inventoryItems]);
@@ -23,8 +23,8 @@ export function CraftFormItem({ item }: { item: ICraftItem }) {
   // Check if user has enough resources for crafting
   const hasEnoughResources = useMemo(() => {
     return item.recipe.every((recipeItem) => {
-      const userAmount = inventoryMap.get(recipeItem.id) ?? 0;
-      return userAmount >= recipeItem.requiredAmount;
+      const userQuantity = inventoryMap.get(recipeItem.id) ?? 0;
+      return userQuantity >= recipeItem.requiredAmount;
     });
   }, [item.recipe, inventoryMap]);
 

@@ -3,24 +3,26 @@
 import { CraftModalForm } from './CraftModalForm';
 import { InventoryModalForm } from '../InventoryModalForm';
 import { useState, useCallback } from 'react';
-import type { IInventoryItem } from '@/lib/types/Inventory';
+import type { IUserInventoryItem } from '@/lib/types/Inventory';
 import { useModalSound } from '@/lib/hooks/useAudio';
 
 export default function CraftModal({ onClose }: { onClose: () => void }) {
   // Play modal sounds
   useModalSound();
 
-  const [draggedItem, setDraggedItem] = useState<IInventoryItem | null>(null);
+  const [draggedItem, setDraggedItem] = useState<IUserInventoryItem | null>(
+    null
+  );
 
-  const handleItemDragStart = useCallback((item: IInventoryItem) => {
-    setDraggedItem(item);
+  const handleItemDragStart = useCallback((userItem: IUserInventoryItem) => {
+    setDraggedItem(userItem);
   }, []);
 
   const handleItemDragEnd = useCallback(() => {
     setDraggedItem(null);
   }, []);
 
-  const handleItemRemove = useCallback((item: IInventoryItem) => {
+  const handleItemRemove = useCallback((userItem: IUserInventoryItem) => {
     // TODO: Add logic here to update inventory on the server
   }, []);
 

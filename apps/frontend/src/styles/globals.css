@@ -12,6 +12,9 @@
 
 @theme inline {
   --font-pixel: var(--font-pixel);
+  --font-pixel-breit: var(--font-pixel-breit);
+  --font-pixel-klein: var(--font-pixel-klein);
+  --font-pixel-schmal: var(--font-pixel-schmal);
 }
 
 @theme {

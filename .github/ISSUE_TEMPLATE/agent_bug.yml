@@ -36,3 +36,12 @@ body:
       label: Constraints / out of scope
       description: What must NOT be changed.
     validations: { required: false }
+  - type: textarea
+    id: context_markers
+    attributes:
+      label: Context markers (optional)
+      description: |
+        Use $Markers to help generate focused context. Examples:
+        - `$InvisibilityEffect` - search for "InvisibilityEffect"
+        - `$Effect = InvisibilityEffect, applyInvisibility` - search for multiple terms
+    validations: { required: false }

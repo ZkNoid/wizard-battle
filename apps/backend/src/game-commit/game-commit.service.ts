@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { GameItemService } from '../game-item/services/game-item.service';
 import { UserInventoryService } from '../user-inventory/services/user-inventory.service';
+import { GameCharacterService } from '../game-character/game-character.service';
 import { BlockchainService } from './blockchain.service';
 import { GameItem } from '../game-item/schemas/game-item.schema';
 import { error } from 'console';
@@ -16,6 +17,7 @@ export class GameCommitService {
   constructor(
     private readonly gameItemService: GameItemService,
     private readonly userInventoryService: UserInventoryService,
+    private readonly gameCharacterService: GameCharacterService,
     private readonly blockchainService: BlockchainService
   ) {}
 
@@ -23,17 +25,49 @@ export class GameCommitService {
 
   async _queryCharacters(characterName: string, userId: string) {
     try {
+      // 1. Find all characters for this user
+      const userCharacters =
+        await this.gameCharacterService.findAllByUserId(userId);
+
+      // 2. Check if user has this specific character
+      const character = userCharacters.find(
+        (char) => char.name === characterName
+      );
+
+      if (!character) {
+        console.log(
+          `❌ Character "${characterName}" not found for user ${userId}`
+        );
+        return {
+          found: false,
+          userHasIt: false,
+          character: null,
+        };
+      }
+
+      // 3. Print character details
+      console.log(`📦 Character loaded from database:`);
+      console.log(`   Name: ${character.name}`);
+      console.log(`   Level: ${character.level}`);
+      console.log(`   User ID: ${character.userId}`);
+      console.log(`   Character ID: ${(character as any)._id}`);
+
+      return {
+        found: true,
+        userHasIt: true,
+        character: {
+          id: (character as any)._id.toString(),
+          name: character.name,
+          level: character.level,
+          userId: character.userId,
+        },
+      };
     } catch (error: any) {
       console.error(
-        `❌ Error loading and verifying resource: ${error?.message || 'unknown error'}`
+        `❌ Error loading and verifying character: ${error?.message || 'unknown error'}`
       );
       throw error;
     }
-    return {
-      found: false,
-      userHasIt: false,
-      characters: null,
-    };
   }
 
   /**
@@ -291,7 +325,11 @@ export class GameCommitService {
       }
 
       // 4. Return success signed callData to user for submission to blockchain
-      if (commitData && commitData.resourceHash.length > 0) {
+      if (
+        commitData &&
+        commitData.characterHash &&
+        commitData.characterHash.length > 0
+      ) {
         console.log('✅ Generated callData for resource commit:', commitData);
         return { success: true, resource: name, action, commit: commitData };
       }
@@ -339,9 +377,9 @@ export class GameCommitService {
           console.log(`Generating mint callData for resource [${name}]...`);
           commitData = await this.blockchainService.mintItem(
             name,
-            payload.playerAddress,
-            metaData.tokenId,
-            result.inventoryDetails?.quantity || 1000
+            payload.playerAddress
+            //metaData.tokenId
+            //result.inventoryDetails?.quantity || 1000
           );
           break;
         case 'burn':
@@ -349,8 +387,8 @@ export class GameCommitService {
           commitData = await this.blockchainService.burnItem(
             name,
             payload.playerAddress,
-            metaData.tokenId,
-            result.inventoryDetails?.quantity || 1000
+            metaData.tokenId
+            //result.inventoryDetails?.quantity || 1000
           );
           break;
         default:
@@ -358,7 +396,7 @@ export class GameCommitService {
       }
 
       // 4. Return success signed callData to user for submission to blockchain
-      if (commitData && commitData.resourceHash.length > 0) {
+      if (commitData && commitData.itemHash && commitData.itemHash.length > 0) {
         console.log('✅ Generated callData for resource commit:', commitData);
         return { success: true, resource: name, action, commit: commitData };
       }
@@ -420,7 +458,11 @@ export class GameCommitService {
       }
 
       // 4. Return success signed callData to user for submission to blockchain
-      if (commitData && commitData.resourceHash.length > 0) {
+      if (
+        commitData &&
+        commitData.characterHash &&
+        commitData.characterHash.length > 0
+      ) {
         console.log('✅ Generated callData for resource commit:', commitData);
         return { success: true, resource: name, action, commit: commitData };
       }

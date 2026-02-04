@@ -52,12 +52,12 @@ export function UnityForm({ onCancel }: UnityFormProps) {
   );
 
   const buttonClassName =
-    'flex h-16 w-auto flex-row items-center gap-2.5 px-6 transition-al -mt-4';
+    'flex h-12 w-auto flex-row items-center gap-2.5 px-6 transition-al -mt-4';
 
   const gemsTypes = useMemo<InventoryFilterType[]>(() => ['gems'], []);
 
   return (
-    <div className="relative flex h-full flex-col pb-5">
+    <div className="relative flex h-full flex-col">
       {/* Content */}
       <div className="relative flex h-full w-full flex-col gap-5">
         {/* Content */}
