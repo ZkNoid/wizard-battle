@@ -103,19 +103,28 @@ export function useClickSound() {
 export function useBackgroundMusic() {
   const playMusic = useAudioStore((state) => state.playMusic);
   const stopMusic = useAudioStore((state) => state.stopMusic);
+  const currentMusic = useAudioStore((state) => state.currentMusic);
 
   const playMainTheme = useCallback(
     (fadeDuration = 500) => {
-      playMusic(AUDIO_ASSETS.music.background.fantasyVillage, fadeDuration);
+      const mainThemePath = AUDIO_ASSETS.music.background.fantasyVillage;
+      // Only play if not already playing the main theme
+      if (currentMusic !== mainThemePath) {
+        playMusic(mainThemePath, fadeDuration);
+      }
     },
-    [playMusic]
+    [playMusic, currentMusic]
   );
 
   const playBattleMusic = useCallback(
     (fadeDuration = 500) => {
-      playMusic(AUDIO_ASSETS.music.battle.deathTaker, fadeDuration);
+      const battleMusicPath = AUDIO_ASSETS.music.battle.deathTaker;
+      // Only play if not already playing battle music
+      if (currentMusic !== battleMusicPath) {
+        playMusic(battleMusicPath, fadeDuration);
+      }
     },
-    [playMusic]
+    [playMusic, currentMusic]
   );
 
   const stopCurrentMusic = useCallback(

@@ -54,16 +54,23 @@ function HomePage() {
 
   useEffect(() => {
     playMainTheme(); // Start background music
-    return () => stopMusic(0);
-  }, []);
+    return () => stopMusic(0); // ⚠️ IMPORTANT: Always cleanup on unmount
+  }, [playMainTheme, stopMusic]);
 }
 ```
 
 **Available methods:**
 
-- `playMainTheme()` - main menu / lobby
-- `playBattleMusic()` - battle music
+- `playMainTheme()` - main menu / lobby (auto-checks if already playing)
+- `playBattleMusic()` - battle music (auto-checks if already playing)
 - `stopMusic(fadeDuration?)` - stop with fade-out
+
+**Important notes:**
+
+- ✅ Music hooks include built-in duplicate prevention
+- ✅ Always include cleanup (`stopMusic`) in useEffect return
+- ✅ Safe to call `playMainTheme()` multiple times - only plays once
+- ⚠️ Don't remove `playMainTheme`/`stopMusic` from dependency array
 
 ---
 
@@ -276,6 +283,12 @@ playSound('/audio/sfx/ui/click.mp3'); // Full path
 - **Autoplay:** Handled automatically (user must interact with the page)
 - **Volume/Mute:** Unified control for all sounds, no localStorage persistence
 - **Singleton:** `audioService` - one instance for the entire application
+- **Anti-duplication:** Multiple layers of protection prevent duplicate music playback:
+  - Track-level checks in `audioService`
+  - Fade transition tracking to prevent overlapping music
+  - Store-level deduplication in `audioStore`
+  - Hook-level current music checks in `useBackgroundMusic`
+  - Automatic cleanup when components unmount
 
 ---
 
@@ -285,3 +298,108 @@ playSound('/audio/sfx/ui/click.mp3'); // Full path
 - `src/lib/store/audioStore.ts` - Zustand state management
 - `src/lib/hooks/useAudio.ts` - React hooks
 - `src/lib/constants/audioAssets.ts` - File paths
+
+---
+
+## ✅ Best Practices
+
+### Background Music Management
+
+1. **Always cleanup on unmount:**
+
+   ```typescript
+   useEffect(() => {
+     playMainTheme();
+     return () => stopMusic(0); // ← Critical!
+   }, [playMainTheme, stopMusic]);
+   ```
+
+2. **Don't worry about duplicate calls:**
+
+   ```typescript
+   // ✅ Safe - built-in protection
+   playMainTheme();
+   playMainTheme();
+   playMainTheme(); // Only plays once
+   ```
+
+3. **Page transitions:**
+
+   ```typescript
+   // HomePage
+   useEffect(() => {
+     playMainTheme();
+     return () => stopMusic(0); // Stop when leaving
+   }, []);
+
+   // GamePage
+   useEffect(() => {
+     playBattleMusic();
+     return () => playMainTheme(); // Return to main theme
+   }, []);
+   ```
+
+### Common Pitfalls
+
+❌ **Don't:** Forget cleanup
+
+```typescript
+useEffect(() => {
+  playMainTheme();
+  // Missing return cleanup!
+}, []);
+```
+
+❌ **Don't:** Comment out stopMusic
+
+```typescript
+return () => {
+  // stopMusic(0); ← BAD! Always cleanup
+};
+```
+
+✅ **Do:** Always include dependencies
+
+```typescript
+useEffect(() => {
+  playMainTheme();
+  return () => stopMusic(0);
+}, [playMainTheme, stopMusic]); // ← Include all used functions
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Music plays twice/duplicates
+
+**Cause:** Missing cleanup in component unmount
+
+**Fix:**
+
+```typescript
+return () => stopMusic(0);
+```
+
+### Music doesn't stop when leaving page
+
+**Cause:** Commented out cleanup or missing return
+
+**Fix:** Ensure cleanup function is present and not commented
+
+### Music stutters during fade transitions
+
+**Cause:** Multiple rapid calls during transition
+
+**Fix:** Built-in fade tracking prevents this - update to latest code
+
+---
+
+## 🔍 Debug Mode
+
+Enable debug logs by checking console for:
+
+- `🎵 Music already playing or fading, skipping duplicate play`
+- `🎵 Store: Music already set to [path]`
+- `🎮 Entering game - switching to battle music`
+- `🎮 Leaving game - switching back to main theme`

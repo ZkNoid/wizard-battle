@@ -45,6 +45,7 @@ export default function HomePage() {
 
     // If autoplay is blocked, retry on first user interaction
     const handleFirstInteraction = () => {
+      // Only retry if music is not already playing
       playMainTheme();
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('keydown', handleFirstInteraction);
@@ -56,7 +57,7 @@ export default function HomePage() {
     return () => {
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('keydown', handleFirstInteraction);
-      // stopMusic(0);
+      stopMusic(0);
     };
   }, [playMainTheme, stopMusic]);
 

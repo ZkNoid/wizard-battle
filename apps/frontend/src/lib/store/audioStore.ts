@@ -112,9 +112,14 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
   // Play background music
   playMusic: (src: MusicTrack, fadeDuration = 500) => {
-    const { isInitialized } = get();
+    const { isInitialized, currentMusic } = get();
     if (!isInitialized) {
       get().initialize();
+    }
+    // Don't call audioService if already playing the same track
+    if (currentMusic === src && audioService.getCurrentMusicKey() === src) {
+      console.log('🎵 Store: Music already set to', src);
+      return;
     }
     audioService.playMusic(src, fadeDuration);
     set({ currentMusic: src });

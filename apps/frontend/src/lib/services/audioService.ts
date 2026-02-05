@@ -11,6 +11,7 @@ class AudioService {
   private currentMusic: Howl | null = null;
   private currentMusicKey: string | null = null;
   private isMusicMuted = false;
+  private isFading = false; // Track if music is currently fading
 
   /**
    * Initialize or get a music track
@@ -59,16 +60,24 @@ class AudioService {
   playMusic(src: MusicTrack, fadeDuration = 500): void {
     const newMusic = this.getOrCreateMusic(src);
 
-    // If the same music is already playing, do nothing
-    if (this.currentMusicKey === src && this.currentMusic?.playing()) {
-      return;
+    // If the same music is already playing or transitioning, do nothing
+    if (this.currentMusicKey === src) {
+      // Check if it's playing or if it's the same track that's fading
+      if (this.currentMusic?.playing() || this.isFading) {
+        console.log('🎵 Music already playing or fading, skipping duplicate play');
+        return;
+      }
     }
+
+    // Set fading flag to prevent duplicate calls during transition
+    this.isFading = true;
 
     // Fade out current music if playing
     if (this.currentMusic && this.currentMusic.playing()) {
-      this.currentMusic.fade(this.currentMusic.volume(), 0, fadeDuration);
-      this.currentMusic.once('fade', () => {
-        this.currentMusic?.stop();
+      const oldMusic = this.currentMusic;
+      oldMusic.fade(oldMusic.volume(), 0, fadeDuration);
+      oldMusic.once('fade', () => {
+        oldMusic.stop();
       });
     }
 
@@ -76,6 +85,11 @@ class AudioService {
     newMusic.volume(0);
     newMusic.play();
     newMusic.fade(0, 1, fadeDuration);
+    
+    // Clear fading flag after fade completes
+    newMusic.once('fade', () => {
+      this.isFading = false;
+    });
 
     this.currentMusic = newMusic;
     this.currentMusicKey = src;
@@ -85,13 +99,24 @@ class AudioService {
    * Stop current background music
    */
   stopMusic(fadeDuration = 500): void {
-    if (this.currentMusic && this.currentMusic.playing()) {
-      this.currentMusic.fade(this.currentMusic.volume(), 0, fadeDuration);
-      this.currentMusic.once('fade', () => {
-        this.currentMusic?.stop();
-      });
+    if (this.currentMusic) {
+      if (this.currentMusic.playing()) {
+        const musicToStop = this.currentMusic;
+        this.isFading = true;
+        
+        musicToStop.fade(musicToStop.volume(), 0, fadeDuration);
+        musicToStop.once('fade', () => {
+          musicToStop.stop();
+          this.isFading = false;
+        });
+      } else {
+        // Music exists but not playing - just stop it
+        this.currentMusic.stop();
+      }
+      
       this.currentMusic = null;
       this.currentMusicKey = null;
+      this.isFading = false;
     }
   }
 
@@ -156,6 +181,20 @@ class AudioService {
   }
 
   /**
+   * Get current music track key
+   */
+  getCurrentMusicKey(): string | null {
+    return this.currentMusicKey;
+  }
+
+  /**
+   * Check if music is currently fading
+   */
+  isMusicFading(): boolean {
+    return this.isFading;
+  }
+
+  /**
    * Cleanup all audio resources
    */
   cleanup(): void {
@@ -165,6 +204,7 @@ class AudioService {
     this.soundEffects.clear();
     this.currentMusic = null;
     this.currentMusicKey = null;
+    this.isFading = false;
   }
 }
 
