@@ -14,6 +14,7 @@ import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionSt
 import { useBackgroundMusic } from '@/lib/hooks/useAudio';
 import Header from '../Header';
 import Modals from '../Header/Modals';
+import { Button } from '../shared/Button';
 
 enum TabHover {
   CRAFT,
@@ -76,6 +77,28 @@ export default function HomePage() {
   return (
     <main className="relative flex h-screen w-full overflow-hidden">
       <Header onTabChange={setTab} />
+
+      {/* Top right button */}
+      <Button
+        variant="gray"
+        className="absolute right-20 top-40 z-30 rounded-lg bg-purple-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-purple-700 active:scale-95"
+        onClick={() => {
+          // Add your button action here
+          console.log('Top right button clicked');
+        }}
+        isLong={true}
+      >
+        <Image
+          src="/icons/lightning.png"
+          width={32}
+          height={28}
+          alt="lightning"
+          className="h-7 w-8 object-contain object-center"
+        />
+        <span className="font-pixel text-main-gray text-lg font-bold">
+          Testnet quest
+        </span>
+      </Button>
 
       {/* Main section */}
       <section
