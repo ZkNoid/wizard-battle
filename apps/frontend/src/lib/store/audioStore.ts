@@ -91,212 +91,212 @@ export const useAudioStore = create<AudioStore>((set, get) => {
       set({ isInitialized: true });
     },
 
-  // Set volume (0-100)
-  setVolume: (volume: number) => {
-    const clampedVolume = Math.max(0, Math.min(100, volume));
-    audioService.setMasterVolume(clampedVolume);
-    set({ volume: clampedVolume });
-  },
+    // Set volume (0-100)
+    setVolume: (volume: number) => {
+      const clampedVolume = Math.max(0, Math.min(100, volume));
+      audioService.setMasterVolume(clampedVolume);
+      set({ volume: clampedVolume });
+    },
 
-  // Toggle mute state
-  toggleMute: () => {
-    const { isMuted } = get();
-    const newMutedState = !isMuted;
-    audioService.setMuted(newMutedState);
-    set({ isMuted: newMutedState });
-  },
+    // Toggle mute state
+    toggleMute: () => {
+      const { isMuted } = get();
+      const newMutedState = !isMuted;
+      audioService.setMuted(newMutedState);
+      set({ isMuted: newMutedState });
+    },
 
-  // Set mute state directly
-  setMuted: (muted: boolean) => {
-    audioService.setMuted(muted);
-    set({ isMuted: muted });
-  },
+    // Set mute state directly
+    setMuted: (muted: boolean) => {
+      audioService.setMuted(muted);
+      set({ isMuted: muted });
+    },
 
-  // Toggle music mute state (only music, not SFX)
-  toggleMusicMute: () => {
-    const { isMusicMuted, musicCache } = get();
-    const newMutedState = !isMusicMuted;
-    
-    // Apply mute state to all cached music tracks
-    musicCache.forEach((howl) => howl.mute(newMutedState));
-    
-    set({ isMusicMuted: newMutedState });
-  },
+    // Toggle music mute state (only music, not SFX)
+    toggleMusicMute: () => {
+      const { isMusicMuted, musicCache } = get();
+      const newMutedState = !isMusicMuted;
 
-  // Set music mute state directly
-  setMusicMuted: (muted: boolean) => {
-    const { musicCache } = get();
-    
-    // Apply mute state to all cached music tracks
-    musicCache.forEach((howl) => howl.mute(muted));
-    
-    set({ isMusicMuted: muted });
-  },
+      // Apply mute state to all cached music tracks
+      musicCache.forEach((howl) => howl.mute(newMutedState));
 
-  // Preload music tracks into cache
-  preloadMusic: (tracks: MusicTrack[]) => {
-    const { musicCache, isMusicMuted, isInitialized } = get();
-    
-    if (!isInitialized) {
-      get().initialize();
-    }
+      set({ isMusicMuted: newMutedState });
+    },
 
-    let loadedCount = 0;
-    tracks.forEach((track) => {
-      if (!musicCache.has(track)) {
-        const howl = audioService.createMusicHowl(track);
+    // Set music mute state directly
+    setMusicMuted: (muted: boolean) => {
+      const { musicCache } = get();
+
+      // Apply mute state to all cached music tracks
+      musicCache.forEach((howl) => howl.mute(muted));
+
+      set({ isMusicMuted: muted });
+    },
+
+    // Preload music tracks into cache
+    preloadMusic: (tracks: MusicTrack[]) => {
+      const { musicCache, isMusicMuted, isInitialized } = get();
+
+      if (!isInitialized) {
+        get().initialize();
+      }
+
+      let loadedCount = 0;
+      tracks.forEach((track) => {
+        if (!musicCache.has(track)) {
+          const howl = audioService.createMusicHowl(track);
+
+          // Apply current mute state to new track
+          if (isMusicMuted) {
+            howl.mute(true);
+          }
+
+          musicCache.set(track, howl);
+          loadedCount++;
+        }
+      });
+
+      if (loadedCount > 0) {
+        set({ musicCache: new Map(musicCache) });
+        console.log('🎵 Preloaded', loadedCount, 'music track(s)');
+      }
+    },
+
+    // Play background music
+    playMusic: (src: MusicTrack) => {
+      const {
+        isInitialized,
+        musicCache,
+        currentMusicHowl,
+        currentMusicTrack,
+        isMusicMuted,
+      } = get();
+
+      if (!isInitialized) {
+        get().initialize();
+      }
+
+      // Get or create Howl from cache first
+      let newHowl = musicCache.get(src);
+      if (!newHowl) {
+        console.log('🎵 Creating new Howl for:', src);
+        newHowl = audioService.createMusicHowl(src);
 
         // Apply current mute state to new track
         if (isMusicMuted) {
-          howl.mute(true);
+          newHowl.mute(true);
         }
 
-        musicCache.set(track, howl);
-        loadedCount++;
-      }
-    });
-
-    if (loadedCount > 0) {
-      set({ musicCache: new Map(musicCache) });
-      console.log('🎵 Preloaded', loadedCount, 'music track(s)');
-    }
-  },
-
-  // Play background music
-  playMusic: (src: MusicTrack) => {
-    const {
-      isInitialized,
-      musicCache,
-      currentMusicHowl,
-      currentMusicTrack,
-      isMusicMuted,
-    } = get();
-
-    if (!isInitialized) {
-      get().initialize();
-    }
-
-    // Get or create Howl from cache first
-    let newHowl = musicCache.get(src);
-    if (!newHowl) {
-      console.log('🎵 Creating new Howl for:', src);
-      newHowl = audioService.createMusicHowl(src);
-
-      // Apply current mute state to new track
-      if (isMusicMuted) {
-        newHowl.mute(true);
+        musicCache.set(src, newHowl);
+        set({ musicCache: new Map(musicCache) });
+      } else {
+        console.log('🎵 Using cached Howl for:', src);
       }
 
-      musicCache.set(src, newHowl);
-      set({ musicCache: new Map(musicCache) });
-    } else {
-      console.log('🎵 Using cached Howl for:', src);
-    }
+      console.log('🎵 Current state:', {
+        currentTrack: currentMusicTrack,
+        requestedTrack: src,
+        isSameHowl: currentMusicHowl === newHowl,
+        isPlaying: currentMusicHowl?.playing(),
+        cacheSize: musicCache.size,
+      });
 
-    console.log('🎵 Current state:', {
-      currentTrack: currentMusicTrack,
-      requestedTrack: src,
-      isSameHowl: currentMusicHowl === newHowl,
-      isPlaying: currentMusicHowl?.playing(),
-      cacheSize: musicCache.size,
-    });
+      // If the same music is already playing, do nothing
+      if (currentMusicHowl === newHowl && currentMusicHowl.playing()) {
+        console.log('🎵 Music already playing:', src);
+        return;
+      }
 
-    // If the same music is already playing, do nothing
-    if (currentMusicHowl === newHowl && currentMusicHowl.playing()) {
-      console.log('🎵 Music already playing:', src);
-      return;
-    }
+      // Stop current music if it's different
+      if (currentMusicHowl && currentMusicHowl !== newHowl) {
+        console.log('🎵 Stopping old music:', currentMusicTrack);
+        currentMusicHowl.stop();
+      }
 
-    // Stop current music if it's different
-    if (currentMusicHowl && currentMusicHowl !== newHowl) {
-      console.log('🎵 Stopping old music:', currentMusicTrack);
-      currentMusicHowl.stop();
-    }
+      // Start new music
+      console.log('🎵 Starting new music:', src);
 
-    // Start new music
-    console.log('🎵 Starting new music:', src);
-    
-    // Stop the Howl first if it's already playing to prevent duplicate sounds
-    if (newHowl.playing()) {
-      console.log('🎵 Stopping existing playback before starting new one');
-      newHowl.stop();
-    }
-    
-    newHowl.volume(1);
-    newHowl.play();
+      // Stop the Howl first if it's already playing to prevent duplicate sounds
+      if (newHowl.playing()) {
+        console.log('🎵 Stopping existing playback before starting new one');
+        newHowl.stop();
+      }
 
-    set({
-      currentMusicHowl: newHowl,
-      currentMusicTrack: src,
-    });
-
-    console.log('🎵 Set as current:', src);
-  },
-
-  // Stop background music
-  stopMusic: () => {
-    const { currentMusicHowl } = get();
-
-    if (currentMusicHowl) {
-      console.log('🎵 Stopping music');
-      currentMusicHowl.stop();
+      newHowl.volume(1);
+      newHowl.play();
 
       set({
+        currentMusicHowl: newHowl,
+        currentMusicTrack: src,
+      });
+
+      console.log('🎵 Set as current:', src);
+    },
+
+    // Stop background music
+    stopMusic: () => {
+      const { currentMusicHowl } = get();
+
+      if (currentMusicHowl) {
+        console.log('🎵 Stopping music');
+        currentMusicHowl.stop();
+
+        set({
+          currentMusicHowl: null,
+          currentMusicTrack: null,
+        });
+      }
+    },
+
+    // Pause background music
+    pauseMusic: () => {
+      const { currentMusicHowl } = get();
+      if (currentMusicHowl) {
+        currentMusicHowl.pause();
+      }
+    },
+
+    // Resume background music
+    resumeMusic: () => {
+      const { currentMusicHowl } = get();
+      if (currentMusicHowl) {
+        currentMusicHowl.play();
+      }
+    },
+
+    // Play sound effect
+    playSound: (src: SoundEffect) => {
+      const { isInitialized } = get();
+      if (!isInitialized) {
+        get().initialize();
+      }
+      audioService.playSound(src);
+    },
+
+    // Cleanup all audio resources
+    cleanup: () => {
+      const { musicCache, currentMusicHowl } = get();
+
+      // Stop current music
+      if (currentMusicHowl) {
+        currentMusicHowl.stop();
+      }
+
+      // Unload all cached music tracks
+      musicCache.forEach((howl) => {
+        howl.unload();
+      });
+
+      // Cleanup sound effects
+      audioService.cleanupSoundEffects();
+
+      set({
+        musicCache: new Map(),
         currentMusicHowl: null,
         currentMusicTrack: null,
       });
-    }
-  },
 
-  // Pause background music
-  pauseMusic: () => {
-    const { currentMusicHowl } = get();
-    if (currentMusicHowl) {
-      currentMusicHowl.pause();
-    }
-  },
-
-  // Resume background music
-  resumeMusic: () => {
-    const { currentMusicHowl } = get();
-    if (currentMusicHowl) {
-      currentMusicHowl.play();
-    }
-  },
-
-  // Play sound effect
-  playSound: (src: SoundEffect) => {
-    const { isInitialized } = get();
-    if (!isInitialized) {
-      get().initialize();
-    }
-    audioService.playSound(src);
-  },
-
-  // Cleanup all audio resources
-  cleanup: () => {
-    const { musicCache, currentMusicHowl } = get();
-
-    // Stop current music
-    if (currentMusicHowl) {
-      currentMusicHowl.stop();
-    }
-
-    // Unload all cached music tracks
-    musicCache.forEach((howl) => {
-      howl.unload();
-    });
-
-    // Cleanup sound effects
-    audioService.cleanupSoundEffects();
-
-    set({
-      musicCache: new Map(),
-      currentMusicHowl: null,
-      currentMusicTrack: null,
-    });
-
-    console.log('🎵 Audio cleanup completed');
-  },
-};
+      console.log('🎵 Audio cleanup completed');
+    },
+  };
 });

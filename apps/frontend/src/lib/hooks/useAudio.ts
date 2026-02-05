@@ -129,30 +129,21 @@ export function useBackgroundMusic() {
   const playMusic = useAudioStore((state) => state.playMusic);
   const stopMusic = useAudioStore((state) => state.stopMusic);
 
-  const playMainTheme = useCallback(
-    (fadeDuration = 500) => {
-      const mainThemePath = AUDIO_ASSETS.music.background.fantasyVillage;
-      // The playMusic function itself checks if the music is already playing
-      playMusic(mainThemePath, fadeDuration);
-    },
-    [playMusic]
-  );
+  const playMainTheme = useCallback(() => {
+    const mainThemePath = AUDIO_ASSETS.music.background.fantasyVillage;
+    // The playMusic function itself checks if the music is already playing
+    playMusic(mainThemePath);
+  }, [playMusic]);
 
-  const playBattleMusic = useCallback(
-    (fadeDuration = 500) => {
-      const battleMusicPath = AUDIO_ASSETS.music.battle.deathTaker;
-      // The playMusic function itself checks if the music is already playing
-      playMusic(battleMusicPath, fadeDuration);
-    },
-    [playMusic]
-  );
+  const playBattleMusic = useCallback(() => {
+    const battleMusicPath = AUDIO_ASSETS.music.battle.deathTaker;
+    // The playMusic function itself checks if the music is already playing
+    playMusic(battleMusicPath);
+  }, [playMusic]);
 
-  const stopCurrentMusic = useCallback(
-    (fadeDuration = 500) => {
-      stopMusic(fadeDuration);
-    },
-    [stopMusic]
-  );
+  const stopCurrentMusic = useCallback(() => {
+    stopMusic();
+  }, [stopMusic]);
 
   return {
     playMainTheme,
