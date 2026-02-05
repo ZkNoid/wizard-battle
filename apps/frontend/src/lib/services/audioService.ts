@@ -19,10 +19,20 @@ class AudioService {
       preload: true,
       html5: true, // Use HTML5 Audio for streaming large files
       onplayerror: () => {
+        console.error('🎵 Play error for:', src);
         // Try to unlock audio on next user interaction
         howl.once('unlock', () => {
           howl.play();
         });
+      },
+      onend: () => {
+        console.log('🎵 Music ended (should loop):', src);
+      },
+      onstop: () => {
+        console.log('🎵 Music stopped:', src);
+      },
+      onpause: () => {
+        console.log('🎵 Music paused:', src);
       },
     });
     return howl;

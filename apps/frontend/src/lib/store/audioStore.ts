@@ -47,7 +47,6 @@ interface AudioStore {
   musicCache: Map<MusicTrack, Howl>; // Cache of all loaded music tracks
   currentMusicHowl: Howl | null; // Current playing Howl instance
   currentMusicTrack: MusicTrack | null; // Current track path
-  isMusicFading: boolean; // Track if music is currently fading
   isInitialized: boolean;
 
   // Actions
@@ -56,9 +55,9 @@ interface AudioStore {
   setMuted: (muted: boolean) => void;
   toggleMusicMute: () => void;
   setMusicMuted: (muted: boolean) => void;
-  playMusic: (src: MusicTrack, fadeDuration?: number) => void;
+  playMusic: (src: MusicTrack) => void;
   preloadMusic: (tracks: MusicTrack[]) => void;
-  stopMusic: (fadeDuration?: number) => void;
+  stopMusic: () => void;
   pauseMusic: () => void;
   resumeMusic: () => void;
   playSound: (src: SoundEffect) => void;
@@ -82,7 +81,6 @@ export const useAudioStore = create<AudioStore>((set, get) => {
     musicCache: new Map<MusicTrack, Howl>(),
     currentMusicHowl: null,
     currentMusicTrack: null,
-    isMusicFading: false,
     isInitialized: false,
 
     // Initialize audio system
@@ -165,13 +163,12 @@ export const useAudioStore = create<AudioStore>((set, get) => {
   },
 
   // Play background music
-  playMusic: (src: MusicTrack, fadeDuration = 500) => {
+  playMusic: (src: MusicTrack) => {
     const {
       isInitialized,
       musicCache,
       currentMusicHowl,
       currentMusicTrack,
-      isMusicFading,
       isMusicMuted,
     } = get();
 
@@ -192,7 +189,17 @@ export const useAudioStore = create<AudioStore>((set, get) => {
 
       musicCache.set(src, newHowl);
       set({ musicCache: new Map(musicCache) });
+    } else {
+      console.log('🎵 Using cached Howl for:', src);
     }
+
+    console.log('🎵 Current state:', {
+      currentTrack: currentMusicTrack,
+      requestedTrack: src,
+      isSameHowl: currentMusicHowl === newHowl,
+      isPlaying: currentMusicHowl?.playing(),
+      cacheSize: musicCache.size,
+    });
 
     // If the same music is already playing, do nothing
     if (currentMusicHowl === newHowl && currentMusicHowl.playing()) {
@@ -200,61 +207,39 @@ export const useAudioStore = create<AudioStore>((set, get) => {
       return;
     }
 
-    // If music is currently fading, don't interrupt
-    if (isMusicFading) {
-      console.log('🎵 Music is fading, skipping duplicate call');
-      return;
+    // Stop current music if it's different
+    if (currentMusicHowl && currentMusicHowl !== newHowl) {
+      console.log('🎵 Stopping old music:', currentMusicTrack);
+      currentMusicHowl.stop();
     }
 
-    // Set fading flag
-    set({ isMusicFading: true });
-
-    // Fade out current music if playing (only if it's a different track)
-    if (currentMusicHowl && currentMusicHowl !== newHowl && currentMusicHowl.playing()) {
-      const oldHowl = currentMusicHowl;
-      const currentVolume = oldHowl.volume();
-      oldHowl.fade(currentVolume, 0, fadeDuration);
-      oldHowl.once('fade', () => {
-        oldHowl.stop();
-      });
+    // Start new music
+    console.log('🎵 Starting new music:', src);
+    
+    // Stop the Howl first if it's already playing to prevent duplicate sounds
+    if (newHowl.playing()) {
+      console.log('🎵 Stopping existing playback before starting new one');
+      newHowl.stop();
     }
-
-    // Fade in new music
-    newHowl.volume(0);
+    
+    newHowl.volume(1);
     newHowl.play();
-    newHowl.fade(0, 1, fadeDuration);
-
-    // Clear fading flag after fade completes
-    newHowl.once('fade', () => {
-      set({ isMusicFading: false });
-    });
 
     set({
       currentMusicHowl: newHowl,
       currentMusicTrack: src,
     });
 
-    console.log('🎵 Now playing:', src);
+    console.log('🎵 Set as current:', src);
   },
 
   // Stop background music
-  stopMusic: (fadeDuration = 500) => {
+  stopMusic: () => {
     const { currentMusicHowl } = get();
 
     if (currentMusicHowl) {
-      if (currentMusicHowl.playing()) {
-        set({ isMusicFading: true });
-
-        const currentVolume = currentMusicHowl.volume();
-        currentMusicHowl.fade(currentVolume, 0, fadeDuration);
-        currentMusicHowl.once('fade', () => {
-          currentMusicHowl.stop();
-          set({ isMusicFading: false });
-        });
-      } else {
-        // Music exists but not playing - just stop it
-        currentMusicHowl.stop();
-      }
+      console.log('🎵 Stopping music');
+      currentMusicHowl.stop();
 
       set({
         currentMusicHowl: null,
@@ -309,7 +294,6 @@ export const useAudioStore = create<AudioStore>((set, get) => {
       musicCache: new Map(),
       currentMusicHowl: null,
       currentMusicTrack: null,
-      isMusicFading: false,
     });
 
     console.log('🎵 Audio cleanup completed');
