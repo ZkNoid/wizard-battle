@@ -1,8 +1,8 @@
 /**
  * Script to seed expedition locations in MongoDB
- * 
+ *
  * This script seeds the `locations` collection with all location definitions
- * 
+ *
  * Run with: node seed-expeditions.js
  */
 
@@ -15,18 +15,29 @@ require('dotenv').config();
 
 const LOCATIONS = [
   {
+    id: 'loc-whisperwood-grove',
+    name: 'Whisperwood Grove',
+    image: '/locations/forest.png',
+    possibleRewards: [
+      { itemId: 'Amber', amount: 1 },
+      { itemId: 'Resin', amount: 1 },
+      { itemId: 'ManaBark', amount: 1 },
+      { itemId: 'ElvenRune', amount: 1 },
+      { itemId: 'PhoenixEmber', amount: 1 },
+    ],
+    minRewards: 3,
+    maxRewards: 5,
+  },
+  {
     id: 'loc-serpentwater-basin',
     name: 'Serpentwater Basin',
     image: '/locations/river.png',
     possibleRewards: [
-      { itemId: 'Amber', amount: 1 },
-      { itemId: 'AstralAlloy', amount: 1 },
-      { itemId: 'BlackOrb', amount: 1 },
-      { itemId: 'ChainLink', amount: 1 },
-      { itemId: 'Crystall', amount: 1 },
-      { itemId: 'Frostdust', amount: 1 },
-      { itemId: 'Glowstone', amount: 1 },
-      { itemId: 'ManaBark', amount: 1 },
+      { itemId: 'Pearl', amount: 1 },
+      { itemId: 'ReedSilk', amount: 1 },
+      { itemId: 'Shell', amount: 1 },
+      { itemId: 'SerpentScale', amount: 1 },
+      { itemId: 'WaterEssence', amount: 1 },
     ],
     minRewards: 3,
     maxRewards: 5,
@@ -36,31 +47,11 @@ const LOCATIONS = [
     name: 'Mount Avalon',
     image: '/locations/mountain.png',
     possibleRewards: [
-      { itemId: 'PhoenixEmber', amount: 1 },
-      { itemId: 'Rune', amount: 1 },
-      { itemId: 'Resin', amount: 1 },
-      { itemId: 'ChainLink', amount: 1 },
-      { itemId: 'BlackOrb', amount: 1 },
-      { itemId: 'AstralAlloy', amount: 1 },
-      { itemId: 'Crystall', amount: 1 },
-      { itemId: 'Glowstone', amount: 1 },
-    ],
-    minRewards: 3,
-    maxRewards: 5,
-  },
-  {
-    id: 'loc-whisperwood-grove',
-    name: 'Whisperwood Grove',
-    image: '/locations/forest.png',
-    possibleRewards: [
-      { itemId: 'ShadowstepLeather', amount: 1 },
-      { itemId: 'ReedSilk', amount: 1 },
-      { itemId: 'SerpentScale', amount: 1 },
-      { itemId: 'ManaBark', amount: 1 },
       { itemId: 'WerewolfFang', amount: 1 },
       { itemId: 'Frostdust', amount: 1 },
-      { itemId: 'Amber', amount: 1 },
       { itemId: 'Glowstone', amount: 1 },
+      { itemId: 'InfusedCrystal', amount: 1 },
+      { itemId: 'AstralAlloy', amount: 1 },
     ],
     minRewards: 3,
     maxRewards: 5,
@@ -69,18 +60,9 @@ const LOCATIONS = [
     id: 'loc-blackfin-hollow',
     name: 'Blackfin Hollow',
     image: '/locations/hills.png',
-    possibleRewards: [
-      { itemId: 'Pearl', amount: 1 },
-      { itemId: 'Shell', amount: 1 },
-      { itemId: 'BlackOrb', amount: 1 },
-      { itemId: 'ChainLink', amount: 1 },
-      { itemId: 'AstralAlloy', amount: 1 },
-      { itemId: 'SilverThread', amount: 1 },
-      { itemId: 'ShardofIllusion', amount: 1 },
-      { itemId: 'Crystall', amount: 1 },
-    ],
-    minRewards: 3,
-    maxRewards: 5,
+    possibleRewards: [],
+    minRewards: 0,
+    maxRewards: 0,
   },
 ];
 
@@ -104,9 +86,11 @@ async function seedLocations() {
 
     // Check if locations already exist
     const existingCount = await locationsCollection.countDocuments();
-    
+
     if (existingCount > 0) {
-      console.log(`Found ${existingCount} existing locations. Clearing and re-seeding...`);
+      console.log(
+        `Found ${existingCount} existing locations. Clearing and re-seeding...`
+      );
       await locationsCollection.deleteMany({});
     }
 
@@ -118,10 +102,11 @@ async function seedLocations() {
     console.log('\nSeeded locations:');
     LOCATIONS.forEach((loc, index) => {
       console.log(`  ${index + 1}. ${loc.name} (${loc.id})`);
-      console.log(`     - Possible rewards: ${loc.possibleRewards.length} items`);
+      console.log(
+        `     - Possible rewards: ${loc.possibleRewards.length} items`
+      );
       console.log(`     - Rewards range: ${loc.minRewards}-${loc.maxRewards}`);
     });
-
   } catch (error) {
     console.error('Error seeding locations:', error);
     process.exit(1);
@@ -133,4 +118,3 @@ async function seedLocations() {
 
 // Run the script
 seedLocations();
-
