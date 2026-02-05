@@ -37,6 +37,7 @@ export default function HomePage() {
     setIsInventoryModalOpen,
     setIsCraftModalOpen,
     setIsExpeditionModalOpen,
+    setIsTestnetModalOpen,
   } = useMiscellaneousSessionStore();
   const { playMainTheme, stopMusic } = useBackgroundMusic();
 
@@ -83,8 +84,7 @@ export default function HomePage() {
         variant="gray"
         className="absolute right-20 top-40 z-30 rounded-lg bg-purple-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-purple-700 active:scale-95"
         onClick={() => {
-          // Add your button action here
-          console.log('Top right button clicked');
+          setIsTestnetModalOpen(true);
         }}
         isLong={true}
       >
