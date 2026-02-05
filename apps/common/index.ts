@@ -7,3 +7,4 @@ export * from "./stater/stater";
 export * from "./types/matchmaking.types";
 export * from "./types/inventory.types";
 export * from "./types/expedition.types";
+export * from "./types/craft.types";
