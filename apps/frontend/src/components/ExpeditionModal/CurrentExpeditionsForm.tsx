@@ -13,9 +13,17 @@ export default function CurrentExpeditionsForm({
   onClose: () => void;
 }) {
   const { address } = useMinaAppkit();
-  const { expeditions, isLoading, interruptExpedition, loadUserExpeditions } = useExpeditionStore();
+  const {
+    expeditions,
+    isLoading,
+    completeExpedition,
+    interruptExpedition,
+    loadUserExpeditions,
+  } = useExpeditionStore();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [selectedExpeditionId, setSelectedExpeditionId] = useState<string | null>(null);
+  const [selectedExpeditionId, setSelectedExpeditionId] = useState<
+    string | null
+  >(null);
 
   // Load expeditions when component mounts or address changes
   useEffect(() => {
@@ -25,11 +33,17 @@ export default function CurrentExpeditionsForm({
   }, [address, loadUserExpeditions]);
 
   // Filter to show active expeditions
-  const activeExpeditions = expeditions.filter((exp) => exp.status === 'active');
+  const activeExpeditions = expeditions.filter(
+    (exp) => exp.status === 'active'
+  );
 
   const onInterruptExpedition = (expeditionId: string) => {
     setSelectedExpeditionId(expeditionId);
     setShowConfirmModal(true);
+  };
+  const onCompleteExpedition = (expeditionId: string) => {
+    setSelectedExpeditionId(expeditionId);
+    handleConfirmComplition();
   };
 
   const handleConfirmInterrupt = async () => {
@@ -38,6 +52,12 @@ export default function CurrentExpeditionsForm({
     }
     setShowConfirmModal(false);
     setSelectedExpeditionId(null);
+  };
+
+  const handleConfirmComplition = async () => {
+    if (selectedExpeditionId && address) {
+      await completeExpedition(address, selectedExpeditionId);
+    }
   };
 
   const handleCancelInterrupt = () => {
@@ -63,7 +83,10 @@ export default function CurrentExpeditionsForm({
               <CurrentExpeditionCard
                 key={expedition.id}
                 expedition={expedition}
-                onInterruptExpedition={() => onInterruptExpedition(expedition.id)}
+                onInterruptExpedition={() =>
+                  onInterruptExpedition(expedition.id)
+                }
+                onCompleteExpedition={() => onCompleteExpedition(expedition.id)}
               />
             ))
           ) : (

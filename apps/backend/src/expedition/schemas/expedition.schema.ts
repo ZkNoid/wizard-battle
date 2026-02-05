@@ -1,42 +1,61 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Schema as MongooseSchema } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
+import type {
+  ExpeditionStatus,
+  IExpeditionRewardDB,
+} from '@wizard-battle/common';
 
-export type ExpeditionDocument = Expedition & Document;
-
-export interface ExpeditionReward {
-  itemId: string;
-  amount: number;
-}
+export type ExpeditionDocument = HydratedDocument<Expedition>;
 
 @Schema({ timestamps: true })
 export class Expedition {
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
+  id!: string;
+
+  @Prop({ required: true, index: true })
   userId!: string;
 
   @Prop({ required: true })
   characterId!: string;
 
   @Prop({ required: true })
-  locationId!: number;
-
-  @Prop({ required: true, enum: ['active', 'completed', 'pending'] })
-  status!: 'active' | 'completed' | 'pending';
-
-  @Prop({ type: [{ itemId: String, amount: Number }], required: true })
-  rewards!: ExpeditionReward[];
+  characterRole!: string;
 
   @Prop({ required: true })
-  startedAt!: Date;
+  characterImage!: string;
+
+  @Prop({ required: true })
+  locationId!: string;
+
+  @Prop({ required: true })
+  locationName!: string;
+
+  @Prop({ type: [{ itemId: String, amount: Number }], default: [] })
+  rewards!: IExpeditionRewardDB[];
+
+  @Prop({
+    required: true,
+    enum: ['active', 'completed', 'pending'],
+    default: 'pending',
+  })
+  status!: ExpeditionStatus;
 
   @Prop()
-  completedAt?: Date;
+  startedAt?: Date;
+
+  @Prop()
+  completesAt?: Date;
 
   @Prop({ required: true })
-  timeToComplete!: number; // in milliseconds
+  timeToComplete!: number; // Duration in milliseconds
+
+  // Timestamps (automatically managed by Mongoose)
+  createdAt!: Date;
+  updatedAt!: Date;
 }
 
 export const ExpeditionSchema = SchemaFactory.createForClass(Expedition);
 
-// Add index for efficient queries
+// Index for efficient queries
 ExpeditionSchema.index({ userId: 1, status: 1 });
-ExpeditionSchema.index({ userId: 1, characterId: 1 });
+ExpeditionSchema.index({ userId: 1, createdAt: -1 });

@@ -12,7 +12,7 @@ import { GameCommitModule } from './game-commit/game-commit.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserInventoryModule } from './user-inventory/user-inventory.module';
 import { GameCharacterModule } from './game-character/game-character.module';
-import { ExpeditionModule } from './expedition_v2/expedition.module';
+import { ExpeditionModule } from './expedition/expedition.module';
 
 @Module({
   imports: [
