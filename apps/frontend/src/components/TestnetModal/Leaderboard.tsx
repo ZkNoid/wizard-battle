@@ -3,11 +3,13 @@
 import ModalTitle from '../shared/ModalTitle';
 import { Scroll } from '@/components/shared/Scroll';
 import { Button } from '@/components/shared/Button';
-import { TESTNET_LEADERBOARD } from '@/lib/constants/testnet';
+import {
+  TESTNET_LEADERBOARD,
+  TESTNET_CURRENT_USER,
+} from '@/lib/constants/testnet';
 
 interface LeaderboardProps {
   onCancel?: () => void;
-  userWalletAddress?: string; // Current user's wallet address
 }
 
 // Helper function to shorten wallet address
@@ -30,7 +32,7 @@ const getPlaceDisplay = (place: number): string => {
   }
 };
 
-export function Leaderboard({ onCancel, userWalletAddress }: LeaderboardProps) {
+export function Leaderboard({ onCancel }: LeaderboardProps) {
   return (
     <div className="flex h-full flex-col">
       <ModalTitle title="Leaderboard" onClose={onCancel || (() => {})} />
@@ -47,44 +49,39 @@ export function Leaderboard({ onCancel, userWalletAddress }: LeaderboardProps) {
       </div>
 
       {/* Leaderboard List */}
-      <div className="mt-1 flex-1 overflow-hidden">
+      <div className="mt-1 flex-1 overflow-hidden pl-2">
         <Scroll height="100%" alwaysShowScrollbar>
           <div className="flex flex-col gap-2 pr-2">
-            {TESTNET_LEADERBOARD.map((item) => {
-              const isCurrentUser =
-                userWalletAddress &&
-                item.walletAddress.toLowerCase() ===
-                  userWalletAddress.toLowerCase();
+            {[TESTNET_CURRENT_USER, ...TESTNET_LEADERBOARD].map((item) => (
+              <Button
+                key={item.place}
+                variant="lightGray"
+                className="h-16 w-full"
+                isLong
+              >
+                <div className="grid w-full grid-cols-[1fr_2fr_1fr] gap-4 px-6">
+                  {/* Place */}
+                  <span className="flex items-center whitespace-nowrap text-left text-lg">
+                    {getPlaceDisplay(item.place)}
+                    {item.place === TESTNET_CURRENT_USER.place && (
+                      <span className="font-pixel-klein ml-2 text-xs">
+                        (Your place)
+                      </span>
+                    )}
+                  </span>
 
-              return (
-                <Button
-                  key={item.place}
-                  variant={isCurrentUser ? 'blue' : 'lightGray'}
-                  className="h-16 w-full"
-                  isLong
-                >
-                  <div className="grid w-full grid-cols-[1fr_2fr_1fr] gap-4 px-4">
-                    {/* Place */}
-                    <span className="flex items-center text-left text-lg">
-                      {getPlaceDisplay(item.place)}
-                      {isCurrentUser && (
-                        <span className="ml-2 text-xs">(Your place)</span>
-                      )}
-                    </span>
+                  {/* Wallet Address */}
+                  <span className="flex items-center justify-center text-base">
+                    {shortenAddress(item.walletAddress)}
+                  </span>
 
-                    {/* Wallet Address */}
-                    <span className="flex items-center justify-center text-base">
-                      {shortenAddress(item.walletAddress)}
-                    </span>
-
-                    {/* Points */}
-                    <span className="flex items-center justify-end text-lg">
-                      {item.points}
-                    </span>
-                  </div>
-                </Button>
-              );
-            })}
+                  {/* Points */}
+                  <span className="flex items-center justify-end text-lg">
+                    {item.points}
+                  </span>
+                </div>
+              </Button>
+            ))}
           </div>
         </Scroll>
       </div>

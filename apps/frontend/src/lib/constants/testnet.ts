@@ -58,9 +58,7 @@ export const TESTNET_BLOCKS: ITestnetBlock[] = [
   {
     title: 'Tier 6: Leave feedback',
     points: 10,
-    items: [
-      { isCompleted: false, title: 'Win a battle with full HP' },
-    ],
+    items: [{ isCompleted: false, title: 'Win a battle with full HP' }],
   },
 ];
 
@@ -166,3 +164,9 @@ export const TESTNET_LEADERBOARD: ITestnetLeaderboardItem[] = [
     points: 10,
   },
 ];
+
+export const TESTNET_CURRENT_USER: ITestnetLeaderboardItem = {
+  place: 322,
+  walletAddress: 'B62qkYa1o6Mj6uTTjDQCob7FYZspuhkm4RRQhgJg9j4koEBWiSrTQrS',
+  points: 112,
+};
