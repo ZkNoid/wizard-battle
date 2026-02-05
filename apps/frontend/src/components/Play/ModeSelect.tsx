@@ -31,6 +31,8 @@ export function ModeSelect({
               setPlayStep(PlaySteps.SELECT_CHARACTER);
               setPlayMode(PlayMode.PVP);
             }}
+            enableHoverSound
+            enableClickSound
             isLong={true}
           >
             Start
@@ -54,6 +56,8 @@ export function ModeSelect({
               setPlayStep(PlaySteps.SELECT_CHARACTER);
               setPlayMode(PlayMode.PVE);
             }}
+            enableHoverSound
+            enableClickSound
             isLong={true}
           >
             Start

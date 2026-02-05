@@ -53,17 +53,13 @@ export function SelectableImage({
         quality={100}
       />
       {isSelected ? (
-        <ActiveImgBorder 
-          className="pointer-events-none absolute inset-0 h-full w-full"
-        />
+        <ActiveImgBorder className="pointer-events-none absolute inset-0 h-full w-full" />
       ) : (
-        <DefaultImgBorder 
-          className="pointer-events-none absolute inset-0 h-full w-full"
-        />
+        <DefaultImgBorder className="pointer-events-none absolute inset-0 h-full w-full" />
       )}
       {isSelected && name && (
         <div
-          className="pointer-events-none absolute bottom-0 left-0 right-0 py-1 text-center font-pixel text-xs text-black"
+          className="font-pixel pointer-events-none absolute bottom-0 left-0 right-0 py-1 text-center text-xs text-black"
           style={{
             backgroundColor: '#5B7AC4',
             height: `${height * 0.35}px`,
@@ -72,9 +68,7 @@ export function SelectableImage({
               'polygon(0% 0%, 100% 0%, 100% 75%, 95% 85%, 85% 100%, 15% 100%, 5% 85%, 0% 75%)',
           }}
         >
-          <span className="font-pixel text-main-gray text-sm">
-            {name}
-          </span>
+          <span className="font-pixel text-main-gray text-sm">{name}</span>
         </div>
       )}
     </div>

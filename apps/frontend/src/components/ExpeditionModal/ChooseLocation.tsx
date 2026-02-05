@@ -34,7 +34,7 @@ export default function ChooseLocation({
       <span className="font-pixel text-main-gray text-center text-xl font-bold">
         Choose location
       </span>
-      <div className="flex flex-row justify-center gap-3 flex-wrap">
+      <div className="flex flex-row flex-wrap justify-center gap-3">
         {locations.map((location) => (
           <SelectableImage
             key={location.id}

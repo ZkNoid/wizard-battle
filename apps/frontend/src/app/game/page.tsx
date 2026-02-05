@@ -29,6 +29,7 @@ import {
   EntityType,
 } from '@/engine';
 import { WizardId } from '../../../../common/wizards';
+import { useBackgroundMusic, useSpellSounds } from '@/lib/hooks/useAudio';
 import Header from '@/components/Header';
 import Modals from '@/components/Header/Modals';
 
@@ -54,6 +55,10 @@ export default function GamePage() {
   // Hooks
   const router = useRouter();
   const { address } = useMinaAppkit();
+  const { playBattleMusic, playMainTheme } = useBackgroundMusic();
+
+  // Enable spell sounds for this game instance
+  useSpellSounds();
   const [canPlayerAct, setCanPlayerAct] = useState<boolean>(false);
   const [actionInfo, setActionInfo] = useState<{
     movementDone: boolean;
@@ -413,6 +418,11 @@ export default function GamePage() {
         (s) => s.id.toString() === spellId.toString()
       );
 
+      if (spell) {
+        // Emit spell cast event for audio
+        EventBus.emit('cast-spell', x, y, spell);
+      }
+
       if (!spell) {
         console.log('Spell not found');
         return;
@@ -549,6 +559,16 @@ export default function GamePage() {
   }, [setActionSend]);
 
   // Effects
+
+  // Switch to battle music when entering game
+  useEffect(() => {
+    playBattleMusic();
+
+    // Return to main theme when leaving game
+    return () => {
+      playMainTheme();
+    };
+  }, [playBattleMusic, playMainTheme]);
 
   useEffect(() => {
     if (gamePhaseManager) {

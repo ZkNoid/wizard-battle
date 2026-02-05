@@ -111,4 +111,3 @@ export const SpectralWizard = memo(({ entity }: { entity: IEntity }) => {
 });
 
 SpectralWizard.displayName = 'SpectralWizard';
-

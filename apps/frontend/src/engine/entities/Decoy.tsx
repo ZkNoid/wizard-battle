@@ -108,4 +108,3 @@ export const Decoy = memo(({ entity }: { entity: IEntity }) => {
 });
 
 Decoy.displayName = 'Decoy';
-

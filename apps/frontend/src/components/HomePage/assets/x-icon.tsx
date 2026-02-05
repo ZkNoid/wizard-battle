@@ -10,7 +10,7 @@ export const XIcon = ({ className }: { className: string }) => {
     >
       <mask
         id="mask0_42_1395"
-        style={{ maskType: "luminance" }}
+        style={{ maskType: 'luminance' }}
         maskUnits="userSpaceOnUse"
         x="0"
         y="0"

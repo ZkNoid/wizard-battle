@@ -21,8 +21,12 @@ export default function Initializer() {
   const { socket, setSocket, setStater, isBootstrapped, setBootstrapped } =
     useUserInformationStore();
   const statsByWizard = useInventoryStore((state) => state.statsByWizard);
-  const loadUserInventory = useInventoryStore((state) => state.loadUserInventory);
-  const loadUserExpeditions = useExpeditionStore((state) => state.loadUserExpeditions);
+  const loadUserInventory = useInventoryStore(
+    (state) => state.loadUserInventory
+  );
+  const loadUserExpeditions = useExpeditionStore(
+    (state) => state.loadUserExpeditions
+  );
 
   // Initialize socket and stater
   useEffect(() => {

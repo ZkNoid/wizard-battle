@@ -25,7 +25,7 @@ export default function WizardImageMini({ wizard }: { wizard: Wizard }) {
         alt={wizard.name}
         style={{ objectFit: 'contain', pointerEvents: 'none' }}
         draggable={false}
-        className="w-full h-full"
+        className="h-full w-full"
         quality={100}
         unoptimized={true}
       />

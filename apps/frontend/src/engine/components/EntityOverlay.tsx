@@ -72,9 +72,7 @@ export function EntityOverlay({
             {entity.type === EntityType.SPECTRAL_WIZARD && (
               <SpectralWizard entity={entity} />
             )}
-            {entity.type === EntityType.DECOY && (
-              <Decoy entity={entity} />
-            )}
+            {entity.type === EntityType.DECOY && <Decoy entity={entity} />}
           </div>
         );
       })}

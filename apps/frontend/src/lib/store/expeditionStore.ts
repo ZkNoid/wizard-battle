@@ -30,8 +30,14 @@ interface ExpeditionStore {
       timePeriod: ExpeditionTimePeriod;
     }
   ) => Promise<IExpedition | null>;
-  completeExpedition: (address: string, expeditionId: string) => Promise<IExpedition | null>;
-  interruptExpedition: (address: string, expeditionId: string) => Promise<IExpedition | null>;
+  completeExpedition: (
+    address: string,
+    expeditionId: string
+  ) => Promise<IExpedition | null>;
+  interruptExpedition: (
+    address: string,
+    expeditionId: string
+  ) => Promise<IExpedition | null>;
   clearExpeditions: () => void;
 
   // Selectors
@@ -54,9 +60,10 @@ export const useExpeditionStore = create<ExpeditionStore>()(
         set({ isLoading: true, error: null });
 
         try {
-          const expeditions = await trpcClient.expeditions.getUserExpeditions.query({
-            userId: address,
-          });
+          const expeditions =
+            await trpcClient.expeditions.getUserExpeditions.query({
+              userId: address,
+            });
 
           set({
             expeditions,
@@ -64,7 +71,10 @@ export const useExpeditionStore = create<ExpeditionStore>()(
           });
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : 'Failed to load expeditions',
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to load expeditions',
             isLoading: false,
           });
         }
@@ -76,7 +86,10 @@ export const useExpeditionStore = create<ExpeditionStore>()(
           set({ locations });
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : 'Failed to load locations',
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to load locations',
           });
         }
       },
@@ -91,10 +104,11 @@ export const useExpeditionStore = create<ExpeditionStore>()(
         set({ isCreating: true, error: null });
 
         try {
-          const newExpedition = await trpcClient.expeditions.createExpedition.mutate({
-            userId: address,
-            ...input,
-          });
+          const newExpedition =
+            await trpcClient.expeditions.createExpedition.mutate({
+              userId: address,
+              ...input,
+            });
 
           set((state) => ({
             expeditions: [newExpedition, ...state.expeditions],
@@ -104,7 +118,10 @@ export const useExpeditionStore = create<ExpeditionStore>()(
           return newExpedition;
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : 'Failed to create expedition',
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to create expedition',
             isCreating: false,
           });
           return null;
@@ -118,10 +135,11 @@ export const useExpeditionStore = create<ExpeditionStore>()(
         }
 
         try {
-          const completedExpedition = await trpcClient.expeditions.completeExpedition.mutate({
-            id: expeditionId,
-            userId: address,
-          });
+          const completedExpedition =
+            await trpcClient.expeditions.completeExpedition.mutate({
+              id: expeditionId,
+              userId: address,
+            });
 
           set((state) => ({
             expeditions: state.expeditions.map((exp) =>
@@ -132,7 +150,10 @@ export const useExpeditionStore = create<ExpeditionStore>()(
           return completedExpedition;
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : 'Failed to complete expedition',
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to complete expedition',
           });
           return null;
         }
@@ -145,10 +166,11 @@ export const useExpeditionStore = create<ExpeditionStore>()(
         }
 
         try {
-          const interruptedExpedition = await trpcClient.expeditions.interruptExpedition.mutate({
-            id: expeditionId,
-            userId: address,
-          });
+          const interruptedExpedition =
+            await trpcClient.expeditions.interruptExpedition.mutate({
+              id: expeditionId,
+              userId: address,
+            });
 
           set((state) => ({
             expeditions: state.expeditions.map((exp) =>
@@ -159,7 +181,10 @@ export const useExpeditionStore = create<ExpeditionStore>()(
           return interruptedExpedition;
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : 'Failed to interrupt expedition',
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to interrupt expedition',
           });
           return null;
         }
@@ -196,4 +221,3 @@ export const useExpeditionStore = create<ExpeditionStore>()(
     }
   )
 );
-

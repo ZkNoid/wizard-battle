@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useMinaAppkit } from 'mina-appkit';
 import WelcomeScreen from '../WelcomeScreen';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
+import { useBackgroundMusic } from '@/lib/hooks/useAudio';
 import Header from '../Header';
 import Modals from '../Header/Modals';
 
@@ -36,6 +37,28 @@ export default function HomePage() {
     setIsCraftModalOpen,
     setIsExpeditionModalOpen,
   } = useMiscellaneousSessionStore();
+  const { playMainTheme, stopMusic } = useBackgroundMusic();
+
+  // Initialize and play main theme on mount
+  useEffect(() => {
+    playMainTheme();
+
+    // If autoplay is blocked, retry on first user interaction
+    const handleFirstInteraction = () => {
+      playMainTheme();
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('keydown', handleFirstInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+      // stopMusic(0);
+    };
+  }, [playMainTheme, stopMusic]);
 
   useEffect(() => {
     const handleResize = () => {

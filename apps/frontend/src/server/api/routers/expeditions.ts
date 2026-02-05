@@ -71,7 +71,10 @@ export const expeditionsRouter = createTRPCRouter({
       });
     }
 
-    const locations = await db.collection(locationsCollection).find({}).toArray();
+    const locations = await db
+      .collection(locationsCollection)
+      .find({})
+      .toArray();
     return locations as unknown as ILocation[];
   }),
 
@@ -211,8 +214,9 @@ export const expeditionsRouter = createTRPCRouter({
 
       // Generate random rewards from location's possible rewards
       const numRewards =
-        Math.floor(Math.random() * (location.maxRewards - location.minRewards + 1)) +
-        location.minRewards;
+        Math.floor(
+          Math.random() * (location.maxRewards - location.minRewards + 1)
+        ) + location.minRewards;
 
       const shuffledRewards = [...location.possibleRewards].sort(
         () => Math.random() - 0.5
@@ -260,29 +264,31 @@ export const expeditionsRouter = createTRPCRouter({
 
       // Start a session for transaction
       const session = client.startSession();
-      
+
       try {
         // Use a transaction to ensure atomicity of expedition completion and reward claiming
         const result = await session.withTransaction(async () => {
           // Atomically update expedition status from active to completed
           // This prevents double-claiming by ensuring only one request can successfully update
-          const updateResult = await db.collection(expeditionsCollection).findOneAndUpdate(
-            { 
-              id: input.id, 
-              userId: input.userId,
-              status: { $ne: 'completed' } // Only update if not already completed
-            },
-            {
-              $set: {
-                status: 'completed',
-                updatedAt: new Date(),
+          const updateResult = await db
+            .collection(expeditionsCollection)
+            .findOneAndUpdate(
+              {
+                id: input.id,
+                userId: input.userId,
+                status: { $ne: 'completed' }, // Only update if not already completed
               },
-            },
-            { 
-              returnDocument: 'after',
-              session 
-            }
-          );
+              {
+                $set: {
+                  status: 'completed',
+                  updatedAt: new Date(),
+                },
+              },
+              {
+                returnDocument: 'after',
+                session,
+              }
+            );
 
           if (!updateResult) {
             throw new TRPCError({
@@ -298,12 +304,12 @@ export const expeditionsRouter = createTRPCRouter({
             // Use upsert with $inc to handle both new and existing items atomically
             await db.collection('userinventory').updateOne(
               { userId: input.userId, itemId: reward.itemId },
-              { 
+              {
                 $inc: { quantity: reward.amount },
                 $setOnInsert: {
                   acquiredAt: new Date(),
                   acquiredFrom: 'reward',
-                }
+                },
               },
               { upsert: true, session }
             );
@@ -331,7 +337,10 @@ export const expeditionsRouter = createTRPCRouter({
 
       const expedition = (await db
         .collection(expeditionsCollection)
-        .findOne({ id: input.id, userId: input.userId })) as unknown as IExpeditionDB | null;
+        .findOne({
+          id: input.id,
+          userId: input.userId,
+        })) as unknown as IExpeditionDB | null;
 
       if (!expedition) {
         throw new TRPCError({
@@ -379,10 +388,12 @@ export const expeditionsRouter = createTRPCRouter({
         });
 
         if (existingItem) {
-          await db.collection('userinventory').updateOne(
-            { userId: input.userId, itemId: reward.itemId },
-            { $inc: { quantity: reward.amount } }
-          );
+          await db
+            .collection('userinventory')
+            .updateOne(
+              { userId: input.userId, itemId: reward.itemId },
+              { $inc: { quantity: reward.amount } }
+            );
         } else {
           await db.collection('userinventory').insertOne({
             userId: input.userId,
@@ -406,4 +417,3 @@ export const expeditionsRouter = createTRPCRouter({
 });
 
 export type ExpeditionsRouter = typeof expeditionsRouter;
-
