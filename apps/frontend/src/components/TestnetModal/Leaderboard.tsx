@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '../shared/Button';
+import ModalTitle from '../shared/ModalTitle';
 
 interface LeaderboardProps {
   onCancel?: () => void;
@@ -8,16 +8,15 @@ interface LeaderboardProps {
 
 export function Leaderboard({ onCancel }: LeaderboardProps) {
   return (
-    <div className="flex h-full flex-col items-center justify-between">
-      <div className="flex w-full flex-1 flex-col items-center justify-center gap-4">
-        <h2 className="font-pixel text-main-gray text-2xl font-bold">
-          Leaderboard
-        </h2>
+    <div className="flex h-full flex-col">
+      <ModalTitle title="Leaderboard" onClose={onCancel || (() => {})} />
+
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto pt-4">
         <p className="font-pixel text-main-gray text-center text-lg">
           Top players in the testnet
         </p>
         {/* TODO: Add actual leaderboard data here */}
-        <div className="mt-4 w-full max-w-md">
+        <div className="mt-4 w-full">
           <div className="flex flex-col gap-2">
             <div className="font-pixel text-main-gray flex items-center justify-between rounded bg-white bg-opacity-20 p-3 text-base">
               <span>1. Player123</span>
@@ -33,21 +32,6 @@ export function Leaderboard({ onCancel }: LeaderboardProps) {
             </div>
           </div>
         </div>
-      </div>
-      <div className="flex w-full justify-center gap-4 pt-4">
-        {onCancel && (
-          <Button
-            variant="gray"
-            className="h-16 w-40"
-            onClick={onCancel}
-            enableHoverSound
-            enableClickSound
-          >
-            <span className="font-pixel text-main-gray text-lg font-bold">
-              Close
-            </span>
-          </Button>
-        )}
       </div>
     </div>
   );
