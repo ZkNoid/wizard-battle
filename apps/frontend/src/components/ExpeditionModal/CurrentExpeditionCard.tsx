@@ -2,6 +2,7 @@
 
 import type { IExpedition } from '@wizard-battle/common';
 import Image from 'next/image';
+import { useState } from 'react';
 import WizardImageMini from './components/WizardImageMini';
 import { allWizards } from '../../../../common/wizards';
 import WizardRole from './components/WizardRole';
@@ -14,12 +15,16 @@ import { ExpeditionCardBg } from './assets/expedition-card-bg';
 interface CurrentExpeditionCardProps {
   expedition: IExpedition;
   onInterruptExpedition: () => void;
+  onCompleteExpedition: () => void;
 }
 
 export default function CurrentExpeditionCard({
   expedition,
   onInterruptExpedition,
+  onCompleteExpedition,
 }: CurrentExpeditionCardProps) {
+  const [expedionPeriodHasEnded, setExpedionPeriodHasEnded] = useState(false);
+
   return (
     <div className="relative">
       <div className="relative z-[1] flex w-full flex-col gap-2 p-3">
@@ -40,7 +45,11 @@ export default function CurrentExpeditionCard({
           <div className="mb-1 flex min-w-0 flex-1 flex-col justify-between gap-1">
             {/* Row 1 - Timer and Location */}
             <div className="flex gap-1">
-              <TimeToComplete timeToComplete={expedition.timeToComplete} />
+              <TimeToComplete
+                timeToComplete={expedition.timeToComplete}
+                startedAt={expedition.startedAt}
+                onExpeditionPeriodEnded={setExpedionPeriodHasEnded}
+              />
               <ExpeditionLocation location={expedition.locationName} />
             </div>
 
@@ -57,16 +66,25 @@ export default function CurrentExpeditionCard({
           </div>
 
           {/* Interrupt Button */}
-          <Button
-            variant="blue"
-            className="h-15 min-w-0 flex-1"
-            isLong
-            onClick={onInterruptExpedition}
-            enableHoverSound
-            enableClickSound
-          >
-            <span className="truncate">Interrupt Expedition</span>
-          </Button>
+          {expedionPeriodHasEnded ? (
+            <Button
+              variant="blue"
+              className="h-15 min-w-0 flex-1"
+              isLong
+              onClick={onCompleteExpedition}
+            >
+              <span className="truncate">Complete Expedition</span>
+            </Button>
+          ) : (
+            <Button
+              variant="blue"
+              className="h-15 min-w-0 flex-1"
+              isLong
+              onClick={onInterruptExpedition}
+            >
+              <span className="truncate">Interrupt Expedition</span>
+            </Button>
+          )}
         </div>
       </div>
 

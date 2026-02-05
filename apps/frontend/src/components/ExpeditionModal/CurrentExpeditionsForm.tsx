@@ -13,8 +13,13 @@ export default function CurrentExpeditionsForm({
   onClose: () => void;
 }) {
   const { address } = useMinaAppkit();
-  const { expeditions, isLoading, interruptExpedition, loadUserExpeditions } =
-    useExpeditionStore();
+  const {
+    expeditions,
+    isLoading,
+    completeExpedition,
+    interruptExpedition,
+    loadUserExpeditions,
+  } = useExpeditionStore();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedExpeditionId, setSelectedExpeditionId] = useState<
     string | null
@@ -36,6 +41,10 @@ export default function CurrentExpeditionsForm({
     setSelectedExpeditionId(expeditionId);
     setShowConfirmModal(true);
   };
+  const onCompleteExpedition = (expeditionId: string) => {
+    setSelectedExpeditionId(expeditionId);
+    handleConfirmComplition();
+  };
 
   const handleConfirmInterrupt = async () => {
     if (selectedExpeditionId && address) {
@@ -43,6 +52,12 @@ export default function CurrentExpeditionsForm({
     }
     setShowConfirmModal(false);
     setSelectedExpeditionId(null);
+  };
+
+  const handleConfirmComplition = async () => {
+    if (selectedExpeditionId && address) {
+      await completeExpedition(address, selectedExpeditionId);
+    }
   };
 
   const handleCancelInterrupt = () => {
@@ -71,6 +86,7 @@ export default function CurrentExpeditionsForm({
                 onInterruptExpedition={() =>
                   onInterruptExpedition(expedition.id)
                 }
+                onCompleteExpedition={() => onCompleteExpedition(expedition.id)}
               />
             ))
           ) : (

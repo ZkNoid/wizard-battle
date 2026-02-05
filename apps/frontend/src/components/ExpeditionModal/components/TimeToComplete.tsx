@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/shared/Button';
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
 
 const formatTime = (milliseconds: number): string => {
   const totalSeconds = Math.floor(milliseconds / 1000);
@@ -14,9 +15,39 @@ const formatTime = (milliseconds: number): string => {
 
 export default function TimeToComplete({
   timeToComplete,
+  startedAt,
+  onExpeditionPeriodEnded,
 }: {
   timeToComplete: number;
+  startedAt?: Date;
+  onExpeditionPeriodEnded?: (ended: boolean) => void;
 }) {
+  const [remainingTime, setRemainingTime] = useState(timeToComplete);
+
+  useEffect(() => {
+    if (!startedAt) {
+      setRemainingTime(timeToComplete);
+      return;
+    }
+
+    const calculateRemaining = () => {
+      const startTime = new Date(startedAt).getTime();
+      const endTime = startTime + timeToComplete;
+      const now = Date.now();
+      const remaining = Math.max(0, endTime - now);
+      setRemainingTime(remaining);
+      onExpeditionPeriodEnded?.(remaining === 0);
+    };
+
+    // Calculate immediately
+    calculateRemaining();
+
+    // Update every second
+    const interval = setInterval(calculateRemaining, 1000);
+
+    return () => clearInterval(interval);
+  }, [startedAt, timeToComplete, onExpeditionPeriodEnded]);
+
   return (
     <Button variant="lightGray" className="w-65 h-18">
       <span className="flex w-full items-center gap-2 px-4">
@@ -27,7 +58,7 @@ export default function TimeToComplete({
           alt="timer-icon"
           className="size-8 object-contain object-center"
         />
-        <span>{formatTime(timeToComplete)}</span>
+        <span>{formatTime(remainingTime)}</span>
       </span>
     </Button>
   );
