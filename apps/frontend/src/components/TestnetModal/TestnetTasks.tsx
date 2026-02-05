@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/shared/Button';
 import ModalTitle from '../shared/ModalTitle';
+import { Scroll } from '@/components/shared/Scroll';
 import { TESTNET_BLOCKS } from '@/lib/constants/testnet';
 import { TestnetTaskBlock } from './TestnetTaskBlock';
 
@@ -85,23 +86,21 @@ export function TestnetTasks({ onCancel }: TestnetTasksProps) {
         </Button>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 overflow-y-auto pt-4">
-        <p className="font-pixel text-main-gray text-center text-lg">
-          Complete tasks to earn rewards and climb the leaderboard
-        </p>
-
-        <div className="mt-2 flex flex-col gap-4">
-          {TESTNET_BLOCKS.map((block, index) => (
-            <TestnetTaskBlock
-              key={index}
-              block={block}
-              onTaskToggle={(taskIndex) => {
-                // TODO: Implement task toggle logic
-                console.log(`Toggle task ${taskIndex} in block ${index}`);
-              }}
-            />
-          ))}
-        </div>
+      <div className="my-2 flex-1 overflow-hidden">
+        <Scroll height="100%" alwaysShowScrollbar>
+          <div className="flex flex-col gap-4 pr-2">
+            {TESTNET_BLOCKS.map((block, index) => (
+              <TestnetTaskBlock
+                key={index}
+                block={block}
+                onTaskToggle={(taskIndex) => {
+                  // TODO: Implement task toggle logic
+                  console.log(`Toggle task ${taskIndex} in block ${index}`);
+                }}
+              />
+            ))}
+          </div>
+        </Scroll>
       </div>
     </div>
   );
