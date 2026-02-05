@@ -10,7 +10,7 @@ export interface ITestnetTask {
 }
 
 export interface ITestnetLeaderboardItem {
-  address: string;
+  walletAddress: string;
   place: number;
   points: number;
 }
