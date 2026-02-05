@@ -58,7 +58,6 @@ AUDIO_ASSETS = {
 │  musicCache: Map<Track, Howl>       │ ← Single source of truth
 │  currentMusicHowl: Howl | null      │ ← Currently playing
 │  currentMusicTrack: Track | null    │
-│  isMusicFading: boolean             │
 │                                     │
 │  playMusic()     ──────┐            │
 │  preloadMusic()        ├────────────┼──> Owns all music Howl instances
@@ -121,8 +120,8 @@ function HomePage() {
 
   useEffect(() => {
     playMainTheme(); // Start background music
-    return () => stopMusic(0); // ⚠️ IMPORTANT: Always cleanup on unmount
-  }, [playMainTheme, stopMusic]);
+    // Note: No cleanup needed - StrictMode safe
+  }, [playMainTheme]);
 }
 ```
 
@@ -130,14 +129,14 @@ function HomePage() {
 
 - `playMainTheme()` - main menu / lobby (auto-checks if already playing)
 - `playBattleMusic()` - battle music (auto-checks if already playing)
-- `stopMusic(fadeDuration?)` - stop with fade-out
+- `stopMusic()` - stop current music immediately
 
 **Important notes:**
 
 - ✅ Music hooks include built-in duplicate prevention
-- ✅ Always include cleanup (`stopMusic`) in useEffect return
 - ✅ Safe to call `playMainTheme()` multiple times - only plays once
-- ⚠️ Don't remove `playMainTheme`/`stopMusic` from dependency array
+- ✅ React StrictMode safe - no cleanup needed in most cases
+- ✅ Music switches instantly (no fade delays)
 
 ---
 
@@ -343,10 +342,11 @@ playSound('/audio/sfx/ui/click.mp3'); // Full path
 ## 🎛️ Features
 
 - **Music:** 
-  - Looped, only one track at a time, smooth fade transitions (500ms)
-  - Cached Howl instances for instant playback
+  - Looped, only one track at a time, instant transitions
+  - Cached Howl instances for immediate playback
   - Store owns all music Howl instances (prevents duplication)
   - Preloading support for better UX
+  - React StrictMode safe
 - **SFX:** 
   - Parallel playback, no looping
   - Managed separately from music
@@ -357,7 +357,7 @@ playSound('/audio/sfx/ui/click.mp3'); // Full path
 - **Anti-duplication guarantee:**
   - Store is single owner of music Howl instances
   - One Howl instance per track in cache
-  - Fade transition tracking prevents overlapping
+  - Built-in duplicate prevention logic
   - Safe to call `playMusic()` multiple times
 - **Automatic cleanup:**
   - Cleanup on window `beforeunload` event
@@ -468,25 +468,26 @@ useEffect(() => {
 **This should no longer happen!** The new architecture guarantees:
 - Only one Howl instance per track (cached in store)
 - Store is the single owner of all music Howl instances
-- Built-in fade tracking prevents overlapping
+- Built-in duplicate prevention checks playing state
+- React StrictMode safe (no double-play in dev mode)
 
 **If it still happens:**
 1. Check that you're not manually creating Howl instances outside the store
-2. Verify cleanup is called: `return () => stopMusic(0);`
+2. Check browser console for `🎵` debug logs to trace the issue
 
 ---
 
-### Music doesn't stop when leaving page
+### Music doesn't stop when component unmounts
 
-**Cause:** Missing cleanup in component unmount
+**This is intentional!** Background music continues playing across pages by design.
 
-**Fix:**
+**To stop music explicitly:**
 
 ```typescript
-useEffect(() => {
-  playMainTheme();
-  return () => stopMusic(0); // ← Must be present
-}, [playMainTheme, stopMusic]);
+const { stopMusic } = useBackgroundMusic();
+
+// Stop when needed
+stopMusic();
 ```
 
 ---
@@ -506,21 +507,29 @@ useEffect(() => {
 
 ---
 
-### Music stutters during fade transitions
+### Music stutters or has issues
 
-**This should no longer happen!** Built-in fade tracking prevents overlapping transitions.
+**Root cause:** Usually browser autoplay policy or React StrictMode in development.
 
-**If it still happens:**
-- Check console for `🎵 Music is fading, skipping duplicate call`
-- Verify you're not calling `playMusic()` in rapid succession
+**Solutions:**
+1. User must interact with page first (click/tap)
+2. Use `preloadMusic()` to cache tracks early
+3. Check console for `🎵` debug logs
 
 ---
 
 ## 🔍 Debug Mode
 
-Enable debug logs by checking console for:
+All music operations log to console with `🎵` prefix:
 
-- `🎵 Music already playing or fading, skipping duplicate play`
-- `🎵 Store: Music already set to [path]`
-- `🎮 Entering game - switching to battle music`
-- `🎮 Leaving game - switching back to main theme`
+```
+🎵 Creating new Howl for: /audio/music/battle/death-taker.mp3
+🎵 Using cached Howl for: /audio/music/background/fantasy-village-woods.mp3
+🎵 Current state: {currentTrack: '...', requestedTrack: '...'}
+🎵 Music already playing: /audio/music/battle/death-taker.mp3
+🎵 Stopping old music: /audio/music/background/fantasy-village-woods.mp3
+🎵 Starting new music: /audio/music/battle/death-taker.mp3
+🎵 Set as current: /audio/music/battle/death-taker.mp3
+```
+
+Check these logs to trace music playback and identify issues.
