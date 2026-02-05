@@ -6,6 +6,7 @@ import { CraftBg } from '../CraftModal/assets/craft-bg';
 import { useModalSound } from '@/lib/hooks/useAudio';
 import { TestnetTasks } from './TestnetTasks';
 import { Leaderboard } from './Leaderboard';
+import Image from 'next/image';
 
 interface TestnetModalProps {
   onClose: () => void;
@@ -17,6 +18,7 @@ export default function TestnetModal({ onClose }: TestnetModalProps) {
 
   const [activeTab, setActiveTab] = useState<string>('tasks');
 
+  const iconClassName = 'h-7 w-8 object-contain object-center';
   const buttonClassName =
     'flex h-20 flex-1 flex-row items-center justify-center gap-2.5';
   const textClassName = 'font-pixel text-main-gray text-lg font-bold';
@@ -53,6 +55,13 @@ export default function TestnetModal({ onClose }: TestnetModalProps) {
             enableHoverSound
             enableClickSound
           >
+            <Image
+              src="/icons/task-list.png"
+              width={32}
+              height={28}
+              alt="tasks"
+              className={iconClassName}
+            />
             <span className={textClassName}>Testnet tasks</span>
           </Button>
           <Button
@@ -62,6 +71,13 @@ export default function TestnetModal({ onClose }: TestnetModalProps) {
             enableHoverSound
             enableClickSound
           >
+            <Image
+              src="/icons/tournaments.png"
+              width={32}
+              height={28}
+              alt="tournaments"
+              className={iconClassName}
+            />
             <span className={textClassName}>Leaderboard</span>
           </Button>
         </div>
