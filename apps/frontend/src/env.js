@@ -10,6 +10,10 @@ export const env = createEnv({
     NODE_ENV: z.enum(['development', 'test', 'production']),
     MONGODB_URI: z.string(),
     MONGODB_DB: z.string(),
+    // BullMQ Redis connection for Mina blockchain job queue
+    // Uses a separate Redis instance from game state Redis
+    BULLMQ_REDIS_HOST: z.string(),
+    BULLMQ_REDIS_PORT: z.coerce.number(),
   },
 
   /**
@@ -35,6 +39,8 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     MONGODB_URI: process.env.MONGODB_URI,
     MONGODB_DB: process.env.MONGODB_DB,
+    BULLMQ_REDIS_HOST: process.env.BULLMQ_REDIS_HOST,
+    BULLMQ_REDIS_PORT: process.env.BULLMQ_REDIS_PORT,
     NEXT_PUBLIC_REOWN_PROJECT_ID: process.env.NEXT_PUBLIC_REOWN_PROJECT_ID,
     NEXT_PUBLIC_PROJECT_NAME: process.env.NEXT_PUBLIC_PROJECT_NAME,
     NEXT_PUBLIC_PROJECT_URL: process.env.NEXT_PUBLIC_PROJECT_URL,
