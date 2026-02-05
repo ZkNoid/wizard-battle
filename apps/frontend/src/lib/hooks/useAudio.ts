@@ -87,6 +87,31 @@ export function useClickSound() {
 }
 
 /**
+ * Hook for preloading music tracks
+ *
+ * Usage:
+ * ```typescript
+ * const preloadMusic = usePreloadMusic();
+ *
+ * useEffect(() => {
+ *   // Preload all music tracks on app initialization
+ *   preloadMusic();
+ * }, [preloadMusic]);
+ * ```
+ */
+export function usePreloadMusic() {
+  const preload = useAudioStore((state) => state.preloadMusic);
+
+  return useCallback(() => {
+    const tracksToPreload = [
+      AUDIO_ASSETS.music.background.fantasyVillage,
+      AUDIO_ASSETS.music.battle.deathTaker,
+    ];
+    preload(tracksToPreload);
+  }, [preload]);
+}
+
+/**
  * Hook for managing background music
  *
  * Usage:

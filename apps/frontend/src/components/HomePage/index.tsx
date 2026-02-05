@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useMinaAppkit } from 'mina-appkit';
 import WelcomeScreen from '../WelcomeScreen';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
-import { useBackgroundMusic } from '@/lib/hooks/useAudio';
+import { useBackgroundMusic, usePreloadMusic } from '@/lib/hooks/useAudio';
 import Header from '../Header';
 import Modals from '../Header/Modals';
 
@@ -38,6 +38,12 @@ export default function HomePage() {
     setIsExpeditionModalOpen,
   } = useMiscellaneousSessionStore();
   const { playMainTheme, stopMusic } = useBackgroundMusic();
+  const preloadMusic = usePreloadMusic();
+
+  // Preload all music tracks on mount
+  useEffect(() => {
+    preloadMusic();
+  }, [preloadMusic]);
 
   // Initialize and play main theme on mount
   useEffect(() => {
@@ -57,9 +63,10 @@ export default function HomePage() {
     return () => {
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('keydown', handleFirstInteraction);
-      stopMusic(0);
+      // Note: No stopMusic() here - HomePage is the main page, music should keep playing
+      // Music will be stopped/changed when navigating to other pages (e.g., game page)
     };
-  }, [playMainTheme, stopMusic]);
+  }, [playMainTheme]);
 
   useEffect(() => {
     const handleResize = () => {

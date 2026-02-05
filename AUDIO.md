@@ -2,6 +2,13 @@
 
 Audio system based on Howler.js and Zustand for managing music and sound effects.
 
+**Key Features:**
+- 🎼 Single Howl instance ownership in store (no duplication)
+- 💾 Music track caching for instant playback
+- ⚡ Preloading support for better UX
+- 🔇 Separate mute controls for music and SFX
+- 🧹 Automatic cleanup on app close
+
 ## 📁 File Structure
 
 ```
@@ -42,9 +49,69 @@ AUDIO_ASSETS = {
 };
 ```
 
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────┐
+│         audioStore (Zustand)        │
+├─────────────────────────────────────┤
+│  musicCache: Map<Track, Howl>       │ ← Single source of truth
+│  currentMusicHowl: Howl | null      │ ← Currently playing
+│  currentMusicTrack: Track | null    │
+│  isMusicFading: boolean             │
+│                                     │
+│  playMusic()     ──────┐            │
+│  preloadMusic()        ├────────────┼──> Owns all music Howl instances
+│  stopMusic()           │            │
+│  cleanup()         ────┘            │
+└─────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────┐
+│      audioService (Singleton)       │
+├─────────────────────────────────────┤
+│  soundEffects: Map<SFX, Howl>       │ ← SFX only
+│                                     │
+│  createMusicHowl(src): Howl         │ ← Factory method
+│  playSound(src)                     │
+│  setMasterVolume(vol)               │ ← Global settings
+│  setMuted(muted)                    │
+└─────────────────────────────────────┘
+```
+
+**Why this architecture?**
+- ✅ **No music duplication** - Store owns single Howl per track
+- ✅ **Fast track switching** - Cached Howl instances
+- ✅ **Race condition free** - Centralized state management
+- ✅ **Easy debugging** - All music logic in one place
+
+---
+
 ## 🎮 Hooks
 
-### 1. Background Music
+### 1. Preloading Music (Recommended)
+
+```typescript
+import { usePreloadMusic } from '@/lib/hooks/useAudio';
+
+function HomePage() {
+  const preloadMusic = usePreloadMusic();
+
+  useEffect(() => {
+    // Preload all tracks on app start for instant playback
+    preloadMusic();
+  }, [preloadMusic]);
+}
+```
+
+**Benefits:**
+- Eliminates loading delays when switching tracks
+- Smooth transitions between menu and battle music
+- Better user experience
+
+---
+
+### 2. Background Music
 
 ```typescript
 import { useBackgroundMusic } from '@/lib/hooks/useAudio';
@@ -275,69 +342,94 @@ playSound('/audio/sfx/ui/click.mp3'); // Full path
 
 ## 🎛️ Features
 
-- **Music:** Looped, only one track at a time, smooth fade transitions (500ms)
-- **SFX:** Parallel playback, no looping
-- **Separate control:** Music can be muted separately from sound effects
+- **Music:** 
+  - Looped, only one track at a time, smooth fade transitions (500ms)
+  - Cached Howl instances for instant playback
+  - Store owns all music Howl instances (prevents duplication)
+  - Preloading support for better UX
+- **SFX:** 
+  - Parallel playback, no looping
+  - Managed separately from music
+- **Separate control:** 
   - `toggleMute()` - mutes everything (music + SFX)
   - `toggleMusicMute()` - mutes only music (SFX continue playing)
+  - Mute state automatically applied to cached tracks
+- **Anti-duplication guarantee:**
+  - Store is single owner of music Howl instances
+  - One Howl instance per track in cache
+  - Fade transition tracking prevents overlapping
+  - Safe to call `playMusic()` multiple times
+- **Automatic cleanup:**
+  - Cleanup on window `beforeunload` event
+  - Manual cleanup available via `cleanup()` method
+- **Volume/Mute:** 
+  - Unified control via `Howler.volume()` for all sounds
+  - No localStorage persistence
 - **Autoplay:** Handled automatically (user must interact with the page)
-- **Volume/Mute:** Unified control for all sounds, no localStorage persistence
-- **Singleton:** `audioService` - one instance for the entire application
-- **Anti-duplication:** Multiple layers of protection prevent duplicate music playback:
-  - Track-level checks in `audioService`
-  - Fade transition tracking to prevent overlapping music
-  - Store-level deduplication in `audioStore`
-  - Hook-level current music checks in `useBackgroundMusic`
-  - Automatic cleanup when components unmount
 
 ---
 
 ## 📂 Source Code
 
-- `src/lib/services/audioService.ts` - Howler.js wrapper
-- `src/lib/store/audioStore.ts` - Zustand state management
-- `src/lib/hooks/useAudio.ts` - React hooks
-- `src/lib/constants/audioAssets.ts` - File paths
+- `src/lib/store/audioStore.ts` - **Main music management** (owns Howl instances, caching, state)
+- `src/lib/services/audioService.ts` - **SFX management** and Howl factory
+- `src/lib/hooks/useAudio.ts` - React hooks (useBackgroundMusic, usePreloadMusic, etc.)
+- `src/lib/constants/audioAssets.ts` - Audio file paths
 
 ---
 
 ## ✅ Best Practices
 
-### Background Music Management
+### 1. Preload music on app start
 
-1. **Always cleanup on unmount:**
+```typescript
+// In HomePage or _app.tsx
+const preloadMusic = usePreloadMusic();
 
-   ```typescript
-   useEffect(() => {
-     playMainTheme();
-     return () => stopMusic(0); // ← Critical!
-   }, [playMainTheme, stopMusic]);
-   ```
+useEffect(() => {
+  preloadMusic(); // Load all tracks into cache
+}, [preloadMusic]);
+```
 
-2. **Don't worry about duplicate calls:**
+**Why?** Eliminates delays when switching between tracks.
 
-   ```typescript
-   // ✅ Safe - built-in protection
-   playMainTheme();
-   playMainTheme();
-   playMainTheme(); // Only plays once
-   ```
+---
 
-3. **Page transitions:**
+### 2. Background Music Management
 
-   ```typescript
-   // HomePage
-   useEffect(() => {
-     playMainTheme();
-     return () => stopMusic(0); // Stop when leaving
-   }, []);
+**Always cleanup on unmount:**
 
-   // GamePage
-   useEffect(() => {
-     playBattleMusic();
-     return () => playMainTheme(); // Return to main theme
-   }, []);
-   ```
+```typescript
+useEffect(() => {
+  playMainTheme();
+  return () => stopMusic(0); // ← Critical!
+}, [playMainTheme, stopMusic]);
+```
+
+**Don't worry about duplicate calls:**
+
+```typescript
+// ✅ Safe - built-in protection
+playMainTheme();
+playMainTheme();
+playMainTheme(); // Only plays once
+```
+
+**Page transitions:**
+
+```typescript
+// HomePage
+useEffect(() => {
+  playMainTheme();
+  return () => stopMusic(0); // Stop when leaving
+}, []);
+
+// GamePage
+useEffect(() => {
+  playBattleMusic();
+  return () => playMainTheme(); // Return to main theme
+}, []);
+```
 
 ### Common Pitfalls
 
@@ -373,25 +465,54 @@ useEffect(() => {
 
 ### Music plays twice/duplicates
 
+**This should no longer happen!** The new architecture guarantees:
+- Only one Howl instance per track (cached in store)
+- Store is the single owner of all music Howl instances
+- Built-in fade tracking prevents overlapping
+
+**If it still happens:**
+1. Check that you're not manually creating Howl instances outside the store
+2. Verify cleanup is called: `return () => stopMusic(0);`
+
+---
+
+### Music doesn't stop when leaving page
+
 **Cause:** Missing cleanup in component unmount
 
 **Fix:**
 
 ```typescript
-return () => stopMusic(0);
+useEffect(() => {
+  playMainTheme();
+  return () => stopMusic(0); // ← Must be present
+}, [playMainTheme, stopMusic]);
 ```
 
-### Music doesn't stop when leaving page
+---
 
-**Cause:** Commented out cleanup or missing return
+### Music has loading delay when switching
 
-**Fix:** Ensure cleanup function is present and not commented
+**Cause:** Tracks not preloaded
+
+**Fix:** Add preload on app start:
+
+```typescript
+const preloadMusic = usePreloadMusic();
+useEffect(() => {
+  preloadMusic();
+}, [preloadMusic]);
+```
+
+---
 
 ### Music stutters during fade transitions
 
-**Cause:** Multiple rapid calls during transition
+**This should no longer happen!** Built-in fade tracking prevents overlapping transitions.
 
-**Fix:** Built-in fade tracking prevents this - update to latest code
+**If it still happens:**
+- Check console for `🎵 Music is fading, skipping duplicate call`
+- Verify you're not calling `playMusic()` in rapid succession
 
 ---
 
