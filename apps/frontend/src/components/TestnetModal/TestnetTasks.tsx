@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/shared/Button';
 import ModalTitle from '../shared/ModalTitle';
 import { TESTNET_BLOCKS } from '@/lib/constants/testnet';
+import { TestnetTaskBlock } from './TestnetTaskBlock';
 
 interface TestnetTasksProps {
   onCancel?: () => void;
@@ -88,17 +89,18 @@ export function TestnetTasks({ onCancel }: TestnetTasksProps) {
         <p className="font-pixel text-main-gray text-center text-lg">
           Complete tasks to earn rewards and climb the leaderboard
         </p>
-        {/* TODO: Add actual testnet tasks list here */}
-        <div className="mt-4 flex flex-col gap-2">
-          <div className="font-pixel text-main-gray text-base">
-            • Task 1: Connect wallet
-          </div>
-          <div className="font-pixel text-main-gray text-base">
-            • Task 2: Complete first battle
-          </div>
-          <div className="font-pixel text-main-gray text-base">
-            • Task 3: Craft an item
-          </div>
+
+        <div className="mt-2 flex flex-col gap-4">
+          {TESTNET_BLOCKS.map((block, index) => (
+            <TestnetTaskBlock
+              key={index}
+              block={block}
+              onTaskToggle={(taskIndex) => {
+                // TODO: Implement task toggle logic
+                console.log(`Toggle task ${taskIndex} in block ${index}`);
+              }}
+            />
+          ))}
         </div>
       </div>
     </div>
