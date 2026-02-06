@@ -179,6 +179,71 @@ const CRAFT_ITEMS = [
     image: 'AstralAlloy.png',
     amount: 1,
   },
+  // Unique crafting resources
+  {
+    id: 'BlackOrb',
+    title: 'Black Orb',
+    type: 'craft',
+    price: 100,
+    description:
+      'A mysterious orb pulsing with dark energy, used to craft powerful gems',
+    rarity: 'unique',
+    image: 'black-orb.png',
+    amount: 1,
+  },
+  {
+    id: 'ChainLink',
+    title: 'Chain Link',
+    type: 'craft',
+    price: 100,
+    description: 'A sturdy metal link, essential for crafting durable belts',
+    rarity: 'unique',
+    image: 'chain-link.png',
+    amount: 1,
+  },
+  {
+    id: 'ShardofIllusion',
+    title: 'Shard of Illusion',
+    type: 'craft',
+    price: 100,
+    description:
+      'A crystalline fragment that bends light and perception, used for crafting amulets',
+    rarity: 'unique',
+    image: 'shard-of-illusion.png',
+    amount: 1,
+  },
+  {
+    id: 'SilverThread',
+    title: 'Silver Thread',
+    type: 'craft',
+    price: 100,
+    description:
+      'Fine enchanted thread spun from pure silver, required for ring crafting',
+    rarity: 'unique',
+    image: 'silver-thread.png',
+    amount: 1,
+  },
+  {
+    id: 'ReinforcedPadding',
+    title: 'Reinforced Padding',
+    type: 'craft',
+    price: 100,
+    description: 'Durable protective material used to craft sturdy gloves',
+    rarity: 'unique',
+    image: 'reinforced-padding.png',
+    amount: 1,
+  },
+  {
+    id: 'ShadowstepLeather',
+    title: 'Shadowstep Leather',
+    type: 'craft',
+    price: 100,
+    description:
+      'Supple leather that seems to shift in shadows, ideal for crafting swift boots',
+    rarity: 'unique',
+    image: 'shadowstep-leather.png',
+    amount: 1,
+  },
 ];
 
 // ============================================================================
