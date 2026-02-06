@@ -91,7 +91,7 @@ export function CraftFormItem({
       recipe.ingredients.forEach((ingredient: ICraftRecipeIngredient) => {
         const userQuantity = inventoryMap.get(ingredient.item.id) ?? 0;
         console.log(
-          `- ${ingredient.item.name}: need ${ingredient.requiredAmount}, have ${userQuantity}`
+          `- ${ingredient.item.title}: need ${ingredient.requiredAmount}, have ${userQuantity}`
         );
       });
       alert('Insufficient ingredients');
