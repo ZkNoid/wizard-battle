@@ -11,10 +11,12 @@ import type { ICraftRecipe } from '@/lib/types/Craft';
 
 interface CraftFormProps {
   onCancel?: () => void;
+  address?: string;
 }
 
-export function CraftForm({ onCancel }: CraftFormProps) {
-  const { groupedPanels, isLoading, error, loadGroupedRecipes } = useCraftStore();
+export function CraftForm({ onCancel, address }: CraftFormProps) {
+  const { groupedPanels, isLoading, error, loadGroupedRecipes } =
+    useCraftStore();
 
   useEffect(() => {
     // Load grouped recipes on mount (for crafting type)
@@ -76,7 +78,11 @@ export function CraftForm({ onCancel }: CraftFormProps) {
                     {panel.recipes && panel.recipes.length > 0 ? (
                       <div className="flex flex-row">
                         {panel.recipes.map((recipe: ICraftRecipe) => (
-                          <CraftFormItem key={recipe.id} recipe={recipe} />
+                          <CraftFormItem
+                            key={recipe.id}
+                            recipe={recipe}
+                            address={address}
+                          />
                         ))}
                       </div>
                     ) : (

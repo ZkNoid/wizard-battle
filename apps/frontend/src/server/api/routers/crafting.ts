@@ -22,11 +22,31 @@ const itemsCollection = 'inventoryitems';
 // Inlined category configs to avoid importing runtime values from common package
 // (which would pull in o1js and break SSR)
 const CRAFT_CATEGORY_CONFIGS: ICraftCategoryConfig[] = [
-  { category: 'necklace', title: 'Necklace', icon: '/inventory/placeholders/necklace.png' },
-  { category: 'ring', title: 'Rings', icon: '/inventory/placeholders/ring.png' },
-  { category: 'belt', title: 'Belts', icon: '/inventory/placeholders/belt.png' },
-  { category: 'arms', title: 'Gloves', icon: '/inventory/placeholders/arms.png' },
-  { category: 'legs', title: 'Boots', icon: '/inventory/placeholders/legs.png' },
+  {
+    category: 'necklace',
+    title: 'Necklace',
+    icon: '/inventory/placeholders/necklace.png',
+  },
+  {
+    category: 'ring',
+    title: 'Rings',
+    icon: '/inventory/placeholders/ring.png',
+  },
+  {
+    category: 'belt',
+    title: 'Belts',
+    icon: '/inventory/placeholders/belt.png',
+  },
+  {
+    category: 'arms',
+    title: 'Gloves',
+    icon: '/inventory/placeholders/arms.png',
+  },
+  {
+    category: 'legs',
+    title: 'Boots',
+    icon: '/inventory/placeholders/legs.png',
+  },
   { category: 'gem', title: 'Gems', icon: '/inventory/placeholders/gem.png' },
 ];
 
@@ -62,7 +82,9 @@ async function populateRecipeIngredients(
 
 // Helper to populate a single recipe
 async function populateRecipe(recipe: ICraftRecipeDB): Promise<ICraftRecipe> {
-  const populatedIngredients = await populateRecipeIngredients(recipe.ingredients);
+  const populatedIngredients = await populateRecipeIngredients(
+    recipe.ingredients
+  );
   return {
     ...recipe,
     ingredients: populatedIngredients,
@@ -97,7 +119,9 @@ export const craftingRouter = createTRPCRouter({
 
   // Get recipes by crafting type (crafting, upgrading, unifying)
   getRecipesByType: publicProcedure
-    .input(z.object({ craftingType: z.enum(['crafting', 'upgrading', 'unifying']) }))
+    .input(
+      z.object({ craftingType: z.enum(['crafting', 'upgrading', 'unifying']) })
+    )
     .query(async ({ input }) => {
       if (!db) {
         throw new TRPCError({
@@ -120,9 +144,11 @@ export const craftingRouter = createTRPCRouter({
 
   // Get recipes by category (necklace, ring, belt, etc.)
   getRecipesByCategory: publicProcedure
-    .input(z.object({ 
-      category: z.enum(['necklace', 'ring', 'belt', 'arms', 'legs', 'gem']) 
-    }))
+    .input(
+      z.object({
+        category: z.enum(['necklace', 'ring', 'belt', 'arms', 'legs', 'gem']),
+      })
+    )
     .query(async ({ input }) => {
       if (!db) {
         throw new TRPCError({
@@ -146,9 +172,13 @@ export const craftingRouter = createTRPCRouter({
   // Get recipes grouped by category (for CraftForm panels)
   getGroupedRecipes: publicProcedure
     .input(
-      z.object({ 
-        craftingType: z.enum(['crafting', 'upgrading', 'unifying']).optional() 
-      }).optional()
+      z
+        .object({
+          craftingType: z
+            .enum(['crafting', 'upgrading', 'unifying'])
+            .optional(),
+        })
+        .optional()
     )
     .query(async ({ input }) => {
       if (!db) {
@@ -158,8 +188,8 @@ export const craftingRouter = createTRPCRouter({
         });
       }
 
-      const filter = input?.craftingType 
-        ? { craftingType: input.craftingType } 
+      const filter = input?.craftingType
+        ? { craftingType: input.craftingType }
         : {};
 
       const recipes = (await db
@@ -172,12 +202,16 @@ export const craftingRouter = createTRPCRouter({
       );
 
       // Group recipes by category
-      const groupedPanels: ICraftGroupPanel[] = CRAFT_CATEGORY_CONFIGS.map((config) => ({
-        category: config.category,
-        title: config.title,
-        icon: config.icon,
-        recipes: populatedRecipes.filter((r) => r.category === config.category),
-      }));
+      const groupedPanels: ICraftGroupPanel[] = CRAFT_CATEGORY_CONFIGS.map(
+        (config) => ({
+          category: config.category,
+          title: config.title,
+          icon: config.icon,
+          recipes: populatedRecipes.filter(
+            (r) => r.category === config.category
+          ),
+        })
+      );
 
       return groupedPanels;
     }),
@@ -206,7 +240,65 @@ export const craftingRouter = createTRPCRouter({
 
       return populateRecipe(recipe);
     }),
+
+  // ==========================================
+  // CRAFT ITEM MUTATION
+  // ==========================================
+
+  // Craft an item using a recipe (calls backend NestJS service)
+  craftItem: publicProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        recipeId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Call the backend NestJS crafting endpoint
+      const backendUrl = env.BACKEND_URL || 'http://localhost:3030';
+
+      try {
+        const response = await fetch(`${backendUrl}/crafting/craft`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: input.userId,
+            recipeId: input.recipeId,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+
+          // Log the backend error for debugging
+          console.error('Backend crafting error:', errorData);
+
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: errorData.message || 'Crafting failed',
+            cause: {
+              ...errorData,
+              missingIngredients: errorData.missingIngredients,
+            },
+          });
+        }
+
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to craft item',
+          cause: error,
+        });
+      }
+    }),
 });
 
 export type CraftingRouter = typeof craftingRouter;
-
