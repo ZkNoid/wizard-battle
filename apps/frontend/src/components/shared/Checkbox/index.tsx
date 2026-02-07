@@ -39,7 +39,9 @@ export function Checkbox({
         }}
       >
         <Image
-          src={checked ? '/icons/checkbox-true.png' : '/icons/checkbox-false.png'}
+          src={
+            checked ? '/icons/checkbox-true.png' : '/icons/checkbox-false.png'
+          }
           width={24}
           height={24}
           alt={checked ? 'checked' : 'unchecked'}
@@ -47,7 +49,7 @@ export function Checkbox({
         />
       </div>
       {label && (
-        <span className="font-pixel text-main-gray select-none text-sm">
+        <span className="font-pixel text-main-gray text-md select-none">
           {label}
         </span>
       )}
