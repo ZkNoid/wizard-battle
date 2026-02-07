@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useExpeditionStore } from '@/lib/store/expeditionStore';
 import CurrentExpeditionCard from './CurrentExpeditionCard';
-import ExpeditionModalTitle from './components/ExpeditionModalTitle';
+import ModalTitle from '../shared/ModalTitle';
 import ConfirmModal from '../shared/ConfirmModal';
 import { useMinaAppkit } from 'mina-appkit';
 
@@ -67,7 +67,7 @@ export default function CurrentExpeditionsForm({
 
   return (
     <div className="flex h-full flex-col">
-      <ExpeditionModalTitle title="Current Expeditions" onClose={onClose} />
+      <ModalTitle title="Current Expeditions" onClose={onClose} />
 
       {/* Scrollable Expeditions List */}
       <div className="flex-1 overflow-y-auto pb-2 pr-2">

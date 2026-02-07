@@ -3,6 +3,7 @@
 import InventoryModal from '../InventoryModal';
 import CraftModal from '../CraftModal';
 import ExpeditionModal from '../ExpeditionModal';
+import TestnetModal from '../TestnetModal';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 
 export default function Modals() {
@@ -13,6 +14,8 @@ export default function Modals() {
     setIsCraftModalOpen,
     isExpeditionModalOpen,
     setIsExpeditionModalOpen,
+    isTestnetModalOpen,
+    setIsTestnetModalOpen,
   } = useMiscellaneousSessionStore();
 
   return (
@@ -27,6 +30,10 @@ export default function Modals() {
 
       {isExpeditionModalOpen && (
         <ExpeditionModal onClose={() => setIsExpeditionModalOpen(false)} />
+      )}
+
+      {isTestnetModalOpen && (
+        <TestnetModal onClose={() => setIsTestnetModalOpen(false)} />
       )}
     </>
   );
