@@ -87,6 +87,31 @@ export function useClickSound() {
 }
 
 /**
+ * Hook for preloading music tracks
+ *
+ * Usage:
+ * ```typescript
+ * const preloadMusic = usePreloadMusic();
+ *
+ * useEffect(() => {
+ *   // Preload all music tracks on app initialization
+ *   preloadMusic();
+ * }, [preloadMusic]);
+ * ```
+ */
+export function usePreloadMusic() {
+  const preload = useAudioStore((state) => state.preloadMusic);
+
+  return useCallback(() => {
+    const tracksToPreload = [
+      AUDIO_ASSETS.music.background.fantasyVillage,
+      AUDIO_ASSETS.music.battle.deathTaker,
+    ];
+    preload(tracksToPreload);
+  }, [preload]);
+}
+
+/**
  * Hook for managing background music
  *
  * Usage:
@@ -104,26 +129,21 @@ export function useBackgroundMusic() {
   const playMusic = useAudioStore((state) => state.playMusic);
   const stopMusic = useAudioStore((state) => state.stopMusic);
 
-  const playMainTheme = useCallback(
-    (fadeDuration = 500) => {
-      playMusic(AUDIO_ASSETS.music.background.fantasyVillage, fadeDuration);
-    },
-    [playMusic]
-  );
+  const playMainTheme = useCallback(() => {
+    const mainThemePath = AUDIO_ASSETS.music.background.fantasyVillage;
+    // The playMusic function itself checks if the music is already playing
+    playMusic(mainThemePath);
+  }, [playMusic]);
 
-  const playBattleMusic = useCallback(
-    (fadeDuration = 500) => {
-      playMusic(AUDIO_ASSETS.music.battle.deathTaker, fadeDuration);
-    },
-    [playMusic]
-  );
+  const playBattleMusic = useCallback(() => {
+    const battleMusicPath = AUDIO_ASSETS.music.battle.deathTaker;
+    // The playMusic function itself checks if the music is already playing
+    playMusic(battleMusicPath);
+  }, [playMusic]);
 
-  const stopCurrentMusic = useCallback(
-    (fadeDuration = 500) => {
-      stopMusic(fadeDuration);
-    },
-    [stopMusic]
-  );
+  const stopCurrentMusic = useCallback(() => {
+    stopMusic();
+  }, [stopMusic]);
 
   return {
     playMainTheme,
