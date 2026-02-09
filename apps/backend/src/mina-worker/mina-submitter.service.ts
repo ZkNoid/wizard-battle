@@ -130,10 +130,12 @@ export class MinaSubmitterService implements OnModuleInit {
       tx.sign([this.adminPrivateKey!]);
       const pendingTx = await tx.send();
 
-      this.logger.log(`Transaction sent: ${pendingTx.hash}`);
+      this.logger.log(`Transaction sent: ${pendingTx.hash}, waiting for confirmation...`);
 
-      // Wait for confirmation (optional, can be done asynchronously)
-      // await pendingTx.wait();
+      // Wait for transaction to be included in a block
+      await pendingTx.wait();
+
+      this.logger.log(`Transaction confirmed: ${pendingTx.hash}`);
 
       return pendingTx.hash;
     } catch (error) {
@@ -200,7 +202,12 @@ export class MinaSubmitterService implements OnModuleInit {
       tx.sign([this.adminPrivateKey!]);
       const pendingTx = await tx.send();
 
-      this.logger.log(`Transaction sent: ${pendingTx.hash}`);
+      this.logger.log(`Transaction sent: ${pendingTx.hash}, waiting for confirmation...`);
+
+      // Wait for transaction to be included in a block
+      await pendingTx.wait();
+
+      this.logger.log(`Transaction confirmed: ${pendingTx.hash}`);
 
       return pendingTx.hash;
     } catch (error) {
