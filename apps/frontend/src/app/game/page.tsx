@@ -562,12 +562,10 @@ export default function GamePage() {
 
   // Switch to battle music when entering game
   useEffect(() => {
-    console.log('🎮 Entering game - switching to battle music');
     playBattleMusic();
 
     // Return to main theme when leaving game
     return () => {
-      console.log('🎮 Leaving game - switching back to main theme');
       playMainTheme();
     };
   }, [playBattleMusic, playMainTheme]);

@@ -158,7 +158,6 @@ export const useAudioStore = create<AudioStore>((set, get) => {
 
       if (loadedCount > 0) {
         set({ musicCache: new Map(musicCache) });
-        console.log('🎵 Preloaded', loadedCount, 'music track(s)');
       }
     },
 
@@ -179,7 +178,6 @@ export const useAudioStore = create<AudioStore>((set, get) => {
       // Get or create Howl from cache first
       let newHowl = musicCache.get(src);
       if (!newHowl) {
-        console.log('🎵 Creating new Howl for:', src);
         newHowl = audioService.createMusicHowl(src);
 
         // Apply current mute state to new track
@@ -189,36 +187,20 @@ export const useAudioStore = create<AudioStore>((set, get) => {
 
         musicCache.set(src, newHowl);
         set({ musicCache: new Map(musicCache) });
-      } else {
-        console.log('🎵 Using cached Howl for:', src);
       }
-
-      console.log('🎵 Current state:', {
-        currentTrack: currentMusicTrack,
-        requestedTrack: src,
-        isSameHowl: currentMusicHowl === newHowl,
-        isPlaying: currentMusicHowl?.playing(),
-        cacheSize: musicCache.size,
-      });
 
       // If the same music is already playing, do nothing
       if (currentMusicHowl === newHowl && currentMusicHowl.playing()) {
-        console.log('🎵 Music already playing:', src);
         return;
       }
 
       // Stop current music if it's different
       if (currentMusicHowl && currentMusicHowl !== newHowl) {
-        console.log('🎵 Stopping old music:', currentMusicTrack);
         currentMusicHowl.stop();
       }
 
-      // Start new music
-      console.log('🎵 Starting new music:', src);
-
       // Stop the Howl first if it's already playing to prevent duplicate sounds
       if (newHowl.playing()) {
-        console.log('🎵 Stopping existing playback before starting new one');
         newHowl.stop();
       }
 
@@ -229,8 +211,6 @@ export const useAudioStore = create<AudioStore>((set, get) => {
         currentMusicHowl: newHowl,
         currentMusicTrack: src,
       });
-
-      console.log('🎵 Set as current:', src);
     },
 
     // Stop background music
@@ -238,7 +218,6 @@ export const useAudioStore = create<AudioStore>((set, get) => {
       const { currentMusicHowl } = get();
 
       if (currentMusicHowl) {
-        console.log('🎵 Stopping music');
         currentMusicHowl.stop();
 
         set({
@@ -295,8 +274,6 @@ export const useAudioStore = create<AudioStore>((set, get) => {
         currentMusicHowl: null,
         currentMusicTrack: null,
       });
-
-      console.log('🎵 Audio cleanup completed');
     },
   };
 });
