@@ -14,6 +14,7 @@ import { UserInventoryModule } from './user-inventory/user-inventory.module';
 import { GameCharacterModule } from './game-character/game-character.module';
 import { ExpeditionModule } from './expedition/expedition.module';
 import { CraftingModule } from './crafting/crafting.module';
+import { RewardModule } from './reward/reward.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { CraftingModule } from './crafting/crafting.module';
         dbName: process.env.MONGODB_DB || 'wizardbattle',
       }
     ),
+    RewardModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, RedisHealthService, GameStateService],

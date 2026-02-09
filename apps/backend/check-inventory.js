@@ -21,7 +21,7 @@ async function checkInventory() {
 
     // Get the collection directly
     const db = mongoose.connection.db;
-    const inventoryCollection = db.collection('userinventories');
+    const inventoryCollection = db.collection('userinventory');
     const gameItemsCollection = db.collection('gameitems');
 
     // Find user's inventory

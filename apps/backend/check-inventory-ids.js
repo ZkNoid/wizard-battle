@@ -16,7 +16,7 @@ async function checkInventory() {
         itemId: String,
         quantity: Number,
       }),
-      'userinventories'
+      'userinventory'
     );
 
     const items = await UserInventory.find({ userId }).lean();

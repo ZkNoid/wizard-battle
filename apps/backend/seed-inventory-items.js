@@ -20,7 +20,7 @@ async function seedInventory() {
     const UserInventory = mongoose.model(
       'UserInventory',
       UserInventorySchema,
-      'userinventories'
+      'userinventory'
     );
 
     // Items to add
