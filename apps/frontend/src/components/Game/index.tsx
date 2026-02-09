@@ -8,6 +8,7 @@ import { Clock } from './Clock';
 import { Users } from './Users';
 import { useRouter } from 'next/navigation';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
+import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 import { spellIdToSpell } from '@/lib/utils';
 import { TilemapBg } from './assets/tilemap-bg';
 import { QuestionmarkIcon } from './assets/questionmark-icon';
@@ -26,6 +27,7 @@ export default function Game({
   const router = useRouter();
   const { stater } = useUserInformationStore();
   const { gamePhaseManager } = useUserInformationStore();
+  const { setIsQuickGuideModalOpen } = useMiscellaneousSessionStore();
 
   return (
     <div className="px-57 grid size-full flex-grow grid-cols-6 grid-rows-6 gap-5 pt-20">
@@ -58,9 +60,7 @@ export default function Game({
             color="gray"
             className="size-14"
             onClick={() => {
-              alert(
-                `movementDone: ${actionInfo?.movementDone}, spellCastDone: ${actionInfo?.spellCastDone}`
-              );
+              setIsQuickGuideModalOpen(true);
             }}
           >
             <Image
