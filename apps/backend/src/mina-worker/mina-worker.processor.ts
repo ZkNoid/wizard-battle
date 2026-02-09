@@ -158,7 +158,8 @@ export class MinaWorkerProcessor extends WorkerHost {
     await job.updateProgress(80);
 
     // 3. Update local state
-    await this.stateService.recordGameFinished(gameId, resultHash);
+    const challengeDeadlineSlot = this.stateService.computeChallengeDeadlineSlot();
+    await this.stateService.recordGameFinished(gameId, resultHash, challengeDeadlineSlot);
     await job.updateProgress(100);
 
     this.logger.log(`Game ${gameId} finished successfully. TX: ${txHash}`);

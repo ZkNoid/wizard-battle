@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { MerkleMap, Field, Poseidon } from 'o1js';
+import { MerkleMap, Field, Poseidon, PublicKey, UInt32 } from 'o1js';
+import { GameManager } from '../../../mina-contracts/src/GameManager';
 
 /**
  * Game state stored in the local MerkleMap
@@ -19,6 +20,14 @@ export interface LocalGameState {
   // Transaction hashes
   startGameTxHash?: string;
   finishGameTxHash?: string;
+}
+
+// Contract fields
+export interface ContractState {
+  gameRoot: Field;
+  challengeWindowSlots: UInt32;
+  admin: string;
+  balancesRoot: Field;
 }
 
 /**
@@ -51,14 +60,20 @@ export class MinaStateService implements OnModuleInit {
 
   // Local game state cache (for quick lookups without deserializing from MerkleMap)
   private gameStates: Map<number, LocalGameState> = new Map();
+  private awaitingFinalizationGames: Set<number> = new Set();
+  
+  private contractAddress: PublicKey;
+  private contract: GameManager;
+  private contractState: ContractState;
 
-  // Current root hash (should match on-chain gamesRoot)
-  private currentRoot: Field;
+  private currentSlot: UInt32 | null = null;
 
   constructor() {
     // Initialize empty MerkleMap
     this.gamesMap = new MerkleMap();
-    this.currentRoot = this.gamesMap.getRoot();
+    this.contractAddress = PublicKey.fromBase58(process.env.MINA_CONTRACT_ADDRESS!);
+    this.contract = new GameManager(this.contractAddress!);
+    this.contractState = this.loadContractState();
   }
 
   async onModuleInit() {
@@ -68,14 +83,19 @@ export class MinaStateService implements OnModuleInit {
     // This ensures we don't lose state after restarts
     await this.loadPersistedState();
 
-    this.logger.log(`Initialized with root: ${this.currentRoot.toString()}`);
+    // Load contract state
+    this.contractState = await this.loadContractState();
+
+    this.logger.log(`Initialized with root: ${this.contractState!.gameRoot.toString()}`);
+
+    this.syncCurrentSlot();
   }
 
   /**
    * Get the current MerkleMap root
    */
   getRoot(): Field {
-    return this.currentRoot;
+    return this.contractState.gameRoot;
   }
 
   /**
@@ -83,6 +103,18 @@ export class MinaStateService implements OnModuleInit {
    */
   async getGameState(gameId: number): Promise<LocalGameState | null> {
     return this.gameStates.get(gameId) || null;
+  }
+  
+  async getAwaitingFinalizationGames(): Promise<LocalGameState[]> {
+    return Array.from(this.awaitingFinalizationGames).map(gameId => this.gameStates.get(gameId)!);
+  }
+
+  async addAwaitingFinalizationGame(gameId: number): Promise<void> {
+    this.awaitingFinalizationGames.add(gameId);
+  }
+
+  async removeAwaitingFinalizationGame(gameId: number): Promise<void> {
+    this.awaitingFinalizationGames.delete(gameId);
   }
 
   /**
@@ -122,7 +154,7 @@ export class MinaStateService implements OnModuleInit {
 
     // Update MerkleMap
     this.gamesMap.set(Field(gameId), leafHash);
-    this.currentRoot = this.gamesMap.getRoot();
+    this.contractState.gameRoot = this.gamesMap.getRoot();
 
     // Update local state cache
     const gameState: LocalGameState = {
@@ -137,24 +169,22 @@ export class MinaStateService implements OnModuleInit {
     // Persist state
     await this.persistState(gameId, gameState);
 
-    this.logger.log(`Recorded game ${gameId} as started. New root: ${this.currentRoot.toString()}`);
+    this.logger.log(`Recorded game ${gameId} as started. New root: ${this.contractState.gameRoot.toString()}`);
   }
 
   /**
    * Record that a game has been finished on-chain (now in challenge window)
    */
-  async recordGameFinished(gameId: number, resultHash: string): Promise<void> {
+  async recordGameFinished(gameId: number, resultHash: string, challengeDeadlineSlot: number): Promise<void> {
     const gameState = this.gameStates.get(gameId);
     if (!gameState) {
       throw new Error(`Game ${gameId} not found`);
     }
 
     // Compute the leaf hash for AwaitingChallenge state
-    // Note: challengeDeadlineSlot would need to be fetched from chain or computed
-    // For now, we'll use a placeholder - the actual value comes from the contract
     const leafHash = Poseidon.hash([
       Field(2), // GameStatus.AwaitingChallenge
-      Field(0), // challengeDeadlineSlot (placeholder)
+      Field(challengeDeadlineSlot),
       Field(gameState.setupHash),
       Field(resultHash),
       Field(0), // fraudHash
@@ -162,18 +192,22 @@ export class MinaStateService implements OnModuleInit {
 
     // Update MerkleMap
     this.gamesMap.set(Field(gameId), leafHash);
-    this.currentRoot = this.gamesMap.getRoot();
+    this.contractState.gameRoot = this.gamesMap.getRoot();
 
     // Update local state cache
     gameState.status = 'awaiting_challenge';
     gameState.resultHash = resultHash;
+    gameState.challengeDeadlineSlot = challengeDeadlineSlot;
     gameState.finishedAt = Date.now();
     this.gameStates.set(gameId, gameState);
 
     // Persist state
     await this.persistState(gameId, gameState);
 
-    this.logger.log(`Recorded game ${gameId} as finished. New root: ${this.currentRoot.toString()}`);
+    // Add game to awaiting finalization games
+    await this.addAwaitingFinalizationGame(gameId);
+
+    this.logger.log(`Recorded game ${gameId} as finished. New root: ${this.contractState.gameRoot.toString()}`);
   }
 
   /**
@@ -197,7 +231,7 @@ export class MinaStateService implements OnModuleInit {
 
     // Update MerkleMap
     this.gamesMap.set(Field(gameId), leafHash);
-    this.currentRoot = this.gamesMap.getRoot();
+    this.contractState.gameRoot = this.gamesMap.getRoot();
 
     // Update local state cache
     gameState.status = isFraud ? 'finalized_fraud' : 'finalized_ok';
@@ -207,7 +241,10 @@ export class MinaStateService implements OnModuleInit {
     // Persist state
     await this.persistState(gameId, gameState);
 
-    this.logger.log(`Recorded game ${gameId} as finalized (fraud: ${isFraud}). New root: ${this.currentRoot.toString()}`);
+    // Remove game from awaiting finalization games
+    await this.removeAwaitingFinalizationGame(gameId);
+
+    this.logger.log(`Recorded game ${gameId} as finalized (fraud: ${isFraud}). New root: ${this.contractState.gameRoot.toString()}`);
   }
 
   /**
@@ -215,12 +252,12 @@ export class MinaStateService implements OnModuleInit {
    * Called when we detect our local state might be out of sync
    */
   async syncWithChain(onChainRoot: Field): Promise<boolean> {
-    if (this.currentRoot.equals(onChainRoot).toBoolean()) {
+    if (this.contractState.gameRoot.equals(onChainRoot).toBoolean()) {
       return true; // Already in sync
     }
 
     this.logger.warn(
-      `State out of sync! Local: ${this.currentRoot.toString()}, Chain: ${onChainRoot.toString()}`,
+      `State out of sync! Local: ${this.contractState.gameRoot.toString()}, Chain: ${onChainRoot.toString()}`,
     );
 
     // TODO: Implement recovery logic
@@ -281,6 +318,39 @@ export class MinaStateService implements OnModuleInit {
     // 2. Store current MerkleMap root
     // 3. Optionally store full MerkleMap for recovery
     this.logger.debug(`Persisting state for game ${gameId} (not implemented yet)`);
+  }
+
+  /**
+   * Load contract state from storage
+   */
+  private loadContractState(): ContractState {
+    return {
+      gameRoot: this.contract.gamesRoot.get(),
+      challengeWindowSlots: this.contract.challengeWindowSlots.get(),
+      admin: this.contract.admin.get().toBase58(),
+      balancesRoot: this.contract.balancesRoot.get(),
+    };
+  }
+
+  private syncCurrentSlot(): void {
+    const slot = this.contract.network.globalSlotSinceGenesis.get();
+    this.currentSlot = slot;
+  }
+
+  getCurrentSlot(): UInt32 | null {
+    return this.currentSlot;
+  }
+
+  /**
+   * Compute the challenge deadline slot based on current slot + challenge window
+   */
+  computeChallengeDeadlineSlot(): number {
+    if (!this.currentSlot) {
+      throw new Error('Current slot not initialized');
+    }
+    const currentSlotNumber = Number(this.currentSlot.toBigint());
+    const challengeWindow = Number(this.contractState.challengeWindowSlots.toBigint());
+    return currentSlotNumber + challengeWindow;
   }
 }
 

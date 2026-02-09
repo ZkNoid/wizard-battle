@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MinaWorkerModule } from './mina-worker.module';
+import { MinaWatcherService } from './mina-watcher.service';
 
 /**
  * WorkerAppModule - Root module for the Mina worker process
@@ -29,6 +30,7 @@ import { MinaWorkerModule } from './mina-worker.module';
     ),
     // Mina worker module with BullMQ
     MinaWorkerModule,
+    MinaWatcherService,
   ],
 })
 export class WorkerAppModule {}
