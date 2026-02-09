@@ -1,6 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { MerkleMap, Field, Poseidon, PublicKey, UInt32 } from 'o1js';
 import { GameManager } from '../../../mina-contracts/src/GameManager';
+import { GameLeaf, GameLeafDocument } from './schemas/game-leaf.schema';
 
 /**
  * Game state stored in the local MerkleMap
@@ -45,7 +48,7 @@ export interface SerializedWitness {
  * Responsibilities:
  * - Maintains in-memory MerkleMap mirroring on-chain gamesRoot
  * - Generates witnesses for game state updates
- * - Persists state to Redis for crash recovery
+ * - Persists state to MongoDB for crash recovery
  * - Handles state synchronization with chain
  *
  * IMPORTANT: This service must process updates sequentially to maintain
@@ -68,7 +71,9 @@ export class MinaStateService implements OnModuleInit {
 
   private currentSlot: UInt32 | null = null;
 
-  constructor() {
+  constructor(
+    @InjectModel(GameLeaf.name) private gameLeafModel: Model<GameLeafDocument>,
+  ) {
     // Initialize empty MerkleMap
     this.gamesMap = new MerkleMap();
     this.contractAddress = PublicKey.fromBase58(process.env.MINA_CONTRACT_ADDRESS!);
@@ -79,8 +84,7 @@ export class MinaStateService implements OnModuleInit {
   async onModuleInit() {
     this.logger.log('Initializing MinaStateService...');
 
-    // TODO: Load persisted state from Redis/DB on startup
-    // This ensures we don't lose state after restarts
+    // Load persisted state from MongoDB on startup
     await this.loadPersistedState();
 
     // Load contract state
@@ -303,21 +307,103 @@ export class MinaStateService implements OnModuleInit {
    * Load persisted state from storage on startup
    */
   private async loadPersistedState(): Promise<void> {
-    // TODO: Implement Redis/DB persistence
-    // For now, start with empty state
-    this.logger.log('Loading persisted state... (not implemented yet)');
+    this.logger.log('Loading persisted state from MongoDB...');
+
+    const gameLeaves = await this.gameLeafModel.find().exec();
+
+    for (const leaf of gameLeaves) {
+      // Reconstruct the leaf hash
+      const leafHash = Poseidon.hash([
+        Field(leaf.status),
+        Field(leaf.challengeDeadlineSlot),
+        Field(leaf.setupHash),
+        Field(leaf.resultHash),
+        Field(leaf.fraudHash),
+      ]);
+
+      // Restore MerkleMap entry
+      this.gamesMap.set(Field(leaf.gameId), leafHash);
+
+      // Restore local state cache
+      const gameState: LocalGameState = {
+        gameId: leaf.gameId,
+        status: this.statusNumberToString(leaf.status),
+        setupHash: leaf.setupHash,
+        resultHash: leaf.resultHash !== '0' ? leaf.resultHash : undefined,
+        challengeDeadlineSlot: leaf.challengeDeadlineSlot || undefined,
+        createdAt: (leaf as any).createdAt?.getTime() || Date.now(),
+      };
+      this.gameStates.set(leaf.gameId, gameState);
+
+      // If game is awaiting challenge, add to awaiting finalization set
+      if (leaf.status === 2) {
+        this.awaitingFinalizationGames.add(leaf.gameId);
+      }
+    }
+
+    this.logger.log(`Loaded ${gameLeaves.length} game leaves from MongoDB`);
+  }
+
+  /**
+   * Convert status number to status string
+   */
+  private statusNumberToString(status: number): LocalGameState['status'] {
+    switch (status) {
+      case 0:
+        return 'pending';
+      case 1:
+        return 'started';
+      case 2:
+        return 'awaiting_challenge';
+      case 3:
+        return 'finalized_ok';
+      case 4:
+        return 'finalized_fraud';
+      default:
+        return 'pending';
+    }
+  }
+
+  /**
+   * Convert status string to status number
+   */
+  private statusStringToNumber(status: LocalGameState['status']): number {
+    switch (status) {
+      case 'pending':
+        return 0;
+      case 'started':
+        return 1;
+      case 'awaiting_challenge':
+        return 2;
+      case 'finalized_ok':
+        return 3;
+      case 'finalized_fraud':
+        return 4;
+      default:
+        return 0;
+    }
   }
 
   /**
    * Persist state to storage
    */
   private async persistState(gameId: number, state: LocalGameState): Promise<void> {
-    // TODO: Implement Redis/DB persistence
-    // This should:
-    // 1. Store game state to Redis/DB
-    // 2. Store current MerkleMap root
-    // 3. Optionally store full MerkleMap for recovery
-    this.logger.debug(`Persisting state for game ${gameId} (not implemented yet)`);
+    const gameLeafData = {
+      gameId,
+      status: this.statusStringToNumber(state.status),
+      challengeDeadlineSlot: state.challengeDeadlineSlot || 0,
+      setupHash: state.setupHash,
+      resultHash: state.resultHash || '0',
+      fraudHash: '0', // Set when fraud is proven
+    };
+
+    await this.gameLeafModel.findOneAndUpdate(
+      { gameId },
+      gameLeafData,
+      { upsert: true, new: true },
+    );
+
+    this.logger.debug(`Persisted state for game ${gameId}`);
   }
 
   /**

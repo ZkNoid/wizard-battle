@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
+import { MongooseModule } from '@nestjs/mongoose';
 import { MinaWorkerProcessor } from './mina-worker.processor';
 import { MinaStateService } from './mina-state.service';
 import { MinaSubmitterService } from './mina-submitter.service';
+import { GameLeaf, GameLeafSchema } from './schemas/game-leaf.schema';
 
 /**
  * MinaWorkerModule - Handles Mina blockchain job processing
@@ -24,6 +26,7 @@ import { MinaSubmitterService } from './mina-submitter.service';
     BullModule.registerQueue({
       name: 'mina-blockchain',
     }),
+    MongooseModule.forFeature([{ name: GameLeaf.name, schema: GameLeafSchema }]),
   ],
   providers: [MinaWorkerProcessor, MinaStateService, MinaSubmitterService],
   exports: [MinaStateService],
