@@ -18,7 +18,7 @@ export function CraftFormItem({
     'flex h-8 flex-row items-center justify-center px-4 shrink-0';
 
   const [isCrafting, setIsCrafting] = useState(false);
-  const inventoryItems = useInventoryStore((state) => state.inventoryItems);
+  const iteminventory = useInventoryStore((state) => state.iteminventory);
   const loadUserInventory = useInventoryStore(
     (state) => state.loadUserInventory
   );
@@ -27,11 +27,11 @@ export function CraftFormItem({
   // Create a map of item id to quantity for quick lookup
   const inventoryMap = useMemo(() => {
     const map = new Map<string, number>();
-    inventoryItems.forEach((userItem) => {
+    iteminventory.forEach((userItem) => {
       map.set(userItem.item.id, userItem.quantity);
     });
     return map;
-  }, [inventoryItems]);
+  }, [iteminventory]);
 
   // Check if user has enough resources for crafting
   const hasEnoughResources = useMemo(() => {

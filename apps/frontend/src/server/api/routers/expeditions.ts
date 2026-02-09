@@ -17,7 +17,7 @@ const db = client?.db(env.MONGODB_DB);
 
 const expeditionsCollection = 'expeditions';
 const locationsCollection = 'locations';
-const itemsCollection = 'inventoryitems';
+const itemsCollection = 'iteminventory';
 
 // Helper to convert time period to milliseconds
 function timePeriodToMs(timePeriod: ExpeditionTimePeriod): number {

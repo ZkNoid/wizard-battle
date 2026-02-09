@@ -1,10 +1,10 @@
 /**
  * Script to populate a user's inventory with default items from ALL_ITEMS
- * 
+ *
  * This script does two things:
- * 1. Seeds the `inventoryitems` collection with all item definitions (if not already present)
+ * 1. Seeds the `iteminventory` collection with all item definitions (if not already present)
  * 2. Adds all items to the specified user's inventory in `userinventory` collection
- * 
+ *
  * Run with: node seed-user-inventory.js <userId>
  * Example: node seed-user-inventory.js 1234
  */
@@ -527,14 +527,18 @@ const ALL_ACCESSORIES = [
 ];
 
 // Combine all items
-const ALL_ITEM_DEFINITIONS = [...ALL_ITEMS, ...ALL_ARMOR_ITEMS, ...ALL_ACCESSORIES];
+const ALL_ITEM_DEFINITIONS = [
+  ...ALL_ITEMS,
+  ...ALL_ARMOR_ITEMS,
+  ...ALL_ACCESSORIES,
+];
 
 // ============================================================================
 // MONGOOSE SCHEMAS
 // ============================================================================
 
-// Schema for item definitions (inventoryitems collection)
-const inventoryItemSchema = new mongoose.Schema(
+// Schema for item definitions (iteminventory collection)
+const iteminventorychema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true }, // e.g., 'Amber', 'MysticRobe'
     image: { type: String, required: true },
@@ -543,27 +547,45 @@ const inventoryItemSchema = new mongoose.Schema(
     amount: { type: Number, required: true, default: 1 },
     price: { type: Number, required: true },
     description: { type: String },
-    rarity: { type: String, required: true, enum: ['common', 'uncommon', 'rare', 'epic', 'legendary', 'unique'] },
+    rarity: {
+      type: String,
+      required: true,
+      enum: ['common', 'uncommon', 'rare', 'epic', 'legendary', 'unique'],
+    },
     // Armor-specific fields (optional)
-    wearableSlot: { type: String, enum: ['gem', 'ring', 'necklace', 'arms', 'legs', 'belt'] },
+    wearableSlot: {
+      type: String,
+      enum: ['gem', 'ring', 'necklace', 'arms', 'legs', 'belt'],
+    },
     level: { type: Number },
     buff: [{ effect: String, value: Number }],
     improvementRequirements: [{ itemId: String, amount: Number }],
     wearRequirements: [{ requirement: String, value: Number }],
   },
-  { timestamps: true, collection: 'inventoryitems' }
+  { timestamps: true, collection: 'iteminventory' }
 );
 
 // Schema for user inventory (userinventory collection)
 const userInventorySchema = new mongoose.Schema(
   {
     userId: { type: String, required: true, index: true },
-    itemId: { type: String, required: true }, // Reference to inventoryitems.id
+    itemId: { type: String, required: true }, // Reference to iteminventory.id
     quantity: { type: Number, required: true, default: 1, min: 1 },
     isEquipped: { type: Boolean, default: false },
     equippedToWizardId: { type: String },
     acquiredAt: { type: Date },
-    acquiredFrom: { type: String, enum: ['crafted', 'loot', 'drop', 'trade', 'reward', 'purchase', 'admin-script'] },
+    acquiredFrom: {
+      type: String,
+      enum: [
+        'crafted',
+        'loot',
+        'drop',
+        'trade',
+        'reward',
+        'purchase',
+        'admin-script',
+      ],
+    },
   },
   { timestamps: true, collection: 'userinventory' }
 );
@@ -576,7 +598,9 @@ userInventorySchema.index({ userId: 1, itemId: 1 }, { unique: true });
 // ============================================================================
 
 async function seedItemDefinitions(InventoryItem) {
-  console.log('\n📦 STEP 1: Seeding item definitions to inventoryitems collection...\n');
+  console.log(
+    '\n📦 STEP 1: Seeding item definitions to iteminventory collection...\n'
+  );
 
   let created = 0;
   let skipped = 0;
@@ -602,20 +626,27 @@ async function seedItemDefinitions(InventoryItem) {
 }
 
 async function seedUserInventory(UserInventory, userId, itemsToAdd) {
-  console.log(`\n👤 STEP 2: Adding items to user inventory for userId: ${userId}\n`);
+  console.log(
+    `\n👤 STEP 2: Adding items to user inventory for userId: ${userId}\n`
+  );
 
   let created = 0;
   let updated = 0;
 
   for (const itemDef of itemsToAdd) {
     try {
-      const existing = await UserInventory.findOne({ userId, itemId: itemDef.id });
+      const existing = await UserInventory.findOne({
+        userId,
+        itemId: itemDef.id,
+      });
 
       if (existing) {
         // Update quantity
         existing.quantity += itemDef.amount;
         await existing.save();
-        console.log(`   🔄 Updated: ${itemDef.title} (qty: ${existing.quantity})`);
+        console.log(
+          `   🔄 Updated: ${itemDef.title} (qty: ${existing.quantity})`
+        );
         updated++;
       } else {
         // Create new inventory entry
@@ -649,13 +680,16 @@ async function main() {
       console.log('\nUsage: node seed-user-inventory.js <userId>');
       console.log('Example: node seed-user-inventory.js 1234');
       console.log('\nThis will:');
-      console.log('  1. Seed all item definitions to inventoryitems collection');
-      console.log('  2. Add all items to the user\'s inventory in userinventory collection');
+      console.log('  1. Seed all item definitions to iteminventory collection');
+      console.log(
+        "  2. Add all items to the user's inventory in userinventory collection"
+      );
       process.exit(1);
     }
 
     // Connect to MongoDB
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/wizardbattle';
+    const mongoUri =
+      process.env.MONGODB_URI || 'mongodb://localhost:27017/wizardbattle';
     const dbName = process.env.MONGODB_DB || 'wizardbattle';
 
     console.log('🔌 Connecting to MongoDB...');
@@ -668,7 +702,7 @@ async function main() {
     // Get or create models
     const InventoryItem =
       mongoose.models.InventoryItem ||
-      mongoose.model('InventoryItem', inventoryItemSchema);
+      mongoose.model('InventoryItem', iteminventorychema);
 
     const UserInventory =
       mongoose.models.UserInventory ||
@@ -681,18 +715,23 @@ async function main() {
     await seedUserInventory(UserInventory, userId, ALL_ITEM_DEFINITIONS);
 
     // Summary
-    console.log('═══════════════════════════════════════════════════════════════');
+    console.log(
+      '═══════════════════════════════════════════════════════════════'
+    );
     console.log('✅ DONE!');
-    console.log(`   User "${userId}" now has ${ALL_ITEM_DEFINITIONS.length} items in inventory`);
+    console.log(
+      `   User "${userId}" now has ${ALL_ITEM_DEFINITIONS.length} items in inventory`
+    );
     console.log('   - Craft items:', ALL_ITEMS.length);
     console.log('   - Armor items:', ALL_ARMOR_ITEMS.length);
     console.log('   - Accessories:', ALL_ACCESSORIES.length);
-    console.log('═══════════════════════════════════════════════════════════════');
+    console.log(
+      '═══════════════════════════════════════════════════════════════'
+    );
 
     // Close connection
     await mongoose.connection.close();
     console.log('\n🔌 MongoDB connection closed');
-
   } catch (error) {
     console.error('❌ Error:', error.message);
     if (mongoose.connection.readyState === 1) {
@@ -704,4 +743,3 @@ async function main() {
 
 // Run the script
 main();
-

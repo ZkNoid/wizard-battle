@@ -17,7 +17,7 @@ const client = await clientPromise;
 const db = client?.db(env.MONGODB_DB);
 
 const craftRecipesCollection = 'craftrecipes';
-const itemsCollection = 'inventoryitems';
+const itemsCollection = 'iteminventory';
 
 // Inlined category configs to avoid importing runtime values from common package
 // (which would pull in o1js and break SSR)

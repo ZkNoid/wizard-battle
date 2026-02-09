@@ -1,7 +1,7 @@
 /**
  * Script to seed craft items from CSV in MongoDB
  *
- * This script seeds the `inventoryitems` collection with craft item definitions
+ * This script seeds the `iteminventory` collection with craft item definitions
  *
  * Run with: node seed-craft-items.js
  */
@@ -262,7 +262,7 @@ async function seedCraftItems() {
     console.log('Connected to MongoDB');
 
     const db = mongoose.connection.db;
-    const itemsCollection = db.collection('inventoryitems');
+    const itemsCollection = db.collection('iteminventory');
 
     // Get IDs of items to update/insert
     const itemIds = CRAFT_ITEMS.map((item) => item.id);

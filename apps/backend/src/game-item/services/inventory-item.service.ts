@@ -1,15 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { InventoryItem, InventoryItemDocument } from '../schemas/inventory-item.schema';
+import {
+  InventoryItem,
+  InventoryItemDocument,
+} from '../schemas/inventory-item.schema';
 import { CreateInventoryItemDto } from '../dto/create-inventory-item.dto';
 import { UpdateInventoryItemDto } from '../dto/update-inventory-item.dto';
 
 @Injectable()
-export class InventoryItemService {
+export class iteminventoryervice {
   constructor(
     @InjectModel(InventoryItem.name)
-    private readonly inventoryItemModel: Model<InventoryItemDocument>,
+    private readonly inventoryItemModel: Model<InventoryItemDocument>
   ) {}
 
   async create(createDto: CreateInventoryItemDto): Promise<InventoryItem> {
@@ -36,12 +39,17 @@ export class InventoryItemService {
   async findByMongoId(mongoId: string): Promise<InventoryItem> {
     const item = await this.inventoryItemModel.findById(mongoId).exec();
     if (!item) {
-      throw new NotFoundException(`InventoryItem with MongoDB ID "${mongoId}" not found`);
+      throw new NotFoundException(
+        `InventoryItem with MongoDB ID "${mongoId}" not found`
+      );
     }
     return item;
   }
 
-  async update(id: string, updateDto: UpdateInventoryItemDto): Promise<InventoryItem> {
+  async update(
+    id: string,
+    updateDto: UpdateInventoryItemDto
+  ): Promise<InventoryItem> {
     const updatedItem = await this.inventoryItemModel
       .findOneAndUpdate({ id }, updateDto, { new: true })
       .exec();
@@ -53,7 +61,9 @@ export class InventoryItemService {
   }
 
   async delete(id: string): Promise<InventoryItem> {
-    const deletedItem = await this.inventoryItemModel.findOneAndDelete({ id }).exec();
+    const deletedItem = await this.inventoryItemModel
+      .findOneAndDelete({ id })
+      .exec();
     if (!deletedItem) {
       throw new NotFoundException(`InventoryItem with ID "${id}" not found`);
     }
@@ -70,17 +80,21 @@ export class InventoryItemService {
   }
 
   async findArmorItems(): Promise<InventoryItem[]> {
-    return this.inventoryItemModel.find({
-      type: 'armor',
-      wearableSlot: { $in: ['arms', 'legs', 'belt'] },
-    }).exec();
+    return this.inventoryItemModel
+      .find({
+        type: 'armor',
+        wearableSlot: { $in: ['arms', 'legs', 'belt'] },
+      })
+      .exec();
   }
 
   async findAccessories(): Promise<InventoryItem[]> {
-    return this.inventoryItemModel.find({
-      type: 'armor',
-      wearableSlot: { $in: ['necklace', 'gem', 'ring'] },
-    }).exec();
+    return this.inventoryItemModel
+      .find({
+        type: 'armor',
+        wearableSlot: { $in: ['necklace', 'gem', 'ring'] },
+      })
+      .exec();
   }
 
   // Filter by slot
@@ -103,4 +117,3 @@ export class InventoryItemService {
     return this.inventoryItemModel.find({ type: 'armor' }).exec();
   }
 }
-
