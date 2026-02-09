@@ -82,7 +82,7 @@ export default function HomePage() {
       {/* Top right button */}
       <Button
         variant="gray"
-        className="absolute right-20 top-40 z-30 rounded-lg bg-purple-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-purple-700 active:scale-95"
+        className="absolute right-20 top-40 z-30 rounded-lg px-6 py-3 font-bold shadow-lg transition-all hover:scale-105 hover:bg-purple-700 active:scale-95"
         onClick={() => {
           setIsTestnetModalOpen(true);
         }}
