@@ -105,7 +105,17 @@ export default function Game({
           />
           <SkillsBg className="absolute inset-0 size-full" />
         </div>
-        <Clock />
+        <div className="flex h-28 flex-row items-center gap-2.5">
+          <Clock />
+          <Button
+            variant="gray"
+            className="h-28 w-40"
+            onClick={() => {
+              gamePhaseManager?.endTurnEarly();
+            }}
+            text="End turn"
+          />
+        </div>
       </div>
     </div>
   );

@@ -366,6 +366,39 @@ export class GamePhaseManager {
   }
 
   /**
+   * @notice Allows player to end their turn early
+   * @dev Public method that can be called from UI to submit empty actions and end turn
+   */
+  public endTurnEarly() {
+    if (this.currentPhase !== GamePhase.SPELL_CASTING) {
+      console.warn(
+        'Cannot end turn early - not in SPELL_CASTING phase:',
+        this.currentPhase
+      );
+      return;
+    }
+
+    if (this.hasSubmittedActions) {
+      console.log('Actions already submitted this turn');
+      return;
+    }
+
+    console.log(`🏁 Player ${this.getPlayerId()} ending turn early`);
+
+    const emptyActions: IUserActions = {
+      actions: [],
+      signature: '',
+    };
+
+    this.socket.emit('submitActions', {
+      roomId: this.roomId,
+      actions: emptyActions,
+    });
+
+    this.hasSubmittedActions = true;
+  }
+
+  /**
    * @notice Automatically submits empty actions if player hasn't acted
    * @dev Called when transitioning away from SPELL_CASTING to ensure all players are tracked
    */
