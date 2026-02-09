@@ -16,10 +16,6 @@ export function TestnetTaskBlock({
   onTaskToggle,
   className,
 }: TestnetTaskBlockProps) {
-  const completedCount = block.items.filter((item) => item.isCompleted).length;
-  const totalCount = block.items.length;
-  const isFullyCompleted = completedCount === totalCount;
-
   return (
     <div className={cn('relative', className)}>
       {/* Content */}
