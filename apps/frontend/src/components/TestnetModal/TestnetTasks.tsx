@@ -93,10 +93,7 @@ export function TestnetTasks({ onCancel }: TestnetTasksProps) {
               <TestnetTaskBlock
                 key={index}
                 block={block}
-                onTaskToggle={(taskIndex) => {
-                  // TODO: Implement task toggle logic
-                  console.log(`Toggle task ${taskIndex} in block ${index}`);
-                }}
+                onTaskToggle={() => {}}
               />
             ))}
           </div>
