@@ -105,7 +105,7 @@ export default function Game({
           />
           <SkillsBg className="absolute inset-0 size-full" />
         </div>
-        <div className="flex h-28 flex-row items-center gap-2.5">
+        <div className="flex h-28 flex-row items-end gap-2.5">
           <Clock />
           <Button
             variant="gray"
@@ -115,6 +115,9 @@ export default function Game({
             }}
             text="End turn"
           />
+          <BoxButton className="size-14" onClick={() => {}} disabled={true}>
+            <span className="text-main-gray text-sm">...</span>
+          </BoxButton>
         </div>
       </div>
     </div>
