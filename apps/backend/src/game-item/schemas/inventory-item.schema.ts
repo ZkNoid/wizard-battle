@@ -91,4 +91,4 @@ export class InventoryItem {
   wearRequirements?: WearRequirement[];
 }
 
-export const InventoryItemSchema = SchemaFactory.createForClass(InventoryItem);
+export const iteminventorychema = SchemaFactory.createForClass(InventoryItem);

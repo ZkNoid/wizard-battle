@@ -55,7 +55,7 @@ interface InventoryStore {
   statsByWizard: Record<string, IHeroStats>;
 
   // User's inventory items (from database)
-  inventoryItems: IUserInventoryItem[];
+  iteminventory: IUserInventoryItem[];
 
   // Actions - address comes from useMinaAppkit hook in components
   loadUserInventory: (address: string) => Promise<void>;
@@ -70,7 +70,7 @@ interface InventoryStore {
     wizardId: string,
     slotId: InventoryItemWearableArmorSlot
   ) => void;
-  setInventoryItems: (items: IUserInventoryItem[]) => void;
+  setiteminventory: (items: IUserInventoryItem[]) => void;
   addToInventory: (item: IUserInventoryItem) => void;
   removeFromInventory: (itemId: string) => void;
   updateItemQuantity: (itemId: string, quantity: number) => void;
@@ -84,7 +84,7 @@ export const useInventoryStore = create<InventoryStore>()(
       error: null,
       equippedItemsByWizard: {},
       statsByWizard: {},
-      inventoryItems: [],
+      iteminventory: [],
 
       loadUserInventory: async (address: string) => {
         set({ isLoading: true, error: null });
@@ -123,7 +123,7 @@ export const useInventoryStore = create<InventoryStore>()(
           });
 
           set({
-            inventoryItems: nonEquippedItems,
+            iteminventory: nonEquippedItems,
             equippedItemsByWizard: equippedByWizard,
             statsByWizard,
             isLoading: false,
@@ -186,7 +186,7 @@ export const useInventoryStore = create<InventoryStore>()(
           const newStats = calculateStats(updatedEquipped);
 
           // Update inventory: remove the equipped item, add back the previously equipped item if any
-          let newInventory = state.inventoryItems.filter(
+          let newInventory = state.iteminventory.filter(
             (i) => i.item.id !== userItem.item.id
           );
           if (previousItem) {
@@ -207,7 +207,7 @@ export const useInventoryStore = create<InventoryStore>()(
               ...state.statsByWizard,
               [wizardId]: newStats,
             },
-            inventoryItems: newInventory,
+            iteminventory: newInventory,
           };
         }),
 
@@ -243,35 +243,35 @@ export const useInventoryStore = create<InventoryStore>()(
               ...state.statsByWizard,
               [wizardId]: newStats,
             },
-            inventoryItems: [...state.inventoryItems, unequippedItem],
+            iteminventory: [...state.iteminventory, unequippedItem],
           };
         }),
 
-      setInventoryItems: (items: IUserInventoryItem[]) =>
-        set({ inventoryItems: items }),
+      setiteminventory: (items: IUserInventoryItem[]) =>
+        set({ iteminventory: items }),
 
       addToInventory: (item: IUserInventoryItem) =>
         set((state) => {
           // Check if item already exists, if so increase quantity
-          const existingIndex = state.inventoryItems.findIndex(
+          const existingIndex = state.iteminventory.findIndex(
             (i) => i.item.id === item.item.id
           );
 
           if (existingIndex >= 0) {
-            const updatedItems = [...state.inventoryItems];
+            const updatedItems = [...state.iteminventory];
             updatedItems[existingIndex] = {
               ...updatedItems[existingIndex]!,
               quantity: updatedItems[existingIndex]!.quantity + item.quantity,
             };
-            return { inventoryItems: updatedItems };
+            return { iteminventory: updatedItems };
           }
 
-          return { inventoryItems: [...state.inventoryItems, item] };
+          return { iteminventory: [...state.iteminventory, item] };
         }),
 
       removeFromInventory: (itemId: string) =>
         set((state) => ({
-          inventoryItems: state.inventoryItems.filter(
+          iteminventory: state.iteminventory.filter(
             (i) => i.item.id !== itemId
           ),
         })),
@@ -280,14 +280,14 @@ export const useInventoryStore = create<InventoryStore>()(
         set((state) => {
           if (quantity <= 0) {
             return {
-              inventoryItems: state.inventoryItems.filter(
+              iteminventory: state.iteminventory.filter(
                 (i) => i.item.id !== itemId
               ),
             };
           }
 
           return {
-            inventoryItems: state.inventoryItems.map((i) =>
+            iteminventory: state.iteminventory.map((i) =>
               i.item.id === itemId ? { ...i, quantity } : i
             ),
           };
@@ -295,7 +295,7 @@ export const useInventoryStore = create<InventoryStore>()(
 
       clearInventory: () =>
         set({
-          inventoryItems: [],
+          iteminventory: [],
           equippedItemsByWizard: {},
           statsByWizard: {},
         }),
@@ -305,7 +305,7 @@ export const useInventoryStore = create<InventoryStore>()(
       partialize: (state) => ({
         equippedItemsByWizard: state.equippedItemsByWizard,
         statsByWizard: state.statsByWizard,
-        inventoryItems: state.inventoryItems,
+        iteminventory: state.iteminventory,
       }),
     }
   )

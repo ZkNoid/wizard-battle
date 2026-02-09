@@ -16,7 +16,7 @@ import type {
 const client = await clientPromise;
 const db = client?.db(env.MONGODB_DB);
 
-const itemsCollection = 'inventoryitems';
+const itemsCollection = 'iteminventory';
 const userInventoryCollection = 'userinventory';
 
 // ============================================

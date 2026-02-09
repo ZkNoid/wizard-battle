@@ -6,7 +6,7 @@ const MONGODB_URI =
   'mongodb://wizardbattle:3usARIkMfjpczaH@db-wizard.zknoid.io:27017/wizardbattle?authSource=wizardbattle';
 
 // Define schema matching the existing structure
-const ItemInventorySchema = new mongoose.Schema(
+const iteminventorySchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
     image: String,
@@ -89,10 +89,10 @@ async function seedItems() {
     await mongoose.connect(MONGODB_URI);
     console.log('Connected to MongoDB');
 
-    const ItemInventory = mongoose.model(
-      'ItemInventory',
-      ItemInventorySchema,
-      'inventoryitems'
+    const iteminventory = mongoose.model(
+      'iteminventory',
+      iteminventorySchema,
+      'iteminventory'
     );
 
     // Parse CSV
@@ -110,16 +110,16 @@ async function seedItems() {
     console.log('=== Processing Items ===');
     for (const item of items) {
       try {
-        const existing = await ItemInventory.findOne({ id: item.id });
+        const existing = await iteminventory.findOne({ id: item.id });
 
         if (existing) {
           // Update existing item
-          await ItemInventory.updateOne({ id: item.id }, { $set: item });
+          await iteminventory.updateOne({ id: item.id }, { $set: item });
           console.log(`✓ Updated: ${item.title} (${item.id})`);
           updatedCount++;
         } else {
           // Insert new item
-          await ItemInventory.create(item);
+          await iteminventory.create(item);
           console.log(`+ Added: ${item.title} (${item.id})`);
           addedCount++;
         }
@@ -136,7 +136,7 @@ async function seedItems() {
     console.log(`Total in CSV: ${items.length}`);
 
     // Verify total count in database
-    const totalInDb = await ItemInventory.countDocuments();
+    const totalInDb = await iteminventory.countDocuments();
     console.log(`Total in database: ${totalInDb}`);
 
     await mongoose.disconnect();

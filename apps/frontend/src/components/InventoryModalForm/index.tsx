@@ -95,7 +95,7 @@ export function InventoryModalForm({
   draggedItem: externalDraggedItem,
 }: IInventoryModalFormProps) {
   // Get items from store
-  const inventoryItems = useInventoryStore((state) => state.inventoryItems);
+  const iteminventory = useInventoryStore((state) => state.iteminventory);
   const removeFromInventory = useInventoryStore(
     (state) => state.removeFromInventory
   );
@@ -131,11 +131,9 @@ export function InventoryModalForm({
 
   const filteredItems = useMemo(() => {
     return activeFilter === 'all'
-      ? inventoryItems
-      : inventoryItems.filter(
-          (userItem) => userItem.item.type === activeFilter
-        );
-  }, [inventoryItems, activeFilter]);
+      ? iteminventory
+      : iteminventory.filter((userItem) => userItem.item.type === activeFilter);
+  }, [iteminventory, activeFilter]);
 
   const totalPages = useMemo(() => {
     return MOCK_PAGINATION
