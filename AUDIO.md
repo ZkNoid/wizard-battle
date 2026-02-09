@@ -2,6 +2,13 @@
 
 Audio system based on Howler.js and Zustand for managing music and sound effects.
 
+**Key Features:**
+- 🎼 Single Howl instance ownership in store (no duplication)
+- 💾 Music track caching for instant playback
+- ⚡ Preloading support for better UX
+- 🔇 Separate mute controls for music and SFX
+- 🧹 Automatic cleanup on app close
+
 ## 📁 File Structure
 
 ```
@@ -42,9 +49,68 @@ AUDIO_ASSETS = {
 };
 ```
 
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────┐
+│         audioStore (Zustand)        │
+├─────────────────────────────────────┤
+│  musicCache: Map<Track, Howl>       │ ← Single source of truth
+│  currentMusicHowl: Howl | null      │ ← Currently playing
+│  currentMusicTrack: Track | null    │
+│                                     │
+│  playMusic()     ──────┐            │
+│  preloadMusic()        ├────────────┼──> Owns all music Howl instances
+│  stopMusic()           │            │
+│  cleanup()         ────┘            │
+└─────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────┐
+│      audioService (Singleton)       │
+├─────────────────────────────────────┤
+│  soundEffects: Map<SFX, Howl>       │ ← SFX only
+│                                     │
+│  createMusicHowl(src): Howl         │ ← Factory method
+│  playSound(src)                     │
+│  setMasterVolume(vol)               │ ← Global settings
+│  setMuted(muted)                    │
+└─────────────────────────────────────┘
+```
+
+**Why this architecture?**
+- ✅ **No music duplication** - Store owns single Howl per track
+- ✅ **Fast track switching** - Cached Howl instances
+- ✅ **Race condition free** - Centralized state management
+- ✅ **Easy debugging** - All music logic in one place
+
+---
+
 ## 🎮 Hooks
 
-### 1. Background Music
+### 1. Preloading Music (Recommended)
+
+```typescript
+import { usePreloadMusic } from '@/lib/hooks/useAudio';
+
+function HomePage() {
+  const preloadMusic = usePreloadMusic();
+
+  useEffect(() => {
+    // Preload all tracks on app start for instant playback
+    preloadMusic();
+  }, [preloadMusic]);
+}
+```
+
+**Benefits:**
+- Eliminates loading delays when switching tracks
+- Smooth transitions between menu and battle music
+- Better user experience
+
+---
+
+### 2. Background Music
 
 ```typescript
 import { useBackgroundMusic } from '@/lib/hooks/useAudio';
@@ -54,16 +120,23 @@ function HomePage() {
 
   useEffect(() => {
     playMainTheme(); // Start background music
-    return () => stopMusic(0);
-  }, []);
+    // Note: No cleanup needed - StrictMode safe
+  }, [playMainTheme]);
 }
 ```
 
 **Available methods:**
 
-- `playMainTheme()` - main menu / lobby
-- `playBattleMusic()` - battle music
-- `stopMusic(fadeDuration?)` - stop with fade-out
+- `playMainTheme()` - main menu / lobby (auto-checks if already playing)
+- `playBattleMusic()` - battle music (auto-checks if already playing)
+- `stopMusic()` - stop current music immediately
+
+**Important notes:**
+
+- ✅ Music hooks include built-in duplicate prevention
+- ✅ Safe to call `playMainTheme()` multiple times - only plays once
+- ✅ React StrictMode safe - no cleanup needed in most cases
+- ✅ Music switches instantly (no fade delays)
 
 ---
 
@@ -268,20 +341,195 @@ playSound('/audio/sfx/ui/click.mp3'); // Full path
 
 ## 🎛️ Features
 
-- **Music:** Looped, only one track at a time, smooth fade transitions (500ms)
-- **SFX:** Parallel playback, no looping
-- **Separate control:** Music can be muted separately from sound effects
+- **Music:** 
+  - Looped, only one track at a time, instant transitions
+  - Cached Howl instances for immediate playback
+  - Store owns all music Howl instances (prevents duplication)
+  - Preloading support for better UX
+  - React StrictMode safe
+- **SFX:** 
+  - Parallel playback, no looping
+  - Managed separately from music
+- **Separate control:** 
   - `toggleMute()` - mutes everything (music + SFX)
   - `toggleMusicMute()` - mutes only music (SFX continue playing)
+  - Mute state automatically applied to cached tracks
+- **Anti-duplication guarantee:**
+  - Store is single owner of music Howl instances
+  - One Howl instance per track in cache
+  - Built-in duplicate prevention logic
+  - Safe to call `playMusic()` multiple times
+- **Automatic cleanup:**
+  - Cleanup on window `beforeunload` event
+  - Manual cleanup available via `cleanup()` method
+- **Volume/Mute:** 
+  - Unified control via `Howler.volume()` for all sounds
+  - No localStorage persistence
 - **Autoplay:** Handled automatically (user must interact with the page)
-- **Volume/Mute:** Unified control for all sounds, no localStorage persistence
-- **Singleton:** `audioService` - one instance for the entire application
 
 ---
 
 ## 📂 Source Code
 
-- `src/lib/services/audioService.ts` - Howler.js wrapper
-- `src/lib/store/audioStore.ts` - Zustand state management
-- `src/lib/hooks/useAudio.ts` - React hooks
-- `src/lib/constants/audioAssets.ts` - File paths
+- `src/lib/store/audioStore.ts` - **Main music management** (owns Howl instances, caching, state)
+- `src/lib/services/audioService.ts` - **SFX management** and Howl factory
+- `src/lib/hooks/useAudio.ts` - React hooks (useBackgroundMusic, usePreloadMusic, etc.)
+- `src/lib/constants/audioAssets.ts` - Audio file paths
+
+---
+
+## ✅ Best Practices
+
+### 1. Preload music on app start
+
+```typescript
+// In HomePage or _app.tsx
+const preloadMusic = usePreloadMusic();
+
+useEffect(() => {
+  preloadMusic(); // Load all tracks into cache
+}, [preloadMusic]);
+```
+
+**Why?** Eliminates delays when switching between tracks.
+
+---
+
+### 2. Background Music Management
+
+**Always cleanup on unmount:**
+
+```typescript
+useEffect(() => {
+  playMainTheme();
+  return () => stopMusic(0); // ← Critical!
+}, [playMainTheme, stopMusic]);
+```
+
+**Don't worry about duplicate calls:**
+
+```typescript
+// ✅ Safe - built-in protection
+playMainTheme();
+playMainTheme();
+playMainTheme(); // Only plays once
+```
+
+**Page transitions:**
+
+```typescript
+// HomePage
+useEffect(() => {
+  playMainTheme();
+  return () => stopMusic(0); // Stop when leaving
+}, []);
+
+// GamePage
+useEffect(() => {
+  playBattleMusic();
+  return () => playMainTheme(); // Return to main theme
+}, []);
+```
+
+### Common Pitfalls
+
+❌ **Don't:** Forget cleanup
+
+```typescript
+useEffect(() => {
+  playMainTheme();
+  // Missing return cleanup!
+}, []);
+```
+
+❌ **Don't:** Comment out stopMusic
+
+```typescript
+return () => {
+  // stopMusic(0); ← BAD! Always cleanup
+};
+```
+
+✅ **Do:** Always include dependencies
+
+```typescript
+useEffect(() => {
+  playMainTheme();
+  return () => stopMusic(0);
+}, [playMainTheme, stopMusic]); // ← Include all used functions
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Music plays twice/duplicates
+
+**This should no longer happen!** The new architecture guarantees:
+- Only one Howl instance per track (cached in store)
+- Store is the single owner of all music Howl instances
+- Built-in duplicate prevention checks playing state
+- React StrictMode safe (no double-play in dev mode)
+
+**If it still happens:**
+1. Check that you're not manually creating Howl instances outside the store
+2. Check browser console for `🎵` debug logs to trace the issue
+
+---
+
+### Music doesn't stop when component unmounts
+
+**This is intentional!** Background music continues playing across pages by design.
+
+**To stop music explicitly:**
+
+```typescript
+const { stopMusic } = useBackgroundMusic();
+
+// Stop when needed
+stopMusic();
+```
+
+---
+
+### Music has loading delay when switching
+
+**Cause:** Tracks not preloaded
+
+**Fix:** Add preload on app start:
+
+```typescript
+const preloadMusic = usePreloadMusic();
+useEffect(() => {
+  preloadMusic();
+}, [preloadMusic]);
+```
+
+---
+
+### Music stutters or has issues
+
+**Root cause:** Usually browser autoplay policy or React StrictMode in development.
+
+**Solutions:**
+1. User must interact with page first (click/tap)
+2. Use `preloadMusic()` to cache tracks early
+3. Check console for `🎵` debug logs
+
+---
+
+## 🔍 Debug Mode
+
+All music operations log to console with `🎵` prefix:
+
+```
+🎵 Creating new Howl for: /audio/music/battle/death-taker.mp3
+🎵 Using cached Howl for: /audio/music/background/fantasy-village-woods.mp3
+🎵 Current state: {currentTrack: '...', requestedTrack: '...'}
+🎵 Music already playing: /audio/music/battle/death-taker.mp3
+🎵 Stopping old music: /audio/music/background/fantasy-village-woods.mp3
+🎵 Starting new music: /audio/music/battle/death-taker.mp3
+🎵 Set as current: /audio/music/battle/death-taker.mp3
+```
+
+Check these logs to trace music playback and identify issues.

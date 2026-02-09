@@ -2,40 +2,40 @@ import { Howl, Howler } from 'howler';
 import type { MusicTrack, SoundEffect } from '../constants/audioAssets';
 
 /**
- * AudioService - Centralized audio management using Howler.js
- * Handles background music and sound effects
+ * AudioService - Simplified audio service for SFX and global settings
+ * Music management is now handled by audioStore
  */
 class AudioService {
-  private musicTracks = new Map<string, Howl>();
   private soundEffects = new Map<string, Howl>();
-  private currentMusic: Howl | null = null;
-  private currentMusicKey: string | null = null;
-  private isMusicMuted = false;
 
   /**
-   * Initialize or get a music track
+   * Create a new Howl instance for background music
+   * Used by audioStore to create music players
    */
-  private getOrCreateMusic(src: MusicTrack): Howl {
-    if (!this.musicTracks.has(src)) {
-      const howl = new Howl({
-        src: [src],
-        loop: true,
-        preload: true,
-        html5: true, // Use HTML5 Audio for streaming large files
-        onplayerror: () => {
-          // Try to unlock audio on next user interaction
-          howl.once('unlock', () => {
-            howl.play();
-          });
-        },
-      });
-      // Apply current music mute state to new track (only if muted)
-      if (this.isMusicMuted) {
-        howl.mute(true);
-      }
-      this.musicTracks.set(src, howl);
-    }
-    return this.musicTracks.get(src)!;
+  createMusicHowl(src: MusicTrack): Howl {
+    const howl = new Howl({
+      src: [src],
+      loop: true,
+      preload: true,
+      html5: true, // Use HTML5 Audio for streaming large files
+      onplayerror: () => {
+        console.error('🎵 Play error for:', src);
+        // Try to unlock audio on next user interaction
+        howl.once('unlock', () => {
+          howl.play();
+        });
+      },
+      onend: () => {
+        console.log('🎵 Music ended (should loop):', src);
+      },
+      onstop: () => {
+        console.log('🎵 Music stopped:', src);
+      },
+      onpause: () => {
+        console.log('🎵 Music paused:', src);
+      },
+    });
+    return howl;
   }
 
   /**
@@ -51,66 +51,6 @@ class AudioService {
       this.soundEffects.set(src, howl);
     }
     return this.soundEffects.get(src)!;
-  }
-
-  /**
-   * Play background music with optional fade
-   */
-  playMusic(src: MusicTrack, fadeDuration = 500): void {
-    const newMusic = this.getOrCreateMusic(src);
-
-    // If the same music is already playing, do nothing
-    if (this.currentMusicKey === src && this.currentMusic?.playing()) {
-      return;
-    }
-
-    // Fade out current music if playing
-    if (this.currentMusic && this.currentMusic.playing()) {
-      this.currentMusic.fade(this.currentMusic.volume(), 0, fadeDuration);
-      this.currentMusic.once('fade', () => {
-        this.currentMusic?.stop();
-      });
-    }
-
-    // Fade in new music
-    newMusic.volume(0);
-    newMusic.play();
-    newMusic.fade(0, 1, fadeDuration);
-
-    this.currentMusic = newMusic;
-    this.currentMusicKey = src;
-  }
-
-  /**
-   * Stop current background music
-   */
-  stopMusic(fadeDuration = 500): void {
-    if (this.currentMusic && this.currentMusic.playing()) {
-      this.currentMusic.fade(this.currentMusic.volume(), 0, fadeDuration);
-      this.currentMusic.once('fade', () => {
-        this.currentMusic?.stop();
-      });
-      this.currentMusic = null;
-      this.currentMusicKey = null;
-    }
-  }
-
-  /**
-   * Pause current background music
-   */
-  pauseMusic(): void {
-    if (this.currentMusic) {
-      this.currentMusic.pause();
-    }
-  }
-
-  /**
-   * Resume paused music
-   */
-  resumeMusic(): void {
-    if (this.currentMusic) {
-      this.currentMusic.play();
-    }
   }
 
   /**
@@ -137,34 +77,11 @@ class AudioService {
   }
 
   /**
-   * Mute/unmute only background music
+   * Cleanup sound effects resources
    */
-  setMusicMuted(muted: boolean): void {
-    this.isMusicMuted = muted;
-    if (this.currentMusic) {
-      this.currentMusic.mute(muted);
-    }
-    // Also mute all music tracks in cache
-    this.musicTracks.forEach((howl) => howl.mute(muted));
-  }
-
-  /**
-   * Get current music volume
-   */
-  getMusicVolume(): number {
-    return this.currentMusic?.volume() ?? 1;
-  }
-
-  /**
-   * Cleanup all audio resources
-   */
-  cleanup(): void {
-    this.musicTracks.forEach((howl) => howl.unload());
+  cleanupSoundEffects(): void {
     this.soundEffects.forEach((howl) => howl.unload());
-    this.musicTracks.clear();
     this.soundEffects.clear();
-    this.currentMusic = null;
-    this.currentMusicKey = null;
   }
 }
 
