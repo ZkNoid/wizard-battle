@@ -29,7 +29,7 @@ import { GameLeaf, GameLeafSchema } from './schemas/game-leaf.schema';
     MongooseModule.forFeature([{ name: GameLeaf.name, schema: GameLeafSchema }]),
   ],
   providers: [MinaWorkerProcessor, MinaStateService, MinaSubmitterService],
-  exports: [MinaStateService],
+  exports: [MinaStateService, MinaSubmitterService],
 })
 export class MinaWorkerModule {}
 

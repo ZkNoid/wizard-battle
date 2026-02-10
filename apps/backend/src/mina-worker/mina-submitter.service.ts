@@ -8,7 +8,6 @@ import {
   MerkleMapWitness,
   UInt32,
 } from 'o1js';
-import { SerializedWitness } from './mina-state.service';
 
 /**
  * MinaSubmitterService - Submits transactions to Mina network
@@ -85,7 +84,7 @@ export class MinaSubmitterService implements OnModuleInit {
   async submitStartGame(
     gameId: number,
     setupHash: string,
-    witness: SerializedWitness,
+    witness: string,
   ): Promise<string> {
     this.assertReady();
 
@@ -106,7 +105,7 @@ export class MinaSubmitterService implements OnModuleInit {
       const setupHashField = Field(setupHash);
 
       // Reconstruct MerkleMapWitness from serialized data
-      const merkleWitness = this.deserializeWitness(witness);
+      const merkleWitness = MerkleMapWitness.fromJSON(witness);
 
       // Import and instantiate the contract
       const { GameManager } = await import(
@@ -151,7 +150,7 @@ export class MinaSubmitterService implements OnModuleInit {
   async submitFinishGame(
     gameId: number,
     resultHash: string,
-    witness: SerializedWitness,
+    witness: string,
     prevSetupHash: string,
   ): Promise<string> {
     this.assertReady();
@@ -172,7 +171,7 @@ export class MinaSubmitterService implements OnModuleInit {
       const prevSetupHashField = Field(prevSetupHash);
 
       // Reconstruct MerkleMapWitness
-      const merkleWitness = this.deserializeWitness(witness);
+      const merkleWitness = MerkleMapWitness.fromJSON(witness);
 
       // Import and instantiate the contract
       const { GameManager } = await import(
@@ -212,6 +211,81 @@ export class MinaSubmitterService implements OnModuleInit {
       return pendingTx.hash;
     } catch (error) {
       this.logger.error('Failed to submit finishGame:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Submit proveByTimeout transaction to Mina
+   * Calls GameManager.proveByTimeout(gameId, witness, deadlineSlot, setupHash, resultHash)
+   * This finalizes a game after the challenge window has passed
+   */
+  async submitProveByTimeout(
+    gameId: number,
+    deadlineSlot: number,
+    setupHash: string,
+    resultHash: string,
+    witness: string,
+  ): Promise<string> {
+    this.assertReady();
+
+    this.logger.log(`Submitting proveByTimeout for game ${gameId}...`);
+
+    try {
+      // Ensure contract is compiled
+      await this.ensureContractCompiled();
+
+      // Fetch the account state
+      await fetchAccount({ publicKey: this.contractAddress! });
+      await fetchAccount({ publicKey: this.adminPublicKey! });
+
+      // Convert parameters to Fields
+      const gameIdField = Field(gameId);
+      const deadlineSlotField = UInt32.from(deadlineSlot);
+      const setupHashField = Field(setupHash);
+      const resultHashField = Field(resultHash);
+
+      // Reconstruct MerkleMapWitness
+      const merkleWitness = MerkleMapWitness.fromJSON(witness);
+
+      // Import and instantiate the contract
+      const { GameManager } = await import(
+        '../../../mina-contracts/src/GameManager.js'
+      );
+      const contract = new GameManager(this.contractAddress!);
+
+      // Create transaction
+      const tx = await Mina.transaction(
+        { sender: this.adminPublicKey!, fee: 100_000_000 },
+        async () => {
+          await contract.proveByTimeout(
+            gameIdField,
+            merkleWitness,
+            deadlineSlotField,
+            setupHashField,
+            resultHashField,
+          );
+        },
+      );
+
+      // Generate proof
+      this.logger.log('Generating proof for proveByTimeout...');
+      await tx.prove();
+
+      // Sign and send
+      tx.sign([this.adminPrivateKey!]);
+      const pendingTx = await tx.send();
+
+      this.logger.log(`Transaction sent: ${pendingTx.hash}, waiting for confirmation...`);
+
+      // Wait for transaction to be included in a block
+      await pendingTx.wait();
+
+      this.logger.log(`Transaction confirmed: ${pendingTx.hash}`);
+
+      return pendingTx.hash;
+    } catch (error) {
+      this.logger.error('Failed to submit proveByTimeout:', error);
       throw error;
     }
   }
@@ -267,24 +341,6 @@ export class MinaSubmitterService implements OnModuleInit {
     this.logger.log(`Contract compiled in ${duration}ms`);
 
     this.isContractCompiled = true;
-  }
-
-
-  /**
-   * Deserialize witness from serialized format
-   * Note: This is a simplified implementation - the actual deserialization
-   * depends on o1js internals
-   */
-  private deserializeWitness(serialized: SerializedWitness): MerkleMapWitness {
-    // TODO: Implement proper deserialization
-    // For now, we need to reconstruct the MerkleMapWitness from path data
-    // This requires understanding o1js internals
-
-    // Placeholder - in production, you'd reconstruct from isLefts and siblings
-    throw new Error(
-      'MerkleMapWitness deserialization not yet implemented. ' +
-        'The witness should be generated fresh from MinaStateService.',
-    );
   }
 }
 

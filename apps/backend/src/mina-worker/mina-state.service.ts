@@ -34,15 +34,6 @@ export interface ContractState {
 }
 
 /**
- * Serialized witness data for transaction submission
- */
-export interface SerializedWitness {
-  // MerkleMapWitness can't be directly serialized, so we store path data
-  isLefts: boolean[];
-  siblings: string[]; // Field values as strings
-}
-
-/**
  * MinaStateService - Manages MerkleMap state for games
  *
  * Responsibilities:
@@ -124,7 +115,7 @@ export class MinaStateService implements OnModuleInit {
   /**
    * Get witness for a new game slot (should be empty)
    */
-  async getWitnessForNewGame(gameId: number): Promise<SerializedWitness> {
+  async getWitnessForNewGame(gameId: number): Promise<string> {
     // Verify slot is empty
     const currentValue = this.gamesMap.get(Field(gameId));
     if (!currentValue.equals(Field(0)).toBoolean()) {
@@ -137,7 +128,7 @@ export class MinaStateService implements OnModuleInit {
   /**
    * Get witness for an existing game
    */
-  async getWitnessForGame(gameId: number): Promise<SerializedWitness> {
+  async getWitnessForGame(gameId: number): Promise<string> {
     return this.getWitness(Field(gameId));
   }
 
@@ -279,28 +270,9 @@ export class MinaStateService implements OnModuleInit {
   /**
    * Get witness for a MerkleMap key
    */
-  private getWitness(key: Field): SerializedWitness {
+  private getWitness(key: Field): string {
     const witness = this.gamesMap.getWitness(key);
-
-    // Serialize the witness for transmission
-    // MerkleMapWitness contains isLefts and siblings arrays
-    const isLefts: boolean[] = [];
-    const siblings: string[] = [];
-
-    // Access internal witness data
-    // Note: This depends on o1js internals and may need adjustment
-    const witnessData = witness.toJSON() as any;
-
-    // The witness structure in o1js is a MerkleTree witness
-    // We need to extract the path information
-    if (witnessData && witnessData.path) {
-      for (const node of witnessData.path) {
-        isLefts.push(node.isLeft);
-        siblings.push(node.sibling.toString());
-      }
-    }
-
-    return { isLefts, siblings };
+    return witness.toJSON();
   }
 
   /**

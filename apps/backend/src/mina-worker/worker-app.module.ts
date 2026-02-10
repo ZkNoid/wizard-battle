@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ScheduleModule } from '@nestjs/schedule';
 import { MinaWorkerModule } from './mina-worker.module';
 import { MinaWatcherService } from './mina-watcher.service';
 
@@ -28,10 +29,12 @@ import { MinaWatcherService } from './mina-watcher.service';
         dbName: process.env.MONGODB_DB || 'wizardbattle',
       },
     ),
+    // Schedule module for cron jobs
+    ScheduleModule.forRoot(),
     // Mina worker module with BullMQ
     MinaWorkerModule,
-    MinaWatcherService,
   ],
+  providers: [MinaWatcherService],
 })
 export class WorkerAppModule {}
 

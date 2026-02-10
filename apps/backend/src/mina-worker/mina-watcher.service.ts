@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { MinaStateService } from "./mina-state.service";
+import { MinaSubmitterService } from "./mina-submitter.service";
 
 
 @Injectable()
@@ -9,6 +10,7 @@ export class MinaWatcherService {
 
   constructor(
     private readonly minaStateService: MinaStateService,
+    private readonly minaSubmitterService: MinaSubmitterService,
   ) {}
 
   @Cron(CronExpression.EVERY_10_MINUTES)
@@ -31,7 +33,29 @@ export class MinaWatcherService {
     );
 
     for (const game of readyForFinalizationGames) {
-      await this.minaStateService.recordGameFinalized(game.gameId, false);
+      try {
+        this.logger.log(`Finalizing game ${game.gameId} on-chain...`);
+
+        // Get witness for the game
+        const witness = await this.minaStateService.getWitnessForGame(game.gameId);
+
+        // Submit proveByTimeout transaction to finalize on-chain
+        const txHash = await this.minaSubmitterService.submitProveByTimeout(
+          game.gameId,
+          game.challengeDeadlineSlot!,
+          game.setupHash,
+          game.resultHash!,
+          witness,
+        );
+
+        this.logger.log(`Game ${game.gameId} finalized on-chain. TX: ${txHash}`);
+
+        // Update local state after successful on-chain finalization
+        await this.minaStateService.recordGameFinalized(game.gameId, false);
+      } catch (error) {
+        this.logger.error(`Failed to finalize game ${game.gameId}:`, error);
+        // Continue with other games even if one fails
+      }
     }
   }
 }
