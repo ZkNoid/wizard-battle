@@ -1,12 +1,11 @@
 export const TimerBg = ({ className }: { className: string }) => {
   return (
     <svg
-      width="564"
-      height="123"
       viewBox="0 0 564 123"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      preserveAspectRatio="none"
     >
       <path d="M554 0H10V5H554V0Z" fill="#070C19" />
       <path d="M554 118H10V123H554V118Z" fill="#070C19" />

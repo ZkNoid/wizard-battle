@@ -1,12 +1,11 @@
 export const HeroCharacteristicsBg = ({ className }: { className: string }) => {
   return (
     <svg
-      width="564"
-      height="150"
       viewBox="0 0 564 150"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      preserveAspectRatio="none"
     >
       <path d="M554 0H10V5H554V0Z" fill="#070C19" />
       <path d="M554 145H10V150H554V145Z" fill="#070C19" />
