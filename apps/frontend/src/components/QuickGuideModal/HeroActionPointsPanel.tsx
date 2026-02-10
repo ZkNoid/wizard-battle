@@ -7,9 +7,9 @@ export default function HeroActionPointsPanel() {
   return (
     <div className="h-38 relative w-full">
       <HeroActionPointBg className="absolute inset-0 size-full" />
-      <div className="relative z-10 px-2 py-3">
+      <div className="relative z-10 px-5 py-3">
         {/* Title */}
-        <h3 className="font-pixel text-main-gray mb-2 text-xl font-bold">
+        <h3 className="font-pixel text-main-gray mb-0 text-xl font-bold">
           Hero action points
         </h3>
 
