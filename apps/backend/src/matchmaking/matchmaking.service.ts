@@ -555,8 +555,16 @@ export class MatchmakingService {
       }
 
       await this.gameStateService.createGameState(roomId, [
-        { id: firstPlayer.playerId!, socketId: firstPlayer.socketId! },
-        { id: secondPlayer.playerId!, socketId: secondPlayer.socketId! },
+        {
+          id: firstPlayer.playerId!,
+          socketId: firstPlayer.socketId!,
+          userId: firstPlayer.userId,
+        },
+        {
+          id: secondPlayer.playerId!,
+          socketId: secondPlayer.socketId!,
+          userId: secondPlayer.userId,
+        },
       ]);
 
       // Try to notify both players of the match
@@ -1322,8 +1330,16 @@ export class MatchmakingService {
 
       // Initialize game state
       await this.gameStateService.createGameState(roomId, [
-        { id: player1.playerId!, socketId: player1.socketId! },
-        { id: player2.playerId!, socketId: player2.socketId! },
+        {
+          id: player1.playerId!,
+          socketId: player1.socketId!,
+          userId: player1.userId,
+        },
+        {
+          id: player2.playerId!,
+          socketId: player2.socketId!,
+          userId: player2.userId,
+        },
       ]);
 
       // Notify both players of the match

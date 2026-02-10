@@ -719,31 +719,54 @@ export class GameSessionGateway {
     );
 
     try {
-      const winnerId = await this.gameStateService.markPlayerDead(
+      const winnerData = await this.gameStateService.markPlayerDead(
         data.roomId,
         data.dead.playerId
       );
 
-      if (winnerId) {
+      if (winnerData && winnerData !== 'draw') {
         // Game ended, announce winner
-        //const gameEnd: IGameEnd = { winnerId };
-        // Reward winner with gold
         const goldAmount = 100;
-        const reward = await this.rewardService.rewardGold(
-          winnerId,
-          goldAmount
-        );
+        let reward: {
+          success: boolean;
+          itemId: string;
+          quantity: number;
+        } | null = null;
+
+        // Only distribute rewards if winner has a valid userId (wallet connected)
+        if (winnerData.userId) {
+          try {
+            reward = await this.rewardService.rewardGold(
+              winnerData.userId,
+              goldAmount
+            );
+            console.log(
+              `💰 Rewarded ${goldAmount} gold to winner ${winnerData.playerId} (userId: ${winnerData.userId})`
+            );
+          } catch (error) {
+            console.error(
+              `❌ Failed to reward gold to winner ${winnerData.playerId}:`,
+              error
+            );
+          }
+        } else {
+          console.log(
+            `⚠️ Winner ${winnerData.playerId} has no userId (wallet not connected), skipping reward distribution`
+          );
+        }
 
         const gameEnd: IGameEnd = {
-          winnerId,
-          reward: {
-            gold: goldAmount,
-            totalGold: reward.quantity,
-          },
+          winnerId: winnerData.playerId,
+          ...(reward && {
+            reward: {
+              gold: goldAmount,
+              totalGold: reward.quantity,
+            },
+          }),
         };
 
         console.log(
-          `📢 Broadcasting game end: ${winnerId} wins in room ${data.roomId}`
+          `📢 Broadcasting game end: ${winnerData.playerId} wins in room ${data.roomId}`
         );
 
         this.server.to(data.roomId).emit('gameEnd', gameEnd);

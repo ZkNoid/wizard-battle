@@ -74,7 +74,7 @@ export interface IDead {
 // }
 export interface IGameEnd {
   winnerId: string;
-  reward: {
+  reward?: {
     gold: number;
     totalGold: number;
   };
