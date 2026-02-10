@@ -5,11 +5,11 @@ import Image from 'next/image';
 
 export default function HeroCharacteristicsPanel() {
   return (
-    <div className="relative w-full">
+    <div className="h-35 relative w-full">
       <HeroCharacteristicsBg className="absolute inset-0 size-full" />
-      <div className="relative z-10 px-6 py-4">
+      <div className="relative z-10 px-5 py-3">
         {/* Title */}
-        <h3 className="font-pixel text-main-gray mb-4 text-xl font-bold">
+        <h3 className="font-pixel text-main-gray text-xl font-bold">
           Hero characteristics
         </h3>
 
