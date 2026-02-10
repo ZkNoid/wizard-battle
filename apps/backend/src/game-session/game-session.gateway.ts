@@ -9,6 +9,7 @@ import { createClient, RedisClientType } from 'redis';
 import { MatchmakingService } from '../matchmaking/matchmaking.service';
 import { GameStateService } from './game-state.service';
 import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
+import { RewardService } from '../reward/reward.service';
 import {
   IAddToQueue,
   IAddToQueueResponse,
@@ -56,7 +57,8 @@ export class GameSessionGateway {
   constructor(
     private readonly matchmakingService: MatchmakingService,
     private readonly gameStateService: GameStateService,
-    private readonly gamePhaseScheduler: GamePhaseSchedulerService
+    private readonly gamePhaseScheduler: GamePhaseSchedulerService,
+    private readonly rewardService: RewardService
   ) {}
 
   /**
@@ -724,7 +726,22 @@ export class GameSessionGateway {
 
       if (winnerId) {
         // Game ended, announce winner
-        const gameEnd: IGameEnd = { winnerId };
+        //const gameEnd: IGameEnd = { winnerId };
+        // Reward winner with gold
+        const goldAmount = 100;
+        const reward = await this.rewardService.rewardGold(
+          winnerId,
+          goldAmount
+        );
+
+        const gameEnd: IGameEnd = {
+          winnerId,
+          reward: {
+            gold: goldAmount,
+            totalGold: reward.quantity,
+          },
+        };
+
         console.log(
           `📢 Broadcasting game end: ${winnerId} wins in room ${data.roomId}`
         );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { PlaySteps } from '@/lib/enums/PlaySteps';
+import { useSearchParams } from 'next/navigation';
 import { ModeSelect } from './ModeSelect';
 import { Navigation } from './Navigation';
 import { PlayMode } from '@/lib/enums/PlayMode';
@@ -18,6 +19,16 @@ import Modals from '../Header/Modals';
 export default function Play() {
   const [playStep, setPlayStep] = useState<PlaySteps>(PlaySteps.SELECT_MODE);
   const [playMode, setPlayMode] = useState<PlayMode | undefined>(undefined);
+  const searchParams = useSearchParams();
+
+  // Extract gold reward from URL params if present
+  const goldReward =
+    searchParams.get('gold') && searchParams.get('totalGold')
+      ? {
+          gold: parseInt(searchParams.get('gold')!),
+          totalGold: parseInt(searchParams.get('totalGold')!),
+        }
+      : undefined;
 
   const { stater, setSelectedSkills, setCurrentWizard } =
     useUserInformationStore();
@@ -72,6 +83,7 @@ export default function Play() {
             <GameResult
               type={playStep === PlaySteps.LOSE ? 'lose' : 'win'}
               setPlayStep={setPlayStep}
+              goldReward={goldReward}
             />
           )}
         </div>

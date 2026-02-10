@@ -36,9 +36,19 @@ export default function Matchmaking({
   const [elapsedTime, setElapsedTime] = useState(0);
   const [queuePosition, setQueuePosition] = useState<number | null>(null);
 
-  const onGameEnd = (winner: boolean) => {
+  const onGameEnd = (
+    winner: boolean,
+    reward?: { gold: number; totalGold: number }
+  ) => {
     setTimeout(() => {
-      router.push(`/gameResults?winner=${winner}`);
+      const params = new URLSearchParams({
+        winner: winner.toString(),
+        ...(reward && {
+          gold: reward.gold.toString(),
+          totalGold: reward.totalGold.toString(),
+        }),
+      });
+      router.push(`/gameResults?${params.toString()}`);
     }, 1000);
   };
 

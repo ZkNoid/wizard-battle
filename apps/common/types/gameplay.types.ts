@@ -69,8 +69,15 @@ export interface IDead {
  * @dev Broadcast to all players when only one player remains alive
  * @param winnerId The unique identifier of the winning player
  */
+// export interface IGameEnd {
+//   winnerId: string;
+// }
 export interface IGameEnd {
   winnerId: string;
+  reward: {
+    gold: number;
+    totalGold: number;
+  };
 }
 
 /**
@@ -175,9 +182,14 @@ export class TransformedDead implements IDead {
 
 export class TransformedGameEnd implements IGameEnd {
   winnerId: string;
+  reward: {
+    gold: number;
+    totalGold: number;
+  };
 
-  constructor(winnerId: string) {
+  constructor(winnerId: string, reward: { gold: number; totalGold: number }) {
     this.winnerId = winnerId;
+    this.reward = reward;
   }
 }
 

@@ -24,9 +24,11 @@ import Image from 'next/image';
 export default function GameResult({
   type,
   setPlayStep,
+  goldReward,
 }: {
   type: 'win' | 'lose';
   setPlayStep: (step: PlaySteps) => void;
+  goldReward?: { gold: number; totalGold: number };
 }) {
   const router = useRouter();
   const { setBackground } = useBackgroundImageStore();
@@ -200,6 +202,26 @@ export default function GameResult({
           <span className="font-pixel text-center text-xl font-bold text-white">
             Your Reward
           </span>
+          {goldReward && type === 'win' && (
+            <div className="mb-4 mt-2 rounded-lg bg-white/10 p-4 backdrop-blur-sm">
+              <div className="flex items-center justify-between">
+                <span className="font-pixel text-lg text-white">
+                  Gold Earned:
+                </span>
+                <span className="font-pixel text-xl text-yellow-400">
+                  +{goldReward.gold}
+                </span>
+              </div>
+              <div className="mt-1 flex items-center justify-between">
+                <span className="font-pixel text-sm text-white/70">
+                  Total Gold:
+                </span>
+                <span className="font-pixel text-lg text-yellow-400">
+                  {goldReward.totalGold}
+                </span>
+              </div>
+            </div>
+          )}
           <Experience
             title="Account Experience"
             expWidth={

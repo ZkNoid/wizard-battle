@@ -7,5 +7,6 @@ import { UserInventoryModule } from '../user-inventory/user-inventory.module';
   imports: [UserInventoryModule],
   controllers: [RewardController],
   providers: [RewardService],
+  exports: [RewardService],
 })
 export class RewardModule {}
