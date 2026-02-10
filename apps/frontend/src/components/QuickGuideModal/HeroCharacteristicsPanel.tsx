@@ -1,7 +1,6 @@
 'use client';
 
 import { HeroCharacteristicsBg } from './assets/hero-characteristics-bg';
-import Image from 'next/image';
 import { HeroCharacteristicsDescription } from './assets/hero-characteristics-description';
 
 export default function HeroCharacteristicsPanel() {

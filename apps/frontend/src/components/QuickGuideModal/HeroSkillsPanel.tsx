@@ -1,11 +1,6 @@
 'use client';
 
 import { HeroSkillsBg } from './assets/hero-skills-bg';
-import Image from 'next/image';
-import { Spell1 } from './assets/spell-1';
-import { Spell2 } from './assets/spell-2';
-import { Spell3 } from './assets/spell-3';
-import { Spell4 } from './assets/spell-4';
 import { HeroSkillsDescription } from './assets/hero-skills-description';
 
 export default function HeroSkillsPanel() {

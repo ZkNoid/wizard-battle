@@ -1,6 +1,5 @@
 'use client';
 
-import { Button } from '../shared/Button';
 import { useModalSound } from '@/lib/hooks/useAudio';
 import { QuickGuideBg } from './assets/quick-guide-bg';
 import ModalTitle from '../shared/ModalTitle';

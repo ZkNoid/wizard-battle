@@ -1,7 +1,6 @@
 'use client';
 
 import { TimerBg } from './assets/timer-bg';
-import Image from 'next/image';
 import { TimerImg } from './assets/timer-img';
 
 export default function TimerPanel() {
@@ -17,20 +16,6 @@ export default function TimerPanel() {
         {/* Content - 2 columns */}
         <div className="flex items-center gap-2">
           {/* Left column - Timer display with hourglass */}
-          {/* <div className="flex items-center gap-2 rounded bg-gray-600/80 px-3 py-2">
-            <Image
-              src="/game/icons/hourglass.png"
-              alt="Hourglass"
-              width={48}
-              height={48}
-              className="size-12"
-              unoptimized={true}
-              quality={100}
-            />
-            <span className="font-pixel text-main-gray text-4xl font-bold tracking-wider">
-              02:00
-            </span>
-          </div> */}
           <TimerImg className="w-40" />
 
           {/* Right column - Description text */}
