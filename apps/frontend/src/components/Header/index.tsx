@@ -19,7 +19,6 @@ export default function Header({ onTabChange }: HeaderProps) {
     setIsInventoryModalOpen,
     setIsCraftModalOpen,
     setIsExpeditionModalOpen,
-    setIsQuickGuideModalOpen,
   } = useMiscellaneousSessionStore();
 
   return (
@@ -72,13 +71,7 @@ export default function Header({ onTabChange }: HeaderProps) {
               className="h-6 w-8"
             />
           </BoxButton>
-          <BoxButton
-            color="gray"
-            onClick={() => {
-              setIsQuickGuideModalOpen(true);
-            }}
-            className="size-16"
-          >
+          <BoxButton color="gray" onClick={() => {}} className="size-16">
             <Image
               src={'/icons/tournaments.png'}
               width={36}
