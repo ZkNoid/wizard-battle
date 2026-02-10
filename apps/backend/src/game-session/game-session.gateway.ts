@@ -24,6 +24,7 @@ import {
   ITrustedState,
   IDead,
   IGameEnd,
+  IReward,
 } from '../../../common/types/gameplay.types';
 
 /**
@@ -726,7 +727,8 @@ export class GameSessionGateway {
 
       if (winnerData && winnerData !== 'draw') {
         // Game ended, announce winner
-        const goldAmount = 100;
+        const goldAmount = Math.floor(Math.random() * 51) + 50; // Random value between 50-100
+
         let reward: {
           success: boolean;
           itemId: string;
@@ -755,13 +757,16 @@ export class GameSessionGateway {
           );
         }
 
+        const gold: IReward = {
+          itemId: 'Gold',
+          amount: goldAmount,
+          total: reward ? reward.quantity : 0,
+        };
+
         const gameEnd: IGameEnd = {
           winnerId: winnerData.playerId,
           ...(reward && {
-            reward: {
-              gold: goldAmount,
-              totalGold: reward.quantity,
-            },
+            reward: [gold],
           }),
         };
 

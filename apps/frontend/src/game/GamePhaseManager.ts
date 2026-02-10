@@ -5,6 +5,7 @@ import {
   GamePhase,
   type IUserActions,
   type ITrustedState,
+  type IReward,
 } from '../../../common/types/gameplay.types';
 import type { IPublicState } from '../../../common/types/matchmaking.types';
 import { EventBus } from './EventBus';
@@ -47,7 +48,7 @@ export class GamePhaseManager {
   private setCurrentPhaseCallback?: (phase: GamePhase) => void;
   private onGameEnd?: (
     winner: boolean,
-    reward?: { gold: number; totalGold: number }
+    reward?: IReward[] //{ gold: number; total: number }
   ) => void;
   private hasSubmittedActions = false; // Track if actions were submitted this turn
   private hasSubmittedTrustedState = false; // Track if trusted state was submitted this turn
@@ -64,10 +65,7 @@ export class GamePhaseManager {
     opponentState: State,
     setOpponentState: (state: State) => void,
     setCurrentPhaseCallback?: (phase: GamePhase) => void,
-    onGameEnd?: (
-      winner: boolean,
-      reward?: { gold: number; totalGold: number }
-    ) => void,
+    onGameEnd?: (winner: boolean, reward?: IReward[]) => void,
     setPlayerState?: (stater: Stater) => void
   ) {
     console.log('Initializing GamePhaseManager');
@@ -326,7 +324,7 @@ export class GamePhaseManager {
       'gameEnd',
       async (data: {
         winnerId: string;
-        reward?: { gold: number; totalGold: number };
+        reward?: IReward[]; //{ gold: number; total: number };
       }) => {
         let release = await this.stageProcessMutex.acquire();
         try {
@@ -335,7 +333,7 @@ export class GamePhaseManager {
           // Stop all polling and state submissions when game ends
           this.cleanup();
           const isWinner = data.winnerId === this.getPlayerId();
-          this.onGameEnd?.(isWinner, isWinner ? data.reward : undefined);
+          this.onGameEnd?.(isWinner, isWinner ? data.reward : []);
         } finally {
           release();
         }

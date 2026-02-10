@@ -21,13 +21,16 @@ export default function Play() {
   const [playMode, setPlayMode] = useState<PlayMode | undefined>(undefined);
   const searchParams = useSearchParams();
 
-  // Extract gold reward from URL params if present
-  const goldReward =
-    searchParams.get('gold') && searchParams.get('totalGold')
-      ? {
-          gold: parseInt(searchParams.get('gold')!),
-          totalGold: parseInt(searchParams.get('totalGold')!),
-        }
+  // Extract rewards from URL params if present (Gold only for now)
+  const rewards =
+    searchParams.get('gold') && searchParams.get('total')
+      ? [
+          {
+            itemId: 'Gold',
+            amount: parseInt(searchParams.get('gold')!),
+            total: parseInt(searchParams.get('total')!),
+          },
+        ]
       : undefined;
 
   const { stater, setSelectedSkills, setCurrentWizard } =
@@ -83,7 +86,7 @@ export default function Play() {
             <GameResult
               type={playStep === PlaySteps.LOSE ? 'lose' : 'win'}
               setPlayStep={setPlayStep}
-              goldReward={goldReward}
+              rewards={rewards}
             />
           )}
         </div>

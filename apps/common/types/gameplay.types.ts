@@ -74,10 +74,13 @@ export interface IDead {
 // }
 export interface IGameEnd {
   winnerId: string;
-  reward?: {
-    gold: number;
-    totalGold: number;
-  };
+  reward?: IReward[];
+}
+
+export interface IReward {
+  itemId: string;
+  amount: number;
+  total: number;
 }
 
 /**
@@ -182,12 +185,9 @@ export class TransformedDead implements IDead {
 
 export class TransformedGameEnd implements IGameEnd {
   winnerId: string;
-  reward: {
-    gold: number;
-    totalGold: number;
-  };
+  reward?: IReward[];
 
-  constructor(winnerId: string, reward: { gold: number; totalGold: number }) {
+  constructor(winnerId: string, reward?: IReward[]) {
     this.winnerId = winnerId;
     this.reward = reward;
   }
