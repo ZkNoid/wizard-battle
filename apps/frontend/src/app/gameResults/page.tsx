@@ -24,6 +24,15 @@ function GameResultsContent() {
   const winnerParam = searchParams.get('winner');
   const isWinner = winnerParam === 'true';
 
+  // Get gold reward from URL parameters
+  const goldReward =
+    searchParams.get('gold') && searchParams.get('totalGold')
+      ? {
+          gold: parseInt(searchParams.get('gold')!),
+          totalGold: parseInt(searchParams.get('totalGold')!),
+        }
+      : undefined;
+
   // Redirect to home if no address is found
   useEffect(() => {
     if (!address) {
@@ -58,6 +67,7 @@ function GameResultsContent() {
         <GameResult
           type={isWinner ? 'win' : 'lose'}
           setPlayStep={handleSetPlayStep}
+          goldReward={goldReward}
         />
       </div>
     </section>
