@@ -171,7 +171,9 @@ export class GamePhaseSchedulerService {
             const res = await this.withRetry(() =>
               this.gameStateService.markPlayerDead(roomId, p.id)
             );
-            if (res) winnerId = res;
+            if (res && typeof res === 'object' && 'playerId' in res) {
+              winnerId = res.playerId; // If this was the last alive player, we have a winner
+            }
           }
 
           if (winnerId) {

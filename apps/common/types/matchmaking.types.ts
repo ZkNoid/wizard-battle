@@ -31,6 +31,7 @@ export interface IPosition {
 export interface IState {
   socketId: string;
   playerId: string;
+  userId?: string; // Wallet address for reward distribution
   fields: string; // JSON.stringify(State.toJSON(publicState))
   // hp: number;
   // position: { x: number; y: number };
@@ -53,6 +54,7 @@ export type IPublicState = IState;
 /* Find a game queue */
 export interface IAddToQueue {
   playerId: string;
+  userId?: string; // Wallet address from frontend for reward distribution
   playerSetup: IPublicState;
   nonce: number;
   signature: any;

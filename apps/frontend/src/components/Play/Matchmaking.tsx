@@ -19,6 +19,7 @@ import type {
 import { State } from '../../../../common/stater/state';
 import { GamePhaseManager } from '@/game/GamePhaseManager';
 import { Field, Int64 } from 'o1js';
+import { useMinaAppkit } from 'mina-appkit';
 
 export default function Matchmaking({
   setPlayStep,
@@ -28,6 +29,7 @@ export default function Matchmaking({
   playMode: PlayMode;
 }) {
   const router = useRouter();
+  const { address } = useMinaAppkit();
   const { socket, stater, setOpponentState, setGamePhaseManager, setStater } =
     useUserInformationStore();
   const { setCurrentPhase } = useInGameStore();
@@ -115,9 +117,11 @@ export default function Matchmaking({
 
       let data = {
         playerId,
+        userId: address ?? undefined, // Send wallet address as userId for reward distribution
         playerSetup: {
           socketId: socket.id!,
           playerId: playerId.toString(),
+          userId: address ?? undefined, // Also set userId in playerSetup for backend storage
           fields: JSON.stringify(State.toJSON(publicState)),
         } satisfies IPublicState,
         nonce: 0,
