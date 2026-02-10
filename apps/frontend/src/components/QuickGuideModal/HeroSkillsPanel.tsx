@@ -20,25 +20,7 @@ export default function HeroSkillsPanel() {
 
         {/* Content - 2 columns */}
         <div className="flex items-start justify-start gap-2">
-          {/* Left column - Skill icons grid (2x2) */}
-          <div className="flex-shrink-0">
-            <div className="grid grid-cols-2 gap-1">
-              <div className="relative size-12 overflow-hidden rounded border border-gray-600 bg-gray-800">
-                <Spell1 className="size-full" />
-              </div>
-              <div className="relative size-12 overflow-hidden rounded border border-gray-600 bg-gray-800">
-                <Spell2 className="size-full" />
-              </div>
-              <div className="relative size-12 overflow-hidden rounded border border-gray-600 bg-gray-800">
-                <Spell3 className="size-full" />
-              </div>
-              <div className="relative size-12 overflow-hidden rounded border border-gray-600 bg-gray-800">
-                <Spell4 className="size-full" />
-              </div>
-            </div>
-          </div>
-
-          <HeroSkillsDescription className="h-26 size-full" />
+          <HeroSkillsDescription className="h-26 size-full w-60" />
         </div>
       </div>
     </div>
