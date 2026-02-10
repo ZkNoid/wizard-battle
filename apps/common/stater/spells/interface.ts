@@ -40,4 +40,6 @@ export interface ISpell<T> {
   companionSpellId?: Field;
   /** If true, spell is not shown in UI spell selection (used for internal companion spells) */
   hidden?: boolean;
+  /** Returns valid positions where this spell can be cast from the caster's position (x, y) */
+  castedArea?: (x: number, y: number) => { x: number; y: number }[];
 }

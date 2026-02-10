@@ -5,6 +5,7 @@ import {
   GamePhase,
   type IUserActions,
   type ITrustedState,
+  type IReward,
 } from '../../../common/types/gameplay.types';
 import type { IPublicState } from '../../../common/types/matchmaking.types';
 import { EventBus } from './EventBus';
@@ -45,7 +46,10 @@ export class GamePhaseManager {
   private setPlayerState?: (stater: Stater) => void;
   private onNewTurnHook: (() => void) | null = null;
   private setCurrentPhaseCallback?: (phase: GamePhase) => void;
-  private onGameEnd?: (winner: boolean) => void;
+  private onGameEnd?: (
+    winner: boolean,
+    reward?: IReward[] //{ gold: number; total: number }
+  ) => void;
   private hasSubmittedActions = false; // Track if actions were submitted this turn
   private hasSubmittedTrustedState = false; // Track if trusted state was submitted this turn
   private trustedStatePollingInterval: ReturnType<typeof setInterval> | null =
@@ -61,7 +65,7 @@ export class GamePhaseManager {
     opponentState: State,
     setOpponentState: (state: State) => void,
     setCurrentPhaseCallback?: (phase: GamePhase) => void,
-    onGameEnd?: (winner: boolean) => void,
+    onGameEnd?: (winner: boolean, reward?: IReward[]) => void,
     setPlayerState?: (stater: Stater) => void
   ) {
     console.log('Initializing GamePhaseManager');
@@ -316,17 +320,25 @@ export class GamePhaseManager {
       }
     );
 
-    this.socket.on('gameEnd', async (data: { winnerId: string }) => {
-      let release = await this.stageProcessMutex.acquire();
-      try {
-        console.log('Received game end. Winner is: ', data.winnerId);
-        // Stop all polling and state submissions when game ends
-        this.cleanup();
-        this.onGameEnd?.(data.winnerId === this.getPlayerId());
-      } finally {
-        release();
+    this.socket.on(
+      'gameEnd',
+      async (data: {
+        winnerId: string;
+        reward?: IReward[]; //{ gold: number; total: number };
+      }) => {
+        let release = await this.stageProcessMutex.acquire();
+        try {
+          console.log('Received game end. Winner is: ', data.winnerId);
+          console.log('Received reward:', data.reward);
+          // Stop all polling and state submissions when game ends
+          this.cleanup();
+          const isWinner = data.winnerId === this.getPlayerId();
+          this.onGameEnd?.(isWinner, isWinner ? data.reward : []);
+        } finally {
+          release();
+        }
       }
-    });
+    );
   }
 
   /**
