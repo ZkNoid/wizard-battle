@@ -14,7 +14,7 @@ export default function HeroCharacteristicsPanel() {
           Hero characteristics
         </h3>
 
-        <HeroCharacteristicsDescription className="h-26 size-full w-60" />
+        <HeroCharacteristicsDescription className="h-22 w-full" />
       </div>
     </div>
   );

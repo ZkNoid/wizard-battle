@@ -1,11 +1,11 @@
 export const HeroSkillsDescription = ({ className }: { className: string }) => {
   return (
     <svg
-      width="528"
-      height="107"
       viewBox="0 0 528 107"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      preserveAspectRatio="none"
     >
       <path
         d="M374.312 2.13672V103.862H122.137V2.13672H374.312Z"

@@ -5,11 +5,11 @@ export const HeroCharacteristicsDescription = ({
 }) => {
   return (
     <svg
-      width="497"
-      height="79"
       viewBox="0 0 497 79"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      preserveAspectRatio="none"
     >
       <rect
         width="3.57647"

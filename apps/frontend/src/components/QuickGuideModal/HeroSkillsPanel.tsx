@@ -19,9 +19,7 @@ export default function HeroSkillsPanel() {
         </h3>
 
         {/* Content - 2 columns */}
-        <div className="flex items-start justify-start gap-2">
-          <HeroSkillsDescription className="h-26 size-full w-60" />
-        </div>
+        <HeroSkillsDescription className="h-22 w-full" />
       </div>
     </div>
   );

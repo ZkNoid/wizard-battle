@@ -26,8 +26,11 @@ export default function QuickGuideModal({ onClose }: QuickGuideModalProps) {
         className="w-150 h-185 relative"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="h-full w-full overflow-y-auto px-8 py-8">
-          <ModalTitle title="Quick guide" onClose={onClose} />
+        <div className="h-full w-full overflow-y-auto px-8 pb-4 pt-2">
+          <div className="mb-4">
+            <ModalTitle title="Quick guide" onClose={onClose} />
+          </div>
+
           <div className="flex flex-col gap-4">
             <HeroCharacteristicsPanel />
             <HeroActionPointsPanel />
