@@ -24,13 +24,16 @@ function GameResultsContent() {
   const winnerParam = searchParams.get('winner');
   const isWinner = winnerParam === 'true';
 
-  // Get gold reward from URL parameters
-  const goldReward =
-    searchParams.get('gold') && searchParams.get('totalGold')
-      ? {
-          gold: parseInt(searchParams.get('gold')!),
-          totalGold: parseInt(searchParams.get('totalGold')!),
-        }
+  // Get rewards from URL parameters (Gold only for now)
+  const rewards =
+    searchParams.get('gold') && searchParams.get('total')
+      ? [
+          {
+            itemId: 'Gold',
+            amount: parseInt(searchParams.get('gold')!),
+            total: parseInt(searchParams.get('total')!),
+          },
+        ]
       : undefined;
 
   // Redirect to home if no address is found
@@ -67,7 +70,7 @@ function GameResultsContent() {
         <GameResult
           type={isWinner ? 'win' : 'lose'}
           setPlayStep={handleSetPlayStep}
-          goldReward={goldReward}
+          rewards={rewards}
         />
       </div>
     </section>

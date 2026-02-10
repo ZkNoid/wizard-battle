@@ -16,6 +16,7 @@ import type {
   IFoundMatch,
   IUpdateQueue,
 } from '../../../../common/types/matchmaking.types';
+import type { IReward } from '../../../../common/types/gameplay.types';
 import { State } from '../../../../common/stater/state';
 import { GamePhaseManager } from '@/game/GamePhaseManager';
 import { Field, Int64 } from 'o1js';
@@ -38,16 +39,14 @@ export default function Matchmaking({
   const [elapsedTime, setElapsedTime] = useState(0);
   const [queuePosition, setQueuePosition] = useState<number | null>(null);
 
-  const onGameEnd = (
-    winner: boolean,
-    reward?: { gold: number; totalGold: number }
-  ) => {
+  const onGameEnd = (winner: boolean, reward?: IReward[]) => {
     setTimeout(() => {
+      const goldReward = reward?.find((item) => item.itemId === 'Gold');
       const params = new URLSearchParams({
         winner: winner.toString(),
-        ...(reward && {
-          gold: reward.gold.toString(),
-          totalGold: reward.totalGold.toString(),
+        ...(goldReward && {
+          gold: goldReward.amount.toString(),
+          total: goldReward.total.toString(),
         }),
       });
       router.push(`/gameResults?${params.toString()}`);
@@ -57,7 +56,6 @@ export default function Matchmaking({
   useEffect(() => {
     if (!socket || !stater) return;
 
-    // Handler defined first so it's available for both registration and cleanup
     const handleMatchFound = (response: IFoundMatch) => {
       console.log(
         '🎮 Match found! Creating GamePhaseManager and confirming joined...'
