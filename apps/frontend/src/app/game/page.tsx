@@ -31,6 +31,7 @@ import { WizardId } from '../../../../common/wizards';
 import { useBackgroundMusic, useSpellSounds } from '@/lib/hooks/useAudio';
 import Header from '@/components/Header';
 import Modals from '@/components/Header/Modals';
+import { trackPageLoad } from '@/lib/analytics/performance';
 
 // Constants
 const GRID_WIDTH = 8;
@@ -96,6 +97,11 @@ export default function GamePage() {
 
   // Derived state
   const entities = getAllEntities();
+
+  // Track page load performance
+  useEffect(() => {
+    trackPageLoad('game');
+  }, []);
 
   // Check if spectral projection effect is active
   const hasSpectralProjectionEffect = useCallback(() => {

@@ -13,6 +13,7 @@ import ReownContext from './context/ReownContext';
 
 import { TRPCReactProvider } from '@/trpc/react';
 import ClientInitializer from './ClientInitializer';
+import { PostHogProvider } from '@/lib/analytics/posthog-provider';
 
 export const metadata: Metadata = {
   title: 'Wizard Battle',
@@ -31,10 +32,12 @@ export default async function RootLayout({
       className={`${dePixel.variable} ${dePixelBreit.variable} ${dePixelKlein.variable} ${dePixelSchmal.variable}`}
     >
       <body>
-        <ReownContext cookies={cookies}>
-          <ClientInitializer />
-          <TRPCReactProvider>{children}</TRPCReactProvider>
-        </ReownContext>
+        <PostHogProvider>
+          <ReownContext cookies={cookies}>
+            <ClientInitializer />
+            <TRPCReactProvider>{children}</TRPCReactProvider>
+          </ReownContext>
+        </PostHogProvider>
         <Analytics />
       </body>
     </html>

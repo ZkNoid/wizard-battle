@@ -13,6 +13,12 @@ import { useEffect, useState, useRef, type KeyboardEvent } from 'react';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import { levelFromXp } from '@/lib/constants/levels';
+import { trackEvent, identifyUser } from '@/lib/analytics/posthog-utils';
+import { AnalyticsEvents } from '@/lib/analytics/events';
+import type {
+  WalletConnectionInitiatedProps,
+  WalletConnectionSuccessProps,
+} from '@/lib/analytics/types';
 
 const NameSchema = Yup.object().shape({
   name: Yup.string()
@@ -42,6 +48,7 @@ export default function Wallet({ className }: WalletProps = {}) {
   const [isEditing, setIsEditing] = useState(false);
   const [originalName, setOriginalName] = useState('');
   const editRef = useRef<HTMLDivElement>(null);
+  const hasTrackedConnection = useRef(false);
 
   const {
     data: user,
@@ -71,6 +78,22 @@ export default function Wallet({ className }: WalletProps = {}) {
       );
     }
   }, [user, isUserFetched, address]);
+
+  // Track wallet connection success and identify user
+  useEffect(() => {
+    if (isConnected && address && !hasTrackedConnection.current) {
+      const props: WalletConnectionSuccessProps = {
+        wallet_type: 'Auro',
+        wallet_address: address,
+      };
+      trackEvent(AnalyticsEvents.WALLET_CONNECTION_SUCCESS, props);
+      trackEvent(AnalyticsEvents.FUNNEL_WALLET_CONNECTED, { wallet_type: 'Auro' });
+      identifyUser(address, 'Auro');
+      hasTrackedConnection.current = true;
+    } else if (!isConnected) {
+      hasTrackedConnection.current = false;
+    }
+  }, [isConnected, address]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -148,6 +171,14 @@ export default function Wallet({ className }: WalletProps = {}) {
       ? formatAddress(address)
       : 'Unknown';
 
+  const handleConnectClick = () => {
+    const props: WalletConnectionInitiatedProps = {
+      wallet_type: 'Auro',
+    };
+    trackEvent(AnalyticsEvents.WALLET_CONNECTION_INITIATED, props);
+    triggerWallet();
+  };
+
   return (
     <motion.div
       // initial={isHomePage ? { opacity: 0, y: 50, scale: 0.9 } : false}
@@ -166,7 +197,7 @@ export default function Wallet({ className }: WalletProps = {}) {
         <Button
           variant="blue"
           text="Connect Wallet"
-          onClick={triggerWallet}
+          onClick={handleConnectClick}
           className="h-15 w-full text-base font-bold"
         />
       )}

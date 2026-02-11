@@ -11,6 +11,9 @@ import type { ExpeditionTimePeriod } from '@wizard-battle/common';
 import { useExpeditionStore } from '@/lib/store/expeditionStore';
 import { allWizards } from '../../../../common/wizards';
 import { useMinaAppkit } from 'mina-appkit';
+import { trackEvent } from '@/lib/analytics/posthog-utils';
+import { AnalyticsEvents } from '@/lib/analytics/events';
+import type { ExpeditionStartedProps } from '@/lib/analytics/types';
 
 export default function NewExpeditionForm({
   onClose,
@@ -68,6 +71,17 @@ export default function NewExpeditionForm({
       locationId: selectedLocation,
       timePeriod: selectedTimePeriod,
     });
+
+    // Track expedition started
+    const durationHours = 
+      selectedTimePeriod === 'short' ? 1 : 
+      selectedTimePeriod === 'medium' ? 4 : 8;
+    const expeditionProps: ExpeditionStartedProps = {
+      location_id: selectedLocation,
+      character_id: selectedCharacter.toString(),
+      duration: durationHours,
+    };
+    trackEvent(AnalyticsEvents.EXPEDITION_STARTED, expeditionProps);
 
     if (onSuccess) {
       onSuccess();

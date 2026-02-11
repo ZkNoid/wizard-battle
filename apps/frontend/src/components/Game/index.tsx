@@ -16,6 +16,9 @@ import { SkillsBg } from './assets/skills-bg';
 import { ActionsBg } from './assets/actions-bg';
 import type { SpellStats } from '../../../../common/stater/structs';
 import Image from 'next/image';
+import { trackEvent } from '@/lib/analytics/posthog-utils';
+import { AnalyticsEvents } from '@/lib/analytics/events';
+import type { GuideOpenedProps } from '@/lib/analytics/types';
 
 export default function Game({
   children,
@@ -60,6 +63,10 @@ export default function Game({
             color="gray"
             className="size-14"
             onClick={() => {
+              const props: GuideOpenedProps = {
+                location: 'battle',
+              };
+              trackEvent(AnalyticsEvents.GUIDE_OPENED, props);
               setIsQuickGuideModalOpen(true);
             }}
           >

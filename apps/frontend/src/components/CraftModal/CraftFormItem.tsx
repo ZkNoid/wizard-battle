@@ -4,8 +4,15 @@ import { Button } from '../shared/Button';
 import { CraftRecipe } from './CraftRecipe';
 import { useInventoryStore } from '@/lib/store';
 import { useCraftStore } from '@/lib/store/craftStore';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { api } from '@/trpc/react';
+import { trackEvent } from '@/lib/analytics/posthog-utils';
+import { AnalyticsEvents } from '@/lib/analytics/events';
+import type {
+  ItemCraftedProps,
+  FunnelFirstCraftProps,
+  CraftFailedProps,
+} from '@/lib/analytics/types';
 
 export function CraftFormItem({
   recipe,
@@ -23,6 +30,7 @@ export function CraftFormItem({
     (state) => state.loadUserInventory
   );
   const loadGroupedRecipes = useCraftStore((state) => state.loadGroupedRecipes);
+  const hasTrackedFirstCraft = useRef(false);
 
   // Create a map of item id to quantity for quick lookup
   const inventoryMap = useMemo(() => {
@@ -43,6 +51,29 @@ export function CraftFormItem({
 
   const craftItemMutation = api.crafting.craftItem.useMutation({
     onSuccess: async () => {
+      // Track successful craft
+      const resourcesUsed: Record<string, number> = {};
+      recipe.ingredients.forEach((ing: ICraftRecipeIngredient) => {
+        resourcesUsed[ing.item.title] = ing.requiredAmount;
+      });
+
+      const craftProps: ItemCraftedProps = {
+        item_name: recipe.title,
+        item_type: recipe.type,
+        resources_used: resourcesUsed,
+      };
+      trackEvent(AnalyticsEvents.ITEM_CRAFTED, craftProps);
+
+      // Track first craft for funnel (only once)
+      if (!hasTrackedFirstCraft.current) {
+        const funnelProps: FunnelFirstCraftProps = {
+          item_name: recipe.title,
+          resources_used: resourcesUsed,
+        };
+        trackEvent(AnalyticsEvents.FUNNEL_FIRST_CRAFT_COMPLETED, funnelProps);
+        hasTrackedFirstCraft.current = true;
+      }
+
       // Reload inventory and recipes after successful crafting
       if (address) {
         await loadUserInventory(address);
@@ -65,6 +96,23 @@ export function CraftFormItem({
 
       // Check if backend returned missing ingredients details
       const missingIngredients = errorData?.missingIngredients;
+
+      // Track failed craft
+      const missingResourcesMap: Record<string, number> = {};
+      if (missingIngredients && Array.isArray(missingIngredients)) {
+        missingIngredients.forEach((ing: any) => {
+          missingResourcesMap[ing.itemId] = ing.required - ing.current;
+        });
+      }
+
+      const failProps: CraftFailedProps = {
+        item_name: recipe.title,
+        reason: errorMessage,
+        missing_resources: Object.keys(missingResourcesMap).length > 0 
+          ? missingResourcesMap 
+          : undefined,
+      };
+      trackEvent(AnalyticsEvents.CRAFT_FAILED, failProps);
 
       let alertMessage = `Crafting failed: ${errorMessage}`;
       if (missingIngredients && Array.isArray(missingIngredients)) {

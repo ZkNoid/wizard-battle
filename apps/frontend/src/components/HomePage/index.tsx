@@ -15,6 +15,7 @@ import { useBackgroundMusic, usePreloadMusic } from '@/lib/hooks/useAudio';
 import Header from '../Header';
 import Modals from '../Header/Modals';
 import { Button } from '../shared/Button';
+import { trackPageLoad } from '@/lib/analytics/performance';
 
 enum TabHover {
   CRAFT,
@@ -46,6 +47,11 @@ export default function HomePage() {
   useEffect(() => {
     preloadMusic();
   }, [preloadMusic]);
+
+  // Track page load performance
+  useEffect(() => {
+    trackPageLoad('home');
+  }, []);
 
   // Initialize and play main theme on mount
   useEffect(() => {

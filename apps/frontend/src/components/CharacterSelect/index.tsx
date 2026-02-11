@@ -13,6 +13,13 @@ import { allSpells } from '../../../../common/stater/spells';
 import { SpellStats } from '../../../../common/stater/structs';
 import { SPELLS_INFO } from '@/lib/constants/spellsInfo';
 import { SpellTooltip } from '../Game/SpellTooltip';
+import { trackEvent } from '@/lib/analytics/posthog-utils';
+import { AnalyticsEvents } from '@/lib/analytics/events';
+import type {
+  FunnelCharacterCreatedProps,
+  CharacterSelectedProps,
+  SkillsSelectedProps,
+} from '@/lib/analytics/types';
 
 export default function CharacterSelect({
   setPlayStep,
@@ -134,6 +141,45 @@ export default function CharacterSelect({
             className="w-106 h-15"
             // disabled={selectedSkillsLength != 4}
             onClick={() => {
+              // Track character creation for funnel
+              const funnelProps: FunnelCharacterCreatedProps = {
+                wizard_id: currentWizard.id.toString(),
+                wizard_name: currentWizard.name,
+                selected_skills: selectedSkills
+                  .filter((s) => s.spellId.toString() !== '0')
+                  .map((s) => {
+                    const spell = allSpells.find(
+                      (sp) => sp.id.toString() === s.spellId.toString()
+                    );
+                    return spell?.name || s.spellId.toString();
+                  }),
+              };
+              trackEvent(AnalyticsEvents.FUNNEL_CHARACTER_CREATED, funnelProps);
+
+              // Track character selected
+              const charProps: CharacterSelectedProps = {
+                wizard_id: currentWizard.id.toString(),
+                wizard_name: currentWizard.name,
+              };
+              trackEvent(AnalyticsEvents.CHARACTER_SELECTED, charProps);
+
+              // Track skills selected
+              const skillsProps: SkillsSelectedProps = {
+                wizard_id: currentWizard.id.toString(),
+                skills: selectedSkills
+                  .filter((s) => s.spellId.toString() !== '0')
+                  .map((s) => {
+                    const spell = allSpells.find(
+                      (sp) => sp.id.toString() === s.spellId.toString()
+                    );
+                    return {
+                      spell_id: s.spellId.toString(),
+                      spell_name: spell?.name || 'Unknown',
+                    };
+                  }),
+              };
+              trackEvent(AnalyticsEvents.SKILLS_SELECTED, skillsProps);
+
               setPlayStep(PlaySteps.SELECT_MAP);
             }}
             isLong={true}
