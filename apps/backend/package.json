@@ -28,10 +28,14 @@
     "test:human-vs-human": "node test-human-vs-human-rounds.js",
     "test:all-integration": "npm run test:single-instance && npm run test:multi-instance && npm run test:gameplay && npm run test:bot-gameplay",
     "start:multi": "./start-multi-instance.sh",
-    "start:instances": "./start-instances-only.sh"
+    "start:instances": "./start-instances-only.sh",
+    "start:worker": "nest start --entryFile mina-worker.main",
+    "start:worker:dev": "nest start --watch --entryFile mina-worker.main",
+    "start:worker:prod": "node dist/mina-worker.main"
   },
   "dependencies": {
     "@golevelup/ts-jest": "^0.7.0",
+    "@nestjs/bullmq": "^11.0.2",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/mapped-types": "*",
@@ -49,10 +53,11 @@
     "dotenv": "^17.2.1",
     "ethers": "^6.16.0",
     "mongoose": "^9.0.2",
-    "o1js": "^2.8.0",
+    "o1js": "2.8.0",
     "redis": "^5.8.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "bullmq": "^5.34.3",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "uuid": "^11.1.0"

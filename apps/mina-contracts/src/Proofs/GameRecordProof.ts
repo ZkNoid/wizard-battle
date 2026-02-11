@@ -7,12 +7,12 @@ import {
   VerificationKey,
   ZkProgram,
 } from 'o1js';
-import { SpellsDynamicProof } from './DynamicProof';
+import { SpellsDynamicProof } from './DynamicProof.js';
 import {
   verifyStateInTree,
   verifyVkInTree,
   verifyDynamicProofInitialState,
-} from './ProofUtils';
+} from './ProofUtils.js';
 
 /**
  * Public input for GameRecordProof

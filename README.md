@@ -2,7 +2,7 @@
 
 A real-time multiplayer wizard battle game with Redis-backed multi-instance architecture supporting horizontal scaling and cross-instance matchmaking.
 
-## 🚀 Features
+## 🚀 Features 
 
 ### **Multi-Instance Architecture**
 - **Horizontal Scaling**: Run multiple server instances simultaneously
