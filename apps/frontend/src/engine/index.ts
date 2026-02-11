@@ -11,7 +11,7 @@ export { EffectOverlay } from './components/EffectOverlay';
 export { RedSquare } from './entities/RedSquare';
 export { BlueSquare } from './entities/BlueSquare';
 export { AnimatedWizard } from './entities/AnimatedWizard';
-export { SpectralWizard } from './entities/SpectralWizard';
+export { SpectralPhantomDuelist } from './entities/AnimatedSpectralPhantomDuelist';
 
 export type { IEntity } from './types/IEntity';
 export { EntityType } from './types/IEntity';

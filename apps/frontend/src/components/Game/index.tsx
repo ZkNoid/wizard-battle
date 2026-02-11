@@ -16,13 +16,16 @@ import { SkillsBg } from './assets/skills-bg';
 import { ActionsBg } from './assets/actions-bg';
 import type { SpellStats } from '../../../../common/stater/structs';
 import Image from 'next/image';
+import type { IUserAction } from 'node_modules/@wizard-battle/common/types/gameplay.types';
 
 export default function Game({
   children,
   actionInfo,
+  preparedActions,
 }: {
   children: [ReactNode, ReactNode];
   actionInfo?: { movementDone: boolean; spellCastDone: boolean };
+  preparedActions?: IUserAction[];
 }) {
   const router = useRouter();
   const { stater } = useUserInformationStore();
@@ -111,7 +114,10 @@ export default function Game({
             variant="gray"
             className="h-28 w-40"
             onClick={() => {
-              gamePhaseManager?.endTurnEarly();
+              gamePhaseManager?.submitPlayerActions({
+                actions: preparedActions ?? [],
+                signature: 'test_signature',
+              });
             }}
             text="End turn"
           />
