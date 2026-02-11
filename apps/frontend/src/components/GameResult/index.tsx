@@ -24,9 +24,11 @@ import Image from 'next/image';
 export default function GameResult({
   type,
   setPlayStep,
+  rewards,
 }: {
   type: 'win' | 'lose';
   setPlayStep: (step: PlaySteps) => void;
+  rewards?: Array<{ itemId: string; amount: number; total: number }>;
 }) {
   const router = useRouter();
   const { setBackground } = useBackgroundImageStore();
@@ -200,6 +202,33 @@ export default function GameResult({
           <span className="font-pixel text-center text-xl font-bold text-white">
             Your Reward
           </span>
+          {type === 'win' && rewards?.length ? (
+            <div className="mb-4 mt-2 rounded-lg bg-white/10 p-4 backdrop-blur-sm">
+              {rewards.map((reward) => (
+                <div
+                  key={reward.itemId}
+                  className="flex items-center justify-between"
+                >
+                  <span className="font-pixel text-lg text-white">
+                    {reward.itemId} Earned:
+                  </span>
+                  <span className="font-pixel text-xl text-yellow-400">
+                    +{reward.amount}
+                  </span>
+                </div>
+              ))}
+              {rewards.some((reward) => reward.itemId === 'Gold') && (
+                <div className="mt-1 flex items-center justify-between">
+                  <span className="font-pixel text-sm text-white/70">
+                    Total Gold:
+                  </span>
+                  <span className="font-pixel text-lg text-yellow-400">
+                    {rewards.find((reward) => reward.itemId === 'Gold')?.total}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : null}
           <Experience
             title="Account Experience"
             expWidth={

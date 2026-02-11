@@ -65,7 +65,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const [activeFilter, setActiveFilter] = useState<InventoryFilterType>('all');
 
   // Get inventory data from store
-  const inventoryItems = useInventoryStore((state) => state.inventoryItems);
+  const iteminventory = useInventoryStore((state) => state.iteminventory);
   const equippedItemsByWizard = useInventoryStore(
     (state) => state.equippedItemsByWizard
   );
@@ -206,10 +206,8 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
 
   const filteredItems =
     activeFilter === 'all'
-      ? inventoryItems
-      : inventoryItems.filter(
-          (userItem) => userItem.item.type === activeFilter
-        );
+      ? iteminventory
+      : iteminventory.filter((userItem) => userItem.item.type === activeFilter);
 
   const handleChangeFilter = (filterMode: InventoryFilterType) => {
     setActiveFilter(filterMode);

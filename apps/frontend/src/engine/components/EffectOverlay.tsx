@@ -59,6 +59,47 @@ const AVAILABLE_EFFECTS: Record<string, { json: string; image: string }> = {
     json: '/assets/spritesheets/archer/SmokeCloud_Reaction.json',
     image: '/assets/spritesheets/archer/SmokeCloud_Reaction.png',
   },
+  // Phantom Duelist effects
+  spectral_arrow: {
+    json: '/assets/spritesheets/phantom_duelist/Spectral_Arrow_Reaction_X4.json',
+    image: '/assets/spritesheets/phantom_duelist/Spectral_Arrow_Reaction_X4.png',
+  },
+  shadow_veil: {
+    json: '/assets/spritesheets/phantom_duelist/Shadow_Veil.json',
+    image: '/assets/spritesheets/phantom_duelist/Shadow_Veil.png',
+  },
+  dusks_embrace: {
+    json: '/assets/spritesheets/phantom_duelist/Dusk_Embrance_Reaction_X2.json',
+    image: '/assets/spritesheets/phantom_duelist/Dusk_Embrance_Reaction_X2.png',
+  },
+  phantom_echo: {
+    json: '/assets/spritesheets/phantom_duelist/Phantom_Echo_Reaction_X4.json',
+    image: '/assets/spritesheets/phantom_duelist/Phantom_Echo_Reaction_X4.png',
+  },
+  shadow_strike: {
+    json: '/assets/spritesheets/phantom_duelist/Shadow_Strike.json',
+    image: '/assets/spritesheets/phantom_duelist/Shadow_Strike.png',
+  },
+  shadow_dash: {
+    json: '/assets/spritesheets/phantom_duelist/Shadow_Dash.json',
+    image: '/assets/spritesheets/phantom_duelist/Shadow_Dash.png',
+  },
+  shadow_dash_move: {
+    json: '/assets/spritesheets/phantom_duelist/Shadow_Dash.json',
+    image: '/assets/spritesheets/phantom_duelist/Shadow_Dash.png',
+  },
+  whirling_blades: {
+    json: '/assets/spritesheets/phantom_duelist/Whirling_Blades_Reaction_X4.json',
+    image: '/assets/spritesheets/phantom_duelist/Whirling_Blades_Reaction_X4.png',
+  },
+  spectral_projection: {
+    json: '/assets/spritesheets/phantom_duelist/Spectral_Projection.json',
+    image: '/assets/spritesheets/phantom_duelist/Spectral_Projection.png',
+  },
+  phantom_armor: {
+    json: '/assets/spritesheets/phantom_duelist/Phantom_Armor.json',
+    image: '/assets/spritesheets/phantom_duelist/Phantom_Armor.png',
+  },
 };
 
 export function EffectOverlay({

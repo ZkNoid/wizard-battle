@@ -14,6 +14,7 @@ export const env = createEnv({
     // Uses a separate Redis instance from game state Redis
     BULLMQ_REDIS_HOST: z.string(),
     BULLMQ_REDIS_PORT: z.coerce.number(),
+    BACKEND_URL: z.string().default('http://localhost:3030'),
   },
 
   /**
@@ -41,6 +42,7 @@ export const env = createEnv({
     MONGODB_DB: process.env.MONGODB_DB,
     BULLMQ_REDIS_HOST: process.env.BULLMQ_REDIS_HOST,
     BULLMQ_REDIS_PORT: process.env.BULLMQ_REDIS_PORT,
+    BACKEND_URL: process.env.BACKEND_URL,
     NEXT_PUBLIC_REOWN_PROJECT_ID: process.env.NEXT_PUBLIC_REOWN_PROJECT_ID,
     NEXT_PUBLIC_PROJECT_NAME: process.env.NEXT_PUBLIC_PROJECT_NAME,
     NEXT_PUBLIC_PROJECT_URL: process.env.NEXT_PUBLIC_PROJECT_URL,

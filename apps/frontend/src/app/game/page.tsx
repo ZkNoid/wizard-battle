@@ -2,13 +2,12 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMinaAppkit } from 'mina-appkit';
 import { Int64, CircuitString } from 'o1js';
 
 import Game from '@/components/Game';
-import { api } from '@/trpc/react';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
 import { useInGameStore } from '@/lib/store/inGameStore';
 import { useEngineStore } from '@/lib/store/engineStore';
@@ -168,6 +167,29 @@ export default function GamePage() {
     return y * GRID_WIDTH + x;
   }, []);
 
+  // Get valid cast positions for a spell (uses castedArea if defined)
+  const getValidCastPositions = useCallback(
+    (spell: (typeof allSpells)[0]) => {
+      if (!spell.castedArea || !stater?.state?.playerStats) {
+        return null; // No restriction - can cast anywhere
+      }
+      const userX = +stater.state.playerStats.position.value.x;
+      const userY = +stater.state.playerStats.position.value.y;
+      return spell.castedArea(userX, userY);
+    },
+    [stater?.state?.playerStats]
+  );
+
+  // Check if a position is valid for casting
+  const isValidCastPosition = useCallback(
+    (spell: (typeof allSpells)[0], x: number, y: number) => {
+      const validPositions = getValidCastPositions(spell);
+      if (!validPositions) return true; // No restriction
+      return validPositions.some((pos) => pos.x === x && pos.y === y);
+    },
+    [getValidCastPositions]
+  );
+
   // Tile hover handler for spell affected area highlighting
   const handleTileMouseEnter = useCallback(
     (index: number, isEnemy: boolean) => {
@@ -213,7 +235,7 @@ export default function GamePage() {
         (s) => s.id.toString() === pickedSpellId.toString()
       );
 
-      if (!spell || !spell.affectedArea) {
+      if (!spell) {
         if (isEnemy) {
           setHighlightedEnemyTiles([]);
         } else {
@@ -236,7 +258,85 @@ export default function GamePage() {
         return;
       }
 
+      // Get valid cast positions (castedArea restriction)
+      const validCastPositions = getValidCastPositions(spell);
       const { x, y } = indexToCoordinates(index);
+
+      // If spell has castedArea, show those positions as red overlay
+      // and only show affectedArea if hovering over a valid cast position
+      if (validCastPositions) {
+        const validCastIndices = validCastPositions
+          .filter(
+            (pos) =>
+              pos.x >= 0 &&
+              pos.x < GRID_WIDTH &&
+              pos.y >= 0 &&
+              pos.y < GRID_HEIGHT
+          )
+          .map((pos) => coordinatesToIndex(pos.x, pos.y));
+
+        // Check if hovered position is valid for casting
+        const isHoveredValid = validCastPositions.some(
+          (pos) => pos.x === x && pos.y === y
+        );
+
+        if (isEnemy) {
+          if (isHoveredValid && spell.affectedArea) {
+            // Show affected area when hovering over valid cast position
+            const affectedPositions = spell.affectedArea(x, y);
+            const affectedIndices = affectedPositions
+              .filter(
+                (pos) =>
+                  pos.x >= 0 &&
+                  pos.x < GRID_WIDTH &&
+                  pos.y >= 0 &&
+                  pos.y < GRID_HEIGHT
+              )
+              .map((pos) => coordinatesToIndex(pos.x, pos.y));
+            setHighlightedEnemyTiles(affectedIndices);
+          } else {
+            // Show valid cast positions
+            setHighlightedEnemyTiles(validCastIndices);
+          }
+        } else {
+          const highlightMap = new Map<number, { color: string }>();
+          if (isHoveredValid && spell.affectedArea) {
+            // Show affected area when hovering over valid cast position
+            const affectedPositions = spell.affectedArea(x, y);
+            affectedPositions
+              .filter(
+                (pos) =>
+                  pos.x >= 0 &&
+                  pos.x < GRID_WIDTH &&
+                  pos.y >= 0 &&
+                  pos.y < GRID_HEIGHT
+              )
+              .forEach((pos) => {
+                highlightMap.set(coordinatesToIndex(pos.x, pos.y), {
+                  color: 'rgba(255, 100, 100, 0.5)',
+                });
+              });
+          } else {
+            // Show valid cast positions
+            validCastIndices.forEach((idx) => {
+              highlightMap.set(idx, { color: 'rgba(255, 100, 100, 0.5)' });
+            });
+          }
+          setHighlightedAllyTiles(highlightMap);
+        }
+        return;
+      }
+
+      // No castedArea restriction - show affectedArea on hover
+      if (!spell.affectedArea) {
+        if (isEnemy) {
+          setHighlightedEnemyTiles([]);
+        } else {
+          setHighlightedAllyTiles(new Map());
+        }
+        return;
+      }
+
       const affectedPositions = spell.affectedArea(x, y);
 
       // Convert positions to indices, filtering out-of-bounds
@@ -266,6 +366,7 @@ export default function GamePage() {
       indexToCoordinates,
       coordinatesToIndex,
       stater,
+      getValidCastPositions,
     ]
   );
 
@@ -438,6 +539,12 @@ export default function GamePage() {
         return;
       }
 
+      // Check if position is valid for casting (castedArea restriction)
+      if (!isValidCastPosition(spell, x, y)) {
+        console.log('Position is not valid for casting this spell');
+        return;
+      }
+
       let userAction = createUserAction(spellId.toString(), x, y, isEnemy);
       if (!userAction) return;
 
@@ -522,6 +629,7 @@ export default function GamePage() {
       submitSpellAction,
       actionInfo,
       setPickedSpellId,
+      isValidCastPosition,
     ]
   );
 

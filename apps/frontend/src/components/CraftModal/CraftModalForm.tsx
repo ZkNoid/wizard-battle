@@ -10,9 +10,10 @@ import { CraftBg } from './assets/craft-bg';
 
 interface CraftModalFormProps {
   onClose?: () => void;
+  address?: string;
 }
 
-export function CraftModalForm({ onClose }: CraftModalFormProps) {
+export function CraftModalForm({ onClose, address }: CraftModalFormProps) {
   const [activeTab, setActiveTab] = useState<string>('craft');
 
   const buttonClassName =
@@ -27,7 +28,7 @@ export function CraftModalForm({ onClose }: CraftModalFormProps) {
   const getForm = (tabName: string): React.ReactNode => {
     switch (tabName) {
       case 'craft':
-        return <CraftForm onCancel={onClose} />;
+        return <CraftForm onCancel={onClose} address={address} />;
       case 'upgrade':
         return <UpgradeForm onCancel={onClose} />;
       case 'unite':

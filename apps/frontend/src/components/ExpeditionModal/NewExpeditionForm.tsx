@@ -5,7 +5,7 @@ import ChooseLocation from './ChooseLocation';
 import ChooseCharacter from './ChooseCharacter';
 import RewardsSection from './RewardsSection';
 import { Button } from '../shared/Button';
-import ExpeditionModalTitle from './components/ExpeditionModalTitle';
+import ModalTitle from '../shared/ModalTitle';
 import type { Field } from 'o1js';
 import type { ExpeditionTimePeriod } from '@wizard-battle/common';
 import { useExpeditionStore } from '@/lib/store/expeditionStore';
@@ -14,8 +14,10 @@ import { useMinaAppkit } from 'mina-appkit';
 
 export default function NewExpeditionForm({
   onClose,
+  onSuccess,
 }: {
   onClose: () => void;
+  onSuccess?: () => void;
 }) {
   const { address } = useMinaAppkit();
   const { createExpedition, isCreating } = useExpeditionStore();
@@ -67,7 +69,9 @@ export default function NewExpeditionForm({
       timePeriod: selectedTimePeriod,
     });
 
-    onClose();
+    if (onSuccess) {
+      onSuccess();
+    }
   };
 
   const disabled =
@@ -79,7 +83,7 @@ export default function NewExpeditionForm({
 
   return (
     <div className="flex h-full flex-col">
-      <ExpeditionModalTitle title="Expedition" onClose={onClose} />
+      <ModalTitle title="Expedition" onClose={onClose} />
 
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
         <ChooseLocation onSelectLocation={handleSelectLocation} />

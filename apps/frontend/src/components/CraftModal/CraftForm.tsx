@@ -1,17 +1,28 @@
 'use client';
 
 import Image from 'next/image';
+import { useEffect } from 'react';
 import { CollapsePanel } from '../shared/CollapsePanel';
 import { CraftFormBg } from './assets/craft-form-bg';
-import { CRAFT_GROUP_PANELS } from '@/lib/constants/craft';
 import { CraftFormItem } from './CraftFormItem';
 import { Scroll } from '../shared/Scroll';
+import { useCraftStore } from '@/lib/store/craftStore';
+import type { ICraftRecipe } from '@/lib/types/Craft';
 
 interface CraftFormProps {
   onCancel?: () => void;
+  address?: string;
 }
 
-export function CraftForm({ onCancel }: CraftFormProps) {
+export function CraftForm({ onCancel, address }: CraftFormProps) {
+  const { groupedPanels, isLoading, error, loadGroupedRecipes } =
+    useCraftStore();
+
+  useEffect(() => {
+    // Load grouped recipes on mount (for crafting type)
+    loadGroupedRecipes('crafting');
+  }, [loadGroupedRecipes]);
+
   return (
     <div className="relative flex h-full flex-col">
       {/* Background */}
@@ -34,36 +45,55 @@ export function CraftForm({ onCancel }: CraftFormProps) {
                 Armor
               </span>
             </div>
-            <div className="flex flex-col gap-2.5">
-              {CRAFT_GROUP_PANELS.map((panel) => (
-                <CollapsePanel
-                  key={panel.title}
-                  title={
-                    <span className="flex flex-row items-center gap-2.5">
-                      <Image
-                        src={panel.icon}
-                        alt={panel.title}
-                        width={32}
-                        height={32}
-                      />
-                      {panel.title}
-                    </span>
-                  }
-                >
-                  {panel.items && panel.items.length > 0 ? (
-                    <div className="flex flex-row">
-                      {panel.items.map((item) => (
-                        <CraftFormItem key={item.id} item={item} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-row gap-2.5">
-                      <div className="flex flex-col gap-1">No items</div>
-                    </div>
-                  )}
-                </CollapsePanel>
-              ))}
-            </div>
+
+            {isLoading && (
+              <div className="flex items-center justify-center py-4">
+                <span className="text-main-gray">Loading recipes...</span>
+              </div>
+            )}
+
+            {error && (
+              <div className="flex items-center justify-center py-4">
+                <span className="text-red-500">{error}</span>
+              </div>
+            )}
+
+            {!isLoading && !error && (
+              <div className="flex flex-col gap-2.5">
+                {groupedPanels.map((panel) => (
+                  <CollapsePanel
+                    key={panel.category}
+                    title={
+                      <span className="flex flex-row items-center gap-2.5">
+                        <Image
+                          src={panel.icon}
+                          alt={panel.title}
+                          width={32}
+                          height={32}
+                        />
+                        {panel.title}
+                      </span>
+                    }
+                  >
+                    {panel.recipes && panel.recipes.length > 0 ? (
+                      <div className="flex flex-row">
+                        {panel.recipes.map((recipe: ICraftRecipe) => (
+                          <CraftFormItem
+                            key={recipe.id}
+                            recipe={recipe}
+                            address={address}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-row gap-2.5">
+                        <div className="flex flex-col gap-1">No recipes</div>
+                      </div>
+                    )}
+                  </CollapsePanel>
+                ))}
+              </div>
+            )}
           </Scroll>
         </div>
       </div>

@@ -13,6 +13,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserInventoryModule } from './user-inventory/user-inventory.module';
 import { GameCharacterModule } from './game-character/game-character.module';
 import { ExpeditionModule } from './expedition/expedition.module';
+import { CraftingModule } from './crafting/crafting.module';
+import { RewardModule } from './reward/reward.module';
 
 @Module({
   imports: [
@@ -24,12 +26,14 @@ import { ExpeditionModule } from './expedition/expedition.module';
     UserInventoryModule,
     GameCharacterModule,
     ExpeditionModule,
+    CraftingModule,
     MongooseModule.forRoot(
       process.env.MONGODB_URI || 'mongodb://localhost:27017/wizardbattle',
       {
         dbName: process.env.MONGODB_DB || 'wizardbattle',
       }
     ),
+    RewardModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, RedisHealthService, GameStateService],

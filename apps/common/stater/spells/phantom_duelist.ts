@@ -669,6 +669,24 @@ const ShadowDashAffectedArea = (x: number, y: number) => {
   return [{ x, y }];
 };
 
+/** Returns all positions in a cross pattern (horizontal and vertical) from the caster's position */
+const ShadowDashCastedArea = (x: number, y: number) => {
+  const positions: { x: number; y: number }[] = [];
+  // Horizontal positions (same row)
+  for (let i = 0; i < 8; i++) {
+    if (i !== x) {
+      positions.push({ x: i, y });
+    }
+  }
+  // Vertical positions (same column)
+  for (let j = 0; j < 8; j++) {
+    if (j !== y) {
+      positions.push({ x, y: j });
+    }
+  }
+  return positions;
+};
+
 // ============================================================================
 // SHADOW DASH MOVE (Spectral Form) - Companion spell to update caster position
 // Cast on self to move to the dash target position
@@ -827,6 +845,11 @@ const WhirlingBladesAffectedArea = (x: number, y: number) => {
     { x: x, y: y + 1 },
     { x: x + 1, y: y + 1 },
   ];
+};
+
+/** Returns only the caster's position - spell can only be cast on self */
+const WhirlingBladesCastedArea = (x: number, y: number) => {
+  return [{ x, y }];
 };
 
 const WhirlingBladesSceneEffect = (
@@ -1004,6 +1027,7 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     },
     hidden: true,
     companionSpellId: CircuitString.fromString('ShadowDashMove').hash(),
+    castedArea: ShadowDashCastedArea,
   },
   {
     id: CircuitString.fromString('ShadowDashMove').hash(),
@@ -1047,5 +1071,6 @@ export const phantomDuelistSpells: ISpell<any>[] = [
       currentCooldown: Int64.from(0),
     },
     hidden: true,
+    castedArea: WhirlingBladesCastedArea,
   },
 ];

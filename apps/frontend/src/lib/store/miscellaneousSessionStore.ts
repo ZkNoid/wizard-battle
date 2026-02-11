@@ -10,6 +10,10 @@ export interface MiscellaneousSessionStore {
   setIsCraftModalOpen: (isCraftModalOpen: boolean) => void;
   isExpeditionModalOpen: boolean;
   setIsExpeditionModalOpen: (isExpeditionModalOpen: boolean) => void;
+  isTestnetModalOpen: boolean;
+  setIsTestnetModalOpen: (isTestnetModalOpen: boolean) => void;
+  isQuickGuideModalOpen: boolean;
+  setIsQuickGuideModalOpen: (isQuickGuideModalOpen: boolean) => void;
 }
 
 export const useMiscellaneousSessionStore = create<
@@ -33,6 +37,14 @@ export const useMiscellaneousSessionStore = create<
       isExpeditionModalOpen: false,
       setIsExpeditionModalOpen: (isExpeditionModalOpen: boolean) => {
         set({ isExpeditionModalOpen });
+      },
+      isTestnetModalOpen: false,
+      setIsTestnetModalOpen: (isTestnetModalOpen: boolean) => {
+        set({ isTestnetModalOpen });
+      },
+      isQuickGuideModalOpen: false,
+      setIsQuickGuideModalOpen: (isQuickGuideModalOpen: boolean) => {
+        set({ isQuickGuideModalOpen });
       },
     }),
     {

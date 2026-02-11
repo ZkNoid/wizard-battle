@@ -4,7 +4,7 @@ import type { ItemAcquiredFrom } from '@wizard-battle/common';
 
 export type UserInventoryDocument = HydratedDocument<UserInventory>;
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, collection: 'userinventory' })
 export class UserInventory {
   @Prop({ required: true, index: true })
   userId!: string;

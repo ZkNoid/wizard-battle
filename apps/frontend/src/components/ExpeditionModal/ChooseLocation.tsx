@@ -17,7 +17,8 @@ export default function ChooseLocation({
     loadLocations();
   }, [loadLocations]);
 
-  const handleSelectLocation = (locationId: string) => {
+  const handleSelectLocation = (locationId: string, disabled: boolean) => {
+    if (disabled) return;
     if (locationId === selectedLocation) {
       setSelectedLocation(null);
       return;
@@ -35,18 +36,22 @@ export default function ChooseLocation({
         Choose location
       </span>
       <div className="flex flex-row flex-wrap justify-center gap-3">
-        {locations.map((location) => (
-          <SelectableImage
-            key={location.id}
-            src={location.image}
-            alt={location.name}
-            name={location.name}
-            isSelected={selectedLocation === location.id}
-            onClick={() => handleSelectLocation(location.id)}
-            width={140}
-            height={140}
-          />
-        ))}
+        {locations.map((location, index) => {
+          const isDisabled = index === 3; // Disable 4th location (index 3)
+          return (
+            <SelectableImage
+              key={location.id}
+              src={location.image}
+              alt={location.name}
+              name={location.name}
+              isSelected={selectedLocation === location.id}
+              onClick={() => handleSelectLocation(location.id, isDisabled)}
+              width={140}
+              height={140}
+              disabled={isDisabled}
+            />
+          );
+        })}
       </div>
     </div>
   );

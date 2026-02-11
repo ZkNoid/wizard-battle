@@ -5,6 +5,7 @@ import { tilemapRouter } from './routers/tilemap';
 import { usersRouter } from './routers/users';
 import { expeditionsRouter } from './routers/expeditions';
 import { minaRouter } from './routers/mina';
+import { craftingRouter } from './routers/crafting';
 
 /**
  * This is the primary router for your server.
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   users: usersRouter,
   expeditions: expeditionsRouter,
   mina: minaRouter,
+  crafting: craftingRouter,
 });
 
 // export type definition of API
