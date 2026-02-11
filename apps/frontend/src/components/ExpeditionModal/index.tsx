@@ -27,7 +27,7 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
   const getForm = (tabName: string): React.ReactNode => {
     switch (tabName) {
       case 'new-expedition':
-        return <NewExpeditionForm onClose={onClose} />;
+        return <NewExpeditionForm onClose={onClose} onSuccess={() => setActiveTab('current-expedition')} />;
       case 'current-expedition':
         return <CurrentExpeditionsForm onClose={onClose} />;
       default:

@@ -14,8 +14,10 @@ import { useMinaAppkit } from 'mina-appkit';
 
 export default function NewExpeditionForm({
   onClose,
+  onSuccess,
 }: {
   onClose: () => void;
+  onSuccess?: () => void;
 }) {
   const { address } = useMinaAppkit();
   const { createExpedition, isCreating } = useExpeditionStore();
@@ -67,7 +69,9 @@ export default function NewExpeditionForm({
       timePeriod: selectedTimePeriod,
     });
 
-    onClose();
+    if (onSuccess) {
+      onSuccess();
+    }
   };
 
   const disabled =
