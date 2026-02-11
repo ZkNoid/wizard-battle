@@ -2,13 +2,12 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMinaAppkit } from 'mina-appkit';
 import { Int64, CircuitString } from 'o1js';
 
 import Game from '@/components/Game';
-import { api } from '@/trpc/react';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
 import { useInGameStore } from '@/lib/store/inGameStore';
 import { useEngineStore } from '@/lib/store/engineStore';
