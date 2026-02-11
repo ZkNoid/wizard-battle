@@ -60,7 +60,7 @@ const animations: Record<string, AnimationConfig> = {
   },
 };
 
-export const SpectralWizard = memo(({ entity }: { entity: IEntity }) => {
+export const SpectralPhantomDuelist = memo(({ entity }: { entity: IEntity }) => {
   // Use the mirrorEntityId if provided, otherwise use the entity's own id
   const animationEntityId = entity.mirrorEntityId ?? entity.id;
 
@@ -110,4 +110,4 @@ export const SpectralWizard = memo(({ entity }: { entity: IEntity }) => {
   );
 });
 
-SpectralWizard.displayName = 'SpectralWizard';
+SpectralPhantomDuelist.displayName = 'SpectralPhantomDuelist';

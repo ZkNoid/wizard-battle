@@ -3,7 +3,8 @@ export enum EntityType {
   RED_SQUARE = 'red-square',
   WIZARD = 'wizard',
   ARCHER = 'archer',
-  SPECTRAL_WIZARD = 'spectral-wizard',
+  PHANTOM_DUELIST = 'phantom-duelist',
+  SPECTRAL_PHANTOM_DUELIST = 'spectral-phantom-duelist',
   DECOY = 'decoy',
 }
 

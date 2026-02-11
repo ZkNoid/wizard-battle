@@ -53,7 +53,9 @@ export function useEntityManagement({
             ? EntityType.WIZARD
             : stater?.state.wizardId.toString() === WizardId.ARCHER.toString()
               ? EntityType.ARCHER
-              : EntityType.WIZARD,
+              : stater?.state.wizardId.toString() === WizardId.PHANTOM_DUELIST.toString()
+                ? EntityType.PHANTOM_DUELIST
+                : EntityType.WIZARD,
         tilemapPosition: DEFAULT_USER_POSITION,
       };
 
@@ -91,7 +93,7 @@ export function useEntityManagement({
       const userPosition = stater?.state?.playerStats?.position?.value;
       const spectral = {
         id: SPECTRAL_ENTITY_ID,
-        type: EntityType.SPECTRAL_WIZARD,
+        type: EntityType.SPECTRAL_PHANTOM_DUELIST,
         tilemapPosition: userPosition
           ? { x: +userPosition.x, y: +userPosition.y }
           : DEFAULT_USER_POSITION,
@@ -124,7 +126,7 @@ export function useEntityManagement({
       const opponentPosition = opponentState?.playerStats?.position?.value;
       const spectral = {
         id: OPPONENT_SPECTRAL_ENTITY_ID,
-        type: EntityType.SPECTRAL_WIZARD,
+        type: EntityType.SPECTRAL_PHANTOM_DUELIST,
         tilemapPosition: opponentPosition
           ? { x: +opponentPosition.x, y: +opponentPosition.y }
           : DEFAULT_ENEMY_POSITION,
