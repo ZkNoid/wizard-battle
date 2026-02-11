@@ -15,6 +15,7 @@ export interface SelectableImageProps {
   className?: string;
   imageClassName?: string;
   name?: string;
+  disabled?: boolean;
 }
 
 export function SelectableImage({
@@ -27,11 +28,16 @@ export function SelectableImage({
   className,
   imageClassName,
   name,
+  disabled = false,
 }: SelectableImageProps) {
   return (
     <div
-      onClick={onClick}
-      className={cn('relative cursor-pointer', className)}
+      onClick={disabled ? undefined : onClick}
+      className={cn(
+        'relative',
+        disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+        className
+      )}
       style={{
         width: `${width}px`,
         height: `${height}px`,
