@@ -6,6 +6,7 @@ import CurrentExpeditionCard from './CurrentExpeditionCard';
 import ModalTitle from '../shared/ModalTitle';
 import ConfirmModal from '../shared/ConfirmModal';
 import { useMinaAppkit } from 'mina-appkit';
+import { useInventoryStore } from '@/lib/store';
 
 export default function CurrentExpeditionsForm({
   onClose,
@@ -20,6 +21,7 @@ export default function CurrentExpeditionsForm({
     interruptExpedition,
     loadUserExpeditions,
   } = useExpeditionStore();
+  const { loadUserInventory } = useInventoryStore();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedExpeditionId, setSelectedExpeditionId] = useState<
     string | null
@@ -41,14 +43,18 @@ export default function CurrentExpeditionsForm({
     setSelectedExpeditionId(expeditionId);
     setShowConfirmModal(true);
   };
-  const onCompleteExpedition = (expeditionId: string) => {
+  const onCompleteExpedition = async (expeditionId: string) => {
     setSelectedExpeditionId(expeditionId);
-    handleConfirmComplition();
+    await handleConfirmComplition();
+    if (address) {
+      await loadUserInventory(address);
+    }
   };
 
   const handleConfirmInterrupt = async () => {
     if (selectedExpeditionId && address) {
       await interruptExpedition(address, selectedExpeditionId);
+      await loadUserInventory(address);
     }
     setShowConfirmModal(false);
     setSelectedExpeditionId(null);
