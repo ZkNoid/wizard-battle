@@ -51,6 +51,7 @@ const phantomDuelistDefaultState = () => {
 
   // Phantom Armor passive: +50% Defence
   // Base defense is 100, so 150 = 100 * 1.5
+  state.playerStats.speed = Int64.from(2);
   state.playerStats.defense = state.playerStats.defense.mul(150).div(100);
 
   return state;
