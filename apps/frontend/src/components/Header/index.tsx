@@ -29,7 +29,7 @@ export default function Header({ onTabChange }: HeaderProps) {
       </div>
 
       {/* Header content */}
-      <div className="absolute left-0 top-2.5 z-50 grid w-full grid-cols-3 items-center px-20">
+      <div className="absolute left-0 top-2.5 z-50 grid w-full grid-cols-3 items-center pl-20 pr-10">
         <SettingsBar setTab={onTabChange} />
         <div className="flex w-full items-center justify-center gap-5">
           <BoxButton color="gray" onClick={() => {}} className="size-16">
@@ -83,10 +83,10 @@ export default function Header({ onTabChange }: HeaderProps) {
             />
           </BoxButton>
         </div>
-        <div className="flex w-full items-center justify-between gap-5 px-10">
+        <div className="flex w-full items-center justify-between gap-2 px-0">
           <Button
             variant="gray"
-            className="h-15 flex w-40 items-center justify-center gap-2.5"
+            className="h-15 flex w-32 items-center justify-center gap-2.5"
           >
             <Image
               src={'/icons/gold-coin.png'}
@@ -101,7 +101,7 @@ export default function Header({ onTabChange }: HeaderProps) {
           </Button>
           <Button
             variant="gray"
-            className="h-15 flex w-40 items-center justify-center gap-2.5"
+            className="h-15 flex w-32 items-center justify-center gap-2.5"
           >
             <Image
               src={'/icons/diamond.png'}
@@ -114,8 +114,12 @@ export default function Header({ onTabChange }: HeaderProps) {
             />
             <span>1.25K</span>
           </Button>
-          <Wallet className="w-25" />
-          <WalletReown className="w-25" />
+          <div className="w-40 shrink-0">
+            <Wallet />
+          </div>
+          <div className="w-40 shrink-0">
+            <WalletReown />
+          </div>
         </div>
       </div>
     </>
