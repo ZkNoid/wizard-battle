@@ -21,7 +21,7 @@ export default function TimerPanel() {
           {/* Right column - Description text */}
           <div className="flex flex-1">
             <p className="font-pixel-klein text-main-gray text-sm leading-relaxed">
-              You only have 2 minutes to make your move, if you don't make a
+              You only have 2 minutes to make your move, if you don&apos;t make a
               move in that time, your opponent will automatically win.
             </p>
           </div>
