@@ -27,7 +27,7 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
   const getForm = (tabName: string): React.ReactNode => {
     switch (tabName) {
       case 'new-expedition':
-        return <NewExpeditionForm onClose={onClose} />;
+        return <NewExpeditionForm onClose={onClose} onSuccess={() => setActiveTab('current-expedition')} />;
       case 'current-expedition':
         return <CurrentExpeditionsForm onClose={onClose} />;
       default:
@@ -46,6 +46,7 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
             variant={getButtonVariant('new-expedition')}
             className={buttonClassName}
             onClick={() => setActiveTab('new-expedition')}
+            isLong={true}
             enableClickSound
           >
             <span className={textClassName}>Start New Expedition</span>
@@ -55,6 +56,7 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
             className={buttonClassName}
             onClick={() => setActiveTab('current-expedition')}
             enableClickSound
+            isLong={true}
           >
             <span className={textClassName}>Current Expeditions</span>
           </Button>
