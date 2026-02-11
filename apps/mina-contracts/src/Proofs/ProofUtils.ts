@@ -1,5 +1,5 @@
 import { Field, MerkleMapWitness, VerificationKey } from 'o1js';
-import { SpellsDynamicProof } from './DynamicProof';
+import { SpellsDynamicProof } from './DynamicProof.js';
 
 /**
  * Shared utility functions for GameRecordProof and FraudProof

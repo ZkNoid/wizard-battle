@@ -20,14 +20,19 @@
     "format": "prettier --write --ignore-unknown **/*",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "testw": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
-    "lint": "npx eslint src/* --fix"
+    "lint": "npx eslint src/* --fix",
+    "deploy": "pnpm build && node --experimental-vm-modules build/scripts/deploy.js",
+    "deploy:devnet": "pnpm build && MINA_NETWORK_URL=https://api.minascan.io/node/devnet/v1/graphql node --experimental-vm-modules build/scripts/deploy.js",
+    "deploy:mainnet": "pnpm build && MINA_NETWORK_URL=https://api.minascan.io/node/mainnet/v1/graphql node --experimental-vm-modules build/scripts/deploy.js"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.16.4",
     "@babel/preset-typescript": "^7.16.0",
     "@types/jest": "^29.5.12",
+    "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^5.5.0",
     "@typescript-eslint/parser": "^5.5.0",
+    "dotenv": "^16.3.1",
     "eslint": "^8.7.0",
     "eslint-plugin-o1js": "^0.4.0",
     "jest": "^29.7.0",
@@ -36,7 +41,7 @@
     "typescript": "^5.4.5"
   },
   "peerDependencies": {
-    "o1js": "^2.*"
+    "o1js": "2.8.0"
   },
   "dependencies": {
     "@wizard-battle/common": "workspace:*"

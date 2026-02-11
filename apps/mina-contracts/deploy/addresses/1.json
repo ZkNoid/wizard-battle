@@ -1,0 +1,7 @@
+{
+  "gameManagerAddress": "B62qkWx48to4WwHyxKRBeooHFHqDUGVp9k6nzh3UmgJLivwxkE4piL1",
+  "adminAddress": "B62qihPrJtxFNPFiAgjfCz4Ptsw4Erh1VoNcaF5YY6HDVBV6BRqXbtd",
+  "deployedAt": "2026-02-11T08:30:17.032Z",
+  "deployTxHash": "5JvAfmZooPZ7JBHng15YJVaiGSaTr1xLsk4ppXYZbYNqjC62hQ7p",
+  "network": "https://api.minascan.io/node/devnet/v1/graphql"
+}
