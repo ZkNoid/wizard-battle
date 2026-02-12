@@ -76,7 +76,7 @@ export function CraftForm({ onCancel, address }: CraftFormProps) {
                     }
                   >
                     {panel.recipes && panel.recipes.length > 0 ? (
-                      <div className="flex flex-row">
+                      <div className="flex flex-col gap-2">
                         {panel.recipes.map((recipe: ICraftRecipe) => (
                           <CraftFormItem
                             key={recipe.id}
