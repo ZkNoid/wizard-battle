@@ -732,11 +732,12 @@ export class GameSessionGateway {
           success: boolean;
           itemId: string;
           quantity: number;
+          total: number;
         } | null = null;
 
         let rewardItems: {
           success: boolean;
-          items: { itemId: string; quantity: number }[];
+          items: { itemId: string; quantity: number; total: number }[];
         } | null = null;
 
         // Only distribute rewards if winner has a valid userId (wallet connected)
@@ -781,14 +782,14 @@ export class GameSessionGateway {
         const goldReward: IReward = {
           itemId: 'Gold',
           amount: goldAmount,
-          total: reward ? reward.quantity : 0,
+          total: reward ? reward.total : 0,
         };
 
         const itemRewards: IReward[] = rewardItems
           ? rewardItems.items.map((item) => ({
               itemId: item.itemId,
               amount: item.quantity,
-              total: item.quantity,
+              total: item.total,
             }))
           : [];
 

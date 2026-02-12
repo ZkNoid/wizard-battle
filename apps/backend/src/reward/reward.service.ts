@@ -28,13 +28,14 @@ export class RewardService {
     return {
       success: true,
       itemId: rewardItem.itemId,
-      quantity: rewardItem.quantity,
+      quantity: amount,
+      total: rewardItem.quantity,
     };
   }
 
   async rewardRandomItems(userId: string, rewards: IRandomItem[]) {
     const out = rewards.map(this.chanceFunc);
-    let rewardItems: { itemId: string; quantity: number }[] = [];
+    let rewardItems: { itemId: string; quantity: number; total: number }[] = [];
 
     for (let item of out) {
       const rewardItem = await this.userInventoryService.addItem({
@@ -46,7 +47,8 @@ export class RewardService {
 
       const resultItem = {
         itemId: rewardItem.itemId,
-        quantity: rewardItem.quantity,
+        quantity: item.quantity,
+        total: rewardItem.quantity,
       };
       rewardItems.push(resultItem);
     }
@@ -56,18 +58,23 @@ export class RewardService {
     };
   }
 
-  async rewardGold(userId: string, amount: number) {
-    const goldItem = await this.userInventoryService.addItem({
-      userId,
-      itemId: 'Gold',
-      quantity: amount,
-      acquiredFrom: 'reward',
-    });
+  // async rewardXP(
+  //   winnerId: string,
+  //   looserId: string,
+  //   status: 'win' | 'draw' | 'even'
+  // ) {
+  //   const rewardItem = await this.user.addItem({
+  //     userId,
+  //     itemId: itemId,
+  //     quantity: amount,
+  //     acquiredFrom: 'reward',
+  //   });
 
-    return {
-      success: true,
-      itemId: goldItem.itemId,
-      quantity: goldItem.quantity,
-    };
-  }
+  //   return {
+  //     success: true,
+  //     itemId: rewardItem.itemId,
+  //     quantity: amount,
+  //     total: rewardItem.quantity,
+  //   };
+  // }
 }
