@@ -39,11 +39,16 @@ export default function Matchmaking({
   const [elapsedTime, setElapsedTime] = useState(0);
   const [queuePosition, setQueuePosition] = useState<number | null>(null);
 
-  const onGameEnd = (winner: boolean, reward?: IReward[]) => {
+  const onGameEnd = (
+    winner: boolean,
+    experience?: number,
+    reward?: IReward[]
+  ) => {
     setTimeout(() => {
       const goldReward = reward?.find((item) => item.itemId === 'Gold');
       const params = new URLSearchParams({
         winner: winner.toString(),
+        experience: experience !== undefined ? experience.toString() : '0',
         ...(goldReward && {
           gold: goldReward.amount.toString(),
           total: goldReward.total.toString(),
