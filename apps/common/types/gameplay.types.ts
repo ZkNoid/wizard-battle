@@ -74,6 +74,7 @@ export interface IDead {
 // }
 export interface IGameEnd {
   winnerId: string;
+  experience?: number;
   reward?: IReward[];
 }
 

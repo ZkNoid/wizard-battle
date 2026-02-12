@@ -219,6 +219,11 @@ jobs:
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_DB=${{ secrets.POSTGRES_DB }}
             REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            MINA_NETWORK_URL=${{ secrets.MINA_NETWORK_URL }}
+            MINA_ADMIN_PRIVATE_KEY=${{ secrets.MINA_ADMIN_PRIVATE_KEY }}
+            MINA_CONTRACT_ADDRESS=${{ secrets.MINa_CONTRACT_ADDRESS }}
+            BULLMQ_REDIS_HOST=${{ secrets.BULLMQ_REDIS_HOST }}
+            BULLMQ_REDIS_PORT=${{ secrets.BULLMQ_REDIS_PORT }}
             EOT
 
             chmod 600 .env

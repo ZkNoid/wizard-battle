@@ -765,6 +765,7 @@ export class GameSessionGateway {
 
         const gameEnd: IGameEnd = {
           winnerId: winnerData.playerId,
+          experience: 0,
           ...(reward && {
             reward: [gold],
           }),
