@@ -205,28 +205,25 @@ export default function GameResult({
           {type === 'win' && rewards?.length ? (
             <div className="mb-4 mt-2 rounded-lg bg-white/10 p-4 backdrop-blur-sm">
               {rewards.map((reward) => (
-                <div
-                  key={reward.itemId}
-                  className="flex items-center justify-between"
-                >
-                  <span className="font-pixel text-lg text-white">
-                    {reward.itemId} Earned:
-                  </span>
-                  <span className="font-pixel text-xl text-yellow-400">
-                    +{reward.amount}
-                  </span>
+                <div key={reward.itemId} className="flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <span className="font-pixel text-lg text-white">
+                      {reward.itemId} Earned:
+                    </span>
+                    <span className="font-pixel text-xl text-yellow-400">
+                      +{reward.amount}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between">
+                    <span className="font-pixel text-sm text-white/70">
+                      Total:
+                    </span>
+                    <span className="font-pixel text-lg text-yellow-400">
+                      {reward.total}
+                    </span>
+                  </div>
                 </div>
               ))}
-              {rewards.some((reward) => reward.itemId === 'Gold') && (
-                <div className="mt-1 flex items-center justify-between">
-                  <span className="font-pixel text-sm text-white/70">
-                    Total Gold:
-                  </span>
-                  <span className="font-pixel text-lg text-yellow-400">
-                    {rewards.find((reward) => reward.itemId === 'Gold')?.total}
-                  </span>
-                </div>
-              )}
             </div>
           ) : null}
           <Experience

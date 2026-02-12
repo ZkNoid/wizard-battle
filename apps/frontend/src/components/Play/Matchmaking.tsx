@@ -45,15 +45,19 @@ export default function Matchmaking({
     reward?: IReward[]
   ) => {
     setTimeout(() => {
-      const goldReward = reward?.find((item) => item.itemId === 'Gold');
       const params = new URLSearchParams({
         winner: winner.toString(),
         experience: experience !== undefined ? experience.toString() : '0',
-        ...(goldReward && {
-          gold: goldReward.amount.toString(),
-          total: goldReward.total.toString(),
-        }),
       });
+
+      // Add all rewards to URL params
+      if (reward && reward.length > 0) {
+        reward.forEach((item) => {
+          params.append(`reward_${item.itemId}_amount`, item.amount.toString());
+          params.append(`reward_${item.itemId}_total`, item.total.toString());
+        });
+      }
+
       router.push(`/gameResults?${params.toString()}`);
     }, 1000);
   };

@@ -335,7 +335,7 @@ export class GamePhaseManager {
         let release = await this.stageProcessMutex.acquire();
         try {
           console.log('Received game end. Winner is: ', data.winnerId);
-          console.log('Received reward:', data.reward);
+          console.log('Received rewards:', JSON.stringify(data.reward));
           // Stop all polling and state submissions when game ends
           this.cleanup();
           const isWinner = data.winnerId === this.getPlayerId();
@@ -344,6 +344,7 @@ export class GamePhaseManager {
             isWinner ? data.experience : 0, // Pass experience if winner, else 0
             isWinner ? data.reward : []
           );
+          //EventBus.emit('rewards-destribution', data);
         } finally {
           release();
         }
