@@ -84,6 +84,12 @@ export interface IReward {
   total: number;
 }
 
+export interface IRandomItem {
+  itemId: string;
+  quantity: number;
+  chance: number;
+}
+
 /**
  * @notice Enumeration of the 5 phases in each game turn
  * @dev Each phase has specific timing and player interactions
