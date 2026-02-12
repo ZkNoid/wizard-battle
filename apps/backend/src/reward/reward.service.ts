@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { UserInventoryService } from '../user-inventory/services/user-inventory.service';
+import { UserService } from '../user/user.service';
 import { IRandomItem } from '../../../common/types/gameplay.types';
 
 @Injectable()
 export class RewardService {
-  constructor(private readonly userInventoryService: UserInventoryService) {}
+  constructor(
+    private readonly userInventoryService: UserInventoryService,
+    private readonly userService: UserService
+  ) {}
 
   numberAndChanceToNumber = (n, q) => {
     let res = 0;
@@ -58,23 +62,39 @@ export class RewardService {
     };
   }
 
-  // async rewardXP(
-  //   winnerId: string,
-  //   looserId: string,
-  //   status: 'win' | 'draw' | 'even'
-  // ) {
-  //   const rewardItem = await this.user.addItem({
-  //     userId,
-  //     itemId: itemId,
-  //     quantity: amount,
-  //     acquiredFrom: 'reward',
-  //   });
+  async rewardXP(
+    winnerId: string,
+    looserId: string,
+    status: 'win' | 'draw' | 'even'
+  ) {
+    let winnerXP = 0;
+    let looserXP = 0;
 
-  //   return {
-  //     success: true,
-  //     itemId: rewardItem.itemId,
-  //     quantity: amount,
-  //     total: rewardItem.quantity,
-  //   };
-  // }
+    switch (status) {
+      case 'win':
+        winnerXP = 100;
+        looserXP = 30;
+        break;
+      case 'draw':
+        winnerXP = 30;
+        looserXP = 30;
+        break;
+      case 'even':
+        winnerXP = 50;
+        looserXP = 50;
+        break;
+      default:
+        winnerXP = 0;
+        looserXP = 0;
+    }
+
+    await this.userService.addXP(winnerId, winnerXP);
+    //await this.userService.addXP(looserId, looserXP);
+
+    return {
+      success: true,
+      winnerXP: winnerXP,
+      looserXP: looserXP,
+    };
+  }
 }

@@ -740,9 +740,21 @@ export class GameSessionGateway {
           items: { itemId: string; quantity: number; total: number }[];
         } | null = null;
 
+        let xpData: {
+          success: boolean;
+          winnerXP: number;
+          looserXP: number;
+        } | null = null;
+
         // Only distribute rewards if winner has a valid userId (wallet connected)
         if (winnerData.userId) {
           try {
+            xpData = await this.rewardService.rewardXP(
+              winnerData.userId,
+              '0x0',
+              'win'
+            );
+
             reward = await this.rewardService.rewardItem(
               winnerData.userId,
               goldAmount,
@@ -795,7 +807,7 @@ export class GameSessionGateway {
 
         const gameEnd: IGameEnd = {
           winnerId: winnerData.playerId,
-          experience: 0,
+          experience: xpData?.winnerXP ?? 0,
           reward: [goldReward, ...itemRewards],
         };
 
