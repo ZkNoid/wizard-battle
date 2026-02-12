@@ -42,6 +42,9 @@ export class RewardService {
     let rewardItems: { itemId: string; quantity: number; total: number }[] = [];
 
     for (let item of out) {
+      if (item.quantity == 0) {
+        continue;
+      }
       const rewardItem = await this.userInventoryService.addItem({
         userId,
         itemId: item.itemId,
