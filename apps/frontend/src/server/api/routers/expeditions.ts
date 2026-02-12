@@ -25,6 +25,83 @@ function timePeriodToMs(timePeriod: ExpeditionTimePeriod): number {
   return hours * 60 * 60 * 1000;
 }
 
+// Unique items pool - can drop from any location with 10% chance per roll
+const UNIQUE_ITEMS_POOL: string[] = [
+  'BlackOrb',
+  'ShardOfIllusion',
+  'SilverThread',
+  'ChainLink',
+  'ReinforcedPadding',
+  'ShadowstepLeather',
+];
+
+// Reward configuration per time period
+const REWARD_CONFIG: Record<
+  ExpeditionTimePeriod,
+  {
+    uniqueRolls: number;
+    uniqueChance: number;
+    uncommonCount: number;
+    commonCount: number;
+  }
+> = {
+  1: { uniqueRolls: 5, uniqueChance: 0.1, uncommonCount: 1, commonCount: 5 },
+  3: { uniqueRolls: 10, uniqueChance: 0.1, uncommonCount: 2, commonCount: 10 },
+  24: { uniqueRolls: 20, uniqueChance: 0.1, uncommonCount: 4, commonCount: 20 },
+};
+
+// Generate rewards based on time period and location biome
+function generateRewards(
+  commonRewards: string[],
+  uncommonRewards: string[],
+  timePeriod: ExpeditionTimePeriod
+): { itemId: string; amount: number }[] {
+  const config = REWARD_CONFIG[timePeriod];
+  const rewards = new Map<string, number>();
+
+  const addReward = (itemId: string, amount: number) => {
+    rewards.set(itemId, (rewards.get(itemId) ?? 0) + amount);
+  };
+
+  // Roll for unique items (X rolls at 10% chance each)
+  for (let i = 0; i < config.uniqueRolls; i++) {
+    if (Math.random() < config.uniqueChance) {
+      const randomUnique =
+        UNIQUE_ITEMS_POOL[Math.floor(Math.random() * UNIQUE_ITEMS_POOL.length)];
+      if (randomUnique) {
+        addReward(randomUnique, 1);
+      }
+    }
+  }
+
+  // Add guaranteed uncommon items from biome
+  if (uncommonRewards.length > 0) {
+    for (let i = 0; i < config.uncommonCount; i++) {
+      const randomUncommon =
+        uncommonRewards[Math.floor(Math.random() * uncommonRewards.length)];
+      if (randomUncommon) {
+        addReward(randomUncommon, 1);
+      }
+    }
+  }
+
+  // Add guaranteed common items from biome
+  if (commonRewards.length > 0) {
+    for (let i = 0; i < config.commonCount; i++) {
+      const randomCommon =
+        commonRewards[Math.floor(Math.random() * commonRewards.length)];
+      if (randomCommon) {
+        addReward(randomCommon, 1);
+      }
+    }
+  }
+
+  return Array.from(rewards.entries()).map(([itemId, amount]) => ({
+    itemId,
+    amount,
+  }));
+}
+
 // Helper to populate expedition rewards with item data
 async function populateExpeditionRewards(
   rewards: { itemId: string; amount: number }[]
@@ -212,19 +289,12 @@ export const expeditionsRouter = createTRPCRouter({
         });
       }
 
-      // Generate random rewards from location's possible rewards
-      const numRewards =
-        Math.floor(
-          Math.random() * (location.maxRewards - location.minRewards + 1)
-        ) + location.minRewards;
-
-      const shuffledRewards = [...location.possibleRewards].sort(
-        () => Math.random() - 0.5
+      // Generate rewards based on time period and location biome
+      const selectedRewards = generateRewards(
+        location.commonRewards ?? [],
+        location.uncommonRewards ?? [],
+        input.timePeriod
       );
-      const selectedRewards = shuffledRewards.slice(0, numRewards).map((r) => ({
-        itemId: r.itemId,
-        amount: Math.floor(Math.random() * 10) + 1, // Random amount 1-10
-      }));
 
       const timeToComplete = timePeriodToMs(input.timePeriod);
       const now = new Date();
