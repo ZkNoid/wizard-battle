@@ -61,7 +61,6 @@ export class GameSessionGateway {
     private readonly gamePhaseScheduler: GamePhaseSchedulerService,
     private readonly rewardService: RewardService
   ) {}
-
   /**
    * @dev Invoked once the gateway is initialized. Injects the Socket.IO
    * server instance into the matchmaking service (so it can join rooms and
@@ -735,16 +734,39 @@ export class GameSessionGateway {
           quantity: number;
         } | null = null;
 
+        let rewardItems: {
+          success: boolean;
+          items: { itemId: string; quantity: number }[];
+        } | null = null;
+
         // Only distribute rewards if winner has a valid userId (wallet connected)
         if (winnerData.userId) {
           try {
-            reward = await this.rewardService.rewardGold(
+            reward = await this.rewardService.rewardItem(
               winnerData.userId,
-              goldAmount
+              goldAmount,
+              'Gold'
             );
             console.log(
               `💰 Rewarded ${goldAmount} gold to winner ${winnerData.playerId} (userId: ${winnerData.userId})`
             );
+
+            rewardItems = await this.rewardService.rewardRandomItems(
+              winnerData.userId,
+              [
+                {
+                  itemId: 'SoulStoneFragment',
+                  quantity: 1,
+                  chance: 0.2,
+                },
+                {
+                  itemId: 'SoulStoneShard',
+                  quantity: 2,
+                  chance: 0.5,
+                },
+              ]
+            );
+            console.log(`💰 Rewarded items: ${JSON.stringify(rewardItems)}`);
           } catch (error) {
             console.error(
               `❌ Failed to reward gold to winner ${winnerData.playerId}:`,
@@ -756,19 +778,24 @@ export class GameSessionGateway {
             `⚠️ Winner ${winnerData.playerId} has no userId (wallet not connected), skipping reward distribution`
           );
         }
-
-        const gold: IReward = {
+        const goldReward: IReward = {
           itemId: 'Gold',
           amount: goldAmount,
           total: reward ? reward.quantity : 0,
         };
 
+        const itemRewards: IReward[] = rewardItems
+          ? rewardItems.items.map((item) => ({
+              itemId: item.itemId,
+              amount: item.quantity,
+              total: item.quantity,
+            }))
+          : [];
+
         const gameEnd: IGameEnd = {
           winnerId: winnerData.playerId,
           experience: 0,
-          ...(reward && {
-            reward: [gold],
-          }),
+          reward: [goldReward, ...itemRewards],
         };
 
         console.log(
