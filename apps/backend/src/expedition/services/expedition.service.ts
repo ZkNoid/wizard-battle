@@ -15,6 +15,30 @@ import type {
   IExpeditionRewardDB,
 } from '@wizard-battle/common';
 
+// Unique items pool - can drop from any location with 10% chance per roll
+const UNIQUE_ITEMS_POOL: string[] = [
+  'BlackOrb',
+  'ShardOfIllusion',
+  'SilverThread',
+  'ChainLink',
+  'ReinforcedPadding',
+  'ShadowstepLeather',
+];
+
+// Reward configuration per time period
+interface IRewardConfig {
+  uniqueRolls: number;
+  uniqueChance: number;
+  uncommonCount: number;
+  commonCount: number;
+}
+
+const REWARD_CONFIG: Record<ExpeditionTimePeriod, IRewardConfig> = {
+  1: { uniqueRolls: 5, uniqueChance: 0.1, uncommonCount: 1, commonCount: 5 },
+  3: { uniqueRolls: 10, uniqueChance: 0.1, uncommonCount: 2, commonCount: 10 },
+  24: { uniqueRolls: 20, uniqueChance: 0.1, uncommonCount: 4, commonCount: 20 },
+};
+
 @Injectable()
 export class ExpeditionService {
   constructor(
@@ -40,24 +64,68 @@ export class ExpeditionService {
   }
 
   /**
-   * Generate random rewards from location's possible rewards
+   * Generate rewards based on time period and location biome
+   * Rules:
+   * - Unique [u]: Roll X times with 10% chance each from global pool
+   * - Uncommon [uc]: Guaranteed items from biome's uncommon pool
+   * - Common [c]: Guaranteed items from biome's common pool
    */
   private generateRewards(
-    possibleRewards: IExpeditionRewardDB[],
-    minRewards: number,
-    maxRewards: number
+    commonRewards: string[],
+    uncommonRewards: string[],
+    timePeriod: ExpeditionTimePeriod
   ): IExpeditionRewardDB[] {
-    const numRewards =
-      Math.floor(Math.random() * (maxRewards - minRewards + 1)) + minRewards;
-    const shuffled = [...possibleRewards].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, numRewards).map((r) => ({
-      itemId: r.itemId,
-      amount: Math.floor(Math.random() * 10) + 1, // Random amount 1-10
+    const config = REWARD_CONFIG[timePeriod];
+    const rewards: Map<string, number> = new Map();
+
+    // Helper to add reward to map (aggregates amounts)
+    const addReward = (itemId: string, amount: number) => {
+      rewards.set(itemId, (rewards.get(itemId) || 0) + amount);
+    };
+
+    // Roll for unique items (X rolls at 10% chance each)
+    for (let i = 0; i < config.uniqueRolls; i++) {
+      if (Math.random() < config.uniqueChance) {
+        const randomUnique =
+          UNIQUE_ITEMS_POOL[Math.floor(Math.random() * UNIQUE_ITEMS_POOL.length)];
+        if (randomUnique) {
+          addReward(randomUnique, 1);
+        }
+      }
+    }
+
+    // Add guaranteed uncommon items from biome
+    if (uncommonRewards.length > 0) {
+      for (let i = 0; i < config.uncommonCount; i++) {
+        const randomUncommon =
+          uncommonRewards[Math.floor(Math.random() * uncommonRewards.length)];
+        if (randomUncommon) {
+          addReward(randomUncommon, 1);
+        }
+      }
+    }
+
+    // Add guaranteed common items from biome
+    if (commonRewards.length > 0) {
+      for (let i = 0; i < config.commonCount; i++) {
+        const randomCommon =
+          commonRewards[Math.floor(Math.random() * commonRewards.length)];
+        if (randomCommon) {
+          addReward(randomCommon, 1);
+        }
+      }
+    }
+
+    // Convert map to array
+    return Array.from(rewards.entries()).map(([itemId, amount]) => ({
+      itemId,
+      amount,
     }));
   }
 
   /**
    * Create a new expedition
+   * Redundant with the frontend logic(trpc), but keeping for backwards compatibility
    */
   async createExpedition(dto: CreateExpeditionDto): Promise<Expedition> {
     // Get location data
@@ -80,9 +148,9 @@ export class ExpeditionService {
       locationId: dto.locationId,
       locationName: location.name,
       rewards: this.generateRewards(
-        location.possibleRewards,
-        location.minRewards,
-        location.maxRewards
+        location.commonRewards,
+        location.uncommonRewards,
+        dto.timePeriod
       ),
       status: 'active',
       startedAt: now,

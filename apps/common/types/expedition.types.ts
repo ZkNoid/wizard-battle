@@ -3,12 +3,14 @@
 export type ExpeditionStatus = 'active' | 'completed' | 'pending';
 export type ExpeditionDuration = '1hour' | '3hour' | '24hour';
 export type ExpeditionTimePeriod = 1 | 3 | 24;
+export type LocationBiome = 'forest' | 'water' | 'mountains';
 
 // Location types
 export interface ILocation {
   id: string;
   name: string;
   image: string;
+  biome: LocationBiome;
 }
 
 // Expedition reward reference (for database storage)
@@ -76,8 +78,8 @@ export interface ILocationDB {
   id: string;
   name: string;
   image: string;
-  possibleRewards: IExpeditionRewardDB[];
-  minRewards: number;
-  maxRewards: number;
+  biome: LocationBiome;
+  commonRewards: string[]; // Item IDs for common rarity items in this biome
+  uncommonRewards: string[]; // Item IDs for uncommon rarity items in this biome
 }
 
