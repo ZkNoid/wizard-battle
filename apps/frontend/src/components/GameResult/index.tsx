@@ -9,7 +9,7 @@ import { Button } from '../shared/Button';
 import { DividerImage } from './assets/divider-image';
 import { Experience } from './Experiense';
 import { PlaySteps } from '@/lib/enums/PlaySteps';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   LOSE_XP,
   WIN_XP,
@@ -31,6 +31,7 @@ export default function GameResult({
   rewards?: Array<{ itemId: string; amount: number; total: number }>;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setBackground } = useBackgroundImageStore();
   const text = type === 'win' ? 'You Win' : 'You Lose';
   const phraseDelay = 0.5 + text.length * 0.1 + 0.2;
@@ -43,15 +44,14 @@ export default function GameResult({
       enabled: !!address,
     }
   );
-  const xpToGain = type === 'win' ? WIN_XP : LOSE_XP;
-
-  // Set background image on mount and reset on unmount
-  useEffect(() => {
-    setBackground(type);
-    return () => {
-      setBackground('base');
-    };
-  }, []);
+  const xpToGain = Number(searchParams.get('experience')) || 0;
+    // Set background image on mount and reset on unmount
+    useEffect(() => {
+      setBackground(type);
+      return () => {
+        setBackground('base');
+      };
+    }, []);
 
   // Update state to default one
   useEffect(() => {
@@ -75,11 +75,11 @@ export default function GameResult({
       (Number(lastGameResultXp) + xpToGain).toString()
     );
 
-    if (type === 'win') {
-      gainXp({ address, xp: xpToGain });
-    } else {
-      gainXp({ address, xp: xpToGain });
-    }
+    // if (type === 'win') {
+    //   gainXp({ address, xp: xpToGain });
+    // } else {
+    //   gainXp({ address, xp: xpToGain });
+    // }
   }, [address, type]);
 
   return (
