@@ -68,7 +68,9 @@ export function useEntityManagement({
             ? EntityType.WIZARD
             : opponentState?.wizardId.toString() === WizardId.ARCHER.toString()
               ? EntityType.ARCHER
-              : EntityType.WIZARD,
+              : opponentState?.wizardId.toString() === WizardId.PHANTOM_DUELIST.toString()
+                ? EntityType.PHANTOM_DUELIST
+                : EntityType.WIZARD,
         tilemapPosition: DEFAULT_ENEMY_POSITION,
       };
 
