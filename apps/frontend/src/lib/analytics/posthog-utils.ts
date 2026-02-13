@@ -9,7 +9,8 @@ export function initPostHog() {
   if (typeof window === 'undefined') return;
 
   const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-  const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com';
+  const apiHost =
+    process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://posthog.zknoid.io/';
 
   if (!apiKey) {
     console.warn('PostHog API key not found. Analytics will not be tracked.');
@@ -60,7 +61,10 @@ export function setUserProperties(properties: UserProperties) {
 }
 
 // Track a custom event
-export function trackEvent(eventName: string, properties?: Record<string, any>) {
+export function trackEvent(
+  eventName: string,
+  properties?: Record<string, any>
+) {
   if (!posthog.__loaded) {
     if (process.env.NODE_ENV === 'development') {
       console.log('[PostHog Mock]', eventName, properties);
