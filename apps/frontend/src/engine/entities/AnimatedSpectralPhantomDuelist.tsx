@@ -129,7 +129,7 @@ export const SpectralPhantomDuelist = memo(({ entity }: { entity: IEntity }) => 
       style={{
         // Ghostly effect: semi-transparent with cyan/blue tint
         filter: 'hue-rotate(180deg) saturate(1.5) brightness(1.3)',
-        opacity: 0.7,
+        opacity: 0.3,
         // Add a subtle glow effect
         mixBlendMode: 'screen',
       }}
