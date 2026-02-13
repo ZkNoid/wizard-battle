@@ -69,6 +69,7 @@ export function Users() {
         onMouseEnter={() => setIsPlayerHovered(true)}
         onMouseLeave={() => setIsPlayerHovered(false)}
         showId={isPlayerHovered}
+        isAlly={true}
       />
       {/* Right user bar */}
       <UserBar
@@ -90,6 +91,7 @@ export function Users() {
         onMouseEnter={() => setIsOpponentHovered(true)}
         onMouseLeave={() => setIsOpponentHovered(false)}
         showId={isOpponentHovered}
+        isAlly={false}
       />
     </div>
   );
