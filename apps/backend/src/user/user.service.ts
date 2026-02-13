@@ -50,13 +50,44 @@ export class UserService {
     return this.userModel.findByIdAndDelete(id).exec();
   }
 
-  async addXP(address: string, amount: number): Promise<User | null> {
-    return this.userModel
-      .findOneAndUpdate(
-        { address },
-        { $inc: { xp: amount } },
-        { new: true }
-      )
-      .exec();
+  async addXP(
+    address: string,
+    amount: number,
+    character: string
+  ): Promise<User | null> {
+    switch (character) {
+      case 'mage':
+        return this.userModel
+          .findOneAndUpdate(
+            { address },
+            { $inc: { xp: amount, mage_xp: amount } },
+            { new: true }
+          )
+          .exec();
+      case 'archer':
+        return this.userModel
+          .findOneAndUpdate(
+            { address },
+            { $inc: { xp: amount, archer_xp: amount } },
+            { new: true }
+          )
+          .exec();
+      case 'duelist':
+        return this.userModel
+          .findOneAndUpdate(
+            { address },
+            { $inc: { xp: amount, duelist_xp: amount } },
+            { new: true }
+          )
+          .exec();
+      default:
+        return this.userModel
+          .findOneAndUpdate(
+            { address },
+            { $inc: { xp: amount } },
+            { new: true }
+          )
+          .exec();
+    }
   }
 }

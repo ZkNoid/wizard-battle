@@ -7,6 +7,7 @@ import {
   ITrustedState,
 } from '../../../common/types/gameplay.types';
 import { RedisService } from '../redis/redis.service';
+import { extractCharacterFromFields } from '../utils/character-mapping';
 
 /**
  * @title Game State Service - 5-Phase Turn Management
@@ -1162,6 +1163,8 @@ export class GameStateService {
         wPlayerId: string;
         lUserId: string | undefined;
         lPlayerId: string;
+        wCharacter: string;
+        lCharacter: string;
       }
     | 'draw'
     | null
@@ -1236,16 +1239,41 @@ export class GameStateService {
           const winner = alivePlayers[0]!;
           const looser = deadPlayers[0]!;
 
+          // Get match data to extract character information
+          let wCharacter = 'mage'; // default
+          let lCharacter = 'mage'; // default
+          try {
+            const matchData = await this.redisClient.hGet('matches', roomId);
+            if (matchData) {
+              const match = JSON.parse(matchData);
+
+              // Determine which player is which in the match
+              if (match.player1?.playerId === winner.id) {
+                wCharacter = extractCharacterFromFields(match.player1.fields);
+                lCharacter = extractCharacterFromFields(match.player2.fields);
+              } else {
+                wCharacter = extractCharacterFromFields(match.player2.fields);
+                lCharacter = extractCharacterFromFields(match.player1.fields);
+              }
+
+              console.log(
+                `🎮 Character mapping: winner=${wCharacter}, loser=${lCharacter}`
+              );
+            }
+          } catch (error) {
+            console.error('Failed to extract character info from match:', error);
+          }
+
           await this.updateGameState(roomId, {
             players: gameState.players,
             playersReady: gameState.playersReady,
             status: 'finished',
           });
           console.log(
-            `🏆 Winner detected: ${winner.id} (userId: ${winner.userId}) in room ${roomId}`
+            `🏆 Winner detected: ${winner.id} (userId: ${winner.userId}, character: ${wCharacter}) in room ${roomId}`
           );
           console.log(
-            `🏆 Looser detected: ${looser.id} (userId: ${looser.userId}) in room ${roomId}`
+            `🏆 Looser detected: ${looser.id} (userId: ${looser.userId}, character: ${lCharacter}) in room ${roomId}`
           );
           // Return userId if available, otherwise fall back to playerId
           return {
@@ -1253,6 +1281,8 @@ export class GameStateService {
             wPlayerId: winner.id,
             lUserId: looser.userId,
             lPlayerId: looser.id,
+            wCharacter,
+            lCharacter,
           };
         } else if (alivePlayers.length === 0) {
           // Draw - no winner

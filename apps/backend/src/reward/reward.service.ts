@@ -68,7 +68,9 @@ export class RewardService {
   async rewardXP(
     winnerId: string,
     looserId: string,
-    status: 'win' | 'draw' | 'even'
+    status: 'win' | 'draw' | 'even',
+    winnerCharacter: string,
+    looserCharacter: string
   ) {
     let winnerXP = 0;
     let looserXP = 0;
@@ -91,8 +93,8 @@ export class RewardService {
         looserXP = 0;
     }
 
-    await this.userService.addXP(winnerId, winnerXP);
-    await this.userService.addXP(looserId, looserXP);
+    await this.userService.addXP(winnerId, winnerXP, winnerCharacter);
+    await this.userService.addXP(looserId, looserXP, looserCharacter);
 
     return {
       success: true,
