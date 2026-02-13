@@ -281,6 +281,7 @@ export const expeditionsRouter = createTRPCRouter({
       const existingExpedition = await db
         .collection(expeditionsCollection)
         .findOne({
+          userId: input.userId,
           characterId: input.characterId,
           status: 'active',
         });
