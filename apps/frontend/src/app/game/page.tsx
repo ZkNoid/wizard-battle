@@ -64,7 +64,7 @@ export default function GamePage() {
   } = useTileHighlighting({
     stater,
     pickedSpellId,
-    canPlayerAct: gamePhaseManager?.currentPhase === GamePhase.SPELL_CASTING,
+    canPlayerAct: gamePhaseManager?.currentPhase === GamePhase.SPELL_CASTING && !actionSend,
   });
 
   // Spell actions
