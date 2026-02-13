@@ -277,6 +277,21 @@ export const expeditionsRouter = createTRPCRouter({
         });
       }
 
+      // Check if character is already in an active expedition
+      const existingExpedition = await db
+        .collection(expeditionsCollection)
+        .findOne({
+          characterId: input.characterId,
+          status: 'active',
+        });
+
+      if (existingExpedition) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This wizard is already on an active expedition',
+        });
+      }
+
       // Get location data
       const location = (await db
         .collection(locationsCollection)

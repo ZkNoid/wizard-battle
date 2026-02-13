@@ -20,13 +20,20 @@ export default function NewExpeditionForm({
   onSuccess?: () => void;
 }) {
   const { address } = useMinaAppkit();
-  const { createExpedition, isCreating } = useExpeditionStore();
+  const { createExpedition, isCreating, getActiveExpeditions } = useExpeditionStore();
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [selectedCharacter, setSelectedCharacter] = useState<
     Field | string | null
   >(null);
   const [selectedTimePeriod, setSelectedTimePeriod] =
     useState<ExpeditionTimePeriod | null>(null);
+
+  // Check if the selected wizard is already on an active expedition
+  const isWizardOnExpedition = selectedCharacter
+    ? getActiveExpeditions().some(
+        (exp) => exp.characterId === selectedCharacter.toString()
+      )
+    : false;
 
   const handleSelectLocation = (location: string | null) => {
     setSelectedLocation(location);
@@ -61,7 +68,7 @@ export default function NewExpeditionForm({
       selectedLocation
     );
 
-    await createExpedition(address, {
+    const result = await createExpedition(address, {
       characterId: selectedCharacter.toString(),
       characterRole: wizard.name,
       characterImage: wizard.imageURL || '',
@@ -69,7 +76,7 @@ export default function NewExpeditionForm({
       timePeriod: selectedTimePeriod,
     });
 
-    if (onSuccess) {
+    if (result && onSuccess) {
       onSuccess();
     }
   };
@@ -79,7 +86,8 @@ export default function NewExpeditionForm({
     !selectedCharacter ||
     !selectedTimePeriod ||
     isCreating ||
-    !address;
+    !address ||
+    isWizardOnExpedition;
 
   return (
     <div className="flex h-full flex-col">
@@ -105,7 +113,11 @@ export default function NewExpeditionForm({
           disabled={disabled}
         >
           <span className="font-pixel text-main-gray whitespace-nowrap text-lg font-bold">
-            {isCreating ? 'Starting...' : 'Start Expedition'}
+            {isCreating
+              ? 'Starting...'
+              : isWizardOnExpedition
+                ? 'Wizard Already on Expedition'
+                : 'Start Expedition'}
           </span>
         </Button>
       </div>
