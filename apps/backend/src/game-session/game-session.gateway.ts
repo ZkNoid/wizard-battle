@@ -748,11 +748,15 @@ export class GameSessionGateway {
 
         // Only distribute rewards if winner has a valid userId (wallet connected)
         if (winnerData.wUserId) {
+          console.log(`winnerData.wCharacter: ${winnerData.wCharacter}`);
+          console.log(`winnerData.lCharacter: ${winnerData.lCharacter}`);
           try {
             xpData = await this.rewardService.rewardXP(
               winnerData.wUserId,
               winnerData.lUserId ?? '0x0',
-              'win'
+              'win',
+              winnerData.wCharacter,
+              winnerData.lCharacter
             );
 
             reward = await this.rewardService.rewardGold(winnerData.wUserId);
