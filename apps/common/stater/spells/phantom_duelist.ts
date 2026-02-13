@@ -156,23 +156,27 @@ export const ShadowVeilModifier = (
   stater.state.pushEffect(
     new Effect({
       effectId: CircuitString.fromString('ShadowVeilInvisible').hash(),
-      duration: Field.from(2),
+      duration: Field.from(1),
       param: Field(0),
     }),
     'public',
     Bool(true)
   );
 
-  // Apply damage boost effect for next attack (+50% damage)
-  // TODO: Implement this
-  //   stater.state.pushEffect(
-  //     new Effect({
-  //       effectId: CircuitString.fromString('ShadowVeilDamageBoost').hash(),
-  //       duration: Field.from(2),
-  //       param: Field(50), // 50% bonus damage
-  //     }),
-  //     'endOfRound'
-  //   );
+  // Apply damage boost: +50 attack immediately, restore after 1 turn
+  const damageBoost = UInt64.from(50);
+  stater.state.playerStats.attack = stater.state.playerStats.attack.add(damageBoost);
+
+  // Push restoration as onEndEffect (fires once when duration expires)
+  stater.state.pushEffect(
+    new Effect({
+      effectId: CircuitString.fromString('DamageBoostRestoration').hash(),
+      duration: Field.from(1),
+      param: Field(0),
+    }),
+    'onEnd',
+    Bool(true)
+  );
 };
 
 // ============================================================================

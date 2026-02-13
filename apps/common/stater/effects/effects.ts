@@ -140,6 +140,16 @@ const weakenRestorationEffect: IEffectInfo = {
   },
 };
 
+const damageBoostRestorationEffect: IEffectInfo = {
+  id: CircuitString.fromString('DamageBoostRestoration').hash(),
+  name: 'DamageBoostRestoration',
+  apply: (state: State, publicState: State, param: Field) => {
+    console.log('Applying damage boost restoration effect');
+    // Restore -50 attack (remove the boost)
+    state.playerStats.attack = state.playerStats.attack.sub(UInt64.from(50));
+  },
+};
+
 const revealedEffect: IEffectInfo = {
   id: CircuitString.fromString('Revealed').hash(),
   name: 'Revealed',
@@ -245,6 +255,7 @@ export const allEffectsInfo: IEffectInfo[] = [
   slowingEffect,
   weakenEffect,
   weakenRestorationEffect,
+  damageBoostRestorationEffect,
   revealedEffect,
   vulnerableEffect,
   vulnerableRestorationEffect,
