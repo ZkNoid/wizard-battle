@@ -948,7 +948,7 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     name: 'DusksEmbrace',
     description:
       'Deal 50 damage to a horizontal line and apply Weaken (-30% Defence) for 2 turns if hit.',
-    image: '/wizards/skills/dusksEmbrace.png',
+    image: '/wizards/skills/duskEmbrace.png',
     modifierData: DusksEmbraceData,
     modifier: DusksEmbraceModifier,
     spellCast: DusksEmbraceSpellCast,
