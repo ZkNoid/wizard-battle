@@ -292,9 +292,28 @@ export const craftingRouter = createTRPCRouter({
           throw error;
         }
 
+        // Log the actual error for debugging
+        console.error('Crafting error:', error);
+
+        // Check if it's a network/fetch error
+        const isNetworkError =
+          error instanceof TypeError ||
+          (error instanceof Error &&
+            (error.message.includes('fetch') ||
+              error.message.includes('ECONNREFUSED') ||
+              error.message.includes('network')));
+
+        if (isNetworkError) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: `Backend service unavailable: ${error instanceof Error ? error.message : 'Connection failed'}`,
+            cause: error,
+          });
+        }
+
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to craft item',
+          message: `Failed to craft item: ${error instanceof Error ? error.message : 'Unknown error'}`,
           cause: error,
         });
       }
