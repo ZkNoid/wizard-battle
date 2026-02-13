@@ -122,8 +122,8 @@
   "frameTags": [
   ],
   "layers": [
+   { "name": "Layer 0", "opacity": 255, "blendMode": "normal" },
    { "name": "Layer 1", "opacity": 255, "blendMode": "normal" },
-   { "name": "Sword", "opacity": 255, "blendMode": "normal" },
    { "name": "Duelist", "opacity": 255, "blendMode": "normal" }
   ],
   "slices": [
