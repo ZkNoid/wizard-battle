@@ -35,7 +35,31 @@ export class CraftingService {
     const recipe = await this.recipeModel.findOne({ id: recipeId }).exec();
 
     if (!recipe) {
-      throw new NotFoundException(`Recipe with id "${recipeId}" not found`);
+      // Get available recipes for developer debugging
+      const availableRecipes = await this.recipeModel
+        .find()
+        .select('id title category')
+        .limit(20)
+        .exec();
+
+      throw new NotFoundException({
+        statusCode: 404,
+        error: 'Not Found',
+        message: `Recipe with id "${recipeId}" not found`,
+        details: {
+          requestedRecipeId: recipeId,
+          availableRecipesCount: availableRecipes.length,
+          sampleRecipes: availableRecipes.map((r) => ({
+            id: r.id,
+            title: r.title,
+            category: r.category,
+          })),
+        },
+        diagnostic: {
+          timestamp: new Date().toISOString(),
+          hint: 'Check if the recipeId is correct. Sample available recipes are listed above.',
+        },
+      });
     }
 
     return recipe;
@@ -64,27 +88,60 @@ export class CraftingService {
     );
 
     if (!hasAllIngredients) {
-      // Get details of missing ingredients for better error message
-      const missingIngredients: Array<{
-        itemId: string;
-        required: number;
-        current: number;
-      }> = [];
+      // Collect detailed diagnostic information for developers
+      const diagnosticInfo: {
+        userId: string;
+        recipeId: string;
+        recipeTitle: string;
+        ingredients: {
+          required: Array<{ itemId: string; required: number }>;
+          userInventory: Array<{
+            itemId: string;
+            quantity: number;
+            found: boolean;
+            error?: string;
+          }>;
+          missing: Array<{
+            itemId: string;
+            required: number;
+            current: number;
+            shortage: number;
+          }>;
+        };
+        debug: {
+          timestamp: string;
+          recipeIngredientTypes: Array<{
+            itemId: string;
+            itemIdType: string;
+            requiredAmount: number;
+          }>;
+        };
+      } = {
+        userId,
+        recipeId,
+        recipeTitle: recipe.title || 'Unknown Recipe',
+        ingredients: {
+          required: [],
+          userInventory: [],
+          missing: [],
+        },
+        debug: {
+          timestamp: new Date().toISOString(),
+          recipeIngredientTypes: recipe.ingredients.map((ing) => ({
+            itemId: ing.itemId,
+            itemIdType: typeof ing.itemId,
+            requiredAmount: ing.requiredAmount,
+          })),
+        },
+      };
 
-      // Debug: Log recipe ingredients
-      console.log(
-        'Recipe ingredients:',
-        recipe.ingredients.map((ing) => ({
-          itemId: ing.itemId,
-          itemIdType: typeof ing.itemId,
-          requiredAmount: ing.requiredAmount,
-        }))
-      );
-
+      // Check each ingredient and build detailed error info
       for (const ingredient of recipe.ingredients) {
-        console.log(
-          `Checking ingredient: ${ingredient.itemId} (type: ${typeof ingredient.itemId})`
-        );
+        const requiredInfo = {
+          itemId: ingredient.itemId,
+          required: ingredient.requiredAmount,
+        };
+        diagnosticInfo.ingredients.required.push(requiredInfo);
 
         const hasItem = await this.userInventoryService.hasItem(
           userId,
@@ -92,34 +149,64 @@ export class CraftingService {
           ingredient.requiredAmount
         );
 
-        console.log(`  hasItem result: ${hasItem}`);
-
         if (!hasItem) {
           const userItem = await this.userInventoryService
             .getUserInventoryItem(userId, ingredient.itemId)
             .catch((err) => {
-              console.log(`  getUserInventoryItem failed: ${err.message}`);
+              // Include error details in diagnostic info
+              diagnosticInfo.ingredients.userInventory.push({
+                itemId: ingredient.itemId,
+                quantity: 0,
+                error: err.message,
+                found: false,
+              });
               return null;
             });
 
-          console.log(
-            `  userItem found:`,
-            userItem
-              ? { itemId: userItem.itemId, quantity: userItem.quantity }
-              : 'null'
-          );
+          const current = userItem?.quantity || 0;
 
-          missingIngredients.push({
+          if (userItem) {
+            diagnosticInfo.ingredients.userInventory.push({
+              itemId: userItem.itemId,
+              quantity: current,
+              found: true,
+            });
+          }
+
+          diagnosticInfo.ingredients.missing.push({
             itemId: ingredient.itemId,
             required: ingredient.requiredAmount,
-            current: userItem?.quantity || 0,
+            current,
+            shortage: ingredient.requiredAmount - current,
           });
+        } else {
+          // Even if user has the item, include it in diagnostics
+          const userItem = await this.userInventoryService
+            .getUserInventoryItem(userId, ingredient.itemId)
+            .catch(() => null);
+
+          if (userItem) {
+            diagnosticInfo.ingredients.userInventory.push({
+              itemId: userItem.itemId,
+              quantity: userItem.quantity,
+              found: true,
+            });
+          }
         }
       }
 
       throw new BadRequestException({
+        statusCode: 400,
+        error: 'Bad Request',
         message: 'Insufficient ingredients for crafting',
-        missingIngredients,
+        details: {
+          summary: `Missing ${diagnosticInfo.ingredients.missing.length} ingredient(s)`,
+          missingIngredients: diagnosticInfo.ingredients.missing,
+          userInventory: diagnosticInfo.ingredients.userInventory,
+          requiredIngredients: diagnosticInfo.ingredients.required,
+        },
+        // Developer-friendly diagnostic info
+        diagnostic: diagnosticInfo,
       });
     }
 
