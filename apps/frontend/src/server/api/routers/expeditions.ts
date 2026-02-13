@@ -277,6 +277,21 @@ export const expeditionsRouter = createTRPCRouter({
         });
       }
 
+      // Check if character is already in an active expedition
+      const existingExpedition = await db
+        .collection(expeditionsCollection)
+        .findOne({
+          characterId: input.characterId,
+          status: 'active',
+        });
+
+      if (existingExpedition) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This wizard is already on an active expedition',
+        });
+      }
+
       // Get location data
       const location = (await db
         .collection(locationsCollection)
@@ -417,11 +432,20 @@ export const expeditionsRouter = createTRPCRouter({
       const elapsed = now.getTime() - new Date(startedAt).getTime();
       const progress = Math.min(elapsed / expedition.timeToComplete, 1);
 
+      // Minimum 10% progress required to receive any rewards
+      const MIN_PROGRESS_FOR_REWARDS = 0.1;
+
       // Give partial rewards (50% of what would have been earned based on progress)
-      const partialRewards = expedition.rewards.map((r) => ({
-        ...r,
-        amount: Math.max(1, Math.floor(r.amount * progress * 0.5)),
-      }));
+      // No minimum amount - if progress is too low, reward is 0
+      const partialRewards = expedition.rewards
+        .map((r) => ({
+          ...r,
+          amount:
+            progress >= MIN_PROGRESS_FOR_REWARDS
+              ? Math.floor(r.amount * progress * 0.5)
+              : 0,
+        }))
+        .filter((r) => r.amount > 0);
 
       // Update expedition status
       await db.collection(expeditionsCollection).updateOne(

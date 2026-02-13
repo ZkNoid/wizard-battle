@@ -278,11 +278,20 @@ export class ExpeditionService {
     const elapsed = now.getTime() - new Date(startedAt).getTime();
     const progress = Math.min(elapsed / expedition.timeToComplete, 1);
 
+    // Minimum 10% progress required to receive any rewards
+    const MIN_PROGRESS_FOR_REWARDS = 0.1;
+
     // Calculate partial rewards (50% of what would have been earned based on progress)
-    const partialRewards = expedition.rewards.map((r) => ({
-      itemId: r.itemId,
-      amount: Math.max(1, Math.floor(r.amount * progress * 0.5)),
-    }));
+    // No minimum amount - if progress is too low, reward is 0
+    const partialRewards = expedition.rewards
+      .map((r) => ({
+        itemId: r.itemId,
+        amount:
+          progress >= MIN_PROGRESS_FOR_REWARDS
+            ? Math.floor(r.amount * progress * 0.5)
+            : 0,
+      }))
+      .filter((r) => r.amount > 0);
 
     // Add partial rewards to user inventory
     for (const reward of partialRewards) {
