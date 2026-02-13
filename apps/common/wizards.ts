@@ -41,6 +41,8 @@ const archerDefaultState = () => {
   let state = State.default();
   state.wizardId = WizardId.ARCHER;
   state.playerStats.speed = Int64.from(3);
+  state.playerStats.maxHp = Int64.from(200);
+  state.playerStats.hp = Int64.from(200);
 
   return state;
 };
@@ -53,6 +55,8 @@ const phantomDuelistDefaultState = () => {
   // Base defense is 100, so 150 = 100 * 1.5
   state.playerStats.speed = Int64.from(2);
   state.playerStats.defense = state.playerStats.defense.mul(150).div(100);
+  state.playerStats.maxHp = Int64.from(200);
+  state.playerStats.hp = Int64.from(200);
 
   return state;
 };

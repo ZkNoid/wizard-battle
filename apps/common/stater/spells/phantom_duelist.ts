@@ -156,23 +156,27 @@ export const ShadowVeilModifier = (
   stater.state.pushEffect(
     new Effect({
       effectId: CircuitString.fromString('ShadowVeilInvisible').hash(),
-      duration: Field.from(2),
+      duration: Field.from(1),
       param: Field(0),
     }),
     'public',
     Bool(true)
   );
 
-  // Apply damage boost effect for next attack (+50% damage)
-  // TODO: Implement this
-  //   stater.state.pushEffect(
-  //     new Effect({
-  //       effectId: CircuitString.fromString('ShadowVeilDamageBoost').hash(),
-  //       duration: Field.from(2),
-  //       param: Field(50), // 50% bonus damage
-  //     }),
-  //     'endOfRound'
-  //   );
+  // Apply damage boost: +50 attack immediately, restore after 1 turn
+  const damageBoost = UInt64.from(50);
+  stater.state.playerStats.attack = stater.state.playerStats.attack.add(damageBoost);
+
+  // Push restoration as onEndEffect (fires once when duration expires)
+  stater.state.pushEffect(
+    new Effect({
+      effectId: CircuitString.fromString('DamageBoostRestoration').hash(),
+      duration: Field.from(1),
+      param: Field(0),
+    }),
+    'onEnd',
+    Bool(true)
+  );
 };
 
 // ============================================================================
@@ -329,14 +333,23 @@ export const DusksEmbraceModifier = (
 
   stater.applyDamage(damageToApply, opponentState);
 
-  // Apply Weaken effect if hit (provable)
+  // Apply Weaken: -30% defense immediately, restore after 2 turns
+  const weakenReduction = UInt64.from(30);
+  const currentDefense = stater.state.playerStats.defense;
+  stater.state.playerStats.defense = Provable.if(
+    sameRow,
+    currentDefense.sub(weakenReduction),
+    currentDefense
+  );
+
+  // Push restoration as onEndEffect (fires once when duration expires)
   stater.state.pushEffect(
     new Effect({
-      effectId: CircuitString.fromString('Weaken').hash(),
+      effectId: CircuitString.fromString('WeakenRestoration').hash(),
       duration: Field.from(2),
-      param: Field(30), // -30% defence
+      param: Field(0),
     }),
-    'endOfRound',
+    'onEnd',
     sameRow
   );
 };
@@ -441,14 +454,23 @@ export const PhantomEchoModifier = (
     isInDiamond
   );
 
-  // Apply vulnerability (+50% damage taken)
+  // Apply Vulnerable: -50 defense immediately, restore after 1 turn
+  const vulnerableReduction = UInt64.from(50);
+  const currentDefense = stater.state.playerStats.defense;
+  stater.state.playerStats.defense = Provable.if(
+    isInDiamond,
+    currentDefense.sub(vulnerableReduction),
+    currentDefense
+  );
+
+  // Push restoration as onEndEffect (fires once when duration expires)
   stater.state.pushEffect(
     new Effect({
-      effectId: CircuitString.fromString('Vulnerable').hash(),
+      effectId: CircuitString.fromString('VulnerableRestoration').hash(),
       duration: Field.from(1),
-      param: Field(50), // +50% damage taken
+      param: Field(0),
     }),
-    'endOfRound',
+    'onEnd',
     isInDiamond
   );
 };
@@ -948,7 +970,7 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     name: 'DusksEmbrace',
     description:
       'Deal 50 damage to a horizontal line and apply Weaken (-30% Defence) for 2 turns if hit.',
-    image: '/wizards/skills/dusksEmbrace.png',
+    image: '/wizards/skills/duskEmbrace.png',
     modifierData: DusksEmbraceData,
     modifier: DusksEmbraceModifier,
     spellCast: DusksEmbraceSpellCast,

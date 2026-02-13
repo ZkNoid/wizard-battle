@@ -90,7 +90,7 @@ async function seedLocations() {
     console.log('\n📋 Reward rules by expedition duration:');
     console.log('  1 hour:  5 x 10% unique + 1 uncommon + 5 common');
     console.log('  3 hours: 10 x 10% unique + 2 uncommon + 10 common');
-    console.log('  24 hours: 20 x 10% unique + 4 uncommon + 20 common');
+    console.log('  8 hours: 20 x 10% unique + 4 uncommon + 20 common');
   } catch (error) {
     console.error('Error seeding locations:', error);
     process.exit(1);
