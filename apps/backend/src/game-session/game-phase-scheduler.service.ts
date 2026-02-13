@@ -172,7 +172,7 @@ export class GamePhaseSchedulerService {
               this.gameStateService.markPlayerDead(roomId, p.id)
             );
             if (res && typeof res === 'object' && 'playerId' in res) {
-              winnerId = res.playerId; // If this was the last alive player, we have a winner
+              winnerId = res.wPlayerId; // If this was the last alive player, we have a winner
             }
           }
 

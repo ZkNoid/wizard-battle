@@ -726,7 +726,7 @@ export class GameSessionGateway {
 
       if (winnerData && winnerData !== 'draw') {
         // Game ended, announce winner
-        const goldAmount = Math.floor(Math.random() * 51) + 50; // Random value between 50-100
+        // const goldAmount = Math.floor(Math.random() * 51) + 50; // Random value between 50-100
 
         let reward: {
           success: boolean;
@@ -747,25 +747,22 @@ export class GameSessionGateway {
         } | null = null;
 
         // Only distribute rewards if winner has a valid userId (wallet connected)
-        if (winnerData.userId) {
+        if (winnerData.wUserId) {
           try {
             xpData = await this.rewardService.rewardXP(
-              winnerData.userId,
-              '0x0',
+              winnerData.wUserId,
+              winnerData.lUserId ?? '0x0',
               'win'
             );
 
-            reward = await this.rewardService.rewardItem(
-              winnerData.userId,
-              goldAmount,
-              'Gold'
-            );
+            reward = await this.rewardService.rewardGold(winnerData.wUserId);
+
             console.log(
-              `💰 Rewarded ${goldAmount} gold to winner ${winnerData.playerId} (userId: ${winnerData.userId})`
+              `💰 Rewarded ${reward?.quantity || 0} gold to winner ${winnerData.wPlayerId} (userId: ${winnerData.wUserId})`
             );
 
             rewardItems = await this.rewardService.rewardRandomItems(
-              winnerData.userId,
+              winnerData.wUserId,
               [
                 {
                   itemId: 'SoulStoneFragment',
@@ -782,18 +779,18 @@ export class GameSessionGateway {
             console.log(`💰 Rewarded items: ${JSON.stringify(rewardItems)}`);
           } catch (error) {
             console.error(
-              `❌ Failed to reward gold to winner ${winnerData.playerId}:`,
+              `❌ Failed to reward gold to winner ${winnerData.wPlayerId}:`,
               error
             );
           }
         } else {
           console.log(
-            `⚠️ Winner ${winnerData.playerId} has no userId (wallet not connected), skipping reward distribution`
+            `⚠️ Winner ${winnerData.wPlayerId} has no userId (wallet not connected), skipping reward distribution`
           );
         }
         const goldReward: IReward = {
           itemId: 'Gold',
-          amount: goldAmount,
+          amount: reward ? reward.quantity : 0,
           total: reward ? reward.total : 0,
         };
 
@@ -806,13 +803,16 @@ export class GameSessionGateway {
           : [];
 
         const gameEnd: IGameEnd = {
-          winnerId: winnerData.playerId,
-          experience: xpData?.winnerXP ?? 0,
+          winnerId: winnerData.wPlayerId,
+          experience: {
+            winnerXP: xpData?.winnerXP ?? 0,
+            looserXP: xpData?.looserXP ?? 0,
+          },
           reward: [goldReward, ...itemRewards],
         };
 
         console.log(
-          `📢 Broadcasting game end: ${winnerData.playerId} wins in room ${data.roomId}`
+          `📢 Broadcasting game end: ${winnerData.wPlayerId} wins in room ${data.roomId}`
         );
 
         this.server.to(data.roomId).emit('gameEnd', gameEnd);

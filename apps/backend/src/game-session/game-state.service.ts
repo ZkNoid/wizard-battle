@@ -1156,7 +1156,16 @@ export class GameStateService {
   async markPlayerDead(
     roomId: string,
     playerId: string
-  ): Promise<{ userId: string | undefined; playerId: string } | 'draw' | null> {
+  ): Promise<
+    | {
+        wUserId: string | undefined;
+        wPlayerId: string;
+        lUserId: string | undefined;
+        lPlayerId: string;
+      }
+    | 'draw'
+    | null
+  > {
     return this.withRoomLock(roomId, async () => {
       try {
         const gameState = await this.getGameState(roomId);
@@ -1216,11 +1225,17 @@ export class GameStateService {
           (p) => p && p.isAlive === true
         );
 
+        const deadPlayers = gameState.players.filter(
+          (p) => p && p.isAlive === false
+        );
+
         console.log(`📊 Alive players count: ${alivePlayers.length}`);
 
         if (alivePlayers.length === 1) {
           // Winner found - return userId (wallet address) for reward distribution
           const winner = alivePlayers[0]!;
+          const looser = deadPlayers[0]!;
+
           await this.updateGameState(roomId, {
             players: gameState.players,
             playersReady: gameState.playersReady,
@@ -1229,8 +1244,16 @@ export class GameStateService {
           console.log(
             `🏆 Winner detected: ${winner.id} (userId: ${winner.userId}) in room ${roomId}`
           );
+          console.log(
+            `🏆 Looser detected: ${looser.id} (userId: ${looser.userId}) in room ${roomId}`
+          );
           // Return userId if available, otherwise fall back to playerId
-          return { userId: winner.userId, playerId: winner.id };
+          return {
+            wUserId: winner.userId,
+            wPlayerId: winner.id,
+            lUserId: looser.userId,
+            lPlayerId: looser.id,
+          };
         } else if (alivePlayers.length === 0) {
           // Draw - no winner
           await this.updateGameState(roomId, {

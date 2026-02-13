@@ -6,6 +6,7 @@ import {
   type IUserActions,
   type ITrustedState,
   type IReward,
+  type IExperience,
 } from '../../../common/types/gameplay.types';
 import type { IPublicState } from '../../../common/types/matchmaking.types';
 import { EventBus } from './EventBus';
@@ -329,7 +330,7 @@ export class GamePhaseManager {
       'gameEnd',
       async (data: {
         winnerId: string;
-        experience?: number;
+        experience?: IExperience;
         reward?: IReward[]; //{ gold: number; total: number };
       }) => {
         let release = await this.stageProcessMutex.acquire();
@@ -341,7 +342,9 @@ export class GamePhaseManager {
           const isWinner = data.winnerId === this.getPlayerId();
           this.onGameEnd?.(
             isWinner,
-            isWinner ? data.experience : 0, // Pass experience if winner, else 0
+            isWinner
+              ? (data.experience?.winnerXP ?? 0)
+              : (data.experience?.looserXP ?? 0), // Pass experience if winner, else 0
             isWinner ? data.reward : []
           );
           //EventBus.emit('rewards-destribution', data);

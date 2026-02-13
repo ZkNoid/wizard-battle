@@ -92,12 +92,17 @@ export class RewardService {
     }
 
     await this.userService.addXP(winnerId, winnerXP);
-    //await this.userService.addXP(looserId, looserXP);
+    await this.userService.addXP(looserId, looserXP);
 
     return {
       success: true,
       winnerXP: winnerXP,
       looserXP: looserXP,
     };
+  }
+  async rewardGold(userId: string) {
+    const goldAmount = Math.floor(Math.random() * 51) + 50; // Random value between 50-100
+
+    return this.rewardItem(userId, goldAmount, 'Gold');
   }
 }
