@@ -48,6 +48,10 @@ interface InventoryStore {
   isLoading: boolean;
   error: string | null;
 
+  // Currency balances
+  gold: number;
+  blackOrb: number;
+
   // Equipped items per wizard (wizard ID as string key)
   equippedItemsByWizard: Record<string, EquippedSlots>;
 
@@ -59,6 +63,7 @@ interface InventoryStore {
 
   // Actions - address comes from useMinaAppkit hook in components
   loadUserInventory: (address: string) => Promise<void>;
+  loadCurrencies: (address: string) => Promise<void>;
   getEquippedItems: (wizardId: string) => EquippedSlots;
   getStats: (wizardId: string) => IHeroStats;
   equipItem: (
@@ -82,9 +87,31 @@ export const useInventoryStore = create<InventoryStore>()(
     (set, get) => ({
       isLoading: false,
       error: null,
+      gold: 0,
+      blackOrb: 0,
       equippedItemsByWizard: {},
       statsByWizard: {},
       iteminventory: [],
+
+      loadCurrencies: async (address: string) => {
+        try {
+          const inventory = await trpcClient.items.getUserInventory.query({
+            userId: address,
+          });
+
+          const goldItem = inventory.find((item) => item.item.id === 'Gold');
+          const blackOrbItem = inventory.find(
+            (item) => item.item.id === 'BlackOrb'
+          );
+
+          set({
+            gold: goldItem?.quantity ?? 0,
+            blackOrb: blackOrbItem?.quantity ?? 0,
+          });
+        } catch (error) {
+          console.error('Failed to load currencies:', error);
+        }
+      },
 
       loadUserInventory: async (address: string) => {
         set({ isLoading: true, error: null });
@@ -122,10 +149,18 @@ export const useInventoryStore = create<InventoryStore>()(
             statsByWizard[wizardId] = calculateStats(slots);
           });
 
+          // Extract currency balances
+          const goldItem = inventory.find((item) => item.item.id === 'Gold');
+          const blackOrbItem = inventory.find(
+            (item) => item.item.id === 'BlackOrb'
+          );
+
           set({
             iteminventory: nonEquippedItems,
             equippedItemsByWizard: equippedByWizard,
             statsByWizard,
+            gold: goldItem?.quantity ?? 0,
+            blackOrb: blackOrbItem?.quantity ?? 0,
             isLoading: false,
           });
         } catch (error) {
@@ -298,6 +333,8 @@ export const useInventoryStore = create<InventoryStore>()(
           iteminventory: [],
           equippedItemsByWizard: {},
           statsByWizard: {},
+          gold: 0,
+          blackOrb: 0,
         }),
     }),
     {
@@ -306,6 +343,8 @@ export const useInventoryStore = create<InventoryStore>()(
         equippedItemsByWizard: state.equippedItemsByWizard,
         statsByWizard: state.statsByWizard,
         iteminventory: state.iteminventory,
+        gold: state.gold,
+        blackOrb: state.blackOrb,
       }),
     }
   )
