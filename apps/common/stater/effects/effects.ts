@@ -120,6 +120,79 @@ const cloudEffect: IEffectInfo = {
   },
 };
 
+const weakenEffect: IEffectInfo = {
+  id: CircuitString.fromString('Weaken').hash(),
+  name: 'Weaken',
+  apply: (state: State, publicState: State, param: Field) => {
+    console.log('Applying weaken effect');
+    // -30% defense - reduce defense by 30 (based on base defense of 100)
+    state.playerStats.defense = state.playerStats.defense.sub(UInt64.from(30));
+  },
+};
+
+const weakenRestorationEffect: IEffectInfo = {
+  id: CircuitString.fromString('WeakenRestoration').hash(),
+  name: 'WeakenRestoration',
+  apply: (state: State, publicState: State, param: Field) => {
+    console.log('Applying weaken restoration effect');
+    // Restore +30 defense
+    state.playerStats.defense = state.playerStats.defense.add(UInt64.from(30));
+  },
+};
+
+const revealedEffect: IEffectInfo = {
+  id: CircuitString.fromString('Revealed').hash(),
+  name: 'Revealed',
+  apply: (state: State, publicState: State, param: Field) => {
+    console.log('Applying revealed effect');
+    // Force to show current position
+    publicState.playerStats.position = new PositionOption({
+      value: state.playerStats.position.value,
+      isSome: Field(1),
+    });
+  },
+};
+
+const vulnerableEffect: IEffectInfo = {
+  id: CircuitString.fromString('Vulnerable').hash(),
+  name: 'Vulnerable',
+  apply: (state: State, publicState: State, param: Field) => {
+    console.log('Applying vulnerable effect');
+    // Receive +50% damage - reduce defense by 50 (based on base defense of 100)
+    state.playerStats.defense = state.playerStats.defense.sub(UInt64.from(50));
+  },
+};
+
+const vulnerableRestorationEffect: IEffectInfo = {
+  id: CircuitString.fromString('VulnerableRestoration').hash(),
+  name: 'VulnerableRestoration',
+  apply: (state: State, publicState: State, param: Field) => {
+    console.log('Applying vulnerable restoration effect');
+    // Restore +50 defense
+    state.playerStats.defense = state.playerStats.defense.add(UInt64.from(50));
+  },
+};
+
+const immobilizeEffect: IEffectInfo = {
+  id: CircuitString.fromString('Immobilize').hash(),
+  name: 'Immobilize',
+  apply: (state: State, publicState: State, param: Field) => {
+    console.log('Applying immobilize effect');
+    // Cannot move - reduce speed by 1 (to 0)
+    state.playerStats.speed = state.playerStats.speed.sub(Int64.from(1));
+  },
+};
+
+const immobilizeRestorationEffect: IEffectInfo = {
+  id: CircuitString.fromString('ImmobilizeRestoration').hash(),
+  name: 'ImmobilizeRestoration',
+  apply: (state: State, publicState: State, param: Field) => {
+    console.log('Applying immobilize restoration effect');
+    // Restore speed by 1
+    state.playerStats.speed = state.playerStats.speed.add(Int64.from(1));
+  },
+};
+
 // Reverse of SpectralProjectionModifier - transforms melee skills back to ranged:
 // - Shadow Strike → Spectral Arrow
 // - Shadow Dash → Dusk's Embrace
@@ -170,6 +243,13 @@ export const allEffectsInfo: IEffectInfo[] = [
   cloudEffect,
   slowingRestorationEffect,
   slowingEffect,
+  weakenEffect,
+  weakenRestorationEffect,
+  revealedEffect,
+  vulnerableEffect,
+  vulnerableRestorationEffect,
+  immobilizeEffect,
+  immobilizeRestorationEffect,
   spectralProjectionReturnEffect,
 ];
 
