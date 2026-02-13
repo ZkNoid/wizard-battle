@@ -11,6 +11,8 @@ export interface ILocation {
   name: string;
   image: string;
   biome: LocationBiome;
+  commonRewards?: string[]; // Item IDs for common rarity items in this biome
+  uncommonRewards?: string[]; // Item IDs for uncommon rarity items in this biome
 }
 
 // Expedition reward reference (for database storage)

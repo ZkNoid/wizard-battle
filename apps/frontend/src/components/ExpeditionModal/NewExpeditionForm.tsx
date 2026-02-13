@@ -101,7 +101,7 @@ export default function NewExpeditionForm({
           onSelectTimePeriod={handleSelectTimePeriod}
         />
 
-        <RewardsSection />
+        <RewardsSection selectedLocationId={selectedLocation} />
       </div>
 
       <div className="mb-1 pt-2">
