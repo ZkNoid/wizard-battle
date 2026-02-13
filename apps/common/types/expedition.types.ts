@@ -1,8 +1,8 @@
 // Shared expedition types for frontend and backend
 
 export type ExpeditionStatus = 'active' | 'completed' | 'pending';
-export type ExpeditionDuration = '1hour' | '3hour' | '24hour';
-export type ExpeditionTimePeriod = 1 | 3 | 24;
+export type ExpeditionDuration = '1hour' | '3hour' | '8hour';
+export type ExpeditionTimePeriod = 1 | 3 | 8;
 export type LocationBiome = 'forest' | 'water' | 'mountains';
 
 // Location types

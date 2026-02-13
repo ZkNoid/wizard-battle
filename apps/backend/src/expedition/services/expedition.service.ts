@@ -36,7 +36,7 @@ interface IRewardConfig {
 const REWARD_CONFIG: Record<ExpeditionTimePeriod, IRewardConfig> = {
   1: { uniqueRolls: 5, uniqueChance: 0.1, uncommonCount: 1, commonCount: 5 },
   3: { uniqueRolls: 10, uniqueChance: 0.1, uncommonCount: 2, commonCount: 10 },
-  24: { uniqueRolls: 20, uniqueChance: 0.1, uncommonCount: 4, commonCount: 20 },
+  8: { uniqueRolls: 20, uniqueChance: 0.1, uncommonCount: 4, commonCount: 20 },
 };
 
 @Injectable()
