@@ -26,6 +26,7 @@ import {
   IGameEnd,
   IReward,
 } from '../../../common/types/gameplay.types';
+import { QuestsService } from '../quests/services/quests.service';
 
 /**
  * @title Game Session Gateway - 5-Phase Turn Orchestration
@@ -59,7 +60,8 @@ export class GameSessionGateway {
     private readonly matchmakingService: MatchmakingService,
     private readonly gameStateService: GameStateService,
     private readonly gamePhaseScheduler: GamePhaseSchedulerService,
-    private readonly rewardService: RewardService
+    private readonly rewardService: RewardService,
+    private readonly questsService: QuestsService
   ) {}
   /**
    * @dev Invoked once the gateway is initialized. Injects the Socket.IO
@@ -186,6 +188,17 @@ export class GameSessionGateway {
       console.warn('joinMatchmaking rejected: Redis not ready');
       return null;
     }
+
+    // Track quest: Start your game
+    const userId = data.addToQueue?.playerSetup?.userId;
+    if (userId) {
+      try {
+        await this.questsService.trackGameStart(userId);
+      } catch (error) {
+        console.error('Failed to track game start quest:', error);
+      }
+    }
+
     return await this.matchmakingService.joinMatchmaking(
       socket,
       data.addToQueue
@@ -209,6 +222,17 @@ export class GameSessionGateway {
       console.warn('joinBotMatchmaking rejected: Redis not ready');
       return null;
     }
+
+    // Track quest: Start your game
+    const userId = data.addToQueue?.playerSetup?.userId;
+    if (userId) {
+      try {
+        await this.questsService.trackGameStart(userId);
+      } catch (error) {
+        console.error('Failed to track game start quest:', error);
+      }
+    }
+
     return await this.matchmakingService.joinBotMatchmaking(
       socket,
       data.addToQueue
@@ -825,6 +849,114 @@ export class GameSessionGateway {
           'gameEnd',
           gameEnd
         );
+
+        // Track quest progress for both players
+        try {
+          // Get game state for turn count and HP data
+          const gameState = await this.gameStateService.getGameState(data.roomId);
+          const roundsPlayed = gameState?.turn ?? 1;
+
+          // Determine if this was a PvE (bot) or PvP match
+          // Bot IDs start with '100' prefix
+          const isBotMatch =
+            winnerData.wPlayerId.startsWith('100') ||
+            winnerData.lPlayerId.startsWith('100');
+
+          // Try to extract winner's HP percentage from their trusted state
+          let winnerHpPercentage = 50; // Default to middle value
+          if (gameState?.players) {
+            const winnerPlayer = gameState.players.find(
+              (p) => p.id === winnerData.wPlayerId
+            );
+            if (winnerPlayer?.trustedState?.publicState?.fields) {
+              const fields = winnerPlayer.trustedState.publicState.fields as any;
+              let hp = 100;
+              let maxHp = 100;
+
+              if (typeof fields === 'string') {
+                try {
+                  const parsed = JSON.parse(fields);
+                  hp = parseInt(parsed?.playerStats?.hp?.magnitude ?? '100');
+                  maxHp = parseInt(parsed?.playerStats?.maxHp?.magnitude ?? '100');
+                } catch (e) {
+                  console.error('Failed to parse fields JSON:', e);
+                }
+              } else if (Array.isArray(fields) && fields.length > 0) {
+                hp = parseInt((fields[0] as any)?.value ?? fields[0]);
+                // maxHp might be in a different index or default to 100
+                maxHp = parseInt((fields[1] as any)?.value ?? fields[1] ?? '100');
+              }
+
+              winnerHpPercentage = maxHp > 0 ? (hp / maxHp) * 100 : 50;
+            }
+          }
+
+          // Normalize character types to valid wizard types
+          const normalizeCharacter = (
+            char: string
+          ): 'mage' | 'archer' | 'duelist' => {
+            const normalized = char?.toLowerCase() ?? 'mage';
+            if (
+              normalized === 'mage' ||
+              normalized === 'archer' ||
+              normalized === 'duelist'
+            ) {
+              return normalized;
+            }
+            return 'mage'; // Default fallback
+          };
+
+          const winnerCharacter = normalizeCharacter(winnerData.wCharacter);
+          const loserCharacter = normalizeCharacter(winnerData.lCharacter);
+
+          // Track quest for winner
+          if (winnerData.wUserId) {
+            if (isBotMatch) {
+              // PvE win
+              await this.questsService.trackPveBattleWin(
+                winnerData.wUserId,
+                winnerCharacter,
+                winnerHpPercentage
+              );
+            } else {
+              // PvP win
+              await this.questsService.trackPvpBattleWin(
+                winnerData.wUserId,
+                winnerCharacter,
+                winnerHpPercentage
+              );
+            }
+            // Track rounds played for winner
+            await this.questsService.trackRoundsPlayed(
+              winnerData.wUserId,
+              roundsPlayed
+            );
+          }
+
+          // Track quest for loser (battle completion, not win)
+          if (winnerData.lUserId) {
+            if (isBotMatch) {
+              // PvE duel completed (loss)
+              await this.questsService.trackPveDuelComplete(winnerData.lUserId);
+            } else {
+              // PvP duel completed (loss)
+              await this.questsService.trackPvpDuelComplete(winnerData.lUserId);
+            }
+            // Track rounds played for loser
+            await this.questsService.trackRoundsPlayed(
+              winnerData.lUserId,
+              roundsPlayed
+            );
+          }
+
+          console.log(
+            `🎯 Quest tracking completed for match ${data.roomId}: ${isBotMatch ? 'PvE' : 'PvP'}, rounds: ${roundsPlayed}`
+          );
+        } catch (questError) {
+          console.error('Failed to track quest progress:', questError);
+          // Don't fail the game end flow if quest tracking fails
+        }
+
         // Immediately destroy room resources when game ends
         try {
           // Use Redis transaction to ensure atomic cleanup
