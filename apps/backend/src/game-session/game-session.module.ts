@@ -7,6 +7,7 @@ import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
 import { BotModule } from '../bot/bot.module';
 import { RedisModule } from '../redis/redis.module';
 import { RewardModule } from '../reward/reward.module';
+import { QuestsModule } from '../quests/quests.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { RewardModule } from '../reward/reward.module';
     RedisModule,
     ScheduleModule.forRoot(), // ✅ Enable cron jobs
     RewardModule, // ✅ Import RewardModule for reward handling
+    QuestsModule, // ✅ Import QuestsModule for quest tracking
   ],
   providers: [
     GameSessionGateway,

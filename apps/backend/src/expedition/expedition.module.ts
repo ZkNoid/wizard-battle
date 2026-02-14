@@ -7,6 +7,7 @@ import { LocationService } from './services/location.service';
 import { ExpeditionController } from './controllers/expedition.controller';
 import { LocationController } from './controllers/location.controller';
 import { UserInventoryModule } from '../user-inventory/user-inventory.module';
+import { QuestsModule } from '../quests/quests.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UserInventoryModule } from '../user-inventory/user-inventory.module';
       { name: Location.name, schema: LocationSchema },
     ]),
     UserInventoryModule, // Import to access UserInventoryService for adding rewards
+    QuestsModule, // Import for quest tracking
   ],
   controllers: [ExpeditionController, LocationController],
   providers: [ExpeditionService, LocationService],

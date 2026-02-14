@@ -10,6 +10,7 @@ import { Location, LocationDocument } from '../schemas/location.schema';
 import { CreateExpeditionDto } from '../dto/create-expedition.dto';
 import { UpdateExpeditionDto } from '../dto/update-expedition.dto';
 import { UserInventoryService } from '../../user-inventory/services/user-inventory.service';
+import { QuestsService } from '../../quests/services/quests.service';
 import type {
   ExpeditionTimePeriod,
   IExpeditionRewardDB,
@@ -46,7 +47,8 @@ export class ExpeditionService {
     private readonly expeditionModel: Model<ExpeditionDocument>,
     @InjectModel(Location.name)
     private readonly locationModel: Model<LocationDocument>,
-    private readonly userInventoryService: UserInventoryService
+    private readonly userInventoryService: UserInventoryService,
+    private readonly questsService: QuestsService
   ) {}
 
   /**
@@ -158,7 +160,16 @@ export class ExpeditionService {
       timeToComplete,
     });
 
-    return newExpedition.save();
+    const savedExpedition = await newExpedition.save();
+
+    // Track quest: Embark on an expedition
+    try {
+      await this.questsService.trackExpeditionStart(dto.userId);
+    } catch (error) {
+      console.error('Failed to track expedition start quest:', error);
+    }
+
+    return savedExpedition;
   }
 
   /**
@@ -256,7 +267,18 @@ export class ExpeditionService {
     }
 
     // Update expedition status
-    return this.updateExpedition(userId, expeditionId, { status: 'completed' });
+    const completedExpedition = await this.updateExpedition(userId, expeditionId, {
+      status: 'completed',
+    });
+
+    // Track quest: Complete an expedition
+    try {
+      await this.questsService.trackExpeditionComplete(userId);
+    } catch (error) {
+      console.error('Failed to track expedition complete quest:', error);
+    }
+
+    return completedExpedition;
   }
 
   /**
