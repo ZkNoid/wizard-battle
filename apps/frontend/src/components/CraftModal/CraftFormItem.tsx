@@ -59,7 +59,6 @@ export function CraftFormItem({
 
       const craftProps: ItemCraftedProps = {
         item_name: recipe.title,
-        item_type: recipe.type,
         resources_used: resourcesUsed,
       };
       trackEvent(AnalyticsEvents.ITEM_CRAFTED, craftProps);
@@ -108,9 +107,10 @@ export function CraftFormItem({
       const failProps: CraftFailedProps = {
         item_name: recipe.title,
         reason: errorMessage,
-        missing_resources: Object.keys(missingResourcesMap).length > 0 
-          ? missingResourcesMap 
-          : undefined,
+        missing_resources:
+          Object.keys(missingResourcesMap).length > 0
+            ? missingResourcesMap
+            : undefined,
       };
       trackEvent(AnalyticsEvents.CRAFT_FAILED, failProps);
 

@@ -23,7 +23,8 @@ export default function NewExpeditionForm({
   onSuccess?: () => void;
 }) {
   const { address } = useMinaAppkit();
-  const { createExpedition, isCreating, getActiveExpeditions } = useExpeditionStore();
+  const { createExpedition, isCreating, getActiveExpeditions } =
+    useExpeditionStore();
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [selectedCharacter, setSelectedCharacter] = useState<
     Field | string | null
@@ -81,13 +82,10 @@ export default function NewExpeditionForm({
 
     if (result) {
       // Track expedition started
-      const durationHours = 
-        selectedTimePeriod === 'short' ? 1 : 
-        selectedTimePeriod === 'medium' ? 4 : 8;
       const expeditionProps: ExpeditionStartedProps = {
         location_id: selectedLocation,
         character_id: selectedCharacter.toString(),
-        duration: durationHours,
+        duration: selectedTimePeriod,
       };
       trackEvent(AnalyticsEvents.EXPEDITION_STARTED, expeditionProps);
 
