@@ -28,7 +28,7 @@ export class CreateExpeditionDto {
   locationId!: string;
 
   @IsNumber()
-  @IsIn([1, 3, 24])
+  @IsIn([1, 3, 8])
   timePeriod!: ExpeditionTimePeriod;
 }
 

@@ -72,8 +72,15 @@ export interface IDead {
 // export interface IGameEnd {
 //   winnerId: string;
 // }
+
+export interface IExperience {
+  winnerXP: number;
+  looserXP: number;
+}
+
 export interface IGameEnd {
   winnerId: string;
+  experience?: IExperience;
   reward?: IReward[];
 }
 
@@ -81,6 +88,12 @@ export interface IReward {
   itemId: string;
   amount: number;
   total: number;
+}
+
+export interface IRandomItem {
+  itemId: string;
+  quantity: number;
+  chance: number;
 }
 
 /**

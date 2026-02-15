@@ -18,51 +18,31 @@ const LOCATIONS = [
     id: 'loc-whisperwood-grove',
     name: 'Whisperwood Grove',
     image: '/locations/forest.png',
-    possibleRewards: [
-      { itemId: 'Amber', amount: 1 },
-      { itemId: 'Resin', amount: 1 },
-      { itemId: 'ManaBark', amount: 1 },
-      { itemId: 'ElvenRune', amount: 1 },
-      { itemId: 'PhoenixEmber', amount: 1 },
-    ],
-    minRewards: 3,
-    maxRewards: 5,
+    biome: 'forest',
+    // Common forest items
+    commonRewards: ['Amber', 'Resin', 'ManaBark'],
+    // Uncommon forest items
+    uncommonRewards: ['ElvenRune', 'PhoenixEmber'],
   },
   {
     id: 'loc-serpentwater-basin',
     name: 'Serpentwater Basin',
     image: '/locations/river.png',
-    possibleRewards: [
-      { itemId: 'Pearl', amount: 1 },
-      { itemId: 'ReedSilk', amount: 1 },
-      { itemId: 'Shell', amount: 1 },
-      { itemId: 'SerpentScale', amount: 1 },
-      { itemId: 'WaterEssence', amount: 1 },
-    ],
-    minRewards: 3,
-    maxRewards: 5,
+    biome: 'water',
+    // Common water items
+    commonRewards: ['Pearl', 'ReedSilk', 'Shell'],
+    // Uncommon water items
+    uncommonRewards: ['SerpentScale', 'WaterEssence'],
   },
   {
     id: 'loc-mount-avalon',
     name: 'Mount Avalon',
     image: '/locations/mountain.png',
-    possibleRewards: [
-      { itemId: 'WerewolfFang', amount: 1 },
-      { itemId: 'Frostdust', amount: 1 },
-      { itemId: 'Glowstone', amount: 1 },
-      { itemId: 'InfusedCrystal', amount: 1 },
-      { itemId: 'AstralAlloy', amount: 1 },
-    ],
-    minRewards: 3,
-    maxRewards: 5,
-  },
-  {
-    id: 'loc-blackfin-hollow',
-    name: 'Blackfin Hollow',
-    image: '/locations/hills.png',
-    possibleRewards: [],
-    minRewards: 0,
-    maxRewards: 0,
+    biome: 'mountains',
+    // Common mountain items
+    commonRewards: ['WerewolfFang', 'Frostdust', 'Glowstone'],
+    // Uncommon mountain items
+    uncommonRewards: ['InfusedCrystal', 'AstralAlloy'],
   },
 ];
 
@@ -102,11 +82,15 @@ async function seedLocations() {
     console.log('\nSeeded locations:');
     LOCATIONS.forEach((loc, index) => {
       console.log(`  ${index + 1}. ${loc.name} (${loc.id})`);
-      console.log(
-        `     - Possible rewards: ${loc.possibleRewards.length} items`
-      );
-      console.log(`     - Rewards range: ${loc.minRewards}-${loc.maxRewards}`);
+      console.log(`     - Biome: ${loc.biome}`);
+      console.log(`     - Common rewards: ${loc.commonRewards.join(', ')}`);
+      console.log(`     - Uncommon rewards: ${loc.uncommonRewards.join(', ')}`);
     });
+    
+    console.log('\n📋 Reward rules by expedition duration:');
+    console.log('  1 hour:  5 x 10% unique + 1 uncommon + 5 common');
+    console.log('  3 hours: 10 x 10% unique + 2 uncommon + 10 common');
+    console.log('  8 hours: 20 x 10% unique + 4 uncommon + 20 common');
   } catch (error) {
     console.error('Error seeding locations:', error);
     process.exit(1);

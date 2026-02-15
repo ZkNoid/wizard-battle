@@ -30,17 +30,33 @@ interface WalletReownProps {
 
 export default function WalletReown({ className }: WalletReownProps = {}) {
   const pathname = usePathname();
-  const isHomePage = pathname === '/';
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const { disconnect } = useDisconnect();
   const { chainId, switchNetwork } = useAppKitNetwork();
   const hasTrackedConnection = useRef(false);
 
-  // Switch to Avalanche chain after wallet connection
+  // Track if this is the initial mount to prevent auto-popup
+  const isInitialMount = useRef(true);
+  const hasAttemptedSwitch = useRef(false);
+
+  // Switch to Avalanche chain only after explicit user connection (not on page load)
   useEffect(() => {
-    if (isConnected && chainId !== avalanche.id) {
+    // Skip network switching on initial mount (when connection is restored from cookies)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Only attempt network switch once per session to avoid popup loops
+    if (isConnected && chainId !== avalanche.id && !hasAttemptedSwitch.current) {
+      hasAttemptedSwitch.current = true;
       switchNetwork(avalanche);
+    }
+
+    // Reset the switch flag when disconnected
+    if (!isConnected) {
+      hasAttemptedSwitch.current = false;
     }
   }, [isConnected, chainId, switchNetwork]);
 

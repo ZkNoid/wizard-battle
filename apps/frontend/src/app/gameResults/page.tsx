@@ -24,17 +24,33 @@ function GameResultsContent() {
   const winnerParam = searchParams.get('winner');
   const isWinner = winnerParam === 'true';
 
-  // Get rewards from URL parameters (Gold only for now)
-  const rewards =
-    searchParams.get('gold') && searchParams.get('total')
-      ? [
-          {
-            itemId: 'Gold',
-            amount: parseInt(searchParams.get('gold')!),
-            total: parseInt(searchParams.get('total')!),
-          },
-        ]
-      : undefined;
+  // Get rewards from URL parameters
+  const rewards = (() => {
+    const rewardMap = new Map<
+      string,
+      { itemId: string; amount: number; total: number }
+    >();
+
+    // Parse all reward_* parameters
+    searchParams.forEach((value, key) => {
+      const match = /^reward_(.+)_(amount|total)$/.exec(key);
+      if (match && value && match[1] && match[2]) {
+        const itemId = match[1];
+        const type = match[2] as 'amount' | 'total';
+        if (!rewardMap.has(itemId)) {
+          rewardMap.set(itemId, { itemId, amount: 0, total: 0 });
+        }
+        const reward = rewardMap.get(itemId)!;
+        if (type === 'amount') {
+          reward.amount = parseInt(value, 10);
+        } else if (type === 'total') {
+          reward.total = parseInt(value, 10);
+        }
+      }
+    });
+
+    return rewardMap.size > 0 ? Array.from(rewardMap.values()) : undefined;
+  })();
 
   // Redirect to home if no address is found
   useEffect(() => {

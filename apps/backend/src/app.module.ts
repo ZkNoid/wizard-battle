@@ -15,6 +15,8 @@ import { GameCharacterModule } from './game-character/game-character.module';
 import { ExpeditionModule } from './expedition/expedition.module';
 import { CraftingModule } from './crafting/crafting.module';
 import { RewardModule } from './reward/reward.module';
+import { UserModule } from './user/user.module';
+import { QuestsModule } from './quests/quests.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { RewardModule } from './reward/reward.module';
       }
     ),
     RewardModule,
+    UserModule,
+    QuestsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, RedisHealthService, GameStateService],

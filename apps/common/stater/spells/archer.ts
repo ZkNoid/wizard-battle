@@ -241,26 +241,25 @@ export const HailOfArrowsModifier = (
 
   stater.applyDamage(damageToApply, opponentState);
 
-  // Slowing effect (provable)
+  // Slowing effect (provable): -1 speed immediately, restore after 2 turns
   const chance = stater.getRandomPercentage();
   const isSlowing = hasDamage.and(chance.lessThan(UInt64.from(20)));
 
+  const currentSpeed = stater.state.playerStats.speed;
+  stater.state.playerStats.speed = Provable.if(
+    isSlowing,
+    currentSpeed.sub(Int64.from(1)),
+    currentSpeed
+  );
+
+  // Push restoration as onEndEffect (fires once when duration expires)
   stater.state.pushEffect(
     new Effect({
       effectId: CircuitString.fromString('SlowingRestoration').hash(),
-      duration: Field.from(3),
-      param: Field(0),
-    }),
-    'endOfRound',
-    isSlowing
-  );
-  stater.state.pushEffect(
-    new Effect({
-      effectId: CircuitString.fromString('Slowing').hash(),
       duration: Field.from(2),
       param: Field(0),
     }),
-    'endOfRound',
+    'onEnd',
     isSlowing
   );
 };

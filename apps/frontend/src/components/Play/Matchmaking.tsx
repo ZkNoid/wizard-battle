@@ -48,7 +48,11 @@ export default function Matchmaking({
   const battleStartTime = useRef<number>(0);
   const hasTrackedFirstBattle = useRef(false);
 
-  const onGameEnd = (winner: boolean, reward?: IReward[]) => {
+  const onGameEnd = (
+    winner: boolean,
+    experience?: number,
+    reward?: IReward[]
+  ) => {
     // Track battle ended
     const battleDuration = Date.now() - battleStartTime.current;
     const battleType = playMode === PlayMode.PVE ? 'PvE' : 'PvP';
@@ -71,14 +75,19 @@ export default function Matchmaking({
     }
 
     setTimeout(() => {
-      const goldReward = reward?.find((item) => item.itemId === 'Gold');
       const params = new URLSearchParams({
         winner: winner.toString(),
-        ...(goldReward && {
-          gold: goldReward.amount.toString(),
-          total: goldReward.total.toString(),
-        }),
+        experience: experience !== undefined ? experience.toString() : '0',
       });
+
+      // Add all rewards to URL params
+      if (reward && reward.length > 0) {
+        reward.forEach((item) => {
+          params.append(`reward_${item.itemId}_amount`, item.amount.toString());
+          params.append(`reward_${item.itemId}_total`, item.total.toString());
+        });
+      }
+
       router.push(`/gameResults?${params.toString()}`);
     }, 1000);
   };

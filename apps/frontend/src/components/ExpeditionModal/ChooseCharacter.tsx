@@ -57,7 +57,7 @@ export default function ChooseCharacter({
           ? 1
           : selectedDuration === '3hour'
             ? 3
-            : 24
+            : 8
         : null
     );
   }, [selectedDuration]);
@@ -125,9 +125,9 @@ export default function ChooseCharacter({
                 className="min-w-28 px-6 py-1 text-xs"
               />
               <Button
-                variant={selectedDuration === '24hour' ? 'blue' : 'gray'}
-                text="24 hour"
-                onClick={() => handleSelectDuration('24hour')}
+                variant={selectedDuration === '8hour' ? 'blue' : 'gray'}
+                text="8 hour"
+                onClick={() => handleSelectDuration('8hour')}
                 className="min-w-28 px-6 py-4 text-sm"
               />
             </div>

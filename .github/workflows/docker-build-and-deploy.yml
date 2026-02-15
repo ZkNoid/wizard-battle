@@ -181,6 +181,11 @@ jobs:
             --build-arg REDIS_URL=${{ secrets.REDIS_URL }} \
             --build-arg WEBSOCKET_URL=${{ secrets.WEBSOCKET_URL }} \
             --build-arg SPELL_CAST_TIMEOUT=${{ secrets.SPELL_CAST_TIMEOUT }} \
+            --build-arg MINA_NETWORK_URL=${{ secrets.MINA_NETWORK_URL }} \
+            --build-arg MINA_ADMIN_PRIVATE_KEY=${{ secrets.MINA_ADMIN_PRIVATE_KEY }} \
+            --build-arg MINA_CONTRACT_ADDRESS=${{ secrets.MINa_CONTRACT_ADDRESS }} \
+            --build-arg BULLMQ_REDIS_HOST=${{ secrets.BULLMQ_REDIS_HOST }} \
+            --build-arg BULLMQ_REDIS_PORT=${{ secrets.BULLMQ_REDIS_PORT }} \
             -t ${{ steps.calc-container.outputs.container_name }} .
 
       - name: Save Docker image to tar

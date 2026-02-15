@@ -1,6 +1,8 @@
 'use client';
 
 import Image from 'next/image';
+import { useEffect } from 'react';
+import { useMinaAppkit } from 'mina-appkit';
 import { SettingsBar } from '../BaseLayout/SettingsBar';
 import Wallet from '../Wallet';
 import WalletReown from '../WalletReown';
@@ -8,18 +10,41 @@ import { Button } from '../shared/Button';
 import BoxButton from '../shared/BoxButton';
 import { Tab } from '@/lib/enums/Tab';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
+import { useInventoryStore } from '@/lib/store/inventoryStore';
 import { TopBarIcon } from '../BaseLayout/assets/top-bar-icon';
+
+// Format large numbers (e.g., 1000000 -> "1M", 1250 -> "1.25K")
+function formatCurrency(value: number): string {
+  if (value >= 1_000_000_000) {
+    return (value / 1_000_000_000).toFixed(value % 1_000_000_000 === 0 ? 0 : 2).replace(/\.?0+$/, '') + 'B';
+  }
+  if (value >= 1_000_000) {
+    return (value / 1_000_000).toFixed(value % 1_000_000 === 0 ? 0 : 2).replace(/\.?0+$/, '') + 'M';
+  }
+  if (value >= 1_000) {
+    return (value / 1_000).toFixed(value % 1_000 === 0 ? 0 : 2).replace(/\.?0+$/, '') + 'K';
+  }
+  return value.toString();
+}
 
 interface HeaderProps {
   onTabChange?: (tab: Tab) => void;
 }
 
 export default function Header({ onTabChange }: HeaderProps) {
+  const { address } = useMinaAppkit();
   const {
     setIsInventoryModalOpen,
     setIsCraftModalOpen,
     setIsExpeditionModalOpen,
   } = useMiscellaneousSessionStore();
+  const { gold, blackOrb, loadCurrencies } = useInventoryStore();
+
+  useEffect(() => {
+    if (address) {
+      loadCurrencies(address);
+    }
+  }, [address, loadCurrencies]);
 
   return (
     <>
@@ -97,7 +122,7 @@ export default function Header({ onTabChange }: HeaderProps) {
               quality={100}
               className="h-8 w-8"
             />
-            <span>100M</span>
+            <span>{formatCurrency(gold)}</span>
           </Button>
           <Button
             variant="gray"
@@ -112,7 +137,7 @@ export default function Header({ onTabChange }: HeaderProps) {
               alt="diamond"
               className="h-7 w-8"
             />
-            <span>1.25K</span>
+            <span>{formatCurrency(blackOrb)}</span>
           </Button>
           <div className="w-40 shrink-0">
             <Wallet />
