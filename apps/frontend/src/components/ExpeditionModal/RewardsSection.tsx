@@ -1,6 +1,6 @@
 'use client';
 
-import { ALL_ITEMS } from '@/lib/constants/items';
+import { api } from '@/trpc/react';
 import { useExpeditionStore } from '@/lib/store/expeditionStore';
 import { useMemo } from 'react';
 
@@ -10,10 +10,11 @@ interface RewardsSectionProps {
 
 export default function RewardsSection({ selectedLocationId }: RewardsSectionProps) {
   const { locations } = useExpeditionStore();
+  const { data: items } = api.items.getAll.useQuery();
 
   // Get the selected location's rewards
   const locationRewards = useMemo(() => {
-    if (!selectedLocationId) return [];
+    if (!selectedLocationId || !items) return [];
 
     const location = locations.find((loc) => loc.id === selectedLocationId);
     if (!location) return [];
@@ -25,9 +26,9 @@ export default function RewardsSection({ selectedLocationId }: RewardsSectionPro
 
     // Map reward IDs to item data
     return allRewardIds
-      .map((rewardId) => ALL_ITEMS.find((item) => item.id === rewardId))
+      .map((rewardId) => items.find((item) => item.id === rewardId))
       .filter((item): item is NonNullable<typeof item> => item !== undefined);
-  }, [selectedLocationId, locations]);
+  }, [selectedLocationId, locations, items]);
 
   if (!selectedLocationId || locationRewards.length === 0) {
     return (
