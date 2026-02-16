@@ -275,10 +275,9 @@ export const ALL_ARMOR_ITEMS: IInventoryArmorItem[] = [
     description: 'A powerful robe imbued with ancient magic',
     rarity: 'uncommon',
     level: 5,
-    buff: [
-      { effect: 'atk', value: 15 },
-      { effect: 'hp', value: 50 },
-    ],
+    buff: {
+      Attack: '15',
+    },
     improvementRequirements: [
       { item: ALL_ITEMS[0]!, amount: 3 },
       { item: ALL_ITEMS[6]!, amount: 2 },
@@ -299,10 +298,10 @@ export const ALL_ARMOR_ITEMS: IInventoryArmorItem[] = [
     description: 'Leggings woven from shadows themselves',
     rarity: 'uncommon',
     level: 4,
-    buff: [
-      { effect: 'dodge', value: 12 },
-      { effect: 'accuracy', value: 8 },
-    ],
+    buff: {
+      Dodge: '12',
+      Accuracy: '8',
+    },
     improvementRequirements: [
       { item: ALL_ITEMS[15]!, amount: 2 },
       { item: ALL_ITEMS[18]!, amount: 4 },
@@ -323,10 +322,9 @@ export const ALL_ARMOR_ITEMS: IInventoryArmorItem[] = [
     description: 'A belt infused with astral energy',
     rarity: 'common',
     level: 3,
-    buff: [
-      { effect: 'hp', value: 50 },
-      { effect: 'accuracy', value: 5 },
-    ],
+    buff: {
+      Accuracy: '5',
+    },
     improvementRequirements: [
       { item: ALL_ITEMS[1]!, amount: 2 },
       { item: ALL_ITEMS[4]!, amount: 3 },
@@ -355,10 +353,9 @@ export const ALL_ACCESSORIES: IInventoryArmorItem[] = [
     description: 'A radiant gem infused with lunar energy',
     rarity: 'uncommon',
     level: 6,
-    buff: [
-      { effect: 'atk', value: 18 },
-      { effect: 'hp', value: 80 },
-    ],
+    buff: {
+      Attack: '18',
+    },
     improvementRequirements: [
       { item: ALL_ITEMS[4]!, amount: 5 },
       { item: ALL_ITEMS[6]!, amount: 3 },
@@ -379,10 +376,10 @@ export const ALL_ACCESSORIES: IInventoryArmorItem[] = [
     description: 'A blood-red gem pulsing with raw power',
     rarity: 'uncommon',
     level: 5,
-    buff: [
-      { effect: 'atk', value: 20 },
-      { effect: 'crit', value: 8 },
-    ],
+    buff: {
+      Attack: '20',
+      critChance: '8',
+    },
     improvementRequirements: [
       { item: ALL_ITEMS[9]!, amount: 4 },
       { item: ALL_ITEMS[2]!, amount: 2 },
@@ -403,10 +400,10 @@ export const ALL_ACCESSORIES: IInventoryArmorItem[] = [
     description: 'A mysterious ring that bends shadows to your will',
     rarity: 'common',
     level: 4,
-    buff: [
-      { effect: 'accuracy', value: 15 },
-      { effect: 'dodge', value: 12 },
-    ],
+    buff: {
+      Accuracy: '15',
+      Dodge: '12',
+    },
     improvementRequirements: [
       { item: ALL_ITEMS[15]!, amount: 3 },
       { item: ALL_ITEMS[16]!, amount: 2 },
@@ -427,10 +424,9 @@ export const ALL_ACCESSORIES: IInventoryArmorItem[] = [
     description: 'An ancient ring inscribed with powerful runes',
     rarity: 'uncommon',
     level: 5,
-    buff: [
-      { effect: 'def', value: 10 },
-      { effect: 'hp', value: 40 },
-    ],
+    buff: {
+      Defence: '10',
+    },
     improvementRequirements: [
       { item: ALL_ITEMS[13]!, amount: 4 },
       { item: ALL_ITEMS[0]!, amount: 3 },
@@ -451,11 +447,10 @@ export const ALL_ACCESSORIES: IInventoryArmorItem[] = [
     description: 'A necklace bearing the eternal flame of the phoenix',
     rarity: 'rare',
     level: 7,
-    buff: [
-      { effect: 'hp', value: 80 },
-      { effect: 'def', value: 15 },
-      { effect: 'atk', value: 10 },
-    ],
+    buff: {
+      Defence: '15',
+      Attack: '10',
+    },
     improvementRequirements: [
       { item: ALL_ITEMS[9]!, amount: 6 },
       { item: ALL_ITEMS[10]!, amount: 4 },
@@ -476,10 +471,10 @@ export const ALL_ACCESSORIES: IInventoryArmorItem[] = [
     description: 'A chilling necklace forged from eternal ice',
     rarity: 'uncommon',
     level: 6,
-    buff: [
-      { effect: 'atk', value: 22 },
-      { effect: 'accuracy', value: 10 },
-    ],
+    buff: {
+      Attack: '22',
+      Accuracy: '10',
+    },
     improvementRequirements: [
       { item: ALL_ITEMS[5]!, amount: 5 },
       { item: ALL_ITEMS[24]!, amount: 3 },
@@ -500,10 +495,10 @@ export const ALL_ACCESSORIES: IInventoryArmorItem[] = [
     description: 'A sinister necklace crafted from serpent scales',
     rarity: 'uncommon',
     level: 5,
-    buff: [
-      { effect: 'atk', value: 18 },
-      { effect: 'def', value: 10 },
-    ],
+    buff: {
+      Attack: '18',
+      Defence: '10',
+    },
     improvementRequirements: [
       { item: ALL_ITEMS[14]!, amount: 4 },
       { item: ALL_ITEMS[17]!, amount: 3 },

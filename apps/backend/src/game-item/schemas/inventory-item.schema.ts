@@ -23,11 +23,23 @@ export type {
 
 @Schema({ _id: false })
 export class ItemBuff implements IItemBuff {
-  @Prop({ required: true })
-  effect!: string;
+  @Prop()
+  critChance?: string;
 
-  @Prop({ required: true })
-  value!: number;
+  @Prop()
+  Accuracy?: string;
+
+  @Prop()
+  Attack?: string;
+
+  @Prop()
+  Dodge?: string;
+
+  @Prop()
+  Movement?: string;
+
+  @Prop()
+  Defence?: string;
 }
 
 @Schema({ _id: false })
@@ -81,8 +93,8 @@ export class InventoryItem {
   @Prop()
   level?: number;
 
-  @Prop({ type: [ItemBuff], default: [] })
-  buff?: ItemBuff[];
+  @Prop({ type: ItemBuff })
+  buff?: ItemBuff;
 
   @Prop({ type: [ImprovementRequirement], default: [] })
   improvementRequirements?: ImprovementRequirement[];
