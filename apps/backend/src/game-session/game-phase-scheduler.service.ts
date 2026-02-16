@@ -70,7 +70,7 @@ export class GamePhaseSchedulerService {
    * @dev If no one submits → draw. If some submit and others don't → non-submitters lose.
    *
    * */
-  @Cron('*/5 * * * * *')
+  @Cron('*/2 * * * * *')
   async enforceSpellCastingTimeouts() {
     if (!(await this.withRetry(() => this.isLeader()))) return;
     try {
@@ -171,12 +171,21 @@ export class GamePhaseSchedulerService {
             const res = await this.withRetry(() =>
               this.gameStateService.markPlayerDead(roomId, p.id)
             );
-            if (res && typeof res === 'object' && 'playerId' in res) {
+            if (res && typeof res === 'object' && 'wPlayerId' in res) {
               winnerId = res.wPlayerId; // If this was the last alive player, we have a winner
             }
           }
 
           if (winnerId) {
+            console.log(
+              `🏆 Game finished - winner declared: ${winnerId} in room ${roomId}`
+            );
+            // Update game status to finished
+            await this.withRetry(() =>
+              this.gameStateService.updateGameState(roomId, {
+                status: 'finished',
+              })
+            );
             const gameEnd = { winnerId };
             console.log(
               `📢 Broadcasting game end for room ${roomId}, winner: ${winnerId}`
@@ -209,9 +218,63 @@ export class GamePhaseSchedulerService {
               );
             }
           } else {
-            console.log(
-              `🎮 Room ${roomId} continues after removing non-submitters (multiple submitters alive)`
+            // Multiple submitters still alive - determine winner from remaining players
+            const remainingPlayers = gameState.players.filter((p) => p.isAlive);
+            if (remainingPlayers.length === 1) {
+              // Should have been caught above, but safety check
+              winnerId = remainingPlayers[0]!.id;
+              console.log(
+                `🏆 Game finished - last player remaining: ${winnerId} in room ${roomId}`
+              );
+              await this.withRetry(() =>
+                this.gameStateService.updateGameState(roomId, {
+                  status: 'finished',
+                })
+              );
+              const gameEnd = { winnerId };
+              this.gameSessionGateway.server.to(roomId).emit('gameEnd', gameEnd);
+              await this.withRetry(() =>
+                this.gameStateService.publishToRoom(roomId, 'gameEnd', gameEnd)
+              );
+            } else {
+              // Multiple players still alive - it's a draw
+              console.log(
+                `🤝 Game finished as draw - multiple players still alive in room ${roomId}`
+              );
+              await this.withRetry(() =>
+                this.gameStateService.updateGameState(roomId, {
+                  status: 'finished',
+                })
+              );
+              const gameEnd = { winnerId: 'draw' };
+              this.gameSessionGateway.server.to(roomId).emit('gameEnd', gameEnd);
+              await this.withRetry(() =>
+                this.gameStateService.publishToRoom(roomId, 'gameEnd', gameEnd)
+              );
+            }
+            await this.withRetry(() =>
+              this.gameStateService.markRoomForCleanup(
+                roomId,
+                'spell_casting_timeout_completed'
+              )
             );
+            // Remove match and game state to allow rematch
+            try {
+              await this.withRetry(() =>
+                this.gameStateService.removeGameState(roomId)
+              );
+              await this.withRetry(() =>
+                this.gameStateService.redisClient.hDel('matches', roomId)
+              );
+              console.log(
+                `🗑️ Cleared match and state for completed game in room ${roomId}`
+              );
+            } catch (cleanupErr) {
+              console.error(
+                `Failed to clear room ${roomId} after completion:`,
+                cleanupErr
+              );
+            }
           }
         }
       }
