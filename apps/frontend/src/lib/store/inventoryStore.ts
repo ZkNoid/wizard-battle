@@ -46,6 +46,16 @@ const getWizardDefaultStats = (wizardId: string): IHeroStats => {
   };
 };
 
+// Mapping from buff keys to IHeroStats keys
+const buffToStatKeyMap: Record<string, keyof IHeroStats> = {
+  critChance: 'crit',
+  Accuracy: 'accuracy',
+  Attack: 'atk',
+  Dodge: 'dodge',
+  Defence: 'def',
+  // Movement has no direct mapping in IHeroStats
+};
+
 // Helper function to calculate stats from equipped items
 const calculateStats = (
   equippedSlots: EquippedSlots,
@@ -56,12 +66,14 @@ const calculateStats = (
   Object.values(equippedSlots).forEach((userItem) => {
     if (userItem && userItem.item.type === 'armor') {
       const armorItem = userItem.item as IInventoryArmorItem;
-      armorItem.buff.forEach((buff) => {
-        const statKey = buff.effect as keyof IHeroStats;
-        if (statKey in stats) {
-          stats[statKey] += buff.value;
-        }
-      });
+      if (armorItem.buff) {
+        Object.entries(armorItem.buff).forEach(([buffKey, buffValue]) => {
+          const statKey = buffToStatKeyMap[buffKey];
+          if (statKey && statKey in stats && buffValue) {
+            stats[statKey] += Number(buffValue);
+          }
+        });
+      }
     }
   });
 

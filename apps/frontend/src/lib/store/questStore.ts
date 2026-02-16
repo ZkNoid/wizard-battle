@@ -334,7 +334,7 @@ export const useQuestStore = create<QuestStore>()((set, get) => ({
         ],
       },
       {
-        title: 'Tier 6: Leave feedback',
+        title: 'Tier 6: Leave feedback(Available after 23.02.2026)',
         points: 30,
         items: [
           {

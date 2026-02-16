@@ -103,10 +103,10 @@ export default function Game({
             }
           />
           <ActionsBg
-            className="absolute left-0 top-0 z-[1] -ml-10 size-28"
+            className="absolute left-0 top-0 z-[2] -ml-10 size-28"
             actionInfo={actionInfo}
           />
-          <SkillsBg className="absolute inset-0 size-full" />
+          <SkillsBg className="absolute inset-0 -z-[1] size-full" />
         </div>
         <div className="flex h-28 flex-row items-end gap-2.5">
           <Clock />
