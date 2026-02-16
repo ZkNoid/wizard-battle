@@ -8,8 +8,6 @@ import type {
   IExpeditionDB,
   IExpeditionReward,
   ILocation,
-  ILocationDB,
-  ExpeditionTimePeriod,
 } from '@wizard-battle/common';
 
 const client = await clientPromise;
@@ -18,89 +16,6 @@ const db = client?.db(env.MONGODB_DB);
 const expeditionsCollection = 'expeditions';
 const locationsCollection = 'locations';
 const itemsCollection = 'iteminventory';
-
-// Helper to convert time period to milliseconds
-function timePeriodToMs(timePeriod: ExpeditionTimePeriod): number {
-  const hours = timePeriod;
-  return hours * 60 * 60 * 1000;
-}
-
-// Unique items pool - can drop from any location with 10% chance per roll
-const UNIQUE_ITEMS_POOL: string[] = [
-  'BlackOrb',
-  'ShardOfIllusion',
-  'SilverThread',
-  'ChainLink',
-  'ReinforcedPadding',
-  'ShadowstepLeather',
-];
-
-// Reward configuration per time period
-const REWARD_CONFIG: Record<
-  ExpeditionTimePeriod,
-  {
-    uniqueRolls: number;
-    uniqueChance: number;
-    uncommonCount: number;
-    commonCount: number;
-  }
-> = {
-  1: { uniqueRolls: 5, uniqueChance: 0.1, uncommonCount: 1, commonCount: 5 },
-  3: { uniqueRolls: 10, uniqueChance: 0.1, uncommonCount: 2, commonCount: 10 },
-  8: { uniqueRolls: 20, uniqueChance: 0.1, uncommonCount: 4, commonCount: 20 },
-};
-
-// Generate rewards based on time period and location biome
-function generateRewards(
-  commonRewards: string[],
-  uncommonRewards: string[],
-  timePeriod: ExpeditionTimePeriod
-): { itemId: string; amount: number }[] {
-  const config = REWARD_CONFIG[timePeriod];
-  const rewards = new Map<string, number>();
-
-  const addReward = (itemId: string, amount: number) => {
-    rewards.set(itemId, (rewards.get(itemId) ?? 0) + amount);
-  };
-
-  // Roll for unique items (X rolls at 10% chance each)
-  for (let i = 0; i < config.uniqueRolls; i++) {
-    if (Math.random() < config.uniqueChance) {
-      const randomUnique =
-        UNIQUE_ITEMS_POOL[Math.floor(Math.random() * UNIQUE_ITEMS_POOL.length)];
-      if (randomUnique) {
-        addReward(randomUnique, 1);
-      }
-    }
-  }
-
-  // Add guaranteed uncommon items from biome
-  if (uncommonRewards.length > 0) {
-    for (let i = 0; i < config.uncommonCount; i++) {
-      const randomUncommon =
-        uncommonRewards[Math.floor(Math.random() * uncommonRewards.length)];
-      if (randomUncommon) {
-        addReward(randomUncommon, 1);
-      }
-    }
-  }
-
-  // Add guaranteed common items from biome
-  if (commonRewards.length > 0) {
-    for (let i = 0; i < config.commonCount; i++) {
-      const randomCommon =
-        commonRewards[Math.floor(Math.random() * commonRewards.length)];
-      if (randomCommon) {
-        addReward(randomCommon, 1);
-      }
-    }
-  }
-
-  return Array.from(rewards.entries()).map(([itemId, amount]) => ({
-    itemId,
-    amount,
-  }));
-}
 
 // Helper to populate expedition rewards with item data
 async function populateExpeditionRewards(
@@ -270,131 +185,125 @@ export const expeditionsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      if (!db) {
+      // Call the backend NestJS expedition endpoint
+      const backendUrl = env.BACKEND_URL || 'http://localhost:3030';
+
+      try {
+        const response = await fetch(`${backendUrl}/expeditions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: input.userId,
+            characterId: input.characterId,
+            characterRole: input.characterRole,
+            characterImage: input.characterImage,
+            locationId: input.locationId,
+            timePeriod: input.timePeriod,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Backend expedition create error:', errorData);
+
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: errorData.message || 'Failed to create expedition',
+          });
+        }
+
+        const expedition = (await response.json()) as IExpeditionDB;
+        return populateExpedition(expedition);
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        console.error('Expedition create error:', error);
+
+        const isNetworkError =
+          error instanceof TypeError ||
+          (error instanceof Error &&
+            (error.message.includes('fetch') ||
+              error.message.includes('ECONNREFUSED') ||
+              error.message.includes('network')));
+
+        if (isNetworkError) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: `Backend service unavailable: ${error instanceof Error ? error.message : 'Connection failed'}`,
+            cause: error,
+          });
+        }
+
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Database not connected',
+          message: `Failed to create expedition: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          cause: error,
         });
       }
-
-      // Check if character is already in an active expedition
-      const existingExpedition = await db
-        .collection(expeditionsCollection)
-        .findOne({
-          userId: input.userId,
-          characterId: input.characterId,
-          status: 'active',
-        });
-
-      if (existingExpedition) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'This wizard is already on an active expedition',
-        });
-      }
-
-      // Get location data
-      const location = (await db
-        .collection(locationsCollection)
-        .findOne({ id: input.locationId })) as unknown as ILocationDB | null;
-
-      if (!location) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: `Location with id "${input.locationId}" not found`,
-        });
-      }
-
-      // Generate rewards based on time period and location biome
-      const selectedRewards = generateRewards(
-        location.commonRewards ?? [],
-        location.uncommonRewards ?? [],
-        input.timePeriod
-      );
-
-      const timeToComplete = timePeriodToMs(input.timePeriod);
-      const now = new Date();
-
-      const newExpedition: IExpeditionDB = {
-        id: `exp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        userId: input.userId,
-        characterId: input.characterId,
-        characterRole: input.characterRole,
-        characterImage: input.characterImage,
-        locationId: input.locationId,
-        locationName: location.name,
-        rewards: selectedRewards,
-        status: 'active',
-        createdAt: now,
-        updatedAt: now,
-        startedAt: now,
-        completesAt: new Date(now.getTime() + timeToComplete),
-        timeToComplete,
-      };
-
-      await db.collection(expeditionsCollection).insertOne(newExpedition);
-
-      return populateExpedition(newExpedition);
     }),
 
   // Complete an expedition (claim rewards)
   completeExpedition: publicProcedure
     .input(z.object({ id: z.string(), userId: z.string() }))
     .mutation(async ({ input }) => {
-      if (!db) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Database not connected',
-        });
-      }
+      // Call the backend NestJS expedition complete endpoint
+      const backendUrl = env.BACKEND_URL || 'http://localhost:3030';
 
-      // Atomically update expedition status from active to completed
-      // This prevents double-claiming by ensuring only one request can successfully update
-      const updateResult = await db
-        .collection(expeditionsCollection)
-        .findOneAndUpdate(
+      try {
+        const response = await fetch(
+          `${backendUrl}/expeditions/${input.userId}/${input.id}/complete`,
           {
-            id: input.id,
-            userId: input.userId,
-            status: { $ne: 'completed' }, // Only update if not already completed
-          },
-          {
-            $set: {
-              status: 'completed',
-              updatedAt: new Date(),
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
             },
-          },
-          {
-            returnDocument: 'after',
           }
         );
 
-      if (!updateResult) {
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Backend expedition complete error:', errorData);
+
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: errorData.message || 'Failed to complete expedition',
+          });
+        }
+
+        const expedition = (await response.json()) as IExpeditionDB;
+        return populateExpedition(expedition);
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        console.error('Expedition complete error:', error);
+
+        const isNetworkError =
+          error instanceof TypeError ||
+          (error instanceof Error &&
+            (error.message.includes('fetch') ||
+              error.message.includes('ECONNREFUSED') ||
+              error.message.includes('network')));
+
+        if (isNetworkError) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: `Backend service unavailable: ${error instanceof Error ? error.message : 'Connection failed'}`,
+            cause: error,
+          });
+        }
+
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Expedition not found or already completed',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to complete expedition: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          cause: error,
         });
       }
-
-      const expedition = updateResult as unknown as IExpeditionDB;
-
-      // Add rewards to user inventory
-      for (const reward of expedition.rewards) {
-        // Use upsert with $inc to handle both new and existing items atomically
-        await db.collection('userinventory').updateOne(
-          { userId: input.userId, itemId: reward.itemId },
-          {
-            $inc: { quantity: reward.amount },
-            $setOnInsert: {
-              acquiredAt: new Date(),
-              acquiredFrom: 'reward',
-            },
-          },
-          { upsert: true }
-        );
-      }
-
-      return populateExpedition(expedition);
     }),
 
   // Interrupt/cancel an expedition
