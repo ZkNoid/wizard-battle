@@ -93,18 +93,30 @@ export class Stater extends Struct({
 
   applyDamage(damage: UInt64, opponentState: State) {
     // Check dodge and accuracy
-    const hitChance = opponentState.playerStats.accuracy
-      .mul(this.state.playerStats.dodgeChance)
+    // hitChance = (accuracy + 100) * (100 - dodgeChance) / 100
+    const hitChance = opponentState.playerStats.accuracy.add(CALCULATION_PRECISION)
+      .mul(UInt64.from(CALCULATION_PRECISION).sub(this.state.playerStats.dodgeChance))
       .div(CALCULATION_PRECISION);
     const dodgeRandomPercentage = this.getRandomPercentage();
     const isHit = dodgeRandomPercentage.lessThan(hitChance);
 
-    // Calculate damage (damage * defense * crit * accuracy)
+    // Calculate damage: fullDamage = damage * attack / defense
+    // All values are percentages where 100 = base (100%)
+    // - attack = 100: base damage, attack = 150: 150% damage
+    // - defense = 100: full damage taken, defense = 150: 67% damage taken (tanky)
+    // - defense = 50: 200% damage taken (vulnerable)
     const fullDamage = damage
       .mul(opponentState.playerStats.attack)
-      .mul(this.state.playerStats.defense)
-      .div(CALCULATION_PRECISION);
+      .div(this.state.playerStats.defense);
     const finalDamage = Provable.if(isHit, fullDamage, UInt64.from(0));
+
+    console.log('hitChance', hitChance);
+    console.log('dodgeRandomPercentage', dodgeRandomPercentage);
+    console.log('isHit', isHit);
+    console.log('damage', damage.toString());
+    console.log('defense', this.state.playerStats.defense.toString());
+    console.log('fullDamage', fullDamage.toString());
+    console.log('finalDamage', finalDamage.toString());
 
     this.state.playerStats.hp = this.state.playerStats.hp.sub(finalDamage);
   }
@@ -146,7 +158,11 @@ export class Stater extends Struct({
       throw new Error('No such effectInfo');
     }
 
-    // Store original states before applying
+    // Decrement duration FIRST, before any state copying
+    effect.duration = effect.duration.sub(Field.from(1));
+    const isExpired = effect.duration.equals(Field.from(0));
+
+    // Store original states before applying (now with decremented duration)
     const originalState = this.state.copy();
     const originalPublicState = publicState.copy();
 
@@ -154,10 +170,9 @@ export class Stater extends Struct({
     console.log('applyOnEndEffect', effectInfo.name);
     effectInfo.apply(this.state, publicState, effect.param);
 
-    effect.duration = effect.duration.sub(Field.from(1));
-    const isExpired = effect.duration.equals(Field.from(0));
-
     // Provably select: keep new state only if expired, otherwise restore original
+    // Note: onEndEffects are NOT restored - we always keep the current effects
+    // with their decremented durations
     const selectedState = Provable.if(
       isExpired,
       State,
@@ -171,7 +186,7 @@ export class Stater extends Struct({
       spellStats: selectedState.spellStats,
       endOfRoundEffects: selectedState.endOfRoundEffects,
       publicStateEffects: selectedState.publicStateEffects,
-      onEndEffects: selectedState.onEndEffects,
+      onEndEffects: this.state.onEndEffects, // Always keep current effects with decremented durations
       map: selectedState.map,
       turnId: selectedState.turnId,
       randomSeed: selectedState.randomSeed,
@@ -191,11 +206,12 @@ export class Stater extends Struct({
     publicState.spellStats = selectedPublicState.spellStats;
     publicState.endOfRoundEffects = selectedPublicState.endOfRoundEffects;
     publicState.publicStateEffects = selectedPublicState.publicStateEffects;
-    publicState.onEndEffects = selectedPublicState.onEndEffects;
+    publicState.onEndEffects = publicState.onEndEffects; // Keep current effects with decremented durations
     publicState.map = selectedPublicState.map;
     publicState.turnId = selectedPublicState.turnId;
     publicState.randomSeed = selectedPublicState.randomSeed;
 
+    // Clear effectId if expired
     effect.effectId = Provable.if(isExpired, Field(0), effect.effectId);
   }
 
@@ -412,8 +428,8 @@ export class Stater extends Struct({
       },
       signature: minaClient.signFields(
         [stateHash.toBigInt()],
-        this.state.signingKey.toString()
-      ),
+        this.state.signingKey.toBase58()
+      ).signature,
     };
   }
 }

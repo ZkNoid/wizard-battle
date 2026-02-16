@@ -8,6 +8,7 @@ import { Clock } from './Clock';
 import { Users } from './Users';
 import { useRouter } from 'next/navigation';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
+import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 import { spellIdToSpell } from '@/lib/utils';
 import { TilemapBg } from './assets/tilemap-bg';
 import { QuestionmarkIcon } from './assets/questionmark-icon';
@@ -15,17 +16,21 @@ import { SkillsBg } from './assets/skills-bg';
 import { ActionsBg } from './assets/actions-bg';
 import type { SpellStats } from '../../../../common/stater/structs';
 import Image from 'next/image';
+import type { IUserAction } from 'node_modules/@wizard-battle/common/types/gameplay.types';
 
 export default function Game({
   children,
   actionInfo,
+  preparedActions,
 }: {
   children: [ReactNode, ReactNode];
   actionInfo?: { movementDone: boolean; spellCastDone: boolean };
+  preparedActions?: IUserAction[];
 }) {
   const router = useRouter();
   const { stater } = useUserInformationStore();
   const { gamePhaseManager } = useUserInformationStore();
+  const { setIsQuickGuideModalOpen } = useMiscellaneousSessionStore();
 
   return (
     <div className="px-57 grid size-full flex-grow grid-cols-6 grid-rows-6 gap-5 pt-20">
@@ -40,7 +45,7 @@ export default function Game({
       </div>
 
       <div className="col-span-6 row-span-1 row-start-6 flex flex-row items-center gap-5">
-        <div className="w-65 flex h-28 flex-row items-end gap-2.5">
+        <div className="w-65 mr-5 flex h-28 flex-row items-end gap-2.5">
           <Button
             variant="blue"
             className="h-16 w-40"
@@ -58,9 +63,7 @@ export default function Game({
             color="gray"
             className="size-14"
             onClick={() => {
-              alert(
-                `movementDone: ${actionInfo?.movementDone}, spellCastDone: ${actionInfo?.spellCastDone}`
-              );
+              setIsQuickGuideModalOpen(true);
             }}
           >
             <Image
@@ -74,7 +77,11 @@ export default function Game({
             />
           </BoxButton>
         </div>
-        <div className="w-220 relative h-28">
+        <div className="relative flex h-28 flex-row items-center">
+          <ActionsBg
+            className="size-28 shrink-0"
+            actionInfo={actionInfo}
+          />
           <Spells
             // DEBUG FOR TESTING
             // skills={Array.from({ length: 5 }).map((_, idx) => ({
@@ -99,13 +106,25 @@ export default function Game({
                 .filter((spell) => spell !== undefined) ?? []
             }
           />
-          <ActionsBg
-            className="absolute left-0 top-0 z-[1] -ml-10 size-28"
-            actionInfo={actionInfo}
-          />
-          <SkillsBg className="absolute inset-0 size-full" />
+          <SkillsBg className="absolute inset-0 -z-[1] size-full" />
         </div>
-        <Clock />
+        <div className="flex h-28 flex-row items-end gap-2.5">
+          <Clock />
+          <Button
+            variant="gray"
+            className="h-28 w-40"
+            onClick={() => {
+              gamePhaseManager?.submitPlayerActions({
+                actions: preparedActions ?? [],
+                signature: 'test_signature',
+              });
+            }}
+            text="End turn"
+          />
+          <BoxButton className="size-14" onClick={() => {}} disabled={true}>
+            <span className="text-main-gray text-sm">...</span>
+          </BoxButton>
+        </div>
       </div>
     </div>
   );

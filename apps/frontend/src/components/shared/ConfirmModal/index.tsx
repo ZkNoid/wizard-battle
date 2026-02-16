@@ -1,6 +1,5 @@
-import { Button } from "../Button";
-import { ConfirmModalBg } from "./assets/confirm-modal-bg";
-
+import { Button } from '../Button';
+import { ConfirmModalBg } from './assets/confirm-modal-bg';
 
 interface ConfirmModalProps {
   title: string;
@@ -11,22 +10,37 @@ interface ConfirmModalProps {
   cancelButtonText?: string;
 }
 
-export default function ConfirmModal({ title, description, onConfirm, onCancel, confirmButtonText = 'Confirm', cancelButtonText = 'Cancel' }: ConfirmModalProps) {
+export default function ConfirmModal({
+  title,
+  description,
+  onConfirm,
+  onCancel,
+  confirmButtonText = 'Confirm',
+  cancelButtonText = 'Cancel',
+}: ConfirmModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 font-pixel text-main-gray">
-      <div className="relative w-70 h-70" onClick={(e) => e.stopPropagation()}>
+    <div className="font-pixel text-main-gray fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-70 h-70 relative" onClick={(e) => e.stopPropagation()}>
         <div className="relative z-10 flex h-full w-full flex-col items-center justify-between gap-2">
-          <h1 className="text-xl text-main-gray text-center leading-relaxed mt-4">
+          <h1 className="text-main-gray mt-4 text-center text-xl leading-relaxed">
             {title}
           </h1>
-          <p className="text-xs text-main-gray text-center leading-relaxed px-4 font-thin">
+          <p className="text-main-gray px-4 text-center text-xs font-thin leading-relaxed">
             {description}
           </p>
-          <div className="flex w-full gap-1 mb-4 px-3">
-            <Button variant="red" onClick={onCancel} className="flex-1 h-12 px-2 text-sm">
+          <div className="mb-4 flex w-full gap-1 px-3">
+            <Button
+              variant="red"
+              onClick={onCancel}
+              className="h-12 flex-1 px-2 text-sm"
+            >
               {cancelButtonText}
             </Button>
-            <Button variant="green" onClick={onConfirm} className="flex-1 h-12 px-2 text-sm">
+            <Button
+              variant="green"
+              onClick={onConfirm}
+              className="h-12 flex-1 px-2 text-sm"
+            >
               {confirmButtonText}
             </Button>
           </div>

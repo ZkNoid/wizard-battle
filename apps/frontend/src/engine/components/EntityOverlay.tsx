@@ -4,6 +4,9 @@ import { RedSquare } from '../entities/RedSquare';
 import { BlueSquare } from '../entities/BlueSquare';
 import { AnimatedWizard } from '../entities/AnimatedWizard';
 import { AnimatedArcher } from '../entities/AnimatedArcher';
+import { AnimatedPhantomDuelist } from '../entities/AnimatedPhantomDuelist';
+import { SpectralPhantomDuelist } from '../entities/AnimatedSpectralPhantomDuelist';
+import { Decoy } from '../entities/Decoy';
 import { EntityType } from '../types/IEntity';
 
 interface EntityOverlayProps {
@@ -67,6 +70,13 @@ export function EntityOverlay({
             {entity.type === EntityType.ARCHER && (
               <AnimatedArcher entity={entity} />
             )}
+            {entity.type === EntityType.PHANTOM_DUELIST && (
+              <AnimatedPhantomDuelist entity={entity} />
+            )}
+            {entity.type === EntityType.SPECTRAL_PHANTOM_DUELIST && (
+              <SpectralPhantomDuelist entity={entity} />
+            )}
+            {entity.type === EntityType.DECOY && <Decoy entity={entity} />}
           </div>
         );
       })}

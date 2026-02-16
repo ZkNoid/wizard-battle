@@ -1,32 +1,69 @@
 'use client';
 
-import { useState } from 'react';
-import { CURRENT_EXPEDITIONS } from '@/lib/constants/expedition';
+import { useState, useEffect } from 'react';
+import { useExpeditionStore } from '@/lib/store/expeditionStore';
 import CurrentExpeditionCard from './CurrentExpeditionCard';
-import Image from 'next/image';
-import ExpeditionModalTitle from './components/ExpeditionModalTitle';
+import ModalTitle from '../shared/ModalTitle';
 import ConfirmModal from '../shared/ConfirmModal';
+import { useMinaAppkit } from 'mina-appkit';
+import { useInventoryStore } from '@/lib/store';
 
 export default function CurrentExpeditionsForm({
   onClose,
 }: {
   onClose: () => void;
 }) {
+  const { address } = useMinaAppkit();
+  const {
+    expeditions,
+    isLoading,
+    completeExpedition,
+    interruptExpedition,
+    loadUserExpeditions,
+  } = useExpeditionStore();
+  const { loadUserInventory } = useInventoryStore();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [selectedExpeditionId, setSelectedExpeditionId] = useState<string | null>(null);
+  const [selectedExpeditionId, setSelectedExpeditionId] = useState<
+    string | null
+  >(null);
+
+  // Load expeditions when component mounts or address changes
+  useEffect(() => {
+    if (address) {
+      loadUserExpeditions(address);
+    }
+  }, [address, loadUserExpeditions]);
+
+  // Filter to show active expeditions
+  const activeExpeditions = expeditions.filter(
+    (exp) => exp.status === 'active'
+  );
 
   const onInterruptExpedition = (expeditionId: string) => {
     setSelectedExpeditionId(expeditionId);
     setShowConfirmModal(true);
   };
+  const onCompleteExpedition = async (expeditionId: string) => {
+    setSelectedExpeditionId(expeditionId);
+    await handleConfirmComplition();
+    if (address) {
+      await loadUserInventory(address);
+    }
+  };
 
-  const handleConfirmInterrupt = () => {
-    if (selectedExpeditionId) {
-      console.log(`Interrupting expedition ${selectedExpeditionId}`);
-      // Здесь будет логика прерывания экспедиции
+  const handleConfirmInterrupt = async () => {
+    if (selectedExpeditionId && address) {
+      await interruptExpedition(address, selectedExpeditionId);
+      await loadUserInventory(address);
     }
     setShowConfirmModal(false);
     setSelectedExpeditionId(null);
+  };
+
+  const handleConfirmComplition = async () => {
+    if (selectedExpeditionId && address) {
+      await completeExpedition(address, selectedExpeditionId);
+    }
   };
 
   const handleCancelInterrupt = () => {
@@ -36,17 +73,26 @@ export default function CurrentExpeditionsForm({
 
   return (
     <div className="flex h-full flex-col">
-      <ExpeditionModalTitle title="Current Expeditions" onClose={onClose} />
+      <ModalTitle title="Current Expeditions" onClose={onClose} />
 
       {/* Scrollable Expeditions List */}
       <div className="flex-1 overflow-y-auto pb-2 pr-2">
         <div className="flex flex-col gap-2">
-          {CURRENT_EXPEDITIONS.length > 0 ? (
-            CURRENT_EXPEDITIONS.map((expedition) => (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <span className="font-['Press_Start_2P'] text-xl text-gray-500">
+                Loading...
+              </span>
+            </div>
+          ) : activeExpeditions.length > 0 ? (
+            activeExpeditions.map((expedition) => (
               <CurrentExpeditionCard
                 key={expedition.id}
                 expedition={expedition}
-                onInterruptExpedition={() => onInterruptExpedition(expedition.id)}
+                onInterruptExpedition={() =>
+                  onInterruptExpedition(expedition.id)
+                }
+                onCompleteExpedition={() => onCompleteExpedition(expedition.id)}
               />
             ))
           ) : (

@@ -1,11 +1,11 @@
 export enum PlaySteps {
-  SELECT_MODE = "select-mode",
-  SELECT_CHARACTER = "select-character",
-  SELECT_MAP = "select-map",
-  MATCHMAKING = "matchmaking",
-  PLAY = "play",
-  WIN = "win",
-  LOSE = "lose",
+  SELECT_MODE = 'select-mode',
+  SELECT_CHARACTER = 'select-character',
+  SELECT_MAP = 'select-map',
+  MATCHMAKING = 'matchmaking',
+  PLAY = 'play',
+  WIN = 'win',
+  LOSE = 'lose',
 }
 
 export const PlayStepOrder = [

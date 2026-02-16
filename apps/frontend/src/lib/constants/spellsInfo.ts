@@ -104,7 +104,7 @@ const phantomDuelistSpells = [
     tags: [SpellTag.Summon, SpellTag.Opponent],
   },
   {
-    image: '/wizards/skills/dusksEmbrace.png',
+    image: '/wizards/skills/duskEmbrace.png',
     title: 'DusksEmbrace',
     description:
       'Deal 50 damage to a horizontal line and apply Weaken (-30% Defence) for 2 turns if hit.',

@@ -44,7 +44,7 @@ contract HelperConfig is Script {
         });
     }
 
-    function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory anvilConfig) {
+    function getOrCreateAnvilEthConfig() public view returns (NetworkConfig memory anvilConfig) {
         if (activeNetworkConfig.gameSigner != address(0)) {
             return activeNetworkConfig;
         }

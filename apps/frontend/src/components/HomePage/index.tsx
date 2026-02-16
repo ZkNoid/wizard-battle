@@ -5,27 +5,16 @@ import { useEffect, useState } from 'react';
 import { Tab } from '@/lib/enums/Tab';
 import HowToPlay from '../HowToPlay';
 import Support from '../Support';
-import { TopBarIcon } from '../BaseLayout/assets/top-bar-icon';
 import Image from 'next/image';
-// import background from '../../../public/menu/background.svg';
-// import hoverCraft from '../../../public/menu/hover-craft.png';
-// import hoverExpeditions from '../../../public/menu/hover-expeditions.png';
-// import hoverPVP from '../../../public/menu/hover-pvp.png';
-// import hoverMarket from '../../../public/menu/hover-market.png';
-// import hoverMarketSmall from '../../../public/menu/hover-market-small.svg';
-// import hoverCharacters from '../../../public/menu/hover-characters.png';
-import { SettingsBar } from '../BaseLayout/SettingsBar';
-import Wallet from '../Wallet';
-import { Button } from '../shared/Button';
-import BoxButton from '../shared/BoxButton';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useMinaAppkit } from 'mina-appkit';
-import InventoryModal from '../InventoryModal';
 import WelcomeScreen from '../WelcomeScreen';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
-import CraftModal from '../CraftModal';
-import ExpeditionModal from '../ExpeditionModal';
+import { useBackgroundMusic, usePreloadMusic } from '@/lib/hooks/useAudio';
+import Header from '../Header';
+import Modals from '../Header/Modals';
+import { Button } from '../shared/Button';
 
 enum TabHover {
   CRAFT,
@@ -40,18 +29,46 @@ export default function HomePage() {
   const [tabHover, setTabHover] = useState<TabHover | undefined>(undefined);
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(false);
 
-  const [isInventoryModalOpen, setIsInventoryModalOpen] =
-    useState<boolean>(false);
-
-  const [isCraftModalOpen, setIsCraftModalOpen] = useState<boolean>(false);
-
-  const [isExpeditionModalOpen, setIsExpeditionModalOpen] =
-    useState<boolean>(false);
-
   const router = useRouter();
   const { address, triggerWallet } = useMinaAppkit();
-  const { hasShownWelcomeScreen, setHasShownWelcomeScreen } =
-    useMiscellaneousSessionStore();
+  const {
+    hasShownWelcomeScreen,
+    setHasShownWelcomeScreen,
+    setIsInventoryModalOpen,
+    setIsCraftModalOpen,
+    setIsExpeditionModalOpen,
+    setIsTestnetModalOpen,
+  } = useMiscellaneousSessionStore();
+  const { playMainTheme, stopMusic } = useBackgroundMusic();
+  const preloadMusic = usePreloadMusic();
+
+  // Preload all music tracks on mount
+  useEffect(() => {
+    preloadMusic();
+  }, [preloadMusic]);
+
+  // Initialize and play main theme on mount
+  useEffect(() => {
+    playMainTheme();
+
+    // If autoplay is blocked, retry on first user interaction
+    const handleFirstInteraction = () => {
+      // Only retry if music is not already playing
+      playMainTheme();
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('keydown', handleFirstInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+      // Note: No stopMusic() here - HomePage is the main page, music should keep playing
+      // Music will be stopped/changed when navigating to other pages (e.g., game page)
+    };
+  }, [playMainTheme]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -68,94 +85,28 @@ export default function HomePage() {
 
   return (
     <main className="relative flex h-screen w-full overflow-hidden">
-      <div className="z-1 absolute left-0 top-2.5 grid w-full grid-cols-3 items-center px-20">
-        <SettingsBar setTab={setTab} />
-        <div className="flex w-full items-center justify-center gap-5">
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
-            <Image
-              src={'/icons/market.png'}
-              width={32}
-              height={32}
-              quality={100}
-              unoptimized={true}
-              alt="market"
-              className="h-8 w-8"
-            />
-          </BoxButton>
-          <BoxButton
-            color="gray"
-            onClick={() => {
-              setIsInventoryModalOpen(true);
-            }}
-            className="size-16"
-          >
-            <Image
-              src={'/icons/inventory.png'}
-              width={28}
-              height={32}
-              quality={100}
-              unoptimized={true}
-              alt="inventory"
-              className="h-8 w-7"
-            />
-          </BoxButton>
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
-            <Image
-              src={'/icons/mail.png'}
-              width={32}
-              height={23}
-              quality={100}
-              unoptimized={true}
-              alt="mail"
-              className="h-6 w-8"
-            />
-          </BoxButton>
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
-            <Image
-              src={'/icons/tournaments.png'}
-              width={36}
-              height={32}
-              quality={100}
-              unoptimized={true}
-              alt="tournaments"
-              className="h-8 w-9"
-            />
-          </BoxButton>
-        </div>
-        <div className="grid w-full grid-cols-3 items-center gap-10">
-          <Button
-            variant="gray"
-            className="w-70 h-15 flex items-center gap-2.5"
-          >
-            <Image
-              src={'/icons/gold-coin.png'}
-              width={32}
-              height={32}
-              unoptimized={true}
-              alt="gold-coin"
-              quality={100}
-              className="h-8 w-8"
-            />
-            <span>100M</span>
-          </Button>
-          <Button
-            variant="gray"
-            className="w-70 h-15 flex items-center gap-2.5"
-          >
-            <Image
-              src={'/icons/diamond.png'}
-              width={32}
-              height={28}
-              unoptimized={true}
-              quality={100}
-              alt="diamond"
-              className="h-7 w-8"
-            />
-            <span>1.25K</span>
-          </Button>
-          <Wallet />
-        </div>
-      </div>
+      <Header onTabChange={setTab} />
+
+      {/* Top right button */}
+      <Button
+        variant="gray"
+        className="absolute right-20 top-40 z-30 rounded-lg px-6 py-3 font-bold shadow-lg transition-all hover:scale-105 hover:bg-purple-700 active:scale-95"
+        onClick={() => {
+          setIsTestnetModalOpen(true);
+        }}
+        isLong={true}
+      >
+        <Image
+          src="/icons/lightning.png"
+          width={32}
+          height={28}
+          alt="lightning"
+          className="h-7 w-8 object-contain object-center"
+        />
+        <span className="font-pixel text-main-gray text-lg font-bold">
+          Testnet quest
+        </span>
+      </Button>
 
       {/* Main section */}
       <section
@@ -175,11 +126,6 @@ export default function HomePage() {
 
       <div className="bottom-12.5 absolute right-20 w-[20%]">
         {tab === Tab.HOME && <SocialLinks />}
-      </div>
-
-      {/* Top bar */}
-      <div className="-z-48 absolute inset-0 h-fit w-full">
-        <TopBarIcon className="pixel-art h-full w-full object-cover object-center" />
       </div>
 
       {/* Background */}
@@ -268,19 +214,9 @@ export default function HomePage() {
         />
       </div>
 
-      {isInventoryModalOpen && (
-        <InventoryModal onClose={() => setIsInventoryModalOpen(false)} />
-      )}
+      <Modals />
       {!hasShownWelcomeScreen && (
         <WelcomeScreen onClick={() => setHasShownWelcomeScreen(true)} />
-      )}
-
-      {isCraftModalOpen && (
-        <CraftModal onClose={() => setIsCraftModalOpen(false)} />
-      )}
-
-      {isExpeditionModalOpen && (
-        <ExpeditionModal onClose={() => setIsExpeditionModalOpen(false)} />
       )}
     </main>
   );

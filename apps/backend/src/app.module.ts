@@ -11,6 +11,12 @@ import { GameItemModule } from './game-item/game-item.module';
 import { GameCommitModule } from './game-commit/game-commit.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserInventoryModule } from './user-inventory/user-inventory.module';
+import { GameCharacterModule } from './game-character/game-character.module';
+import { ExpeditionModule } from './expedition/expedition.module';
+import { CraftingModule } from './crafting/crafting.module';
+import { RewardModule } from './reward/reward.module';
+import { UserModule } from './user/user.module';
+import { QuestsModule } from './quests/quests.module';
 
 @Module({
   imports: [
@@ -20,12 +26,18 @@ import { UserInventoryModule } from './user-inventory/user-inventory.module';
     GameItemModule,
     GameCommitModule,
     UserInventoryModule,
+    GameCharacterModule,
+    ExpeditionModule,
+    CraftingModule,
     MongooseModule.forRoot(
       process.env.MONGODB_URI || 'mongodb://localhost:27017/wizardbattle',
       {
         dbName: process.env.MONGODB_DB || 'wizardbattle',
       }
     ),
+    RewardModule,
+    UserModule,
+    QuestsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, RedisHealthService, GameStateService],

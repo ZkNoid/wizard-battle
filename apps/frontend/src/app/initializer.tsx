@@ -12,13 +12,32 @@ import {
   Position,
   PositionOption,
 } from '../../../common/stater/structs';
-import { useInventoryStore } from '@/lib/store';
+import { useInventoryStore, useUserDataStore } from '@/lib/store';
+import { useExpeditionStore } from '@/lib/store/expeditionStore';
+import { useMinaAppkit } from 'mina-appkit';
+import { api } from '@/trpc/react';
 
 export default function Initializer() {
+  const { address } = useMinaAppkit();
   const { socket, setSocket, setStater, isBootstrapped, setBootstrapped } =
     useUserInformationStore();
   const statsByWizard = useInventoryStore((state) => state.statsByWizard);
+  const loadUserInventory = useInventoryStore(
+    (state) => state.loadUserInventory
+  );
+  const loadUserExpeditions = useExpeditionStore(
+    (state) => state.loadUserExpeditions
+  );
+  const setUserData = useUserDataStore((state) => state.setUserData);
+  const clearUserData = useUserDataStore((state) => state.clearUserData);
 
+  // Fetch user data from database
+  const { data: userData } = api.users.get.useQuery(
+    { address: address ?? '' },
+    { enabled: !!address }
+  );
+
+  // Initialize socket and stater
   useEffect(() => {
     if (isBootstrapped) return;
 
@@ -69,6 +88,23 @@ export default function Initializer() {
 
     s.on('connect', () => console.log('socket connected'));
   }, [isBootstrapped, setBootstrapped, setSocket, setStater]);
+
+  // Load user data when wallet is connected
+  useEffect(() => {
+    if (address) {
+      void loadUserInventory(address);
+      void loadUserExpeditions(address);
+    } else {
+      clearUserData();
+    }
+  }, [address, loadUserInventory, loadUserExpeditions, clearUserData]);
+
+  // Update store when user data is fetched
+  useEffect(() => {
+    if (userData) {
+      setUserData(userData);
+    }
+  }, [userData, setUserData]);
 
   return null;
 }

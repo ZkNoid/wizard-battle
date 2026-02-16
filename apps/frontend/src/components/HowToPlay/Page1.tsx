@@ -1,10 +1,10 @@
-import { Hero1 } from "./assets/hero-1";
-import { Hero2 } from "./assets/hero-2";
-import { Skill1 } from "./assets/skill-1";
-import { Skill2 } from "./assets/skill-2";
-import { Skill3 } from "./assets/skill-3";
-import { Skill4 } from "./assets/skill-4";
-import { Skill5 } from "./assets/skill-5";
+import { Hero1 } from './assets/hero-1';
+import { Hero2 } from './assets/hero-2';
+import { Skill1 } from './assets/skill-1';
+import { Skill2 } from './assets/skill-2';
+import { Skill3 } from './assets/skill-3';
+import { Skill4 } from './assets/skill-4';
+import { Skill5 } from './assets/skill-5';
 
 export function Page1() {
   return (

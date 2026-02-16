@@ -1,41 +1,79 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
-  IInventoryItem,
   IInventoryArmorItem,
   InventoryItemWearableArmorSlot,
+  IUserInventoryItem,
+  AnyInventoryItem,
 } from '@/lib/types/Inventory';
 import type { IHeroStats } from '@/lib/types/IHeroStat';
-import { ALL_ITEMS } from '@/lib/constants/items';
+import { trpcClient } from '@/trpc/vanilla';
+import { allWizards } from '../../../../common/wizards';
 import { defaultHeroStats } from '@/lib/constants/stat';
 
 export type EquippedSlots = Record<
   InventoryItemWearableArmorSlot,
-  IInventoryItem | null
+  IUserInventoryItem | null
 >;
 
 const defaultEquippedSlots: EquippedSlots = {
-  gem: null,
-  ring: null,
-  necklace: null,
-  arms: null,
-  legs: null,
-  belt: null,
+  Orb: null,
+  Belt: null,
+  Ring: null,
+  Amulet: null,
+  Boots: null,
+  Gloves: null,
+};
+
+// Helper function to get default stats for a wizard based on their type
+const getWizardDefaultStats = (wizardId: string): IHeroStats => {
+  const wizard = allWizards.find((w) => w.id.toString() === wizardId);
+
+  if (!wizard) {
+    return { ...defaultHeroStats };
+  }
+
+  const state = wizard.defaultState();
+  const playerStats = state.playerStats;
+
+  return {
+    hp: Number(playerStats.maxHp.toBigint()),
+    atk: Number(playerStats.attack.toBigInt()),
+    def: Number(playerStats.defense.toBigInt()),
+    crit: Number(playerStats.critChance.toBigInt()),
+    dodge: Number(playerStats.dodgeChance.toBigInt()),
+    accuracy: Number(playerStats.accuracy.toBigInt()),
+  };
+};
+
+// Mapping from buff keys to IHeroStats keys
+const buffToStatKeyMap: Record<string, keyof IHeroStats> = {
+  critChance: 'crit',
+  Accuracy: 'accuracy',
+  Attack: 'atk',
+  Dodge: 'dodge',
+  Defence: 'def',
+  // Movement has no direct mapping in IHeroStats
 };
 
 // Helper function to calculate stats from equipped items
-const calculateStats = (equippedSlots: EquippedSlots): IHeroStats => {
-  const stats: IHeroStats = { ...defaultHeroStats };
+const calculateStats = (
+  equippedSlots: EquippedSlots,
+  wizardId: string
+): IHeroStats => {
+  const stats: IHeroStats = getWizardDefaultStats(wizardId);
 
-  Object.values(equippedSlots).forEach((item) => {
-    if (item && item.type === 'armor') {
-      const wearableItem = item as IInventoryArmorItem;
-      wearableItem.buff.forEach((buff) => {
-        const statKey = buff.effect as keyof IHeroStats;
-        if (statKey in stats) {
-          stats[statKey] += buff.value;
-        }
-      });
+  Object.values(equippedSlots).forEach((userItem) => {
+    if (userItem && userItem.item.type === 'armor') {
+      const armorItem = userItem.item as IInventoryArmorItem;
+      if (armorItem.buff) {
+        Object.entries(armorItem.buff).forEach(([buffKey, buffValue]) => {
+          const statKey = buffToStatKeyMap[buffKey];
+          if (statKey && statKey in stats && buffValue) {
+            stats[statKey] += Number(buffValue);
+          }
+        });
+      }
     }
   });
 
@@ -43,38 +81,135 @@ const calculateStats = (equippedSlots: EquippedSlots): IHeroStats => {
 };
 
 interface InventoryStore {
-  // Equipped items per wizard (wizard ID as string key, e.g. Field.toString())
+  // Loading state
+  isLoading: boolean;
+  error: string | null;
+
+  // Currency balances
+  gold: number;
+  blackOrb: number;
+
+  // Equipped items per wizard (wizard ID as string key)
   equippedItemsByWizard: Record<string, EquippedSlots>;
 
   // Stats per wizard (calculated from equipped items)
   statsByWizard: Record<string, IHeroStats>;
 
-  // User's inventory items (not equipped)
-  inventoryItems: (IInventoryItem | IInventoryArmorItem)[];
+  // User's inventory items (from database)
+  iteminventory: IUserInventoryItem[];
 
-  // Actions
+  // Actions - address comes from useMinaAppkit hook in components
+  loadUserInventory: (address: string) => Promise<void>;
+  loadCurrencies: (address: string) => Promise<void>;
   getEquippedItems: (wizardId: string) => EquippedSlots;
   getStats: (wizardId: string) => IHeroStats;
   equipItem: (
     wizardId: string,
     slotId: InventoryItemWearableArmorSlot,
-    item: IInventoryItem
+    userItem: IUserInventoryItem
   ) => void;
   unequipItem: (
     wizardId: string,
     slotId: InventoryItemWearableArmorSlot
   ) => void;
-  setInventoryItems: (items: (IInventoryItem | IInventoryArmorItem)[]) => void;
-  addToInventory: (item: IInventoryItem | IInventoryArmorItem) => void;
+  setiteminventory: (items: IUserInventoryItem[]) => void;
+  addToInventory: (item: IUserInventoryItem) => void;
   removeFromInventory: (itemId: string) => void;
+  updateItemQuantity: (itemId: string, quantity: number) => void;
+  clearInventory: () => void;
 }
 
 export const useInventoryStore = create<InventoryStore>()(
   persist(
     (set, get) => ({
+      isLoading: false,
+      error: null,
+      gold: 0,
+      blackOrb: 0,
       equippedItemsByWizard: {},
       statsByWizard: {},
-      inventoryItems: [...ALL_ITEMS],
+      iteminventory: [],
+
+      loadCurrencies: async (address: string) => {
+        try {
+          const inventory = await trpcClient.items.getUserInventory.query({
+            userId: address,
+          });
+
+          const goldItem = inventory.find((item) => item.item.id === 'Gold');
+          const blackOrbItem = inventory.find(
+            (item) => item.item.id === 'BlackOrb'
+          );
+
+          set({
+            gold: goldItem?.quantity ?? 0,
+            blackOrb: blackOrbItem?.quantity ?? 0,
+          });
+        } catch (error) {
+          console.error('Failed to load currencies:', error);
+        }
+      },
+
+      loadUserInventory: async (address: string) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          // Fetch user's inventory from database (using wallet address as userId)
+          const inventory = await trpcClient.items.getUserInventory.query({
+            userId: address,
+          });
+
+          // Separate equipped and non-equipped items
+          const equippedByWizard: Record<string, EquippedSlots> = {};
+          const nonEquippedItems: IUserInventoryItem[] = [];
+
+          inventory.forEach((userItem) => {
+            if (userItem.isEquipped && userItem.equippedToWizardId) {
+              const wizardId = userItem.equippedToWizardId;
+              if (!equippedByWizard[wizardId]) {
+                equippedByWizard[wizardId] = { ...defaultEquippedSlots };
+              }
+
+              // Get the slot from the item
+              if (userItem.item.type === 'armor') {
+                const armorItem = userItem.item as IInventoryArmorItem;
+                equippedByWizard[wizardId][armorItem.wearableSlot] = userItem;
+              }
+            } else {
+              nonEquippedItems.push(userItem);
+            }
+          });
+
+          // Calculate stats for each wizard
+          const statsByWizard: Record<string, IHeroStats> = {};
+          Object.entries(equippedByWizard).forEach(([wizardId, slots]) => {
+            statsByWizard[wizardId] = calculateStats(slots, wizardId);
+          });
+
+          // Extract currency balances
+          const goldItem = inventory.find((item) => item.item.id === 'Gold');
+          const blackOrbItem = inventory.find(
+            (item) => item.item.id === 'BlackOrb'
+          );
+
+          set({
+            iteminventory: nonEquippedItems,
+            equippedItemsByWizard: equippedByWizard,
+            statsByWizard,
+            gold: goldItem?.quantity ?? 0,
+            blackOrb: blackOrbItem?.quantity ?? 0,
+            isLoading: false,
+          });
+        } catch (error) {
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to load inventory',
+            isLoading: false,
+          });
+        }
+      },
 
       getEquippedItems: (wizardId: string): EquippedSlots => {
         const state = get();
@@ -87,13 +222,13 @@ export const useInventoryStore = create<InventoryStore>()(
 
       getStats: (wizardId: string): IHeroStats => {
         const state = get();
-        return state.statsByWizard[wizardId] ?? { ...defaultHeroStats };
+        return state.statsByWizard[wizardId] ?? getWizardDefaultStats(wizardId);
       },
 
       equipItem: (
         wizardId: string,
         slotId: InventoryItemWearableArmorSlot,
-        item: IInventoryItem
+        userItem: IUserInventoryItem
       ) =>
         set((state) => {
           // Get current equipped items for this wizard
@@ -106,23 +241,33 @@ export const useInventoryStore = create<InventoryStore>()(
           const updatedEquipped = { ...currentEquipped };
           Object.keys(updatedEquipped).forEach((key) => {
             const slot = key as InventoryItemWearableArmorSlot;
-            if (updatedEquipped[slot]?.id === item.id) {
+            if (updatedEquipped[slot]?.item.id === userItem.item.id) {
               updatedEquipped[slot] = null;
             }
           });
 
-          // Equip the new item
-          updatedEquipped[slotId] = item;
+          // Equip the new item with updated metadata
+          const equippedItem: IUserInventoryItem = {
+            ...userItem,
+            isEquipped: true,
+            equippedToWizardId: wizardId,
+          };
+          updatedEquipped[slotId] = equippedItem;
 
           // Recalculate stats for this wizard
-          const newStats = calculateStats(updatedEquipped);
+          const newStats = calculateStats(updatedEquipped, wizardId);
 
           // Update inventory: remove the equipped item, add back the previously equipped item if any
-          let newInventory = state.inventoryItems.filter(
-            (i) => i.id !== item.id
+          let newInventory = state.iteminventory.filter(
+            (i) => i.item.id !== userItem.item.id
           );
           if (previousItem) {
-            newInventory = [...newInventory, previousItem];
+            const unequippedItem: IUserInventoryItem = {
+              ...previousItem,
+              isEquipped: false,
+              equippedToWizardId: undefined,
+            };
+            newInventory = [...newInventory, unequippedItem];
           }
 
           return {
@@ -134,7 +279,7 @@ export const useInventoryStore = create<InventoryStore>()(
               ...state.statsByWizard,
               [wizardId]: newStats,
             },
-            inventoryItems: newInventory,
+            iteminventory: newInventory,
           };
         }),
 
@@ -143,18 +288,24 @@ export const useInventoryStore = create<InventoryStore>()(
           const currentEquipped = state.equippedItemsByWizard[wizardId] ?? {
             ...defaultEquippedSlots,
           };
-          const item = currentEquipped[slotId];
+          const userItem = currentEquipped[slotId];
 
-          if (!item) return state;
+          if (!userItem) return state;
 
           // Remove item from slot
           const updatedEquipped = { ...currentEquipped };
           updatedEquipped[slotId] = null;
 
           // Recalculate stats for this wizard
-          const newStats = calculateStats(updatedEquipped);
+          const newStats = calculateStats(updatedEquipped, wizardId);
 
           // Add item back to inventory
+          const unequippedItem: IUserInventoryItem = {
+            ...userItem,
+            isEquipped: false,
+            equippedToWizardId: undefined,
+          };
+
           return {
             equippedItemsByWizard: {
               ...state.equippedItemsByWizard,
@@ -164,29 +315,73 @@ export const useInventoryStore = create<InventoryStore>()(
               ...state.statsByWizard,
               [wizardId]: newStats,
             },
-            inventoryItems: [...state.inventoryItems, item],
+            iteminventory: [...state.iteminventory, unequippedItem],
           };
         }),
 
-      setInventoryItems: (items: (IInventoryItem | IInventoryArmorItem)[]) =>
-        set({ inventoryItems: items }),
+      setiteminventory: (items: IUserInventoryItem[]) =>
+        set({ iteminventory: items }),
 
-      addToInventory: (item: IInventoryItem | IInventoryArmorItem) =>
-        set((state) => ({
-          inventoryItems: [...state.inventoryItems, item],
-        })),
+      addToInventory: (item: IUserInventoryItem) =>
+        set((state) => {
+          // Check if item already exists, if so increase quantity
+          const existingIndex = state.iteminventory.findIndex(
+            (i) => i.item.id === item.item.id
+          );
+
+          if (existingIndex >= 0) {
+            const updatedItems = [...state.iteminventory];
+            updatedItems[existingIndex] = {
+              ...updatedItems[existingIndex]!,
+              quantity: updatedItems[existingIndex]!.quantity + item.quantity,
+            };
+            return { iteminventory: updatedItems };
+          }
+
+          return { iteminventory: [...state.iteminventory, item] };
+        }),
 
       removeFromInventory: (itemId: string) =>
         set((state) => ({
-          inventoryItems: state.inventoryItems.filter((i) => i.id !== itemId),
+          iteminventory: state.iteminventory.filter(
+            (i) => i.item.id !== itemId
+          ),
         })),
+
+      updateItemQuantity: (itemId: string, quantity: number) =>
+        set((state) => {
+          if (quantity <= 0) {
+            return {
+              iteminventory: state.iteminventory.filter(
+                (i) => i.item.id !== itemId
+              ),
+            };
+          }
+
+          return {
+            iteminventory: state.iteminventory.map((i) =>
+              i.item.id === itemId ? { ...i, quantity } : i
+            ),
+          };
+        }),
+
+      clearInventory: () =>
+        set({
+          iteminventory: [],
+          equippedItemsByWizard: {},
+          statsByWizard: {},
+          gold: 0,
+          blackOrb: 0,
+        }),
     }),
     {
       name: 'wizard-battle-inventory',
       partialize: (state) => ({
         equippedItemsByWizard: state.equippedItemsByWizard,
         statsByWizard: state.statsByWizard,
-        inventoryItems: state.inventoryItems,
+        iteminventory: state.iteminventory,
+        gold: state.gold,
+        blackOrb: state.blackOrb,
       }),
     }
   )

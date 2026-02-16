@@ -97,7 +97,7 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      * @dev Used to categorize different game assets for organizational purposes
      */
     enum GameElementType {
-        COIN, /// @dev In-game currency tokens (ERC20)
+        COIN, /// @dev Game currency tokens (ERC20)
         RESOURCE, /// @dev Game resources (ERC1155)
         CHARACTER, /// @dev Character NFTs (ERC721)
         UNIQUE_ITEM /// @dev Unique/special items (ERC1155 or ERC721)
@@ -198,7 +198,7 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      * @notice Emitted when resources are committed to the registry
      * @param commit The commit data that was processed
      */
-    event CommitResources(bytes indexed commit);
+    event Commit(bytes indexed commit);
 
     /**
      * @notice Emitted when a batch of commits is processed
@@ -330,7 +330,7 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
 
         for (uint256 i = 0; i < batch.length;) {
             (bytes32 resourceHash, bytes memory commit, bytes memory signature) = abi.decode(batch[i], (bytes32, bytes, bytes));
-            _commitResource(resourceHash, commit, signature);
+            _commitSingle(resourceHash, commit, signature);
 
             unchecked {
                 ++i;
@@ -346,8 +346,8 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      * @param commit Encoded commit data (target, account, signer, nonce, callData)
      * @param signature EIP-712 signature from authorized game signer
      */
-    function commitResource(bytes32 resourceHash, bytes memory commit, bytes memory signature) external nonReentrant {
-        _commitResource(resourceHash, commit, signature);
+    function commitSingle(bytes32 resourceHash, bytes memory commit, bytes memory signature) external nonReentrant {
+        _commitSingle(resourceHash, commit, signature);
     }
 
     /**
@@ -434,14 +434,14 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      * @param commit Encoded commit data
      * @param signature EIP-712 signature for verification
      */
-    function _commitResource(bytes32 resourceHash, bytes memory commit, bytes memory signature) private {
+    function _commitSingle(bytes32 resourceHash, bytes memory commit, bytes memory signature) private {
         if (resourceHash == bytes32(0) || commit.length == 0 || signature.length == 0) {
             revert GameRegistry__InvalidCommitData();
         }
 
         (uint256 nonce, address target, bytes memory callData) = _verifyInputs(resourceHash, commit, signature);
 
-        emit CommitResources(commit);
+        emit Commit(commit);
         s_usedNonces[nonce] = true;
         _commitDispatcher(target, callData);
 

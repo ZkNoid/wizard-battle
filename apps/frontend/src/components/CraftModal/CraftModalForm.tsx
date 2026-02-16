@@ -10,9 +10,10 @@ import { CraftBg } from './assets/craft-bg';
 
 interface CraftModalFormProps {
   onClose?: () => void;
+  address?: string;
 }
 
-export function CraftModalForm({ onClose }: CraftModalFormProps) {
+export function CraftModalForm({ onClose, address }: CraftModalFormProps) {
   const [activeTab, setActiveTab] = useState<string>('craft');
 
   const buttonClassName =
@@ -27,7 +28,7 @@ export function CraftModalForm({ onClose }: CraftModalFormProps) {
   const getForm = (tabName: string): React.ReactNode => {
     switch (tabName) {
       case 'craft':
-        return <CraftForm onCancel={onClose} />;
+        return <CraftForm onCancel={onClose} address={address} />;
       case 'upgrade':
         return <UpgradeForm onCancel={onClose} />;
       case 'unite':
@@ -44,6 +45,8 @@ export function CraftModalForm({ onClose }: CraftModalFormProps) {
           variant={getButtonVariant('craft')}
           className={buttonClassName}
           onClick={() => setActiveTab('craft')}
+          enableHoverSound
+          enableClickSound
         >
           <Image
             src="/icons/pickaxe.png"
@@ -58,6 +61,8 @@ export function CraftModalForm({ onClose }: CraftModalFormProps) {
           variant={getButtonVariant('upgrade')}
           className={buttonClassName}
           onClick={() => setActiveTab('upgrade')}
+          enableHoverSound
+          enableClickSound
         >
           <Image
             src="/icons/armor.png"
@@ -72,6 +77,8 @@ export function CraftModalForm({ onClose }: CraftModalFormProps) {
           variant={getButtonVariant('unite')}
           className={buttonClassName}
           onClick={() => setActiveTab('unite')}
+          enableHoverSound
+          enableClickSound
         >
           <Image
             src="/icons/gem.png"
@@ -83,7 +90,7 @@ export function CraftModalForm({ onClose }: CraftModalFormProps) {
           <span className={textClassName}>Unite</span>
         </Button>
       </div>
-      <div className="relative z-10 h-185 -mt-5 w-full">
+      <div className="h-185 relative z-10 -mt-5 w-full">
         <div className="h-full w-full px-4 py-4">{getForm(activeTab)}</div>
         <CraftBg className="absolute inset-0 -z-10 size-full h-full w-full" />
       </div>

@@ -1,5 +1,5 @@
-import { createEnv } from "@t3-oss/env-nextjs";
-import { z } from "zod";
+import { createEnv } from '@t3-oss/env-nextjs';
+import { z } from 'zod';
 
 export const env = createEnv({
   /**
@@ -7,9 +7,10 @@ export const env = createEnv({
    * isn't built with invalid env vars.
    */
   server: {
-    NODE_ENV: z.enum(["development", "test", "production"]),
+    NODE_ENV: z.enum(['development', 'test', 'production']),
     MONGODB_URI: z.string(),
     MONGODB_DB: z.string(),
+    BACKEND_URL: z.string().default('http://localhost:3030'),
   },
 
   /**
@@ -19,6 +20,12 @@ export const env = createEnv({
    */
   client: {
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    NEXT_PUBLIC_PROJECT_NAME: z.string().default('Wizard Battle'),
+    NEXT_PUBLIC_PROJECT_URL: z.string(),
+    NEXT_PUBLIC_PROJECT_DESCRIPTION: z
+      .string()
+      .default('An epic wizard battle game'),
+    NEXT_PUBLIC_REOWN_PROJECT_ID: z.string(),
   },
 
   /**
@@ -29,7 +36,12 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     MONGODB_URI: process.env.MONGODB_URI,
     MONGODB_DB: process.env.MONGODB_DB,
-    // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+    BACKEND_URL: process.env.BACKEND_URL,
+    NEXT_PUBLIC_REOWN_PROJECT_ID: process.env.NEXT_PUBLIC_REOWN_PROJECT_ID,
+    NEXT_PUBLIC_PROJECT_NAME: process.env.NEXT_PUBLIC_PROJECT_NAME,
+    NEXT_PUBLIC_PROJECT_URL: process.env.NEXT_PUBLIC_PROJECT_URL,
+    NEXT_PUBLIC_PROJECT_DESCRIPTION:
+      process.env.NEXT_PUBLIC_PROJECT_DESCRIPTION,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

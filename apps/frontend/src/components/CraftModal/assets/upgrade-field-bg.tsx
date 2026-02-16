@@ -1,23 +1,22 @@
 export const UpgradeFieldBg = ({ className }: { className: string }) => {
   return (
     <svg
-      width="561"
-      height="478"
       viewBox="0 0 561 478"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="none"
       className={className}
     >
       <mask
         id="mask0_832_100949"
         style={{ maskType: 'alpha' }}
         maskUnits="userSpaceOnUse"
-        x="4"
+        x="0"
         y="0"
-        width="553"
-        height="470"
+        width="561"
+        height="478"
       >
-        <rect x="4" width="553" height="470" fill="#ACB0BC" />
+        <rect x="0" y="0" width="561" height="478" fill="#ACB0BC" />
       </mask>
       <g mask="url(#mask0_832_100949)">
         <path d="M474.999 167.002H470V172.001H474.999V167.002Z" fill="black" />

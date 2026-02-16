@@ -6,14 +6,16 @@ import BoxButton from '../shared/BoxButton';
 import { Tab } from '@/lib/enums/Tab';
 import Image from 'next/image';
 
-export function SettingsBar({ setTab }: { setTab: (tab: Tab) => void }) {
+export function SettingsBar({ setTab }: { setTab?: (tab: Tab) => void }) {
   return (
     <motion.div className="flex items-center gap-4">
       {/* Support button */}
       <BoxButton
-        onClick={() => setTab(Tab.HOW_TO_PLAY)}
+        onClick={() => setTab?.(Tab.HOW_TO_PLAY)}
         color="gray"
         className="size-16"
+        enableHoverSound
+        enableClickSound
       >
         <Image
           src={'/icons/question.png'}
@@ -26,7 +28,13 @@ export function SettingsBar({ setTab }: { setTab: (tab: Tab) => void }) {
         />
       </BoxButton>
       {/* Settings button */}
-      <BoxButton onClick={() => {}} color="gray" className="size-16">
+      <BoxButton
+        onClick={() => {}}
+        color="gray"
+        className="size-16"
+        enableHoverSound
+        enableClickSound
+      >
         <Image
           src={'/icons/gear.png'}
           width={30}

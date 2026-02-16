@@ -1,16 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
-import { GameItem } from '../../game-item/schemas/game-item.schema';
+import { HydratedDocument } from 'mongoose';
+import type { ItemAcquiredFrom } from '@wizard-battle/common';
 
 export type UserInventoryDocument = HydratedDocument<UserInventory>;
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, collection: 'userinventory' })
 export class UserInventory {
   @Prop({ required: true, index: true })
-  userId!: string; // Reference to user (from auth/user module)
+  userId!: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'GameItem', required: true })
-  itemId!: Types.ObjectId; // Reference to GameItem
+  @Prop({ required: true })
+  itemId!: string; // Reference to InventoryItem.id
 
   @Prop({ required: true, default: 1, min: 1 })
   quantity!: number;
@@ -19,13 +19,20 @@ export class UserInventory {
   isEquipped?: boolean;
 
   @Prop()
+  equippedToWizardId?: string; // Which wizard has this equipped
+
+  @Prop()
   acquiredAt?: Date;
 
   @Prop()
-  acquiredFrom?: string; // 'crafted', 'loot', 'trade', 'drop', etc.
+  acquiredFrom?: ItemAcquiredFrom;
 }
 
 export const UserInventorySchema = SchemaFactory.createForClass(UserInventory);
 
 // Compound index for efficient queries and uniqueness
 UserInventorySchema.index({ userId: 1, itemId: 1 }, { unique: true });
+
+// Index for equipped items queries
+UserInventorySchema.index({ userId: 1, isEquipped: 1 });
+UserInventorySchema.index({ userId: 1, equippedToWizardId: 1 });

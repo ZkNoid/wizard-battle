@@ -1,4 +1,4 @@
 export enum PlayMode {
-  PVP = "pvp",
-  PVE = "pve",
+  PVP = 'pvp',
+  PVE = 'pve',
 }

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { Button } from "../shared/Button";
-import { useRouter } from "next/navigation";
+import { Button } from '../shared/Button';
+import { useRouter } from 'next/navigation';
 
 export function Page4() {
   const router = useRouter();
@@ -26,7 +26,7 @@ export function Page4() {
           <Button
             text="Play now!"
             variant="blue"
-            onClick={() => router.push("/play")}
+            onClick={() => router.push('/play')}
             className="h-15 w-90"
           />
         </div>

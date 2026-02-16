@@ -1,63 +1,123 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
 import ChooseLocation from './ChooseLocation';
 import ChooseCharacter from './ChooseCharacter';
 import RewardsSection from './RewardsSection';
 import { Button } from '../shared/Button';
-import ExpeditionModalTitle from './components/ExpeditionModalTitle';
+import ModalTitle from '../shared/ModalTitle';
 import type { Field } from 'o1js';
-import type { ExpeditionTimePeriod } from '@/lib/types/Expedition';
+import type { ExpeditionTimePeriod } from '@wizard-battle/common';
+import { useExpeditionStore } from '@/lib/store/expeditionStore';
+import { allWizards } from '../../../../common/wizards';
+import { useMinaAppkit } from 'mina-appkit';
 
 export default function NewExpeditionForm({
   onClose,
+  onSuccess,
 }: {
   onClose: () => void;
+  onSuccess?: () => void;
 }) {
-  const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
-  const [selectedCharacter, setSelectedCharacter] = useState<Field | string | null>(null);
-  const [selectedTimePeriod, setSelectedTimePeriod] = useState<ExpeditionTimePeriod | null>(null);
+  const { address } = useMinaAppkit();
+  const { createExpedition, isCreating, getActiveExpeditions } = useExpeditionStore();
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const [selectedCharacter, setSelectedCharacter] = useState<
+    Field | string | null
+  >(null);
+  const [selectedTimePeriod, setSelectedTimePeriod] =
+    useState<ExpeditionTimePeriod | null>(null);
 
-  const handleSelectLocation = (location: number | null) => {
+  // Check if the selected wizard is already on an active expedition
+  const isWizardOnExpedition = selectedCharacter
+    ? getActiveExpeditions().some(
+        (exp) => exp.characterId === selectedCharacter.toString()
+      )
+    : false;
+
+  const handleSelectLocation = (location: string | null) => {
     setSelectedLocation(location);
-    console.log(location);
   };
 
   const handleSelectCharacter = (character: Field | string | null) => {
     setSelectedCharacter(character);
-    console.log(character);
   };
 
   const handleSelectTimePeriod = (timePeriod: ExpeditionTimePeriod | null) => {
     setSelectedTimePeriod(timePeriod);
-    console.log(timePeriod);
   };
 
-  const disabled = !selectedLocation || !selectedCharacter || !selectedTimePeriod;
+  const handleStartExpedition = async () => {
+    if (
+      !selectedLocation ||
+      !selectedCharacter ||
+      !selectedTimePeriod ||
+      !address
+    )
+      return;
+
+    const wizard = allWizards.find(
+      (w) => w.id.toString() === selectedCharacter.toString()
+    );
+    if (!wizard) return;
+
+    console.log(
+      'Creating expedition with character:',
+      wizard.name,
+      'and location:',
+      selectedLocation
+    );
+
+    const result = await createExpedition(address, {
+      characterId: selectedCharacter.toString(),
+      characterRole: wizard.name,
+      characterImage: wizard.imageURL || '',
+      locationId: selectedLocation,
+      timePeriod: selectedTimePeriod,
+    });
+
+    if (result && onSuccess) {
+      onSuccess();
+    }
+  };
+
+  const disabled =
+    !selectedLocation ||
+    !selectedCharacter ||
+    !selectedTimePeriod ||
+    isCreating ||
+    !address ||
+    isWizardOnExpedition;
 
   return (
     <div className="flex h-full flex-col">
-      <ExpeditionModalTitle title="Expedition" onClose={onClose} />
+      <ModalTitle title="Expedition" onClose={onClose} />
 
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
         <ChooseLocation onSelectLocation={handleSelectLocation} />
 
-        <ChooseCharacter onSelectCharacter={handleSelectCharacter} onSelectTimePeriod={handleSelectTimePeriod} />
+        <ChooseCharacter
+          onSelectCharacter={handleSelectCharacter}
+          onSelectTimePeriod={handleSelectTimePeriod}
+        />
 
-        <RewardsSection />
+        <RewardsSection selectedLocationId={selectedLocation} />
       </div>
 
       <div className="mb-1 pt-2">
         <Button
-          variant={disabled ? 'gray' : 'blue'}  
-          onClick={() => {}}
-          className="w-full flex h-15 flex-row items-center justify-center gap-2.5"
+          variant={disabled ? 'gray' : 'blue'}
+          onClick={handleStartExpedition}
+          className="h-15 flex w-full flex-row items-center justify-center gap-2.5"
           isLong
           disabled={disabled}
         >
           <span className="font-pixel text-main-gray whitespace-nowrap text-lg font-bold">
-            Start Expedition
+            {isCreating
+              ? 'Starting...'
+              : isWizardOnExpedition
+                ? 'Wizard Already on Expedition'
+                : 'Start Expedition'}
           </span>
         </Button>
       </div>

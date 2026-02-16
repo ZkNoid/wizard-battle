@@ -9,7 +9,7 @@ GAME_REGISTRY="0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1"
 PLAYER="0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
 
 echo "Testing cast send..."
-cast send $GAME_REGISTRY "commitResource(bytes32,bytes,bytes)" \
+cast send $GAME_REGISTRY "commitSingle(bytes32,bytes,bytes)" \
   $RESOURCE_HASH \
   $COMMIT \
   $SIGNATURE \

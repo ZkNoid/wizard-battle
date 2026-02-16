@@ -52,12 +52,12 @@ export function UnityForm({ onCancel }: UnityFormProps) {
   );
 
   const buttonClassName =
-    'flex h-16 w-auto flex-row items-center gap-2.5 px-6 transition-al -mt-4';
+    'flex h-12 w-auto flex-row items-center gap-2.5 px-6 transition-al -mt-4';
 
   const gemsTypes = useMemo<InventoryFilterType[]>(() => ['gems'], []);
 
   return (
-    <div className="relative flex h-full flex-col pb-5">
+    <div className="relative flex h-full flex-col">
       {/* Content */}
       <div className="relative flex h-full w-full flex-col gap-5">
         {/* Content */}
@@ -161,8 +161,8 @@ export function UnityForm({ onCancel }: UnityFormProps) {
               </div>
               <div className="mb-2 flex w-full items-center justify-between">
                 <span className="text-sm">
-                  To get a higher-level soul gem, place five identical soul
-                  gems of a lower level in the cells and click &quot;craft&quot;.
+                  To get a higher-level soul gem, place five identical soul gems
+                  of a lower level in the cells and click &quot;craft&quot;.
                 </span>
               </div>
               <div>

@@ -41,6 +41,8 @@ const archerDefaultState = () => {
   let state = State.default();
   state.wizardId = WizardId.ARCHER;
   state.playerStats.speed = Int64.from(3);
+  state.playerStats.maxHp = Int64.from(200);
+  state.playerStats.hp = Int64.from(200);
 
   return state;
 };
@@ -51,7 +53,10 @@ const phantomDuelistDefaultState = () => {
 
   // Phantom Armor passive: +50% Defence
   // Base defense is 100, so 150 = 100 * 1.5
+  state.playerStats.speed = Int64.from(2);
   state.playerStats.defense = state.playerStats.defense.mul(150).div(100);
+  state.playerStats.maxHp = Int64.from(200);
+  state.playerStats.hp = Int64.from(200);
 
   return state;
 };
@@ -62,7 +67,7 @@ export const allWizards: Wizard[] = [
     name: 'Wizard',
     defaultHealth: 100,
     publicFields: ['map', 'health'],
-    imageURL: '/wizards/base-wizard.svg',
+    imageURL: '/wizards/mage-hero.png',
     defaultState: mageDefaultState,
   },
   {
@@ -70,7 +75,7 @@ export const allWizards: Wizard[] = [
     name: 'Archer',
     defaultHealth: 100,
     publicFields: ['map', 'health'],
-    imageURL: '/wizards/archer.svg',
+    imageURL: '/wizards/archer-hero.png',
     defaultState: archerDefaultState,
   },
   {
@@ -78,7 +83,7 @@ export const allWizards: Wizard[] = [
     name: 'Phantom Duelist',
     defaultHealth: 100,
     publicFields: ['map', 'health'],
-    imageURL: '/wizards/phantom_duelist.png',
+    imageURL: '/wizards/duelist-hero.png',
     defaultState: phantomDuelistDefaultState,
   },
   // {

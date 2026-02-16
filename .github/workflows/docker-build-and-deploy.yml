@@ -32,6 +32,8 @@ jobs:
           REDIS_URL: ${{ secrets.REDIS_URL }}
           WEBSOCKET_URL: ${{ secrets.WEBSOCKET_URL }}
           SPELL_CAST_TIMEOUT: ${{ secrets.SPELL_CAST_TIMEOUT }}
+          NEXT_PUBLIC_REOWN_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_REOWN_PROJECT_ID }}
+          NEXT_PUBLIC_PROJECT_URL: ${{ secrets.NEXT_PUBLIC_PROJECT_URL }}
         run: pnpm turbo run build
   deploy:
     needs: test-build
@@ -179,6 +181,11 @@ jobs:
             --build-arg REDIS_URL=${{ secrets.REDIS_URL }} \
             --build-arg WEBSOCKET_URL=${{ secrets.WEBSOCKET_URL }} \
             --build-arg SPELL_CAST_TIMEOUT=${{ secrets.SPELL_CAST_TIMEOUT }} \
+            --build-arg MINA_NETWORK_URL=${{ secrets.MINA_NETWORK_URL }} \
+            --build-arg MINA_ADMIN_PRIVATE_KEY=${{ secrets.MINA_ADMIN_PRIVATE_KEY }} \
+            --build-arg MINA_CONTRACT_ADDRESS=${{ secrets.MINa_CONTRACT_ADDRESS }} \
+            --build-arg BULLMQ_REDIS_HOST=${{ secrets.BULLMQ_REDIS_HOST }} \
+            --build-arg BULLMQ_REDIS_PORT=${{ secrets.BULLMQ_REDIS_PORT }} \
             -t ${{ steps.calc-container.outputs.container_name }} .
 
       - name: Save Docker image to tar

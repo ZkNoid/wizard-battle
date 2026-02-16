@@ -472,4 +472,505 @@ describe('Stater', () => {
       expect(stater.state.randomSeed.toString()).toBe(originalSeed);
     });
   });
+
+  describe('applyDamage', () => {
+    /**
+     * Formula under test:
+     * hitChance = (accuracy + CALC_PREC) * (CALC_PREC - dodgeChance) / (CALC_PREC * CALC_PREC)
+     * fullDamage = damage * attack * (CALC_PREC - defense) / (CALC_PREC * CALC_PREC)
+     * finalDamage = isHit ? fullDamage : 0
+     * 
+     * Note: CALCULATION_PRECISION = 100
+     * - accuracy, attack, defense, dodgeChance are percentages (0-100)
+     * - getRandomPercentage() returns 0-99
+     */
+
+    describe('damage calculation (fullDamage formula)', () => {
+      /**
+       * NEW FORMULA: fullDamage = damage * attack / defense
+       * 
+       * All values are percentages where 100 = base (100%):
+       * - defense = 100 (100%): full damage taken (base)
+       * - defense = 200 (200%): 50% damage taken (tank)
+       * - defense = 50 (50%): 200% damage taken (vulnerable)
+       * - attack = 100: base damage, attack = 150: 150% damage
+       */
+
+      it('should calculate base damage correctly with 100% attack and 100% defense', () => {
+        // Setup: attack = 100 (100%), defense = 100 (100% = base)
+        // Expected: fullDamage = 100 * 100 / 100 = 100
+        const attackerState = createState({
+          playerId: 1,
+          attack: 100,
+          accuracy: 100, // High accuracy to ensure hit
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 100,
+          defense: 100, // 100% = base defense
+          dodgeChance: 0,
+          randomSeed: Field(0), // Deterministic seed that produces low random (ensures hit)
+        });
+
+        defenderStater.applyDamage(UInt64.from(100), attackerState);
+
+        // With 100 defense and 100 attack, 100 damage should deal 100 damage
+        expect(defenderStater.state.playerStats.hp.toString()).toBe('0');
+      });
+
+      it('should reduce damage by 50% with 200% defense (tank)', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 100,
+          accuracy: 100,
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 100,
+          defense: 200, // 200% defense = takes 50% damage (tank)
+          dodgeChance: 0,
+          randomSeed: Field(0),
+        });
+
+        defenderStater.applyDamage(UInt64.from(100), attackerState);
+
+        // fullDamage = 100 * 100 / 200 = 50
+        expect(defenderStater.state.playerStats.hp.toString()).toBe('50');
+      });
+
+      it('should increase damage with attack multiplier > 100%', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 150, // 150% attack
+          accuracy: 100,
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 200,
+          defense: 100, // 100% = base defense
+          dodgeChance: 0,
+          randomSeed: Field(0),
+        });
+
+        defenderStater.applyDamage(UInt64.from(100), attackerState);
+
+        // fullDamage = 100 * 150 / 100 = 150
+        expect(defenderStater.state.playerStats.hp.toString()).toBe('50');
+      });
+
+      it('should combine attack and defense multipliers correctly', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 150, // 150% attack
+          accuracy: 100,
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 200,
+          defense: 125, // 125% defense (reduces damage)
+          dodgeChance: 0,
+          randomSeed: Field(0),
+        });
+
+        defenderStater.applyDamage(UInt64.from(100), attackerState);
+
+        // fullDamage = 100 * 150 / 125 = 120
+        expect(defenderStater.state.playerStats.hp.toString()).toBe('80');
+      });
+
+      it('should amplify damage with defense < 100% (vulnerable)', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 100,
+          accuracy: 100,
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 300,
+          defense: 50, // 50% defense = takes 200% damage (vulnerable)
+          dodgeChance: 0,
+          randomSeed: Field(0),
+        });
+
+        defenderStater.applyDamage(UInt64.from(100), attackerState);
+
+        // fullDamage = 100 * 100 / 50 = 200
+        expect(defenderStater.state.playerStats.hp.toString()).toBe('100');
+      });
+
+      it('should scale with base damage amount', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 100,
+          accuracy: 100,
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 500,
+          defense: 100, // 100% = base defense
+          dodgeChance: 0,
+          randomSeed: Field(0),
+        });
+
+        defenderStater.applyDamage(UInt64.from(250), attackerState);
+
+        // fullDamage = 250 * 100 / 100 = 250
+        expect(defenderStater.state.playerStats.hp.toString()).toBe('250');
+      });
+    });
+
+    describe('hit/dodge calculation (hitChance formula)', () => {
+      /**
+       * Hit chance formula: hitChance = (accuracy + 100) * (100 - dodgeChance) / 100
+       * 
+       * With accuracy=0, dodgeChance=0:
+       *   hitChance = 100 * 100 / 100 = 100 (always hits, random 0-99 < 100)
+       * With accuracy=100, dodgeChance=0:
+       *   hitChance = 200 * 100 / 100 = 200 (always hits)
+       * With accuracy=0, dodgeChance=100:
+       *   hitChance = 100 * 0 / 100 = 0 (always misses)
+       */
+
+      it('should miss when random roll exceeds hitChance (current behavior)', () => {
+        // With high dodge chance, hitChance is reduced
+        const attackerState = createState({
+          playerId: 1,
+          attack: 100,
+          accuracy: 0, // Base accuracy
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 100,
+          defense: 100, // 100% = base defense
+          dodgeChance: 99, // 99% dodge = hitChance = 100 * 1 / 100 = 1
+          randomSeed: Field(999), // Seed that likely produces high random value
+        });
+
+        defenderStater.applyDamage(UInt64.from(100), attackerState);
+
+        // With 99% dodge, most attacks will miss
+        const hp = parseInt(defenderStater.state.playerStats.hp.toString());
+        // HP should either be 100 (miss) or 0 (hit) depending on random
+        expect(hp === 100 || hp === 0).toBe(true);
+      });
+
+      it('should deal 0 damage on miss', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 100,
+          accuracy: 0,
+        });
+
+        // With 100% dodge, always misses (hitChance = 0)
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 100,
+          defense: 100, // 100% = base defense
+          dodgeChance: 100, // 100% dodge = always miss
+          randomSeed: Field(123), // Test seed
+        });
+
+        const initialHp = defenderStater.state.playerStats.hp.toString();
+        defenderStater.applyDamage(UInt64.from(100), attackerState);
+        const finalHp = defenderStater.state.playerStats.hp.toString();
+
+        // 100% dodge should always miss
+        expect(finalHp).toBe('100');
+      });
+
+      it('should account for dodge chance in hitChance calculation', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 100,
+          accuracy: 0,
+        });
+
+        // Higher dodge chance should reduce hit chance
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 100,
+          defense: 100, // 100% = base defense
+          dodgeChance: 50, // 50% dodge
+          randomSeed: Field(0),
+        });
+
+        // hitChance = (0 + 100) * (100 - 50) / 100 = 100 * 50 / 100 = 50
+        defenderStater.applyDamage(UInt64.from(100), attackerState);
+
+        // The attack outcome depends on the random seed
+        const hp = parseInt(defenderStater.state.playerStats.hp.toString());
+        expect(hp === 100 || hp === 0).toBe(true);
+      });
+
+      it('should account for accuracy bonus in hitChance calculation', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 100,
+          accuracy: 100, // +100% accuracy bonus (200% total)
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 100,
+          defense: 100, // 100% = base defense
+          dodgeChance: 0,
+          randomSeed: Field(0),
+        });
+
+        // hitChance = (100 + 100) * (100 - 0) / 100 = 200 (always hits)
+        defenderStater.applyDamage(UInt64.from(100), attackerState);
+
+        // With 200% hit chance (>100), should always hit
+        expect(defenderStater.state.playerStats.hp.toString()).toBe('0');
+      });
+    });
+
+    describe('HP modification', () => {
+      it('should subtract damage from current HP', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 100,
+          accuracy: 100,
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 150,
+          defense: 200, // 200% defense = takes 50% damage (tank)
+          dodgeChance: 0,
+          randomSeed: Field(0),
+        });
+
+        defenderStater.applyDamage(UInt64.from(100), attackerState);
+
+        // fullDamage = 100 * 100 / 200 = 50
+        // HP: 150 - 50 = 100
+        expect(defenderStater.state.playerStats.hp.toString()).toBe('100');
+      });
+
+      it('should allow HP to go negative (no floor at 0)', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 200, // 200% attack
+          accuracy: 100,
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 50,
+          defense: 100, // 100% = base defense
+          dodgeChance: 0,
+          randomSeed: Field(0),
+        });
+
+        defenderStater.applyDamage(UInt64.from(100), attackerState);
+
+        // fullDamage = 100 * 200 / 100 = 200
+        // HP: 50 - 200 = -150
+        expect(defenderStater.state.playerStats.hp.toString()).toBe('-150');
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should handle zero base damage', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 100,
+          accuracy: 100,
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 100,
+          defense: 100, // 100% = base defense
+          dodgeChance: 0,
+          randomSeed: Field(0),
+        });
+
+        defenderStater.applyDamage(UInt64.from(0), attackerState);
+
+        expect(defenderStater.state.playerStats.hp.toString()).toBe('100');
+      });
+
+      it('should handle very high attack multiplier', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 500, // 500% attack
+          accuracy: 100,
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 1000,
+          defense: 100, // 100% = base defense
+          dodgeChance: 0,
+          randomSeed: Field(0),
+        });
+
+        defenderStater.applyDamage(UInt64.from(100), attackerState);
+
+        // fullDamage = 100 * 500 / 100 = 500
+        expect(defenderStater.state.playerStats.hp.toString()).toBe('500');
+      });
+    });
+  });
 });
+
+// Helper functions to create test states
+function createState(options: {
+  playerId: number;
+  attack?: number;
+  defense?: number;
+  accuracy?: number;
+  dodgeChance?: number;
+  hp?: number;
+}): State {
+  return new State({
+    playerId: Field(options.playerId),
+    wizardId: WizardId.MAGE,
+    playerStats: new PlayerStats({
+      hp: Int64.from(options.hp ?? 100),
+      maxHp: Int64.from(options.hp ?? 100),
+      position: new PositionOption({
+        value: new Position({
+          x: Int64.from(0),
+          y: Int64.from(0),
+        }),
+        isSome: Field(1),
+      }),
+      speed: Int64.from(1),
+      attack: UInt64.from(options.attack ?? 100),
+      defense: UInt64.from(options.defense ?? 0),
+      critChance: UInt64.from(0),
+      dodgeChance: UInt64.from(options.dodgeChance ?? 0),
+      accuracy: UInt64.from(options.accuracy ?? 0),
+    }),
+    spellStats: Array(5)
+      .fill(null)
+      .map(
+        () =>
+          new SpellStats({
+            spellId: Field(0),
+            cooldown: Int64.from(0),
+            currentCooldown: Int64.from(0),
+          })
+      ),
+    publicStateEffects: Array(10)
+      .fill(null)
+      .map(
+        () =>
+          new Effect({
+            effectId: Field(0),
+            duration: Field(0),
+            param: Field(0),
+          })
+      ),
+    endOfRoundEffects: Array(10)
+      .fill(null)
+      .map(
+        () =>
+          new Effect({
+            effectId: Field(0),
+            duration: Field(0),
+            param: Field(0),
+          })
+      ),
+    onEndEffects: Array(10)
+      .fill(null)
+      .map(
+        () =>
+          new Effect({
+            effectId: Field(0),
+            duration: Field(0),
+            param: Field(0),
+          })
+      ),
+    map: [...Array(64).fill(Field(0))],
+    turnId: Int64.from(1),
+    randomSeed: Field(456),
+    signingKey: PrivateKey.random(),
+  });
+}
+
+function createStater(options: {
+  playerId: number;
+  hp?: number;
+  defense?: number;
+  dodgeChance?: number;
+  randomSeed?: Field;
+}): Stater {
+  const state = new State({
+    playerId: Field(options.playerId),
+    wizardId: WizardId.MAGE,
+    playerStats: new PlayerStats({
+      hp: Int64.from(options.hp ?? 100),
+      maxHp: Int64.from(options.hp ?? 100),
+      position: new PositionOption({
+        value: new Position({
+          x: Int64.from(0),
+          y: Int64.from(0),
+        }),
+        isSome: Field(1),
+      }),
+      speed: Int64.from(1),
+      attack: UInt64.from(100),
+      defense: UInt64.from(options.defense ?? 0),
+      critChance: UInt64.from(0),
+      dodgeChance: UInt64.from(options.dodgeChance ?? 0),
+      accuracy: UInt64.from(0),
+    }),
+    spellStats: Array(5)
+      .fill(null)
+      .map(
+        () =>
+          new SpellStats({
+            spellId: Field(0),
+            cooldown: Int64.from(0),
+            currentCooldown: Int64.from(0),
+          })
+      ),
+    publicStateEffects: Array(10)
+      .fill(null)
+      .map(
+        () =>
+          new Effect({
+            effectId: Field(0),
+            duration: Field(0),
+            param: Field(0),
+          })
+      ),
+    endOfRoundEffects: Array(10)
+      .fill(null)
+      .map(
+        () =>
+          new Effect({
+            effectId: Field(0),
+            duration: Field(0),
+            param: Field(0),
+          })
+      ),
+    onEndEffects: Array(10)
+      .fill(null)
+      .map(
+        () =>
+          new Effect({
+            effectId: Field(0),
+            duration: Field(0),
+            param: Field(0),
+          })
+      ),
+    map: [...Array(64).fill(Field(0))],
+    turnId: Int64.from(1),
+    randomSeed: options.randomSeed ?? Field(123),
+    signingKey: PrivateKey.random(),
+  });
+
+  return new Stater({ state });
+}

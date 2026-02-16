@@ -31,7 +31,11 @@ const NameSchema = Yup.object().shape({
     .required('Username is required'),
 });
 
-export default function Wallet() {
+interface WalletProps {
+  className?: string;
+}
+
+export default function Wallet({ className }: WalletProps = {}) {
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   const { address, isConnected, triggerWallet, disconnect } = useMinaAppkit();
@@ -149,21 +153,21 @@ export default function Wallet() {
       // initial={isHomePage ? { opacity: 0, y: 50, scale: 0.9 } : false}
       // animate={isHomePage ? { opacity: 1, y: 0, scale: 1 } : false}
       // transition={{ duration: 0.7, ease: 'easeOut', delay: 2.5 }}
-      className="w-full"
+      className={className || 'w-full'}
     >
       {isConnected && address ? (
         <Button
           variant="blue"
           text={`${displayName}`}
           onClick={disconnect}
-          className="w-70 h-15 text-base font-bold"
+          className="h-15 w-full text-base font-bold"
         />
       ) : (
         <Button
           variant="blue"
           text="Connect Wallet"
           onClick={triggerWallet}
-          className="w-70 h-15 text-base font-bold"
+          className="h-15 w-full text-base font-bold"
         />
       )}
     </motion.div>

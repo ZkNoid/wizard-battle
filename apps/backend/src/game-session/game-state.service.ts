@@ -7,6 +7,7 @@ import {
   ITrustedState,
 } from '../../../common/types/gameplay.types';
 import { RedisService } from '../redis/redis.service';
+import { extractCharacterFromFields } from '../utils/character-mapping';
 
 /**
  * @title Game State Service - 5-Phase Turn Management
@@ -33,7 +34,8 @@ import { RedisService } from '../redis/redis.service';
 interface GameState {
   roomId: string;
   players: {
-    id: string; // Unique player identifier
+    id: string; // Unique player identifier (game playerId)
+    userId?: string; // User's wallet address for rewards
     instanceId: string; // Which server instance manages this player
     socketId: string; // Socket.IO connection ID
     state: any; // Player's private game state
@@ -354,7 +356,7 @@ export class GameStateService {
   /**
    * Create initial game state for a room
    * @param roomId - The room identifier
-   * @param players - Players list with logical ids and socket ids
+   * @param players - Players list with logical ids, socket ids, and optional userId
    * @returns The created `GameState`
    * @dev Initializes a `GameState` structure with per-player entries bound to
    * the creating instance id, sets timestamps, and persists it in the Redis
@@ -362,12 +364,13 @@ export class GameStateService {
    */
   async createGameState(
     roomId: string,
-    players: { id: string; socketId: string }[]
+    players: { id: string; socketId: string; userId?: string }[]
   ): Promise<GameState> {
     const gameState: GameState = {
       roomId,
       players: players.map((p) => ({
         id: p.id,
+        userId: p.userId,
         socketId: p.socketId,
         instanceId: this.instanceId,
         state: null,
@@ -1134,10 +1137,10 @@ export class GameStateService {
    * @dev Called when a player's HP reaches zero or they're eliminated by game rules
    * @param roomId The unique identifier for the game room
    * @param playerId The unique identifier for the eliminated player
-   * @return Winner's player ID if game ended, 'draw' if no players remain, null if game continues
+   * @return Object with userId and playerId if game ended, 'draw' string if tie, null if game continues
    *
    * Win Condition Logic:
-   * - If 1 player remains alive: Return winner ID, set status to 'finished'
+   * - If 1 player remains alive: Return { userId, playerId } object, set status to 'finished'
    * - If 0 players remain alive: Return 'draw', set status to 'finished'
    * - If 2+ players remain: Return null, game continues
    *
@@ -1148,12 +1151,24 @@ export class GameStateService {
    *
    * Usage:
    * - Gateway calls this when receiving 'reportDead' message
+   * - Return value (userId) is used for reward distribution via RewardService
    * - Return value determines if 'gameEnd' event should be broadcast
    */
   async markPlayerDead(
     roomId: string,
     playerId: string
-  ): Promise<string | null> {
+  ): Promise<
+    | {
+        wUserId: string | undefined;
+        wPlayerId: string;
+        lUserId: string | undefined;
+        lPlayerId: string;
+        wCharacter: string;
+        lCharacter: string;
+      }
+    | 'draw'
+    | null
+  > {
     return this.withRoomLock(roomId, async () => {
       try {
         const gameState = await this.getGameState(roomId);
@@ -1213,18 +1228,62 @@ export class GameStateService {
           (p) => p && p.isAlive === true
         );
 
+        const deadPlayers = gameState.players.filter(
+          (p) => p && p.isAlive === false
+        );
+
         console.log(`📊 Alive players count: ${alivePlayers.length}`);
 
         if (alivePlayers.length === 1) {
-          // Winner found
+          // Winner found - return userId (wallet address) for reward distribution
           const winner = alivePlayers[0]!;
+          const looser = deadPlayers[0]!;
+
+          // Get match data to extract character information
+          let wCharacter = 'mage'; // default
+          let lCharacter = 'mage'; // default
+          try {
+            const matchData = await this.redisClient.hGet('matches', roomId);
+            if (matchData) {
+              const match = JSON.parse(matchData);
+
+              // Determine which player is which in the match
+              if (match.player1?.playerId === winner.id) {
+                wCharacter = extractCharacterFromFields(match.player1.fields);
+                lCharacter = extractCharacterFromFields(match.player2.fields);
+              } else {
+                wCharacter = extractCharacterFromFields(match.player2.fields);
+                lCharacter = extractCharacterFromFields(match.player1.fields);
+              }
+
+              console.log(
+                `🎮 Character mapping: winner=${wCharacter}, loser=${lCharacter}`
+              );
+            }
+          } catch (error) {
+            console.error('Failed to extract character info from match:', error);
+          }
+
           await this.updateGameState(roomId, {
             players: gameState.players,
             playersReady: gameState.playersReady,
             status: 'finished',
           });
-          console.log(`🏆 Winner detected: ${winner.id} in room ${roomId}`);
-          return winner.id;
+          console.log(
+            `🏆 Winner detected: ${winner.id} (userId: ${winner.userId}, character: ${wCharacter}) in room ${roomId}`
+          );
+          console.log(
+            `🏆 Looser detected: ${looser.id} (userId: ${looser.userId}, character: ${lCharacter}) in room ${roomId}`
+          );
+          // Return userId if available, otherwise fall back to playerId
+          return {
+            wUserId: winner.userId,
+            wPlayerId: winner.id,
+            lUserId: looser.userId,
+            lPlayerId: looser.id,
+            wCharacter,
+            lCharacter,
+          };
         } else if (alivePlayers.length === 0) {
           // Draw - no winner
           await this.updateGameState(roomId, {

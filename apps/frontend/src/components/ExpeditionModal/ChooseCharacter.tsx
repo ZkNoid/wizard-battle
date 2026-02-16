@@ -6,16 +6,23 @@ import { allWizards, type Wizard } from '../../../../common/wizards';
 import { Button } from '../shared/Button';
 import WizardImageMini from './components/WizardImageMini';
 import type { Field } from 'o1js';
-import type { ExpeditionDuration, ExpeditionTimePeriod } from '@/lib/types/Expedition';
+import type {
+  ExpeditionDuration,
+  ExpeditionTimePeriod,
+} from '@/lib/types/Expedition';
 
 interface ChooseCharacterProps {
   onSelectCharacter: (character: Field | string | null) => void;
   onSelectTimePeriod: (timePeriod: ExpeditionTimePeriod | null) => void;
 }
 
-export default function ChooseCharacter({ onSelectCharacter, onSelectTimePeriod }: ChooseCharacterProps) {
+export default function ChooseCharacter({
+  onSelectCharacter,
+  onSelectTimePeriod,
+}: ChooseCharacterProps) {
   const [currentWizard, setCurrentWizard] = useState<Wizard>(allWizards[0]!);
-  const [selectedDuration, setSelectedDuration] = useState<ExpeditionDuration | null>(null);
+  const [selectedDuration, setSelectedDuration] =
+    useState<ExpeditionDuration | null>(null);
 
   const handlePrevWizard = () => {
     const currentIndex = allWizards.findIndex((w) => w.id === currentWizard.id);
@@ -44,7 +51,15 @@ export default function ChooseCharacter({ onSelectCharacter, onSelectTimePeriod 
   }, [currentWizard]);
 
   useEffect(() => {
-    onSelectTimePeriod(selectedDuration ? selectedDuration === '1hour' ? 1 : selectedDuration === '3hour' ? 3 : 24 : null);
+    onSelectTimePeriod(
+      selectedDuration
+        ? selectedDuration === '1hour'
+          ? 1
+          : selectedDuration === '3hour'
+            ? 3
+            : 8
+        : null
+    );
   }, [selectedDuration]);
 
   return (
@@ -59,7 +74,7 @@ export default function ChooseCharacter({ onSelectCharacter, onSelectTimePeriod 
             {/* Left Arrow Button */}
             <button
               onClick={handlePrevWizard}
-              className="transition-transform duration-300 hover:scale-110 flex-shrink-0"
+              className="flex-shrink-0 transition-transform duration-300 hover:scale-110"
             >
               <Image
                 src="/inventory/arrow-left.png"
@@ -77,7 +92,7 @@ export default function ChooseCharacter({ onSelectCharacter, onSelectTimePeriod 
             {/* Right Arrow Button */}
             <button
               onClick={handleNextWizard}
-              className="transition-transform duration-300 hover:scale-110 flex-shrink-0"
+              className="flex-shrink-0 transition-transform duration-300 hover:scale-110"
             >
               <Image
                 src="/inventory/arrow-right.png"
@@ -89,7 +104,7 @@ export default function ChooseCharacter({ onSelectCharacter, onSelectTimePeriod 
             </button>
           </div>
         </div>
-        <div className="flex-1 max-w-md">
+        <div className="max-w-md flex-1">
           <div className="flex flex-col gap-2.5">
             <span className="font-pixel text-main-gray text-left text-xs font-thin">
               When a character is sent on an expedition, he is not available for
@@ -101,19 +116,19 @@ export default function ChooseCharacter({ onSelectCharacter, onSelectTimePeriod 
                 variant={selectedDuration === '1hour' ? 'blue' : 'gray'}
                 text="1 hour"
                 onClick={() => handleSelectDuration('1hour')}
-                className="px-6 py-1 text-xs min-w-28"
+                className="h-12 w-28 px-6 py-1 text-xs"
               />
               <Button
                 variant={selectedDuration === '3hour' ? 'blue' : 'gray'}
                 text="3 hour"
                 onClick={() => handleSelectDuration('3hour')}
-                className="px-6 py-1 text-xs min-w-28"
+                className="h-12 w-28 px-6 py-1 text-xs"
               />
               <Button
-                variant={selectedDuration === '24hour' ? 'blue' : 'gray'}
-                text="24 hour"
-                onClick={() => handleSelectDuration('24hour')}
-                className="px-6 py-4 text-sm min-w-28"
+                variant={selectedDuration === '8hour' ? 'blue' : 'gray'}
+                text="8 hour"
+                onClick={() => handleSelectDuration('8hour')}
+                className="h-12 w-28 px-6 py-4 text-sm"
               />
             </div>
           </div>

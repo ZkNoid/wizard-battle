@@ -13,7 +13,7 @@ import {DeployWBCharacters} from "script/DeployWBCharacters.s.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 contract GameRegistryIntTest is Test {
-    event CommitResources(bytes indexed commit);
+    event commitSingles(bytes indexed commit);
     event CommitBatch(uint256 indexed nonce, bytes[] indexed commits);
     event RevokeAdminRole(address indexed account);
     event GrantAdminRole(address indexed account);
@@ -105,7 +105,7 @@ contract GameRegistryIntTest is Test {
 
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
 
         uint256 playerWBCoinBalance = wBCoin.balanceOf(PLAYER);
         assertEq(playerWBCoinBalance, amount);
@@ -127,7 +127,7 @@ contract GameRegistryIntTest is Test {
 
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
 
         uint256 playerWBCResourcelance = wbResources.balanceOf(PLAYER, 1);
         assertEq(playerWBCResourcelance, amount);
@@ -149,13 +149,13 @@ contract GameRegistryIntTest is Test {
 
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(mintCallData);
-        gameRegistry.commitResource({resourceHash: mintResourceHash, commit: mintCommit, signature: mintSignature});
+        gameRegistry.commitSingle({resourceHash: mintResourceHash, commit: mintCommit, signature: mintSignature});
 
         uint256 playerWBCResourceMintedBalance = wbResources.balanceOf(PLAYER, 1);
 
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(burnCallData);
-        gameRegistry.commitResource({resourceHash: burnResourceHash, commit: burnCommit, signature: burnSignature});
+        gameRegistry.commitSingle({resourceHash: burnResourceHash, commit: burnCommit, signature: burnSignature});
 
         uint256 playerWBCResourceBurnedBalance = wbResources.balanceOf(PLAYER, 1);
 
@@ -178,7 +178,7 @@ contract GameRegistryIntTest is Test {
 
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
-        gameRegistry.commitResource({resourceHash: resourceHash, commit: commit, signature: signature});
+        gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
 
         uint256 playerWBCCharactersBalance = wbCharacters.balanceOf(PLAYER);
         assertEq(playerWBCCharactersBalance, 1);

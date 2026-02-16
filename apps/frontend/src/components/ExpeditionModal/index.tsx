@@ -5,8 +5,12 @@ import { Button } from '../shared/Button';
 import NewExpeditionForm from './NewExpeditionForm';
 import CurrentExpeditionsForm from './CurrentExpeditionsForm';
 import { ExpeditionsBg } from './assets/expeditions-bg';
+import { useModalSound } from '@/lib/hooks/useAudio';
 
 export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
+  // Play modal sounds
+  useModalSound();
+
   const [activeTab, setActiveTab] = useState<
     'new-expedition' | 'current-expedition'
   >('new-expedition');
@@ -23,7 +27,7 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
   const getForm = (tabName: string): React.ReactNode => {
     switch (tabName) {
       case 'new-expedition':
-        return <NewExpeditionForm onClose={onClose} />;
+        return <NewExpeditionForm onClose={onClose} onSuccess={() => setActiveTab('current-expedition')} />;
       case 'current-expedition':
         return <CurrentExpeditionsForm onClose={onClose} />;
       default:
@@ -42,6 +46,8 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
             variant={getButtonVariant('new-expedition')}
             className={buttonClassName}
             onClick={() => setActiveTab('new-expedition')}
+            isLong={true}
+            enableClickSound
           >
             <span className={textClassName}>Start New Expedition</span>
           </Button>
@@ -49,6 +55,8 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
             variant={getButtonVariant('current-expedition')}
             className={buttonClassName}
             onClick={() => setActiveTab('current-expedition')}
+            enableClickSound
+            isLong={true}
           >
             <span className={textClassName}>Current Expeditions</span>
           </Button>

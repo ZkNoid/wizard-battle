@@ -57,7 +57,7 @@ export function Users() {
         playerId={stater?.state.playerId.toString()}
         level={user && user.xp ? levelFromXp(user.xp) : 0}
         health={stater ? +stater!.state.playerStats.hp : 0}
-        maxHealth={100}
+        maxHealth={stater ? +stater!.state.playerStats.maxHp : 0}
         wizardType={
           stater?.state.wizardId.toString() === WizardId.MAGE.toString()
             ? 'wizard'
@@ -69,6 +69,7 @@ export function Users() {
         onMouseEnter={() => setIsPlayerHovered(true)}
         onMouseLeave={() => setIsPlayerHovered(false)}
         showId={isPlayerHovered}
+        isAlly={true}
       />
       {/* Right user bar */}
       <UserBar
@@ -78,7 +79,7 @@ export function Users() {
         // level={opponentAccount && opponentAccount.xp ? levelFromXp(opponentAccount.xp) : 0}
         level={0}
         health={opponentState ? +opponentState!.playerStats.hp : 0}
-        maxHealth={100}
+        maxHealth={opponentState ? +opponentState!.playerStats.maxHp : 0}
         wizardType={
           opponentState?.wizardId.toString() === WizardId.MAGE.toString()
             ? 'wizard'
@@ -90,6 +91,7 @@ export function Users() {
         onMouseEnter={() => setIsOpponentHovered(true)}
         onMouseLeave={() => setIsOpponentHovered(false)}
         showId={isOpponentHovered}
+        isAlly={false}
       />
     </div>
   );
