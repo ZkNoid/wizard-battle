@@ -355,11 +355,11 @@ export function UserBar({
 
         if (effectInfo) {
           // Skip "restoration" effects from display (these are internal effects)
-          if (
-            effectInfo.name.includes('Restoration') ||
-            effectInfo.name.includes('Return')
-          )
-            continue;
+          // if (
+          //   effectInfo.name.includes('Restoration') ||
+          //   effectInfo.name.includes('Return')
+          // )
+          //   continue;
 
           // Check if this effect is already in the list (avoid duplicates)
           const existing = effects.find((e) => e.name === effectInfo.name);
