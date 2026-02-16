@@ -1,6 +1,3 @@
-import { devAuthMiddleware } from '@repo/dev-auth';
-
-export default devAuthMiddleware;
 
 export const config = {
   matcher: [
