@@ -138,7 +138,6 @@ export function CraftFormItem({
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <span className="font-pixel truncate font-bold">{recipe.title}</span>
         <div className="flex min-w-0 flex-row items-center gap-2">
-          <span className="font-pixel shrink-0 text-[12px]">Recipe:</span>
           <div className="min-w-0 flex-1">
             <CraftRecipe
               ingredients={recipe.ingredients}
