@@ -32,8 +32,10 @@ export default async function RootLayout({
     >
       <body>
         <ReownContext cookies={cookies}>
-          <ClientInitializer />
-          <TRPCReactProvider>{children}</TRPCReactProvider>
+          <TRPCReactProvider>
+            <ClientInitializer />
+            {children}
+          </TRPCReactProvider>
         </ReownContext>
         <Analytics />
       </body>
