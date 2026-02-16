@@ -393,7 +393,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   onDrop={() => handleDrop('Ring')}
                   onDragOver={handleDragOver}
                   onClick={() => handleUnequip('Ring')}
-                >
+                >placeholder
                   {equippedItems.Ring ? (
                     <InventoryTooltip userItem={equippedItems.Ring}>
                       <Image
