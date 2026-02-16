@@ -77,11 +77,7 @@ export default function Game({
             />
           </BoxButton>
         </div>
-        <div className="relative flex h-28 flex-row items-center">
-          <ActionsBg
-            className="size-28 shrink-0"
-            actionInfo={actionInfo}
-          />
+        <div className="w-220 relative h-28">
           <Spells
             // DEBUG FOR TESTING
             // skills={Array.from({ length: 5 }).map((_, idx) => ({
@@ -105,6 +101,10 @@ export default function Game({
                 })
                 .filter((spell) => spell !== undefined) ?? []
             }
+          />
+          <ActionsBg
+            className="absolute left-0 top-0 z-[2] -ml-10 size-28"
+            actionInfo={actionInfo}
           />
           <SkillsBg className="absolute inset-0 -z-[1] size-full" />
         </div>
