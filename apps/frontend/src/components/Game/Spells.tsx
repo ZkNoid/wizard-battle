@@ -21,7 +21,7 @@ export function Spells({
 
   const MAX_SKILLS = 10;
   return (
-    <div className="relative z-0 ml-6 flex h-full w-full flex-row items-center justify-center gap-2.5">
+    <div className="relative z-[1] ml-6 flex h-full w-full flex-row items-center justify-center gap-2.5">
       <>
         {skills.map((skill) => (
           <SpellTooltip
