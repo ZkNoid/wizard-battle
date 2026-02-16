@@ -16,12 +16,12 @@ export type EquippedSlots = Record<
 >;
 
 const defaultEquippedSlots: EquippedSlots = {
-  gem: null,
-  ring: null,
-  necklace: null,
-  arms: null,
-  legs: null,
-  belt: null,
+  Orb: null,
+  Belt: null,
+  Ring: null,
+  Amulet: null,
+  Boots: null,
+  Gloves: null,
 };
 
 // Helper function to calculate stats from equipped items

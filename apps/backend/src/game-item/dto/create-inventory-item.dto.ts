@@ -62,7 +62,7 @@ export class CreateInventoryItemDto {
   image!: string;
 
   @IsString()
-  @IsIn(['common', 'uncommon', 'unique'])
+  @IsIn(['common', 'uncommon', 'rare'])
   rarity!: ItemRarity;
 
   @IsString()
@@ -79,7 +79,7 @@ export class CreateInventoryItemDto {
 
   // Armor-specific fields (optional)
   @IsString()
-  @IsIn(['arms', 'legs', 'belt', 'necklace', 'gem', 'ring'])
+  @IsIn(['Orb', 'Belt', 'Ring', 'Amulet', 'Boots', 'Gloves'])
   @IsOptional()
   wearableSlot?: InventoryItemWearableArmorSlot;
 

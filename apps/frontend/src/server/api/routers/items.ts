@@ -182,7 +182,7 @@ export const itemsRouter = createTRPCRouter({
       .collection(itemsCollection)
       .find({
         type: 'armor',
-        wearableSlot: { $in: ['arms', 'legs', 'belt'] },
+        wearableSlot: { $in: ['Gloves', 'Boots', 'Belt'] },
       })
       .toArray()) as unknown as IInventoryArmorItemDB[];
 
@@ -208,7 +208,7 @@ export const itemsRouter = createTRPCRouter({
       .collection(itemsCollection)
       .find({
         type: 'armor',
-        wearableSlot: { $in: ['necklace', 'gem', 'ring'] },
+        wearableSlot: { $in: ['Amulet', 'Orb', 'Ring'] },
       })
       .toArray()) as unknown as IInventoryArmorItemDB[];
 

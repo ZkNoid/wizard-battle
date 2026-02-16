@@ -62,7 +62,7 @@ export class InventoryItem {
   @Prop({ required: true })
   image!: string;
 
-  @Prop({ required: true, enum: ['common', 'uncommon', 'unique'] })
+  @Prop({ required: true, enum: ['common', 'uncommon', 'rare'] })
   rarity!: ItemRarity;
 
   @Prop({ required: true, enum: ['armor', 'craft', 'gems'] })
@@ -75,7 +75,7 @@ export class InventoryItem {
   price!: number;
 
   // Armor-specific fields (optional for craft/gems items)
-  @Prop({ enum: ['arms', 'legs', 'belt', 'necklace', 'gem', 'ring'] })
+  @Prop({ enum: ['Orb', 'Belt', 'Ring', 'Amulet', 'Boots', 'Gloves'] })
   wearableSlot?: InventoryItemWearableArmorSlot;
 
   @Prop()

@@ -267,12 +267,12 @@ export class CraftingService {
     const lowerItemId = itemId.toLowerCase();
 
     // Map item name patterns to categories
-    if (lowerItemId.includes('necklace')) return 'necklace';
-    if (lowerItemId.includes('ring')) return 'ring';
-    if (lowerItemId.includes('belt')) return 'belt';
-    if (lowerItemId.includes('arms') || lowerItemId.includes('glove') || lowerItemId.includes('bracer')) return 'arms';
-    if (lowerItemId.includes('legs') || lowerItemId.includes('boot') || lowerItemId.includes('pant')) return 'legs';
-    if (lowerItemId.includes('orb') || lowerItemId.includes('gem')) return 'gem';
+    if (lowerItemId.includes('orb')) return 'Orb';
+    if (lowerItemId.includes('belt')) return 'Belt';
+    if (lowerItemId.includes('ring')) return 'Ring';
+    if (lowerItemId.includes('amulet')) return 'Amulet';
+    if (lowerItemId.includes('boot')) return 'Boots';
+    if (lowerItemId.includes('glove')) return 'Gloves';
 
     return null;
   }
@@ -282,7 +282,7 @@ export class CraftingService {
    * and if they have Lv2+ items in all categories
    */
   private async checkGearQuests(userId: string): Promise<void> {
-    const ALL_CATEGORIES = ['necklace', 'ring', 'belt', 'arms', 'legs', 'gem'];
+    const ALL_CATEGORIES = ['Orb', 'Belt', 'Ring', 'Amulet', 'Boots', 'Gloves'];
 
     try {
       // Get all user's inventory items
