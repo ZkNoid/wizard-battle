@@ -19,11 +19,28 @@ import type {
 
 export class ItemBuffDto implements IItemBuff {
   @IsString()
-  @IsNotEmpty()
-  effect!: string;
+  @IsOptional()
+  critChance?: string;
 
-  @IsNumber()
-  value!: number;
+  @IsString()
+  @IsOptional()
+  Accuracy?: string;
+
+  @IsString()
+  @IsOptional()
+  Attack?: string;
+
+  @IsString()
+  @IsOptional()
+  Dodge?: string;
+
+  @IsString()
+  @IsOptional()
+  Movement?: string;
+
+  @IsString()
+  @IsOptional()
+  Defence?: string;
 }
 
 export class ImprovementRequirementDto implements IImprovementRequirementDB {
@@ -87,11 +104,10 @@ export class CreateInventoryItemDto {
   @IsOptional()
   level?: number;
 
-  @IsArray()
-  @ValidateNested({ each: true })
+  @ValidateNested()
   @Type(() => ItemBuffDto)
   @IsOptional()
-  buff?: ItemBuffDto[];
+  buff?: ItemBuffDto;
 
   @IsArray()
   @ValidateNested({ each: true })
