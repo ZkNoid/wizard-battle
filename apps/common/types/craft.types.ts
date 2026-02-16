@@ -72,11 +72,11 @@ export interface ICraftCategoryConfig {
 
 // Default category configurations
 export const CRAFT_CATEGORY_CONFIGS: ICraftCategoryConfig[] = [
-  { category: 'necklace', title: 'Necklace', icon: '/inventory/placeholders/necklace.png' },
-  { category: 'ring', title: 'Rings', icon: '/inventory/placeholders/ring.png' },
-  { category: 'belt', title: 'Belts', icon: '/inventory/placeholders/belt.png' },
-  { category: 'arms', title: 'Gloves', icon: '/inventory/placeholders/arms.png' },
-  { category: 'legs', title: 'Boots', icon: '/inventory/placeholders/legs.png' },
-  { category: 'gem', title: 'Gems', icon: '/inventory/placeholders/gem.png' },
+  { category: 'Orb', title: 'Orbs', icon: '/inventory/placeholders/orb.png' },
+  { category: 'Belt', title: 'Belts', icon: '/inventory/placeholders/belt.png' },
+  { category: 'Ring', title: 'Rings', icon: '/inventory/placeholders/ring.png' },
+  { category: 'Amulet', title: 'Amulets', icon: '/inventory/placeholders/amulet.png' },
+  { category: 'Boots', title: 'Boots', icon: '/inventory/placeholders/boots.png' },
+  { category: 'Gloves', title: 'Gloves', icon: '/inventory/placeholders/gloves.png' },
 ];
 

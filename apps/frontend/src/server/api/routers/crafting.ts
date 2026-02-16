@@ -23,31 +23,31 @@ const itemsCollection = 'iteminventory';
 // (which would pull in o1js and break SSR)
 const CRAFT_CATEGORY_CONFIGS: ICraftCategoryConfig[] = [
   {
-    category: 'necklace',
-    title: 'Necklace',
-    icon: '/inventory/placeholders/necklace.png',
+    category: 'Orb',
+    title: 'Orbs',
+    icon: '/inventory/placeholders/orb.png',
   },
   {
-    category: 'ring',
-    title: 'Rings',
-    icon: '/inventory/placeholders/ring.png',
-  },
-  {
-    category: 'belt',
+    category: 'Belt',
     title: 'Belts',
     icon: '/inventory/placeholders/belt.png',
   },
   {
-    category: 'arms',
-    title: 'Gloves',
-    icon: '/inventory/placeholders/arms.png',
+    category: 'Ring',
+    title: 'Rings',
+    icon: '/inventory/placeholders/ring.png',
   },
   {
-    category: 'legs',
-    title: 'Boots',
-    icon: '/inventory/placeholders/legs.png',
+    category: 'Amulet',
+    title: 'Amulets',
+    icon: '/inventory/placeholders/amulet.png',
   },
-  { category: 'gem', title: 'Gems', icon: '/inventory/placeholders/gem.png' },
+  {
+    category: 'Boots',
+    title: 'Boots',
+    icon: '/inventory/placeholders/boots.png',
+  },
+  { category: 'Gloves', title: 'Gloves', icon: '/inventory/placeholders/gloves.png' },
 ];
 
 // Helper to populate recipe ingredients with item data
@@ -142,11 +142,11 @@ export const craftingRouter = createTRPCRouter({
       return populatedRecipes;
     }),
 
-  // Get recipes by category (necklace, ring, belt, etc.)
+  // Get recipes by category (orb, belt, ring, etc.)
   getRecipesByCategory: publicProcedure
     .input(
       z.object({
-        category: z.enum(['necklace', 'ring', 'belt', 'arms', 'legs', 'gem']),
+        category: z.enum(['Orb', 'Belt', 'Ring', 'Amulet', 'Boots', 'Gloves']),
       })
     )
     .query(async ({ input }) => {

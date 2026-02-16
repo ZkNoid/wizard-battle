@@ -79,12 +79,12 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   // Get equipped items for current wizard
   const equippedItems = useMemo((): EquippedSlots => {
     const defaultSlots: EquippedSlots = {
-      gem: null,
-      ring: null,
-      necklace: null,
-      arms: null,
-      legs: null,
-      belt: null,
+      Orb: null,
+      Belt: null,
+      Ring: null,
+      Amulet: null,
+      Boots: null,
+      Gloves: null,
     };
     return equippedItemsByWizard[currentWizardId] ?? defaultSlots;
   }, [equippedItemsByWizard, currentWizardId]);
@@ -361,17 +361,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
               <div className="flex h-full w-1/4 flex-col gap-5">
                 <div
                   className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('gem')}
+                  onDrop={() => handleDrop('Orb')}
                   onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('gem')}
+                  onClick={() => handleUnequip('Orb')}
                 >
-                  {equippedItems.gem ? (
-                    <InventoryTooltip userItem={equippedItems.gem}>
+                  {equippedItems.Orb ? (
+                    <InventoryTooltip userItem={equippedItems.Orb}>
                       <Image
-                        src={`/items/${equippedItems.gem.item.image}`}
+                        src={`/items/${equippedItems.Orb.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.gem.item.title}
+                        alt={equippedItems.Orb.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -379,10 +379,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                     </InventoryTooltip>
                   ) : (
                     <Image
-                      src="/inventory/placeholders/gem.png"
+                      src="/inventory/placeholders/orb.png"
                       width={100}
                       height={100}
-                      alt="gem-placeholder"
+                      alt="orb-placeholder"
                       className="pointer-events-none size-full select-none object-contain object-center"
                     />
                   )}
@@ -390,17 +390,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <div
                   className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('ring')}
+                  onDrop={() => handleDrop('Ring')}
                   onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('ring')}
+                  onClick={() => handleUnequip('Ring')}
                 >
-                  {equippedItems.ring ? (
-                    <InventoryTooltip userItem={equippedItems.ring}>
+                  {equippedItems.Ring ? (
+                    <InventoryTooltip userItem={equippedItems.Ring}>
                       <Image
-                        src={`/items/${equippedItems.ring.item.image}`}
+                        src={`/items/${equippedItems.Ring.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.ring.item.title}
+                        alt={equippedItems.Ring.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -419,17 +419,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <div
                   className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('necklace')}
+                  onDrop={() => handleDrop('Amulet')}
                   onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('necklace')}
+                  onClick={() => handleUnequip('Amulet')}
                 >
-                  {equippedItems.necklace ? (
-                    <InventoryTooltip userItem={equippedItems.necklace}>
+                  {equippedItems.Amulet ? (
+                    <InventoryTooltip userItem={equippedItems.Amulet}>
                       <Image
-                        src={`/items/${equippedItems.necklace.item.image}`}
+                        src={`/items/${equippedItems.Amulet.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.necklace.item.title}
+                        alt={equippedItems.Amulet.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -437,10 +437,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                     </InventoryTooltip>
                   ) : (
                     <Image
-                      src="/inventory/placeholders/necklace.png"
+                      src="/inventory/placeholders/amulet.png"
                       width={100}
                       height={100}
-                      alt="necklace-placeholder"
+                      alt="amulet-placeholder"
                       className="pointer-events-none size-full select-none object-contain object-center"
                     />
                   )}
@@ -476,17 +476,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
               <div className="flex h-full w-1/4 flex-col gap-5">
                 <div
                   className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('arms')}
+                  onDrop={() => handleDrop('Gloves')}
                   onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('arms')}
+                  onClick={() => handleUnequip('Gloves')}
                 >
-                  {equippedItems.arms ? (
-                    <InventoryTooltip userItem={equippedItems.arms}>
+                  {equippedItems.Gloves ? (
+                    <InventoryTooltip userItem={equippedItems.Gloves}>
                       <Image
-                        src={`/items/${equippedItems.arms.item.image}`}
+                        src={`/items/${equippedItems.Gloves.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.arms.item.title}
+                        alt={equippedItems.Gloves.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -494,10 +494,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                     </InventoryTooltip>
                   ) : (
                     <Image
-                      src="/inventory/placeholders/arms.png"
+                      src="/inventory/placeholders/gloves.png"
                       width={100}
                       height={100}
-                      alt="arms-placeholder"
+                      alt="gloves-placeholder"
                       className="pointer-events-none size-full select-none object-contain object-center"
                     />
                   )}
@@ -505,17 +505,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <div
                   className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('legs')}
+                  onDrop={() => handleDrop('Boots')}
                   onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('legs')}
+                  onClick={() => handleUnequip('Boots')}
                 >
-                  {equippedItems.legs ? (
-                    <InventoryTooltip userItem={equippedItems.legs}>
+                  {equippedItems.Boots ? (
+                    <InventoryTooltip userItem={equippedItems.Boots}>
                       <Image
-                        src={`/items/${equippedItems.legs.item.image}`}
+                        src={`/items/${equippedItems.Boots.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.legs.item.title}
+                        alt={equippedItems.Boots.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -523,10 +523,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                     </InventoryTooltip>
                   ) : (
                     <Image
-                      src="/inventory/placeholders/legs.png"
+                      src="/inventory/placeholders/boots.png"
                       width={100}
                       height={100}
-                      alt="legs-placeholder"
+                      alt="boots-placeholder"
                       className="pointer-events-none size-full select-none object-contain object-center"
                     />
                   )}
@@ -534,17 +534,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <div
                   className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('belt')}
+                  onDrop={() => handleDrop('Belt')}
                   onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('belt')}
+                  onClick={() => handleUnequip('Belt')}
                 >
-                  {equippedItems.belt ? (
-                    <InventoryTooltip userItem={equippedItems.belt}>
+                  {equippedItems.Belt ? (
+                    <InventoryTooltip userItem={equippedItems.Belt}>
                       <Image
-                        src={`/items/${equippedItems.belt.item.image}`}
+                        src={`/items/${equippedItems.Belt.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.belt.item.title}
+                        alt={equippedItems.Belt.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}

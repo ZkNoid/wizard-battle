@@ -1,14 +1,14 @@
 // Shared inventory types for frontend and backend
 
-export type ItemRarity = 'common' | 'uncommon' | 'unique';
+export type ItemRarity = 'common' | 'uncommon' | 'rare';
 export type ItemType = 'armor' | 'craft' | 'gems';
 export type InventoryItemWearableArmorSlot =
-  | 'arms'
-  | 'legs'
-  | 'belt'
-  | 'necklace'
-  | 'gem'
-  | 'ring';
+  | 'Orb'
+  | 'Belt'
+  | 'Ring'
+  | 'Amulet'
+  | 'Boots'
+  | 'Gloves';
 
 export type InventoryFilterType = 'all' | 'armor' | 'craft' | 'gems';
 
