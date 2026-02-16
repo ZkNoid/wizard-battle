@@ -66,6 +66,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const equippedItemsByWizard = useInventoryStore(
     (state) => state.equippedItemsByWizard
   );
+  const statsByWizard = useInventoryStore((state) => state.statsByWizard);
   const getStats = useInventoryStore((state) => state.getStats);
   const equipItem = useInventoryStore((state) => state.equipItem);
   const unequipItem = useInventoryStore((state) => state.unequipItem);
@@ -92,7 +93,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   // Get stats for current wizard from store
   const stats = useMemo(() => {
     return getStats(currentWizardId);
-  }, [getStats, currentWizardId]);
+  }, [getStats, currentWizardId, statsByWizard]);
 
   // Get XP for the currently selected wizard
   const xp = useMemo(() => {
@@ -198,6 +199,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
 
     // Use store action to equip item (handles inventory swap automatically)
     equipItem(currentWizardId, slotId, draggedItem);
+    
     setDraggedItem(null);
   };
 
