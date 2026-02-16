@@ -77,11 +77,11 @@ export default function Game({
             />
           </BoxButton>
         </div>
-        <ActionsBg
-          className="h-28 w-28 shrink-0"
-          actionInfo={actionInfo}
-        />
-        <div className="w-220 relative h-28">
+        <div className="relative flex h-28 flex-row items-center">
+          <ActionsBg
+            className="size-28 shrink-0"
+            actionInfo={actionInfo}
+          />
           <Spells
             // DEBUG FOR TESTING
             // skills={Array.from({ length: 5 }).map((_, idx) => ({
