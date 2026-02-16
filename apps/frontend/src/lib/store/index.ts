@@ -6,3 +6,4 @@ export { useEngineStore } from './engineStore';
 export { useInventoryStore, type EquippedSlots } from './inventoryStore';
 export { useAudioStore } from './audioStore';
 export { useCraftStore } from './craftStore';
+export { useQuestStore } from './questStore';
