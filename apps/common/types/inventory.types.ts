@@ -12,9 +12,14 @@ export type InventoryItemWearableArmorSlot =
 
 export type InventoryFilterType = 'all' | 'armor' | 'craft' | 'gems';
 
+// Buff is now an object with optional stat keys
 export interface IItemBuff {
-  effect: string;
-  value: number;
+  critChance?: string;
+  Accuracy?: string;
+  Attack?: string;
+  Dodge?: string;
+  Movement?: string;
+  Defence?: string;
 }
 
 // For database storage - stores item reference by ID
@@ -50,7 +55,7 @@ export interface IInventoryArmorItem extends IInventoryItem {
   type: 'armor';
   wearableSlot: InventoryItemWearableArmorSlot;
   level: number;
-  buff: IItemBuff[];
+  buff: IItemBuff;
   improvementRequirements: IImprovementRequirement[];
   wearRequirements: IWearRequirement[];
 }
@@ -60,7 +65,7 @@ export interface IInventoryArmorItemDB extends IInventoryItem {
   type: 'armor';
   wearableSlot: InventoryItemWearableArmorSlot;
   level: number;
-  buff: IItemBuff[];
+  buff: IItemBuff;
   improvementRequirements: IImprovementRequirementDB[];
   wearRequirements: IWearRequirement[];
 }
