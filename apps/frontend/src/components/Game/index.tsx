@@ -77,10 +77,6 @@ export default function Game({
             />
           </BoxButton>
         </div>
-        <ActionsBg
-          className="h-28 w-28 shrink-0"
-          actionInfo={actionInfo}
-        />
         <div className="w-220 relative h-28">
           <Spells
             // DEBUG FOR TESTING
@@ -106,7 +102,11 @@ export default function Game({
                 .filter((spell) => spell !== undefined) ?? []
             }
           />
-          <SkillsBg className="absolute inset-0 -z-[1] size-full" />
+          <ActionsBg
+            className="absolute left-0 top-0 z-[1] -ml-10 size-28"
+            actionInfo={actionInfo}
+          />
+          <SkillsBg className="absolute inset-0 size-full" />
         </div>
         <div className="flex h-28 flex-row items-end gap-2.5">
           <Clock />
