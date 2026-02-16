@@ -7,8 +7,9 @@ import type {
   AnyInventoryItem,
 } from '@/lib/types/Inventory';
 import type { IHeroStats } from '@/lib/types/IHeroStat';
-import { defaultHeroStats } from '@/lib/constants/stat';
 import { trpcClient } from '@/trpc/vanilla';
+import { allWizards } from '../../../../common/wizards';
+import { defaultHeroStats } from '@/lib/constants/stat';
 
 export type EquippedSlots = Record<
   InventoryItemWearableArmorSlot,
@@ -24,9 +25,33 @@ const defaultEquippedSlots: EquippedSlots = {
   Gloves: null,
 };
 
+// Helper function to get default stats for a wizard based on their type
+const getWizardDefaultStats = (wizardId: string): IHeroStats => {
+  const wizard = allWizards.find((w) => w.id.toString() === wizardId);
+
+  if (!wizard) {
+    return { ...defaultHeroStats };
+  }
+
+  const state = wizard.defaultState();
+  const playerStats = state.playerStats;
+
+  return {
+    hp: Number(playerStats.maxHp.toBigint()),
+    atk: Number(playerStats.attack.toBigInt()),
+    def: Number(playerStats.defense.toBigInt()),
+    crit: Number(playerStats.critChance.toBigInt()),
+    dodge: Number(playerStats.dodgeChance.toBigInt()),
+    accuracy: Number(playerStats.accuracy.toBigInt()),
+  };
+};
+
 // Helper function to calculate stats from equipped items
-const calculateStats = (equippedSlots: EquippedSlots): IHeroStats => {
-  const stats: IHeroStats = { ...defaultHeroStats };
+const calculateStats = (
+  equippedSlots: EquippedSlots,
+  wizardId: string
+): IHeroStats => {
+  const stats: IHeroStats = getWizardDefaultStats(wizardId);
 
   Object.values(equippedSlots).forEach((userItem) => {
     if (userItem && userItem.item.type === 'armor') {
@@ -146,7 +171,7 @@ export const useInventoryStore = create<InventoryStore>()(
           // Calculate stats for each wizard
           const statsByWizard: Record<string, IHeroStats> = {};
           Object.entries(equippedByWizard).forEach(([wizardId, slots]) => {
-            statsByWizard[wizardId] = calculateStats(slots);
+            statsByWizard[wizardId] = calculateStats(slots, wizardId);
           });
 
           // Extract currency balances
@@ -185,7 +210,7 @@ export const useInventoryStore = create<InventoryStore>()(
 
       getStats: (wizardId: string): IHeroStats => {
         const state = get();
-        return state.statsByWizard[wizardId] ?? { ...defaultHeroStats };
+        return state.statsByWizard[wizardId] ?? getWizardDefaultStats(wizardId);
       },
 
       equipItem: (
@@ -218,7 +243,7 @@ export const useInventoryStore = create<InventoryStore>()(
           updatedEquipped[slotId] = equippedItem;
 
           // Recalculate stats for this wizard
-          const newStats = calculateStats(updatedEquipped);
+          const newStats = calculateStats(updatedEquipped, wizardId);
 
           // Update inventory: remove the equipped item, add back the previously equipped item if any
           let newInventory = state.iteminventory.filter(
@@ -260,7 +285,7 @@ export const useInventoryStore = create<InventoryStore>()(
           updatedEquipped[slotId] = null;
 
           // Recalculate stats for this wizard
-          const newStats = calculateStats(updatedEquipped);
+          const newStats = calculateStats(updatedEquipped, wizardId);
 
           // Add item back to inventory
           const unequippedItem: IUserInventoryItem = {
