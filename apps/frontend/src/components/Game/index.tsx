@@ -45,7 +45,7 @@ export default function Game({
       </div>
 
       <div className="col-span-6 row-span-1 row-start-6 flex flex-row items-center gap-5">
-        <div className="w-65 flex h-28 flex-row items-end gap-2.5">
+        <div className="w-65 mr-5 flex h-28 flex-row items-end gap-2.5">
           <Button
             variant="blue"
             className="h-16 w-40"
