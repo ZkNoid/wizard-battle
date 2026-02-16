@@ -16,10 +16,9 @@ import { LEVELS_XP, levelFromXp } from '@/lib/constants/levels';
 import { InventoryTooltip } from './InventoryTooltip';
 import type { IInventoryFilterBtnProps } from './InventoryFilterBtn';
 import InventoryFilterBtn from './InventoryFilterBtn';
-import { defaultHeroStats, heroStatsConfig } from '@/lib/constants/stat';
+import { heroStatsConfig } from '@/lib/constants/stat';
 import type { IHeroStatConfig, IHeroStats } from '@/lib/types/IHeroStat';
-import { api } from '@/trpc/react';
-import { useInventoryStore, type EquippedSlots } from '@/lib/store';
+import { useInventoryStore, useUserDataStore, type EquippedSlots } from '@/lib/store';
 import { WizardId } from '../../../../common/wizards';
 import {
   useModalSound,
@@ -53,10 +52,8 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const playClickSound = useClickSound();
   const playHoverSound = useHoverSound();
 
-  // Request user XP (mock address for now)
-  const { data: xp = 0 } = api.users.getXp.useQuery({
-    address: 'mock-address',
-  });
+  // Get wizard-specific XP from store
+  const userData = useUserDataStore((state) => state.userData);
 
   const [currentWizard, setCurrentWizard] = useState<Wizards>(Wizards.MAGE);
   const [draggedItem, setDraggedItem] = useState<IUserInventoryItem | null>(
@@ -69,7 +66,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const equippedItemsByWizard = useInventoryStore(
     (state) => state.equippedItemsByWizard
   );
-  const statsByWizard = useInventoryStore((state) => state.statsByWizard);
+  const getStats = useInventoryStore((state) => state.getStats);
   const equipItem = useInventoryStore((state) => state.equipItem);
   const unequipItem = useInventoryStore((state) => state.unequipItem);
 
@@ -94,8 +91,20 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
 
   // Get stats for current wizard from store
   const stats = useMemo(() => {
-    return statsByWizard[currentWizardId] ?? { ...defaultHeroStats };
-  }, [statsByWizard, currentWizardId]);
+    return getStats(currentWizardId);
+  }, [getStats, currentWizardId]);
+
+  // Get XP for the currently selected wizard
+  const xp = useMemo(() => {
+    switch (currentWizard) {
+      case Wizards.ARCHER:
+        return userData?.archer_xp ?? 0;
+      case Wizards.WARRIOR:
+        return userData?.duelist_xp ?? 0;
+      case Wizards.MAGE:
+        return userData?.mage_xp ?? 0;
+    }
+  }, [currentWizard, userData]);
 
   const handleNext = () => {
     setCurrentWizard((prev) => (prev + 1) % 3);
