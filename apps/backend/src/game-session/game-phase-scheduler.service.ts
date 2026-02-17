@@ -113,7 +113,7 @@ export class GamePhaseSchedulerService {
             timeoutMarker
           )
         );
-
+        // New turn has been started and no one submited any acctions -> no rewards!
         if (submitters.length === 0) {
           console.log(`🤝 No actions submitted in room ${roomId} → draw`);
           await this.withRetry(() =>
@@ -131,6 +131,10 @@ export class GamePhaseSchedulerService {
               roomId,
               'spell_casting_timeout_draw'
             )
+          );
+
+          console.log(
+            `⚠️ gameEnd event submited for room ${roomId}, with valuw draw`
           );
           // Remove match and game state to allow rematch
           try {
@@ -165,8 +169,12 @@ export class GamePhaseSchedulerService {
               .map((p) => p.id)
               .join(', ')}`
           );
+          console.log(
+            `🤝 Only one player has submited action in room ${roomId}!`
+          );
 
           let winnerId: string | null = null;
+
           for (const p of nonSubmitters) {
             const res = await this.withRetry(() =>
               this.gameStateService.markPlayerDead(roomId, p.id)
@@ -218,6 +226,9 @@ export class GamePhaseSchedulerService {
               );
             }
           } else {
+            console.log(
+              '⚠️ should not be called, only possible if previus winner determination is not valid'
+            );
             // Multiple submitters still alive - determine winner from remaining players
             const remainingPlayers = gameState.players.filter((p) => p.isAlive);
             if (remainingPlayers.length === 1) {
@@ -232,7 +243,9 @@ export class GamePhaseSchedulerService {
                 })
               );
               const gameEnd = { winnerId };
-              this.gameSessionGateway.server.to(roomId).emit('gameEnd', gameEnd);
+              this.gameSessionGateway.server
+                .to(roomId)
+                .emit('gameEnd', gameEnd);
               await this.withRetry(() =>
                 this.gameStateService.publishToRoom(roomId, 'gameEnd', gameEnd)
               );
@@ -247,7 +260,9 @@ export class GamePhaseSchedulerService {
                 })
               );
               const gameEnd = { winnerId: 'draw' };
-              this.gameSessionGateway.server.to(roomId).emit('gameEnd', gameEnd);
+              this.gameSessionGateway.server
+                .to(roomId)
+                .emit('gameEnd', gameEnd);
               await this.withRetry(() =>
                 this.gameStateService.publishToRoom(roomId, 'gameEnd', gameEnd)
               );
