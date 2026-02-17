@@ -71,23 +71,6 @@ export const usersRouter = createTRPCRouter({
       return true;
     }),
 
-  gainXp: publicProcedure
-    .input(z.object({ address: z.string(), xp: z.number() }))
-    .mutation(async ({ input }) => {
-      if (!db) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Database not connected',
-        });
-      }
-
-      await db
-        .collection(collectionName)
-        .updateOne({ address: input.address }, { $inc: { xp: input.xp } });
-
-      return true;
-    }),
-
   getXp: publicProcedure
     .input(z.object({ address: z.string() }))
     .query(async ({ input }) => {
