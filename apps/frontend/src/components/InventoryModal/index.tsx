@@ -25,6 +25,7 @@ import {
   useClickSound,
   useHoverSound,
 } from '@/lib/hooks/useAudio';
+import { useMinaAppkit } from 'mina-appkit';
 
 const MAX_ITEMS = 35;
 
@@ -51,6 +52,9 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   useModalSound();
   const playClickSound = useClickSound();
   const playHoverSound = useHoverSound();
+
+  // Get wallet address for tRPC calls
+  const { address } = useMinaAppkit();
 
   // Get wizard-specific XP from store
   const userData = useUserDataStore((state) => state.userData);
@@ -182,8 +186,8 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     setDraggedItem(null);
   };
 
-  const handleDrop = (slotId: InventoryItemWearableArmorSlot) => {
-    if (!draggedItem) return;
+  const handleDrop = async (slotId: InventoryItemWearableArmorSlot) => {
+    if (!draggedItem || !address) return;
 
     // Check if dragged item can be equipped in this slot
     if (draggedItem.item.type !== 'armor') {
@@ -198,7 +202,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     }
 
     // Use store action to equip item (handles inventory swap automatically)
-    equipItem(currentWizardId, slotId, draggedItem);
+    await equipItem(address, currentWizardId, slotId, draggedItem);
     
     setDraggedItem(null);
   };
@@ -207,12 +211,14 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     e.preventDefault();
   };
 
-  const handleUnequip = (slotId: InventoryItemWearableArmorSlot) => {
+  const handleUnequip = async (slotId: InventoryItemWearableArmorSlot) => {
+    if (!address) return;
+    
     const userItem = equippedItems[slotId];
     if (!userItem) return;
 
     // Use store action to unequip item
-    unequipItem(currentWizardId, slotId);
+    await unequipItem(address, currentWizardId, slotId);
   };
 
   const filteredItems =
