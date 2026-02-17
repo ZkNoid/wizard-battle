@@ -171,13 +171,10 @@ export const useAudioStore = create<AudioStore>((set, get) => {
         isMusicMuted,
       } = get();
 
-      // If the same track is already playing or loading, do nothing
-      if (currentMusicTrack === src && currentMusicHowl) {
-        // Check if loading (prevents race condition) or already playing
-        const state = currentMusicHowl.state();
-        if (state === 'loading' || currentMusicHowl.playing()) {
-          return;
-        }
+      // If already set to play this track, do nothing
+      // (We set currentMusicTrack BEFORE calling play(), so this prevents duplicates)
+      if (currentMusicTrack === src) {
+        return;
       }
 
       if (!isInitialized) {

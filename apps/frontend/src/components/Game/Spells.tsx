@@ -73,7 +73,7 @@ export function Spells({
             </button>
           </SpellTooltip>
         ))}
-        {Array.from({ length: MAX_SKILLS - skills.length }).map((_, index) => (
+        {/* {Array.from({ length: MAX_SKILLS - skills.length }).map((_, index) => (
           <Image
             key={index}
             className="size-16 shrink-0 cursor-not-allowed border-4 border-black"
@@ -82,7 +82,7 @@ export function Spells({
             width={64}
             height={64}
           />
-        ))}
+        ))} */}
       </>
     </div>
   );
