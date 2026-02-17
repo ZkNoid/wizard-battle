@@ -7,6 +7,7 @@ import type {
   InventoryFilterType,
   InventoryItemWearableArmorSlot,
   IUserInventoryItem,
+  WizardClassName,
 } from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
 import { useState, useMemo } from 'react';
@@ -44,6 +45,18 @@ const getWizardId = (wizard: Wizards): string => {
       return WizardId.PHANTOM_DUELIST.toString();
     case Wizards.MAGE:
       return WizardId.MAGE.toString();
+  }
+};
+
+// Map UI wizard enum to class name for wear requirements
+const getWizardClassName = (wizard: Wizards): WizardClassName => {
+  switch (wizard) {
+    case Wizards.ARCHER:
+      return 'ShadowArcher';
+    case Wizards.WARRIOR:
+      return 'PhantomDuelist';
+    case Wizards.MAGE:
+      return 'ArcaneSorcerer';
   }
 };
 
@@ -199,6 +212,32 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     if (wearableItem.wearableSlot !== slotId) {
       setDraggedItem(null);
       return;
+    }
+
+    // Check wear requirements (class and level)
+    if (wearableItem.wearRequirements && wearableItem.wearRequirements.length > 0) {
+      const currentClassName = getWizardClassName(currentWizard);
+      const currentLevel = levelFromXp(xp);
+
+      for (const req of wearableItem.wearRequirements) {
+        // Check class requirement
+        if (req.requirement.toLowerCase() === 'class') {
+          if (req.value !== currentClassName) {
+            console.warn(`Cannot equip ${wearableItem.title}: Requires class ${req.value}, but current wizard is ${currentClassName}`);
+            setDraggedItem(null);
+            return;
+          }
+        }
+        // Check level requirement
+        if (req.requirement.toLowerCase() === 'level') {
+          const requiredLevel = typeof req.value === 'string' ? parseInt(req.value, 10) : req.value;
+          if (currentLevel < requiredLevel) {
+            console.warn(`Cannot equip ${wearableItem.title}: Requires level ${requiredLevel}, but current wizard is level ${currentLevel}`);
+            setDraggedItem(null);
+            return;
+          }
+        }
+      }
     }
 
     // Use store action to equip item (handles inventory swap automatically)

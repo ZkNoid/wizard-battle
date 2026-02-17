@@ -57,8 +57,8 @@ export class WearRequirementDto implements IWearRequirement {
   @IsNotEmpty()
   requirement!: string;
 
-  @IsNumber()
-  value!: number;
+  @IsNotEmpty()
+  value!: number | string; // number for level, string for class names
 }
 
 export class CreateInventoryItemDto {

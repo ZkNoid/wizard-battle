@@ -36,8 +36,11 @@ export interface IImprovementRequirement {
 
 export interface IWearRequirement {
   requirement: string;
-  value: number;
+  value: number | string; // number for level, string for class names
 }
+
+// Wizard class names for wearRequirements
+export type WizardClassName = 'ShadowArcher' | 'PhantomDuelist' | 'ArcaneSorcerer';
 
 export interface IInventoryItem {
   id: string;
