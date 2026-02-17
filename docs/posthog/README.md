@@ -1,43 +1,43 @@
 # 📊 PostHog Analytics
 
-Документация по аналитике PostHog для Wizard Battle.
+PostHog analytics documentation for Wizard Battle.
 
 ---
 
-## 🚀 Быстрый старт
+## 🚀 Quick Start
 
-1. **Посмотрите события** → [EVENTS.md](./EVENTS.md) - все 34 события
-2. **Настройте аналитику** → Создайте дашборды и воронки в PostHog UI
-
----
-
-## 📈 Что реализовано
-
-- ✅ **34 события** отправляются в PostHog
-- ✅ **91% требований** (20/22) уже реализовано
-- ✅ **Полная воронка онбординга** (6 шагов)
-- ✅ **Blockchain метрики**
-- ✅ **Игровые метрики**
-- ✅ **Метрики производительности**
+1. **Check events** → [EVENTS.md](./EVENTS.md) - all 34 events
+2. **Configure analytics** → Create dashboards and funnels in PostHog UI
 
 ---
 
-## 🎯 Категории событий
+## 📈 What's Implemented
 
-1. **🔐 Wallet Events** (6) - Подключение кошельков
-2. **⚔️ Battle Events** (3) - Игровые бои
-3. **🧙 Character Events** (3) - Персонажи
-4. **🔨 Craft Events** (3) - Крафт предметов
-5. **🗺️ Expedition Events** (2) - Экспедиции
-6. **🎨 UI Events** (2) - Интерфейс
-7. **⚡ Performance Events** (4) - Производительность
-8. **📊 Funnel Events** (6) - Воронка конверсии
-9. **⛓️ Blockchain Events** (3) - Блокчейн
-10. **🎮 Session Events** (2) - Сессии
+- ✅ **34 events** are being sent to PostHog
+- ✅ **91% of requirements** (20/22) already implemented
+- ✅ **Complete onboarding funnel** (6 steps)
+- ✅ **Blockchain metrics**
+- ✅ **Game metrics**
+- ✅ **Performance metrics**
 
 ---
 
-## 📊 Воронка онбординга
+## 🎯 Event Categories
+
+1. **🔐 Wallet Events** (6) - Wallet connections
+2. **⚔️ Battle Events** (3) - Game battles
+3. **🧙 Character Events** (3) - Characters
+4. **🔨 Craft Events** (3) - Item crafting
+5. **🗺️ Expedition Events** (2) - Expeditions
+6. **🎨 UI Events** (2) - User interface
+7. **⚡ Performance Events** (4) - Performance
+8. **📊 Funnel Events** (6) - Conversion funnel
+9. **⛓️ Blockchain Events** (3) - Blockchain
+10. **🎮 Session Events** (2) - Sessions
+
+---
+
+## 📊 Onboarding Funnel
 
 ```
 1. funnel_app_loaded              (100%)
@@ -50,38 +50,38 @@
 
 ---
 
-## 🛠️ Конфигурация
+## 🛠️ Configuration
 
 ```env
 NEXT_PUBLIC_POSTHOG_KEY="your_api_key"
 NEXT_PUBLIC_POSTHOG_HOST="https://posthog.zknoid.io/"
 ```
 
-**Файлы:**
-- `/apps/frontend/src/lib/analytics/events.ts` - определения событий
-- `/apps/frontend/src/lib/analytics/types.ts` - TypeScript типы
-- `/apps/frontend/src/lib/analytics/posthog-utils.ts` - утилиты
-- `/apps/frontend/src/lib/analytics/posthog-provider.tsx` - React провайдер
+**Files:**
+- `/apps/frontend/src/lib/analytics/events.ts` - event definitions
+- `/apps/frontend/src/lib/analytics/types.ts` - TypeScript types
+- `/apps/frontend/src/lib/analytics/posthog-utils.ts` - utilities
+- `/apps/frontend/src/lib/analytics/posthog-provider.tsx` - React provider
 
 ---
 
-## 📚 Документация
+## 📚 Documentation
 
-- **[EVENTS.md](./EVENTS.md)** - Справочник всех 34 событий с параметрами
-
----
-
-## 💡 Как использовать
-
-### Для разработчиков:
-- Изучите [EVENTS.md](./EVENTS.md) чтобы понять какие события отправляются
-- Используйте примеры кода для интеграции новых событий
-
-### Для аналитиков:
-- Все события уже настроены и отправляются в PostHog
-- Создавайте дашборды и воронки напрямую в PostHog UI
-- Обращайтесь к [EVENTS.md](./EVENTS.md) для понимания структуры данных
+- **[EVENTS.md](./EVENTS.md)** - Reference of all 34 events with parameters
 
 ---
 
-**Статус:** Готово к использованию 🚀
+## 💡 How to Use
+
+### For Developers:
+- Study [EVENTS.md](./EVENTS.md) to understand what events are being sent
+- Use code examples to integrate new events
+
+### For Analysts:
+- All events are already configured and being sent to PostHog
+- Create dashboards and funnels directly in PostHog UI
+- Refer to [EVENTS.md](./EVENTS.md) to understand data structure
+
+---
+
+**Status:** Ready to use 🚀
