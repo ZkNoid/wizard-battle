@@ -166,7 +166,7 @@ export default function Wallet({ className }: WalletProps = {}) {
       {isConnected && address ? (
         <Button
           variant="blue"
-          text={`${displayName}`}
+          text={` ${displayName} `}
           onClick={disconnect}
           className="h-15 w-full text-base font-bold"
         />
