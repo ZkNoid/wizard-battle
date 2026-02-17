@@ -4,6 +4,7 @@ import { itemsRouter } from './routers/items';
 import { tilemapRouter } from './routers/tilemap';
 import { usersRouter } from './routers/users';
 import { expeditionsRouter } from './routers/expeditions';
+import { minaRouter } from './routers/mina';
 import { craftingRouter } from './routers/crafting';
 import { questsRouter } from './routers/quests';
 
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   tilemap: tilemapRouter,
   users: usersRouter,
   expeditions: expeditionsRouter,
+  mina: minaRouter,
   crafting: craftingRouter,
   quests: questsRouter,
 });

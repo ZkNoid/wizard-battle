@@ -5,13 +5,13 @@ import {
   VerificationKey,
   ZkProgram,
 } from 'o1js';
-import { SpellsDynamicProof } from './DynamicProof';
+import { SpellsDynamicProof } from './DynamicProof.js';
 import {
   verifyStateInTree,
   verifyVkInTree,
   verifyDynamicProofInitialState,
   verifySequentialStates,
-} from './ProofUtils';
+} from './ProofUtils.js';
 
 // Public input contains only provable field elements
 export class FraudProofPublicInput extends Struct({

@@ -17,9 +17,9 @@ import {
   Provable,
 } from 'o1js';
 
-import { GameRecordProof } from './Proofs/GameRecordProof';
-import { FraudProof } from './Proofs/FraudProoof';
-import { GameLeaf, GameStatus, Result } from './Proofs/GameLeaf';
+import { GameRecordProof } from './Proofs/GameRecordProof.js';
+import { FraudProof } from './Proofs/FraudProoof.js';
+import { GameLeaf, GameStatus, Result } from './Proofs/GameLeaf.js';
 
 /* --------------------------------- Contract --------------------------------- */
 

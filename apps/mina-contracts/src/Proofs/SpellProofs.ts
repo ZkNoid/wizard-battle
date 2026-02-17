@@ -1,5 +1,5 @@
 // Create proof for each spell
-import { SpellsPublicInput, SpellsPublicOutput } from './DynamicProof';
+import { SpellsPublicInput, SpellsPublicOutput } from './DynamicProof.js';
 import { State } from '@wizard-battle/common/stater/state';
 import { allSpells } from '@wizard-battle/common/stater/spells';
 import { SpellCast } from '@wizard-battle/common/stater/structs';
