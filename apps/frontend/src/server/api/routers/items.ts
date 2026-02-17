@@ -11,6 +11,7 @@ import type {
   AnyInventoryItemDB,
   IUserInventoryRecord,
   IUserInventoryItem,
+  IWearRequirement,
 } from '@/lib/types/Inventory';
 
 const client = await clientPromise;
@@ -27,6 +28,17 @@ async function populateArmorItem(
   item: IInventoryArmorItemDB,
   allCraftItems: IInventoryItem[]
 ): Promise<IInventoryArmorItem> {
+  // Transform wearRequirements from object format { class: "X", level: "Y" }
+  // to array format [{ requirement: "class", value: "X" }, ...]
+  let wearRequirements: IWearRequirement[] = item.wearRequirements ?? [];
+  if (item.wearRequirements && !Array.isArray(item.wearRequirements)) {
+    const reqObj = item.wearRequirements as unknown as Record<string, string>;
+    wearRequirements = Object.entries(reqObj).map(([key, value]) => ({
+      requirement: key,
+      value: key === 'level' ? parseInt(value, 10) || value : value,
+    })) as IWearRequirement[];
+  }
+
   return {
     ...item,
     improvementRequirements: (item.improvementRequirements ?? []).map(
@@ -35,6 +47,7 @@ async function populateArmorItem(
         amount: req.amount,
       })
     ),
+    wearRequirements: wearRequirements ?? [],
   };
 }
 

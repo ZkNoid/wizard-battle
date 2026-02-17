@@ -171,6 +171,15 @@ export const useAudioStore = create<AudioStore>((set, get) => {
         isMusicMuted,
       } = get();
 
+      // If the same track is already playing or loading, do nothing
+      if (currentMusicTrack === src && currentMusicHowl) {
+        // Check if loading (prevents race condition) or already playing
+        const state = currentMusicHowl.state();
+        if (state === 'loading' || currentMusicHowl.playing()) {
+          return;
+        }
+      }
+
       if (!isInitialized) {
         get().initialize();
       }
@@ -189,11 +198,6 @@ export const useAudioStore = create<AudioStore>((set, get) => {
         set({ musicCache: new Map(musicCache) });
       }
 
-      // If the same music is already playing, do nothing
-      if (currentMusicHowl === newHowl && currentMusicHowl.playing()) {
-        return;
-      }
-
       // Stop current music if it's different
       if (currentMusicHowl && currentMusicHowl !== newHowl) {
         currentMusicHowl.stop();
@@ -204,13 +208,14 @@ export const useAudioStore = create<AudioStore>((set, get) => {
         newHowl.stop();
       }
 
-      newHowl.volume(1);
-      newHowl.play();
-
+      // Set state BEFORE calling play() to prevent race conditions
       set({
         currentMusicHowl: newHowl,
         currentMusicTrack: src,
       });
+
+      newHowl.volume(1);
+      newHowl.play();
     },
 
     // Stop background music
@@ -219,12 +224,12 @@ export const useAudioStore = create<AudioStore>((set, get) => {
 
       if (currentMusicHowl) {
         currentMusicHowl.stop();
-
-        set({
-          currentMusicHowl: null,
-          currentMusicTrack: null,
-        });
       }
+
+      set({
+        currentMusicHowl: null,
+        currentMusicTrack: null,
+      });
     },
 
     // Pause background music
