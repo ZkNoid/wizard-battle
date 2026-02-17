@@ -63,6 +63,7 @@ export function CraftModalForm({ onClose, address }: CraftModalFormProps) {
           onClick={() => setActiveTab('upgrade')}
           enableHoverSound
           enableClickSound
+          disabled={true}
         >
           <Image
             src="/icons/armor.png"
@@ -79,6 +80,7 @@ export function CraftModalForm({ onClose, address }: CraftModalFormProps) {
           onClick={() => setActiveTab('unite')}
           enableHoverSound
           enableClickSound
+          disabled={true}
         >
           <Image
             src="/icons/gem.png"
