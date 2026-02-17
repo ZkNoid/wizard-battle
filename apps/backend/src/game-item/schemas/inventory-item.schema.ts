@@ -56,8 +56,8 @@ export class WearRequirement implements IWearRequirement {
   @Prop({ required: true })
   requirement!: string;
 
-  @Prop({ required: true })
-  value!: number;
+  @Prop({ required: true, type: 'Mixed' })
+  value!: number | string; // number for level, string for class names
 }
 
 @Schema({ timestamps: true })

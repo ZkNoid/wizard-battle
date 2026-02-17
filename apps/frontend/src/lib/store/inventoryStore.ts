@@ -104,14 +104,16 @@ interface InventoryStore {
   getEquippedItems: (wizardId: string) => EquippedSlots;
   getStats: (wizardId: string) => IHeroStats;
   equipItem: (
+    userId: string,
     wizardId: string,
     slotId: InventoryItemWearableArmorSlot,
     userItem: IUserInventoryItem
-  ) => void;
+  ) => Promise<void>;
   unequipItem: (
+    userId: string,
     wizardId: string,
     slotId: InventoryItemWearableArmorSlot
-  ) => void;
+  ) => Promise<void>;
   setiteminventory: (items: IUserInventoryItem[]) => void;
   addToInventory: (item: IUserInventoryItem) => void;
   removeFromInventory: (itemId: string) => void;
@@ -225,11 +227,20 @@ export const useInventoryStore = create<InventoryStore>()(
         return state.statsByWizard[wizardId] ?? getWizardDefaultStats(wizardId);
       },
 
-      equipItem: (
+      equipItem: async (
+        userId: string,
         wizardId: string,
         slotId: InventoryItemWearableArmorSlot,
         userItem: IUserInventoryItem
-      ) =>
+      ) => {
+        // Call tRPC to persist the equip action
+        await trpcClient.items.equipItem.mutate({
+          userId,
+          itemId: userItem.item.id,
+          wizardId,
+        });
+
+        // Update local state
         set((state) => {
           // Get current equipped items for this wizard
           const currentEquipped = state.equippedItemsByWizard[wizardId] ?? {
@@ -281,9 +292,29 @@ export const useInventoryStore = create<InventoryStore>()(
             },
             iteminventory: newInventory,
           };
-        }),
+        });
+      },
 
-      unequipItem: (wizardId: string, slotId: InventoryItemWearableArmorSlot) =>
+      unequipItem: async (
+        userId: string,
+        wizardId: string,
+        slotId: InventoryItemWearableArmorSlot
+      ) => {
+        const state = get();
+        const currentEquipped = state.equippedItemsByWizard[wizardId] ?? {
+          ...defaultEquippedSlots,
+        };
+        const userItem = currentEquipped[slotId];
+
+        if (!userItem) return;
+
+        // Call tRPC to persist the unequip action
+        await trpcClient.items.unequipItem.mutate({
+          userId,
+          itemId: userItem.item.id,
+        });
+
+        // Update local state
         set((state) => {
           const currentEquipped = state.equippedItemsByWizard[wizardId] ?? {
             ...defaultEquippedSlots,
@@ -317,7 +348,8 @@ export const useInventoryStore = create<InventoryStore>()(
             },
             iteminventory: [...state.iteminventory, unequippedItem],
           };
-        }),
+        });
+      },
 
       setiteminventory: (items: IUserInventoryItem[]) =>
         set({ iteminventory: items }),

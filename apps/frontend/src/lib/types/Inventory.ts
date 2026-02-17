@@ -19,4 +19,6 @@ export {
   type IUserInventoryRecord,
   type IUserInventoryItem,
   type IUserInventoryArmorItem,
+  // Wizard class name type
+  type WizardClassName,
 } from '@wizard-battle/common';
