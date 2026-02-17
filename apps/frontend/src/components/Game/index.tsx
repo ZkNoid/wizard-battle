@@ -107,7 +107,7 @@ export default function Game({
                   .filter((spell) => spell !== undefined) ?? []
               }
             />
-            <SkillsBg className="absolute inset-0 -z-10 size-full" />
+            <SkillsBg className="absolute inset-0 -z-10 w-full h-[150%]" />
           </div>
         </div>
         <div className="flex h-28 flex-row items-end gap-2.5">
