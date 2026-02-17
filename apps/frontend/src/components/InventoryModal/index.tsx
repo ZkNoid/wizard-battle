@@ -7,6 +7,7 @@ import type {
   InventoryFilterType,
   InventoryItemWearableArmorSlot,
   IUserInventoryItem,
+  WizardClassName,
 } from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
 import { useState, useMemo } from 'react';
@@ -25,6 +26,7 @@ import {
   useClickSound,
   useHoverSound,
 } from '@/lib/hooks/useAudio';
+import { useMinaAppkit } from 'mina-appkit';
 
 const MAX_ITEMS = 35;
 
@@ -46,11 +48,26 @@ const getWizardId = (wizard: Wizards): string => {
   }
 };
 
+// Map UI wizard enum to class name for wear requirements
+const getWizardClassName = (wizard: Wizards): WizardClassName => {
+  switch (wizard) {
+    case Wizards.ARCHER:
+      return 'ShadowArcher';
+    case Wizards.WARRIOR:
+      return 'PhantomDuelist';
+    case Wizards.MAGE:
+      return 'ArcaneSorcerer';
+  }
+};
+
 export default function InventoryModal({ onClose }: { onClose: () => void }) {
   // Play modal sounds
   useModalSound();
   const playClickSound = useClickSound();
   const playHoverSound = useHoverSound();
+
+  // Get wallet address for tRPC calls
+  const { address } = useMinaAppkit();
 
   // Get wizard-specific XP from store
   const userData = useUserDataStore((state) => state.userData);
@@ -66,6 +83,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const equippedItemsByWizard = useInventoryStore(
     (state) => state.equippedItemsByWizard
   );
+  const statsByWizard = useInventoryStore((state) => state.statsByWizard);
   const getStats = useInventoryStore((state) => state.getStats);
   const equipItem = useInventoryStore((state) => state.equipItem);
   const unequipItem = useInventoryStore((state) => state.unequipItem);
@@ -92,7 +110,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   // Get stats for current wizard from store
   const stats = useMemo(() => {
     return getStats(currentWizardId);
-  }, [getStats, currentWizardId]);
+  }, [getStats, currentWizardId, statsByWizard]);
 
   // Get XP for the currently selected wizard
   const xp = useMemo(() => {
@@ -181,8 +199,8 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     setDraggedItem(null);
   };
 
-  const handleDrop = (slotId: InventoryItemWearableArmorSlot) => {
-    if (!draggedItem) return;
+  const handleDrop = async (slotId: InventoryItemWearableArmorSlot) => {
+    if (!draggedItem || !address) return;
 
     // Check if dragged item can be equipped in this slot
     if (draggedItem.item.type !== 'armor') {
@@ -196,8 +214,35 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
       return;
     }
 
+    // Check wear requirements (class and level)
+    if (wearableItem.wearRequirements && wearableItem.wearRequirements.length > 0) {
+      const currentClassName = getWizardClassName(currentWizard);
+      const currentLevel = levelFromXp(xp);
+
+      for (const req of wearableItem.wearRequirements) {
+        // Check class requirement
+        if (req.requirement.toLowerCase() === 'class') {
+          if (req.value !== currentClassName) {
+            console.warn(`Cannot equip ${wearableItem.title}: Requires class ${req.value}, but current wizard is ${currentClassName}`);
+            setDraggedItem(null);
+            return;
+          }
+        }
+        // Check level requirement
+        if (req.requirement.toLowerCase() === 'level') {
+          const requiredLevel = typeof req.value === 'string' ? parseInt(req.value, 10) : req.value;
+          if (currentLevel < requiredLevel) {
+            console.warn(`Cannot equip ${wearableItem.title}: Requires level ${requiredLevel}, but current wizard is level ${currentLevel}`);
+            setDraggedItem(null);
+            return;
+          }
+        }
+      }
+    }
+
     // Use store action to equip item (handles inventory swap automatically)
-    equipItem(currentWizardId, slotId, draggedItem);
+    await equipItem(address, currentWizardId, slotId, draggedItem);
+    
     setDraggedItem(null);
   };
 
@@ -205,12 +250,14 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     e.preventDefault();
   };
 
-  const handleUnequip = (slotId: InventoryItemWearableArmorSlot) => {
+  const handleUnequip = async (slotId: InventoryItemWearableArmorSlot) => {
+    if (!address) return;
+    
     const userItem = equippedItems[slotId];
     if (!userItem) return;
 
     // Use store action to unequip item
-    unequipItem(currentWizardId, slotId);
+    await unequipItem(address, currentWizardId, slotId);
   };
 
   const filteredItems =

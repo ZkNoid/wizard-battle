@@ -49,3 +49,27 @@ export const levelToXp = (level: number) => {
   if (level > LEVELS_XP.length) return LEVELS_XP[LEVELS_XP.length - 1]!;
   return LEVELS_XP[level - 1]!;
 };
+
+/**
+ * Calculates the progress percentage within the current level.
+ * @param xp - The total amount of XP
+ * @returns A number between 0 and 100 representing progress to next level
+ */
+export const xpProgressPercent = (xp: number) => {
+  // Below first level threshold
+  if (xp < LEVELS_XP[0]!) {
+    return (xp / LEVELS_XP[0]!) * 100;
+  }
+
+  const level = levelFromXp(xp);
+  const levelStartXp = LEVELS_XP[level - 1]!;
+  const levelEndXp = LEVELS_XP[level] ?? LEVELS_XP[LEVELS_XP.length - 1]!;
+
+  // At max level
+  if (levelStartXp === levelEndXp) return 100;
+
+  const xpInLevel = xp - levelStartXp;
+  const xpNeededForLevel = levelEndXp - levelStartXp;
+
+  return Math.min((xpInLevel / xpNeededForLevel) * 100, 100);
+};

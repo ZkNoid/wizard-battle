@@ -11,15 +11,14 @@ import { Experience } from './Experiense';
 import { PlaySteps } from '@/lib/enums/PlaySteps';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  LOSE_XP,
-  WIN_XP,
   levelFromXp,
-  xpToNextLevel,
+  xpProgressPercent,
 } from '@/lib/constants/levels';
 import { useMinaAppkit } from 'mina-appkit';
 import { api } from '@/trpc/react';
 import { useInGameStore, useUserInformationStore } from '@/lib/store';
 import Image from 'next/image';
+import { allWizards } from '../../../../common/wizards';
 
 export default function GameResult({
   type,
@@ -35,9 +34,16 @@ export default function GameResult({
   const { setBackground } = useBackgroundImageStore();
   const text = type === 'win' ? 'You Win' : 'You Lose';
   const phraseDelay = 0.5 + text.length * 0.1 + 0.2;
-  const { setDefaultState } = useUserInformationStore();
+  const { setDefaultState, stater } = useUserInformationStore();
   const { address } = useMinaAppkit();
-  const { mutate: gainXp } = api.users.gainXp.useMutation();
+  
+  const currentWizard = stater?.state?.wizardId
+    ? allWizards.find(
+        (w) => w.id.toString() === stater.state.wizardId.toString()
+      )
+    : null;
+  const wizardName = currentWizard?.name ?? 'Wizard';
+
   const { data: user } = api.users.get.useQuery(
     { address: address ?? '' },
     {
@@ -45,6 +51,21 @@ export default function GameResult({
     }
   );
   const xpToGain = Number(searchParams.get('experience')) || 0;
+
+  // Get wizard-specific XP based on current character
+  const wizardXp = (() => {
+    if (!user || !currentWizard) return 0;
+    switch (currentWizard.name) {
+      case 'Wizard':
+        return user.mage_xp ?? 0;
+      case 'Archer':
+        return user.archer_xp ?? 0;
+      case 'Phantom Duelist':
+        return user.duelist_xp ?? 0;
+      default:
+        return 0;
+    }
+  })();
     // Set background image on mount and reset on unmount
     useEffect(() => {
       setBackground(type);
@@ -57,30 +78,6 @@ export default function GameResult({
   useEffect(() => {
     setDefaultState();
   }, []);
-
-  // Gain XP process, need to improve when changed xp logic
-  useEffect(() => {
-    if (!address || !user) return;
-
-    const lastGameResultXp = sessionStorage.getItem('lastGameResultXp');
-
-    if (lastGameResultXp && Number(lastGameResultXp) === user.xp) {
-      throw new Error(
-        `Already claimed reward, lastGameResultXp: ${lastGameResultXp}, currentUserXp: ${user.xp}`
-      );
-    }
-
-    sessionStorage.setItem(
-      'lastGameResultXp',
-      (Number(lastGameResultXp) + xpToGain).toString()
-    );
-
-    // if (type === 'win') {
-    //   gainXp({ address, xp: xpToGain });
-    // } else {
-    //   gainXp({ address, xp: xpToGain });
-    // }
-  }, [address, type]);
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -228,28 +225,16 @@ export default function GameResult({
           ) : null}
           <Experience
             title="Account Experience"
-            expWidth={
-              user?.xp
-                ? (levelFromXp(user.xp + xpToGain) /
-                    xpToNextLevel(user.xp + xpToGain)) *
-                  100
-                : 0
-            }
+            expWidth={xpProgressPercent((user?.xp ?? 0) + xpToGain)}
             expColor="#557FE8"
-            level={user?.xp ? levelFromXp(user.xp + xpToGain) : 1}
+            level={levelFromXp((user?.xp ?? 0) + xpToGain)}
             plusExp={xpToGain}
           />
           <Experience
-            title="Character Experience: Wizard"
-            expWidth={
-              user?.xp
-                ? (levelFromXp(user.xp + xpToGain) /
-                    xpToNextLevel(user.xp + xpToGain)) *
-                  100
-                : 0
-            }
+            title={`Character Experience: ${wizardName}`}
+            expWidth={xpProgressPercent(wizardXp + xpToGain)}
             expColor="#FF5627"
-            level={user?.xp ? levelFromXp(user.xp + xpToGain) : 1}
+            level={levelFromXp(wizardXp + xpToGain)}
             plusExp={xpToGain}
           />
         </motion.div>

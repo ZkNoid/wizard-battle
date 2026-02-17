@@ -21,9 +21,9 @@ class AudioService {
       onplayerror: () => {
         console.error('🎵 Play error for:', src);
         // Try to unlock audio on next user interaction
-        howl.once('unlock', () => {
-          howl.play();
-        });
+        // howl.once('unlock', () => {
+        //   howl.play();
+        // });
       },
       onend: () => {
         console.log('🎵 Music ended (should loop):', src);

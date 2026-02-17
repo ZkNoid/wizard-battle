@@ -21,7 +21,7 @@ export function Spells({
 
   const MAX_SKILLS = 10;
   return (
-    <div className="relative z-[1] ml-6 flex h-full w-full flex-row items-center justify-center gap-2.5">
+    <div className="relative z-[1] ml-6 flex h-full flex-row items-center justify-start gap-2.5">
       <>
         {skills.map((skill) => (
           <SpellTooltip
@@ -40,7 +40,7 @@ export function Spells({
               key={skill.id.toString()}
               disabled={+skill.currentCooldown !== 0}
               className={
-                'not-disabled:cursor-pointer not-disabled:transition-transform not-disabled:duration-300 not-disabled:hover:scale-110 group relative size-16 disabled:cursor-not-allowed'
+                'not-disabled:cursor-pointer not-disabled:transition-transform not-disabled:duration-300 not-disabled:hover:scale-110 group relative size-16 shrink-0 disabled:cursor-not-allowed'
               }
               onClick={() => {
                 console.log('Picked spell', skill.id.toString());
@@ -73,16 +73,16 @@ export function Spells({
             </button>
           </SpellTooltip>
         ))}
-        {Array.from({ length: MAX_SKILLS - skills.length }).map((_, index) => (
+        {/* {Array.from({ length: MAX_SKILLS - skills.length }).map((_, index) => (
           <Image
             key={index}
-            className="size-16 cursor-not-allowed border-4 border-black"
+            className="size-16 shrink-0 cursor-not-allowed border-4 border-black"
             src={'/wizards/skills/empty.png'}
             alt={'empty skill'}
             width={64}
             height={64}
           />
-        ))}
+        ))} */}
       </>
     </div>
   );
