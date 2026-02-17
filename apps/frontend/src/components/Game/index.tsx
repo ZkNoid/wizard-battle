@@ -77,38 +77,36 @@ export default function Game({
             />
           </BoxButton>
         </div>
-        <div className="flex h-28 flex-row items-center">
+        <div className="relative flex h-28 flex-row items-center">
           <ActionsBg
             className="size-28"
             actionInfo={actionInfo}
           />
-          <div className="relative flex-1">
-            <Spells
-              // DEBUG FOR TESTING
-              // skills={Array.from({ length: 5 }).map((_, idx) => ({
-              //   id: idx + 1,
-              //   name: `Skill ${idx + 1}`,
-              //   description: `Random skill description ${idx + 1}`,
-              //   image: `/wizards/skills/heal.svg`,
-              //   manaCost: Math.floor(Math.random() * 10) + 1,
-              //   cooldown: Math.floor(Math.random() * 5) + 1,
-              //   currentCooldown: BigInt(Math.floor(Math.random() * 5)),
-              // }))}
-              skills={
-                stater?.state.spellStats
-                  .map((spell: SpellStats) => {
-                    const spellData = spellIdToSpell(spell.spellId);
-                    if (!spellData) return undefined;
-                    return {
-                      ...spellData,
-                      currentCooldown: spell.currentCooldown,
-                    };
-                  })
-                  .filter((spell) => spell !== undefined) ?? []
-              }
-            />
-            <SkillsBg className="absolute top-1/2 -translate-y-1/2 left-0 right-0 -z-10 h-[150%]" />
-          </div>
+          <Spells
+            // DEBUG FOR TESTING
+            // skills={Array.from({ length: 5 }).map((_, idx) => ({
+            //   id: idx + 1,
+            //   name: `Skill ${idx + 1}`,
+            //   description: `Random skill description ${idx + 1}`,
+            //   image: `/wizards/skills/heal.svg`,
+            //   manaCost: Math.floor(Math.random() * 10) + 1,
+            //   cooldown: Math.floor(Math.random() * 5) + 1,
+            //   currentCooldown: BigInt(Math.floor(Math.random() * 5)),
+            // }))}
+            skills={
+              stater?.state.spellStats
+                .map((spell: SpellStats) => {
+                  const spellData = spellIdToSpell(spell.spellId);
+                  if (!spellData) return undefined;
+                  return {
+                    ...spellData,
+                    currentCooldown: spell.currentCooldown,
+                  };
+                })
+                .filter((spell) => spell !== undefined) ?? []
+            }
+          />
+          <SkillsBg className="absolute top-1/2 -translate-y-1/2 -left-4 -z-10 h-[150%] w-[calc(100%+2rem)]" />
         </div>
         <div className="flex h-28 flex-row items-end gap-2.5">
           <Clock />
