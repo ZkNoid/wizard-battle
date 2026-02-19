@@ -7,6 +7,7 @@ import { useMinaAppkit } from 'mina-appkit';
 import dynamicImport from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { trackPageLoad } from '@/lib/analytics/performance';
 
 const Play = dynamicImport(() => import('@/components/Play'), {
   ssr: false,
@@ -23,6 +24,11 @@ export default function PlayPage() {
       router.replace('/');
     }
   }, [address]);
+
+  // Track page load performance
+  useEffect(() => {
+    trackPageLoad('play');
+  }, []);
 
   return <Play />;
 }

@@ -5,13 +5,22 @@ import AudioSelector from '../AudioSelector';
 import BoxButton from '../shared/BoxButton';
 import { Tab } from '@/lib/enums/Tab';
 import Image from 'next/image';
+import { trackEvent } from '@/lib/analytics/posthog-utils';
+import { AnalyticsEvents } from '@/lib/analytics/events';
+import type { GuideOpenedProps } from '@/lib/analytics/types';
 
 export function SettingsBar({ setTab }: { setTab?: (tab: Tab) => void }) {
   return (
     <motion.div className="flex items-center gap-4">
       {/* Support button */}
       <BoxButton
-        onClick={() => setTab?.(Tab.HOW_TO_PLAY)}
+        onClick={() => {
+          const props: GuideOpenedProps = {
+            location: 'home',
+          };
+          trackEvent(AnalyticsEvents.GUIDE_OPENED, props);
+          setTab?.(Tab.HOW_TO_PLAY);
+        }}
         color="gray"
         className="size-16"
         enableHoverSound

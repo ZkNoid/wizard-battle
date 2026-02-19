@@ -13,6 +13,7 @@ import ReownContext from './context/ReownContext';
 
 import { TRPCReactProvider } from '@/trpc/react';
 import ClientInitializer from './ClientInitializer';
+import { PostHogProvider } from '@/lib/analytics/posthog-provider';
 
 export const metadata: Metadata = {
   title: 'Wizard Battle',
@@ -32,10 +33,12 @@ export default async function RootLayout({
     >
       <body>
         <ReownContext cookies={cookies}>
-          <TRPCReactProvider>
-            <ClientInitializer />
-            {children}
-          </TRPCReactProvider>
+          <PostHogProvider>
+            <TRPCReactProvider>
+              <ClientInitializer />
+              {children}
+            </TRPCReactProvider>
+          </PostHogProvider>
         </ReownContext>
         <Analytics />
       </body>

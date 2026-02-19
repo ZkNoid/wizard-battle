@@ -21,6 +21,13 @@ import { State } from '../../../../common/stater/state';
 import { GamePhaseManager } from '@/game/GamePhaseManager';
 import { Field, Int64 } from 'o1js';
 import { useMinaAppkit } from 'mina-appkit';
+import { trackEvent } from '@/lib/analytics/posthog-utils';
+import { AnalyticsEvents } from '@/lib/analytics/events';
+import type {
+  BattleStartedProps,
+  BattleEndedProps,
+  FunnelFirstBattleProps,
+} from '@/lib/analytics/types';
 
 export default function Matchmaking({
   setPlayStep,
@@ -38,12 +45,35 @@ export default function Matchmaking({
   const sendRequest = useRef(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [queuePosition, setQueuePosition] = useState<number | null>(null);
+  const battleStartTime = useRef<number>(0);
+  const hasTrackedFirstBattle = useRef(false);
 
   const onGameEnd = (
     winner: boolean,
     experience?: number,
     reward?: IReward[]
   ) => {
+    // Track battle ended
+    const battleDuration = Date.now() - battleStartTime.current;
+    const battleType = playMode === PlayMode.PVE ? 'PvE' : 'PvP';
+    
+    const battleEndProps: BattleEndedProps = {
+      battle_type: battleType,
+      result: winner ? 'win' : 'loss',
+      duration_ms: battleDuration,
+    };
+    trackEvent(AnalyticsEvents.BATTLE_ENDED, battleEndProps);
+
+    // Track first battle won for funnel (only if winner and first battle)
+    if (winner && !hasTrackedFirstBattle.current) {
+      const funnelProps: FunnelFirstBattleProps = {
+        battle_type: battleType,
+        duration_ms: battleDuration,
+      };
+      trackEvent(AnalyticsEvents.FUNNEL_FIRST_BATTLE_WON, funnelProps);
+      hasTrackedFirstBattle.current = true;
+    }
+
     setTimeout(() => {
       const params = new URLSearchParams({
         winner: winner.toString(),
@@ -90,6 +120,25 @@ export default function Matchmaking({
           setStater
         )
       );
+
+      // Track battle started
+      battleStartTime.current = Date.now();
+      const battleType = playMode === PlayMode.PVE ? 'PvE' : 'PvP';
+      const battleStartProps: BattleStartedProps = {
+        battle_type: battleType,
+        wizard_id: stater.state.wizardId.toString(),
+        wizard_name: 'Unknown', // We'll need to get this from somewhere
+      };
+      trackEvent(AnalyticsEvents.BATTLE_STARTED, battleStartProps);
+
+      // Track first battle started for funnel (only once)
+      if (!hasTrackedFirstBattle.current) {
+        const funnelProps: FunnelFirstBattleProps = {
+          battle_type: battleType,
+        };
+        trackEvent(AnalyticsEvents.FUNNEL_FIRST_BATTLE_STARTED, funnelProps);
+      }
+
       router.push(`/game`);
     };
 

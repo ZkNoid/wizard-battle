@@ -11,6 +11,12 @@ import {
 } from '@reown/appkit/react';
 import { avalanche } from '@reown/appkit/networks';
 import { useEffect, useRef } from 'react';
+import { trackEvent, identifyUser } from '@/lib/analytics/posthog-utils';
+import { AnalyticsEvents } from '@/lib/analytics/events';
+import type {
+  WalletConnectionInitiatedProps,
+  WalletConnectionSuccessProps,
+} from '@/lib/analytics/types';
 
 // Helper function to format address (similar to Mina's formatAddress)
 const formatAddress = (address: string): string => {
@@ -28,6 +34,7 @@ export default function WalletReown({ className }: WalletReownProps = {}) {
   const { address, isConnected } = useAppKitAccount();
   const { disconnect } = useDisconnect();
   const { chainId, switchNetwork } = useAppKitNetwork();
+  const hasTrackedConnection = useRef(false);
 
   // Track if this is the initial mount to prevent auto-popup
   const isInitialMount = useRef(true);
@@ -53,10 +60,30 @@ export default function WalletReown({ className }: WalletReownProps = {}) {
     }
   }, [isConnected, chainId, switchNetwork]);
 
+  // Track wallet connection success and identify user
+  useEffect(() => {
+    if (isConnected && address && !hasTrackedConnection.current) {
+      const props: WalletConnectionSuccessProps = {
+        wallet_type: 'Reown',
+        wallet_address: address,
+      };
+      trackEvent(AnalyticsEvents.WALLET_CONNECTION_SUCCESS, props);
+      trackEvent(AnalyticsEvents.FUNNEL_WALLET_CONNECTED, { wallet_type: 'Reown' });
+      identifyUser(address, 'Reown');
+      hasTrackedConnection.current = true;
+    } else if (!isConnected) {
+      hasTrackedConnection.current = false;
+    }
+  }, [isConnected, address]);
+
   const handleButtonClick = () => {
     if (isConnected) {
       disconnect();
     } else {
+      const props: WalletConnectionInitiatedProps = {
+        wallet_type: 'Reown',
+      };
+      trackEvent(AnalyticsEvents.WALLET_CONNECTION_INITIATED, props);
       open();
     }
   };

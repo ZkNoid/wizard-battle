@@ -42,6 +42,17 @@ room_events: Pub/sub channel for cross-instance communication
 - **Frontend**: Next.js with React
 - **Build System**: Turborepo for monorepo management
 
+## 📊 Analytics Documentation
+
+PostHog analytics is integrated for tracking user behavior and game metrics.
+
+**Documentation:** [`docs/posthog/`](./docs/posthog/)
+
+- **[README.md](./docs/posthog/README.md)** - Overview and quick start
+- **[EVENTS.md](./docs/posthog/EVENTS.md)** - All 34 tracked events with parameters
+
+**Status:** ✅ 34 events, 91% requirements implemented (20/22)
+
 ## 📦 Project Structure
 
 ```
