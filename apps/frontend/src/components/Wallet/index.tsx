@@ -44,11 +44,19 @@ interface WalletProps {
 export default function Wallet({ className }: WalletProps = {}) {
   const pathname = usePathname();
   const isHomePage = pathname === '/';
-  const { address, isConnected, triggerWallet, disconnect } = useMinaAppkit();
+  const { address, isConnected, triggerWallet, disconnect, isWalletInstalled } = useMinaAppkit();
   const [isEditing, setIsEditing] = useState(false);
   const [originalName, setOriginalName] = useState('');
   const editRef = useRef<HTMLDivElement>(null);
   const hasTrackedConnection = useRef(false);
+
+  const triggerWalletOrRedirect = () => {
+    if (isWalletInstalled) {
+      handleConnectClick()
+    } else {
+      window.open('https://www.aurowallet.com/', '_blank', 'noopener,noreferrer');
+    }
+  }
 
   const {
     data: user,
@@ -189,7 +197,7 @@ export default function Wallet({ className }: WalletProps = {}) {
       {isConnected && address ? (
         <Button
           variant="blue"
-          text={`${displayName}`}
+          text={` ${displayName} `}
           onClick={disconnect}
           className="h-15 w-full text-base font-bold"
         />
@@ -197,7 +205,7 @@ export default function Wallet({ className }: WalletProps = {}) {
         <Button
           variant="blue"
           text="Connect Wallet"
-          onClick={handleConnectClick}
+          onClick={triggerWalletOrRedirect}
           className="h-15 w-full text-base font-bold"
         />
       )}

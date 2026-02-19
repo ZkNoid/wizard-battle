@@ -11,6 +11,7 @@ import type {
   AnyInventoryItemDB,
   IUserInventoryRecord,
   IUserInventoryItem,
+  IWearRequirement,
 } from '@/lib/types/Inventory';
 
 const client = await clientPromise;
@@ -27,6 +28,17 @@ async function populateArmorItem(
   item: IInventoryArmorItemDB,
   allCraftItems: IInventoryItem[]
 ): Promise<IInventoryArmorItem> {
+  // Transform wearRequirements from object format { class: "X", level: "Y" }
+  // to array format [{ requirement: "class", value: "X" }, ...]
+  let wearRequirements: IWearRequirement[] = item.wearRequirements ?? [];
+  if (item.wearRequirements && !Array.isArray(item.wearRequirements)) {
+    const reqObj = item.wearRequirements as unknown as Record<string, string>;
+    wearRequirements = Object.entries(reqObj).map(([key, value]) => ({
+      requirement: key,
+      value: key === 'level' ? parseInt(value, 10) || value : value,
+    })) as IWearRequirement[];
+  }
+
   return {
     ...item,
     improvementRequirements: (item.improvementRequirements ?? []).map(
@@ -35,6 +47,7 @@ async function populateArmorItem(
         amount: req.amount,
       })
     ),
+    wearRequirements: wearRequirements ?? [],
   };
 }
 
@@ -182,7 +195,7 @@ export const itemsRouter = createTRPCRouter({
       .collection(itemsCollection)
       .find({
         type: 'armor',
-        wearableSlot: { $in: ['arms', 'legs', 'belt'] },
+        wearableSlot: { $in: ['Gloves', 'Boots', 'Belt'] },
       })
       .toArray()) as unknown as IInventoryArmorItemDB[];
 
@@ -208,7 +221,7 @@ export const itemsRouter = createTRPCRouter({
       .collection(itemsCollection)
       .find({
         type: 'armor',
-        wearableSlot: { $in: ['necklace', 'gem', 'ring'] },
+        wearableSlot: { $in: ['Amulet', 'Orb', 'Ring'] },
       })
       .toArray()) as unknown as IInventoryArmorItemDB[];
 
@@ -458,6 +471,147 @@ export const itemsRouter = createTRPCRouter({
         owned: true,
         quantity: (record as unknown as IUserInventoryRecord).quantity,
       };
+    }),
+
+  // Equip an item to a wizard
+  equipItem: publicProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        itemId: z.string(),
+        wizardId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      if (!db) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database not connected',
+        });
+      }
+
+      // Check if user owns the item
+      const userRecord = (await db.collection(userInventoryCollection).findOne({
+        userId: input.userId,
+        itemId: input.itemId,
+      })) as unknown as IUserInventoryRecord | null;
+
+      if (!userRecord) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Item not found in user inventory',
+        });
+      }
+
+      // Get the item definition to check if it's equippable
+      const itemDef = (await db.collection(itemsCollection).findOne({
+        id: input.itemId,
+      })) as unknown as AnyInventoryItemDB | null;
+
+      if (!itemDef) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Item definition not found',
+        });
+      }
+
+      // Only armor items can be equipped
+      if (!isArmorItemDB(itemDef)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Only armor items can be equipped',
+        });
+      }
+
+      const wearableSlot = itemDef.wearableSlot;
+
+      // Get all equipped items for this wizard and unequip the one in the same slot
+      const equippedItems = (await db
+        .collection(userInventoryCollection)
+        .find({
+          userId: input.userId,
+          isEquipped: true,
+          equippedToWizardId: input.wizardId,
+        })
+        .toArray()) as unknown as IUserInventoryRecord[];
+
+      // Check each equipped item's slot
+      for (const equippedRecord of equippedItems) {
+        const equippedItemDef = (await db.collection(itemsCollection).findOne({
+          id: equippedRecord.itemId,
+        })) as unknown as AnyInventoryItemDB | null;
+
+        if (equippedItemDef && isArmorItemDB(equippedItemDef)) {
+          if (equippedItemDef.wearableSlot === wearableSlot) {
+            // Unequip this item
+            await db.collection(userInventoryCollection).updateOne(
+              {
+                userId: input.userId,
+                itemId: equippedRecord.itemId,
+              },
+              {
+                $set: { isEquipped: false },
+                $unset: { equippedToWizardId: '' },
+              }
+            );
+          }
+        }
+      }
+
+      // Equip the new item
+      await db.collection(userInventoryCollection).updateOne(
+        {
+          userId: input.userId,
+          itemId: input.itemId,
+        },
+        {
+          $set: {
+            isEquipped: true,
+            equippedToWizardId: input.wizardId,
+          },
+        }
+      );
+
+      return { success: true, slot: wearableSlot };
+    }),
+
+  // Unequip an item from a wizard
+  unequipItem: publicProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        itemId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      if (!db) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database not connected',
+        });
+      }
+
+      // Update the item to unequip it
+      const result = await db.collection(userInventoryCollection).updateOne(
+        {
+          userId: input.userId,
+          itemId: input.itemId,
+          isEquipped: true,
+        },
+        {
+          $set: { isEquipped: false },
+          $unset: { equippedToWizardId: '' },
+        }
+      );
+
+      if (result.matchedCount === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Equipped item not found',
+        });
+      }
+
+      return { success: true };
     }),
 });
 

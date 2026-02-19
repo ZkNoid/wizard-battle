@@ -7,6 +7,7 @@ import type {
   InventoryFilterType,
   InventoryItemWearableArmorSlot,
   IUserInventoryItem,
+  WizardClassName,
 } from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
 import { useState, useMemo } from 'react';
@@ -16,16 +17,16 @@ import { LEVELS_XP, levelFromXp } from '@/lib/constants/levels';
 import { InventoryTooltip } from './InventoryTooltip';
 import type { IInventoryFilterBtnProps } from './InventoryFilterBtn';
 import InventoryFilterBtn from './InventoryFilterBtn';
-import { defaultHeroStats, heroStatsConfig } from '@/lib/constants/stat';
+import { heroStatsConfig } from '@/lib/constants/stat';
 import type { IHeroStatConfig, IHeroStats } from '@/lib/types/IHeroStat';
-import { api } from '@/trpc/react';
-import { useInventoryStore, type EquippedSlots } from '@/lib/store';
+import { useInventoryStore, useUserDataStore, type EquippedSlots } from '@/lib/store';
 import { WizardId } from '../../../../common/wizards';
 import {
   useModalSound,
   useClickSound,
   useHoverSound,
 } from '@/lib/hooks/useAudio';
+import { useMinaAppkit } from 'mina-appkit';
 
 const MAX_ITEMS = 35;
 
@@ -47,16 +48,29 @@ const getWizardId = (wizard: Wizards): string => {
   }
 };
 
+// Map UI wizard enum to class name for wear requirements
+const getWizardClassName = (wizard: Wizards): WizardClassName => {
+  switch (wizard) {
+    case Wizards.ARCHER:
+      return 'ShadowArcher';
+    case Wizards.WARRIOR:
+      return 'PhantomDuelist';
+    case Wizards.MAGE:
+      return 'ArcaneSorcerer';
+  }
+};
+
 export default function InventoryModal({ onClose }: { onClose: () => void }) {
   // Play modal sounds
   useModalSound();
   const playClickSound = useClickSound();
   const playHoverSound = useHoverSound();
 
-  // Request user XP (mock address for now)
-  const { data: xp = 0 } = api.users.getXp.useQuery({
-    address: 'mock-address',
-  });
+  // Get wallet address for tRPC calls
+  const { address } = useMinaAppkit();
+
+  // Get wizard-specific XP from store
+  const userData = useUserDataStore((state) => state.userData);
 
   const [currentWizard, setCurrentWizard] = useState<Wizards>(Wizards.MAGE);
   const [draggedItem, setDraggedItem] = useState<IUserInventoryItem | null>(
@@ -70,6 +84,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     (state) => state.equippedItemsByWizard
   );
   const statsByWizard = useInventoryStore((state) => state.statsByWizard);
+  const getStats = useInventoryStore((state) => state.getStats);
   const equipItem = useInventoryStore((state) => state.equipItem);
   const unequipItem = useInventoryStore((state) => state.unequipItem);
 
@@ -82,20 +97,32 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   // Get equipped items for current wizard
   const equippedItems = useMemo((): EquippedSlots => {
     const defaultSlots: EquippedSlots = {
-      gem: null,
-      ring: null,
-      necklace: null,
-      arms: null,
-      legs: null,
-      belt: null,
+      Orb: null,
+      Belt: null,
+      Ring: null,
+      Amulet: null,
+      Boots: null,
+      Gloves: null,
     };
     return equippedItemsByWizard[currentWizardId] ?? defaultSlots;
   }, [equippedItemsByWizard, currentWizardId]);
 
   // Get stats for current wizard from store
   const stats = useMemo(() => {
-    return statsByWizard[currentWizardId] ?? { ...defaultHeroStats };
-  }, [statsByWizard, currentWizardId]);
+    return getStats(currentWizardId);
+  }, [getStats, currentWizardId, statsByWizard]);
+
+  // Get XP for the currently selected wizard
+  const xp = useMemo(() => {
+    switch (currentWizard) {
+      case Wizards.ARCHER:
+        return userData?.archer_xp ?? 0;
+      case Wizards.WARRIOR:
+        return userData?.duelist_xp ?? 0;
+      case Wizards.MAGE:
+        return userData?.mage_xp ?? 0;
+    }
+  }, [currentWizard, userData]);
 
   const handleNext = () => {
     setCurrentWizard((prev) => (prev + 1) % 3);
@@ -172,8 +199,8 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     setDraggedItem(null);
   };
 
-  const handleDrop = (slotId: InventoryItemWearableArmorSlot) => {
-    if (!draggedItem) return;
+  const handleDrop = async (slotId: InventoryItemWearableArmorSlot) => {
+    if (!draggedItem || !address) return;
 
     // Check if dragged item can be equipped in this slot
     if (draggedItem.item.type !== 'armor') {
@@ -187,8 +214,35 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
       return;
     }
 
+    // Check wear requirements (class and level)
+    if (wearableItem.wearRequirements && wearableItem.wearRequirements.length > 0) {
+      const currentClassName = getWizardClassName(currentWizard);
+      const currentLevel = levelFromXp(xp);
+
+      for (const req of wearableItem.wearRequirements) {
+        // Check class requirement
+        if (req.requirement.toLowerCase() === 'class') {
+          if (req.value !== currentClassName) {
+            console.warn(`Cannot equip ${wearableItem.title}: Requires class ${req.value}, but current wizard is ${currentClassName}`);
+            setDraggedItem(null);
+            return;
+          }
+        }
+        // Check level requirement
+        if (req.requirement.toLowerCase() === 'level') {
+          const requiredLevel = typeof req.value === 'string' ? parseInt(req.value, 10) : req.value;
+          if (currentLevel < requiredLevel) {
+            console.warn(`Cannot equip ${wearableItem.title}: Requires level ${requiredLevel}, but current wizard is level ${currentLevel}`);
+            setDraggedItem(null);
+            return;
+          }
+        }
+      }
+    }
+
     // Use store action to equip item (handles inventory swap automatically)
-    equipItem(currentWizardId, slotId, draggedItem);
+    await equipItem(address, currentWizardId, slotId, draggedItem);
+    
     setDraggedItem(null);
   };
 
@@ -196,12 +250,14 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     e.preventDefault();
   };
 
-  const handleUnequip = (slotId: InventoryItemWearableArmorSlot) => {
+  const handleUnequip = async (slotId: InventoryItemWearableArmorSlot) => {
+    if (!address) return;
+    
     const userItem = equippedItems[slotId];
     if (!userItem) return;
 
     // Use store action to unequip item
-    unequipItem(currentWizardId, slotId);
+    await unequipItem(address, currentWizardId, slotId);
   };
 
   const filteredItems =
@@ -352,17 +408,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
               <div className="flex h-full w-1/4 flex-col gap-5">
                 <div
                   className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('gem')}
+                  onDrop={() => handleDrop('Orb')}
                   onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('gem')}
+                  onClick={() => handleUnequip('Orb')}
                 >
-                  {equippedItems.gem ? (
-                    <InventoryTooltip userItem={equippedItems.gem}>
+                  {equippedItems.Orb ? (
+                    <InventoryTooltip userItem={equippedItems.Orb}>
                       <Image
-                        src={`/items/${equippedItems.gem.item.image}`}
+                        src={`/items/${equippedItems.Orb.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.gem.item.title}
+                        alt={equippedItems.Orb.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -370,10 +426,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                     </InventoryTooltip>
                   ) : (
                     <Image
-                      src="/inventory/placeholders/gem.png"
+                      src="/inventory/placeholders/orb.png"
                       width={100}
                       height={100}
-                      alt="gem-placeholder"
+                      alt="orb-placeholder"
                       className="pointer-events-none size-full select-none object-contain object-center"
                     />
                   )}
@@ -381,17 +437,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <div
                   className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('ring')}
+                  onDrop={() => handleDrop('Ring')}
                   onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('ring')}
+                  onClick={() => handleUnequip('Ring')}
                 >
-                  {equippedItems.ring ? (
-                    <InventoryTooltip userItem={equippedItems.ring}>
+                  {equippedItems.Ring ? (
+                    <InventoryTooltip userItem={equippedItems.Ring}>
                       <Image
-                        src={`/items/${equippedItems.ring.item.image}`}
+                        src={`/items/${equippedItems.Ring.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.ring.item.title}
+                        alt={equippedItems.Ring.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -410,17 +466,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <div
                   className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('necklace')}
+                  onDrop={() => handleDrop('Amulet')}
                   onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('necklace')}
+                  onClick={() => handleUnequip('Amulet')}
                 >
-                  {equippedItems.necklace ? (
-                    <InventoryTooltip userItem={equippedItems.necklace}>
+                  {equippedItems.Amulet ? (
+                    <InventoryTooltip userItem={equippedItems.Amulet}>
                       <Image
-                        src={`/items/${equippedItems.necklace.item.image}`}
+                        src={`/items/${equippedItems.Amulet.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.necklace.item.title}
+                        alt={equippedItems.Amulet.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -428,10 +484,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                     </InventoryTooltip>
                   ) : (
                     <Image
-                      src="/inventory/placeholders/necklace.png"
+                      src="/inventory/placeholders/amulet.png"
                       width={100}
                       height={100}
-                      alt="necklace-placeholder"
+                      alt="amulet-placeholder"
                       className="pointer-events-none size-full select-none object-contain object-center"
                     />
                   )}
@@ -467,17 +523,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
               <div className="flex h-full w-1/4 flex-col gap-5">
                 <div
                   className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('arms')}
+                  onDrop={() => handleDrop('Gloves')}
                   onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('arms')}
+                  onClick={() => handleUnequip('Gloves')}
                 >
-                  {equippedItems.arms ? (
-                    <InventoryTooltip userItem={equippedItems.arms}>
+                  {equippedItems.Gloves ? (
+                    <InventoryTooltip userItem={equippedItems.Gloves}>
                       <Image
-                        src={`/items/${equippedItems.arms.item.image}`}
+                        src={`/items/${equippedItems.Gloves.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.arms.item.title}
+                        alt={equippedItems.Gloves.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -485,10 +541,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                     </InventoryTooltip>
                   ) : (
                     <Image
-                      src="/inventory/placeholders/arms.png"
+                      src="/inventory/placeholders/gloves.png"
                       width={100}
                       height={100}
-                      alt="arms-placeholder"
+                      alt="gloves-placeholder"
                       className="pointer-events-none size-full select-none object-contain object-center"
                     />
                   )}
@@ -496,17 +552,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <div
                   className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('legs')}
+                  onDrop={() => handleDrop('Boots')}
                   onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('legs')}
+                  onClick={() => handleUnequip('Boots')}
                 >
-                  {equippedItems.legs ? (
-                    <InventoryTooltip userItem={equippedItems.legs}>
+                  {equippedItems.Boots ? (
+                    <InventoryTooltip userItem={equippedItems.Boots}>
                       <Image
-                        src={`/items/${equippedItems.legs.item.image}`}
+                        src={`/items/${equippedItems.Boots.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.legs.item.title}
+                        alt={equippedItems.Boots.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}
@@ -514,10 +570,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                     </InventoryTooltip>
                   ) : (
                     <Image
-                      src="/inventory/placeholders/legs.png"
+                      src="/inventory/placeholders/boots.png"
                       width={100}
                       height={100}
-                      alt="legs-placeholder"
+                      alt="boots-placeholder"
                       className="pointer-events-none size-full select-none object-contain object-center"
                     />
                   )}
@@ -525,17 +581,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                 </div>
                 <div
                   className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('belt')}
+                  onDrop={() => handleDrop('Belt')}
                   onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('belt')}
+                  onClick={() => handleUnequip('Belt')}
                 >
-                  {equippedItems.belt ? (
-                    <InventoryTooltip userItem={equippedItems.belt}>
+                  {equippedItems.Belt ? (
+                    <InventoryTooltip userItem={equippedItems.Belt}>
                       <Image
-                        src={`/items/${equippedItems.belt.item.image}`}
+                        src={`/items/${equippedItems.Belt.item.image}`}
                         width={100}
                         height={100}
-                        alt={equippedItems.belt.item.title}
+                        alt={equippedItems.Belt.item.title}
                         className="pointer-events-none size-full select-none object-contain object-center"
                         quality={100}
                         unoptimized={true}

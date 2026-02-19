@@ -171,20 +171,22 @@ export function CraftFormItem({
   return (
     <div className="flex w-full flex-row items-center gap-2 text-sm">
       <Image
-        src={recipe.image || '/icons/default-item.png'}
+        src={
+          recipe.image
+            ? recipe.image.startsWith('/')
+              ? recipe.image
+              : `/items/${recipe.image}`
+            : '/icons/default-item.png'
+        }
         alt={recipe.title}
         width={40}
         height={40}
         className="size-10 shrink-0 bg-gray-400"
-        unoptimized={
-          !recipe.image?.startsWith('/') && !recipe.image?.startsWith('http')
-        }
       />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <span className="font-pixel truncate font-bold">{recipe.title}</span>
         <div className="flex min-w-0 flex-row items-center gap-2">
-          <span className="font-pixel shrink-0 text-[12px]">Recipe:</span>
-          <div className="min-w-0 flex-1 overflow-x-auto">
+          <div className="min-w-0 flex-1">
             <CraftRecipe
               ingredients={recipe.ingredients}
               userInventory={inventoryMap}

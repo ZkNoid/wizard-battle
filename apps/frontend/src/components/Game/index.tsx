@@ -48,7 +48,7 @@ export default function Game({
       </div>
 
       <div className="col-span-6 row-span-1 row-start-6 flex flex-row items-center gap-5">
-        <div className="w-65 flex h-28 flex-row items-end gap-2.5">
+        <div className="w-65 mr-5 flex h-28 flex-row items-end gap-2.5">
           <Button
             variant="blue"
             className="h-16 w-40"
@@ -84,7 +84,11 @@ export default function Game({
             />
           </BoxButton>
         </div>
-        <div className="w-220 relative h-28">
+        <div className="relative flex h-28 flex-row items-center">
+          <ActionsBg
+            className="size-28"
+            actionInfo={actionInfo}
+          />
           <Spells
             // DEBUG FOR TESTING
             // skills={Array.from({ length: 5 }).map((_, idx) => ({
@@ -109,11 +113,7 @@ export default function Game({
                 .filter((spell) => spell !== undefined) ?? []
             }
           />
-          <ActionsBg
-            className="absolute left-0 top-0 z-[1] -ml-10 size-28"
-            actionInfo={actionInfo}
-          />
-          <SkillsBg className="absolute inset-0 size-full" />
+          <SkillsBg className="absolute top-1/2 -translate-y-1/2 -left-4 -z-10 h-[150%] w-[calc(100%+2rem)]" />
         </div>
         <div className="flex h-28 flex-row items-end gap-2.5">
           <Clock />

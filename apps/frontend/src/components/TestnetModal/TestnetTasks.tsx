@@ -5,8 +5,9 @@ import Image from 'next/image';
 import { Button } from '@/components/shared/Button';
 import ModalTitle from '../shared/ModalTitle';
 import { Scroll } from '@/components/shared/Scroll';
-import { TESTNET_BLOCKS } from '@/lib/constants/testnet';
 import { TestnetTaskBlock } from './TestnetTaskBlock';
+import { useQuestStore } from '@/lib/store/questStore';
+import { useMinaAppkit } from 'mina-appkit';
 
 interface TestnetTasksProps {
   onCancel?: () => void;
@@ -26,15 +27,21 @@ export function TestnetTasks({ onCancel }: TestnetTasksProps) {
   const testnetEndDate = new Date('2026-03-31T23:59:59');
   const [remainingTime, setRemainingTime] = useState(0);
 
-  // Calculate total and completed quests
-  const totalQuests = TESTNET_BLOCKS.reduce(
-    (sum, block) => sum + block.items.length,
-    0
-  );
-  const completedQuests = TESTNET_BLOCKS.reduce(
-    (sum, block) => sum + block.items.filter((item) => item.isCompleted).length,
-    0
-  );
+  const { address } = useMinaAppkit();
+  const {
+    isLoading,
+    loadUserQuests,
+    getTestnetBlocks,
+    getTotalQuests,
+    getCompletedQuests,
+  } = useQuestStore();
+
+  // Load quests when component mounts or address changes
+  useEffect(() => {
+    if (address) {
+      void loadUserQuests(address);
+    }
+  }, [address, loadUserQuests]);
 
   useEffect(() => {
     const calculateRemaining = () => {
@@ -49,6 +56,10 @@ export function TestnetTasks({ onCancel }: TestnetTasksProps) {
 
     return () => clearInterval(interval);
   }, [testnetEndDate]);
+
+  const blocks = getTestnetBlocks();
+  const totalQuests = getTotalQuests();
+  const completedQuests = getCompletedQuests();
 
   return (
     <div className="flex h-full flex-col">
@@ -87,17 +98,31 @@ export function TestnetTasks({ onCancel }: TestnetTasksProps) {
       </div>
 
       <div className="my-2 flex-1 overflow-hidden">
-        <Scroll height="100%" alwaysShowScrollbar>
-          <div className="flex flex-col gap-4 pr-2">
-            {TESTNET_BLOCKS.map((block, index) => (
-              <TestnetTaskBlock
-                key={index}
-                block={block}
-                onTaskToggle={() => {}}
-              />
-            ))}
+        {isLoading ? (
+          <div className="flex h-full items-center justify-center">
+            <span className="font-pixel text-main-gray text-lg">
+              Loading quests...
+            </span>
           </div>
-        </Scroll>
+        ) : !address ? (
+          <div className="flex h-full items-center justify-center">
+            <span className="font-pixel text-main-gray text-lg">
+              Connect wallet to view quests
+            </span>
+          </div>
+        ) : (
+          <Scroll height="100%" alwaysShowScrollbar>
+            <div className="flex flex-col gap-4 pr-2">
+              {blocks.map((block, index) => (
+                <TestnetTaskBlock
+                  key={index}
+                  block={block}
+                  onTaskToggle={() => {}}
+                />
+              ))}
+            </div>
+          </Scroll>
+        )}
       </div>
     </div>
   );

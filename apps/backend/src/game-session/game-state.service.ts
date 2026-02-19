@@ -43,6 +43,8 @@ interface GameState {
     currentActions?: IUserActions; // Phase 1: Actions submitted by player
     trustedState?: ITrustedState; // Phase 4: Computed state after spell effects
     confirmedJoined?: boolean; // Whether player confirmed they joined the match
+    lastKnownHp?: number; // Preserved HP value for game end calculations (persists across turn clears)
+    lastKnownMaxHp?: number; // Preserved max HP value for game end calculations
   }[];
   gameData: any; // Additional game-specific data
   turn: number; // Current turn number (increments after each cycle)
@@ -749,12 +751,36 @@ export class GameStateService {
 
       console.log(`🧹 Clearing turn data for room ${roomId}`);
 
-      // Clear turn-specific player data
-      const clearedPlayers = gameState.players.map((player) => ({
-        ...player,
-        currentActions: undefined,
-        trustedState: undefined,
-      }));
+      // Clear turn-specific player data, but preserve HP values for game end calculations
+      const clearedPlayers = gameState.players.map((player) => {
+        // Extract HP from trusted state before clearing
+        let hp: number | undefined = player.lastKnownHp;
+        let maxHp: number | undefined = player.lastKnownMaxHp;
+
+        if (player.trustedState?.publicState?.fields) {
+          try {
+            const fields = player.trustedState.publicState.fields as any;
+            if (typeof fields === 'string') {
+              const parsed = JSON.parse(fields);
+              hp = parseInt(parsed?.playerStats?.hp?.magnitude ?? '100');
+              maxHp = parseInt(parsed?.playerStats?.maxHp?.magnitude ?? '100');
+            } else if (Array.isArray(fields) && fields.length > 0) {
+              hp = parseInt((fields[0] as any)?.value ?? fields[0]);
+              maxHp = parseInt((fields[1] as any)?.value ?? fields[1] ?? '100');
+            }
+          } catch (e) {
+            console.warn(`⚠️ Failed to extract HP for player ${player.id}:`, e);
+          }
+        }
+
+        return {
+          ...player,
+          currentActions: undefined,
+          trustedState: undefined,
+          lastKnownHp: hp,
+          lastKnownMaxHp: maxHp,
+        };
+      });
 
       await this.updateGameState(roomId, {
         players: clearedPlayers,

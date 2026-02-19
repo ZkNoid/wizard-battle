@@ -237,7 +237,7 @@ export default function Matchmaking({
         <div className="flex items-center gap-5">
           <QueueIcon className="h-20 w-20" />
           <div className="font-pixel text-main-gray flex flex-col gap-1">
-            <span className="text-xl">Place in Queue:</span>
+            <span className="text-xl">Players in queue:</span>
             <span className="text-3xl">
               {queuePosition !== null ? queuePosition : '...'}
             </span>

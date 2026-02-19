@@ -124,7 +124,7 @@ export default function Header({ onTabChange }: HeaderProps) {
             />
             <span>{formatCurrency(gold)}</span>
           </Button>
-          <Button
+          {/* <Button
             variant="gray"
             className="h-15 flex w-32 items-center justify-center gap-2.5"
           >
@@ -138,13 +138,13 @@ export default function Header({ onTabChange }: HeaderProps) {
               className="h-7 w-8"
             />
             <span>{formatCurrency(blackOrb)}</span>
-          </Button>
+          </Button> */}
           <div className="w-40 shrink-0">
             <Wallet />
           </div>
-          <div className="w-40 shrink-0">
+          {/* <div className="w-40 shrink-0">
             <WalletReown />
-          </div>
+          </div> */}
         </div>
       </div>
     </>

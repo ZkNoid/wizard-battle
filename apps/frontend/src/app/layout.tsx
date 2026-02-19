@@ -32,12 +32,14 @@ export default async function RootLayout({
       className={`${dePixel.variable} ${dePixelBreit.variable} ${dePixelKlein.variable} ${dePixelSchmal.variable}`}
     >
       <body>
-        <PostHogProvider>
-          <ReownContext cookies={cookies}>
-            <ClientInitializer />
-            <TRPCReactProvider>{children}</TRPCReactProvider>
-          </ReownContext>
-        </PostHogProvider>
+        <ReownContext cookies={cookies}>
+          <PostHogProvider>
+            <TRPCReactProvider>
+              <ClientInitializer />
+              {children}
+            </TRPCReactProvider>
+          </PostHogProvider>
+        </ReownContext>
         <Analytics />
       </body>
     </html>

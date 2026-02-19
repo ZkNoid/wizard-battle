@@ -19,11 +19,28 @@ import type {
 
 export class ItemBuffDto implements IItemBuff {
   @IsString()
-  @IsNotEmpty()
-  effect!: string;
+  @IsOptional()
+  critChance?: string;
 
-  @IsNumber()
-  value!: number;
+  @IsString()
+  @IsOptional()
+  Accuracy?: string;
+
+  @IsString()
+  @IsOptional()
+  Attack?: string;
+
+  @IsString()
+  @IsOptional()
+  Dodge?: string;
+
+  @IsString()
+  @IsOptional()
+  Movement?: string;
+
+  @IsString()
+  @IsOptional()
+  Defence?: string;
 }
 
 export class ImprovementRequirementDto implements IImprovementRequirementDB {
@@ -40,8 +57,8 @@ export class WearRequirementDto implements IWearRequirement {
   @IsNotEmpty()
   requirement!: string;
 
-  @IsNumber()
-  value!: number;
+  @IsNotEmpty()
+  value!: number | string; // number for level, string for class names
 }
 
 export class CreateInventoryItemDto {
@@ -62,7 +79,7 @@ export class CreateInventoryItemDto {
   image!: string;
 
   @IsString()
-  @IsIn(['common', 'uncommon', 'unique'])
+  @IsIn(['common', 'uncommon', 'rare'])
   rarity!: ItemRarity;
 
   @IsString()
@@ -79,7 +96,7 @@ export class CreateInventoryItemDto {
 
   // Armor-specific fields (optional)
   @IsString()
-  @IsIn(['arms', 'legs', 'belt', 'necklace', 'gem', 'ring'])
+  @IsIn(['Orb', 'Belt', 'Ring', 'Amulet', 'Boots', 'Gloves'])
   @IsOptional()
   wearableSlot?: InventoryItemWearableArmorSlot;
 
@@ -87,11 +104,10 @@ export class CreateInventoryItemDto {
   @IsOptional()
   level?: number;
 
-  @IsArray()
-  @ValidateNested({ each: true })
+  @ValidateNested()
   @Type(() => ItemBuffDto)
   @IsOptional()
-  buff?: ItemBuffDto[];
+  buff?: ItemBuffDto;
 
   @IsArray()
   @ValidateNested({ each: true })

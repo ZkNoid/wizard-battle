@@ -23,11 +23,23 @@ export type {
 
 @Schema({ _id: false })
 export class ItemBuff implements IItemBuff {
-  @Prop({ required: true })
-  effect!: string;
+  @Prop()
+  critChance?: string;
 
-  @Prop({ required: true })
-  value!: number;
+  @Prop()
+  Accuracy?: string;
+
+  @Prop()
+  Attack?: string;
+
+  @Prop()
+  Dodge?: string;
+
+  @Prop()
+  Movement?: string;
+
+  @Prop()
+  Defence?: string;
 }
 
 @Schema({ _id: false })
@@ -44,8 +56,8 @@ export class WearRequirement implements IWearRequirement {
   @Prop({ required: true })
   requirement!: string;
 
-  @Prop({ required: true })
-  value!: number;
+  @Prop({ required: true, type: 'Mixed' })
+  value!: number | string; // number for level, string for class names
 }
 
 @Schema({ timestamps: true })
@@ -62,7 +74,7 @@ export class InventoryItem {
   @Prop({ required: true })
   image!: string;
 
-  @Prop({ required: true, enum: ['common', 'uncommon', 'unique'] })
+  @Prop({ required: true, enum: ['common', 'uncommon', 'rare'] })
   rarity!: ItemRarity;
 
   @Prop({ required: true, enum: ['armor', 'craft', 'gems'] })
@@ -75,14 +87,14 @@ export class InventoryItem {
   price!: number;
 
   // Armor-specific fields (optional for craft/gems items)
-  @Prop({ enum: ['arms', 'legs', 'belt', 'necklace', 'gem', 'ring'] })
+  @Prop({ enum: ['Orb', 'Belt', 'Ring', 'Amulet', 'Boots', 'Gloves'] })
   wearableSlot?: InventoryItemWearableArmorSlot;
 
   @Prop()
   level?: number;
 
-  @Prop({ type: [ItemBuff], default: [] })
-  buff?: ItemBuff[];
+  @Prop({ type: ItemBuff })
+  buff?: ItemBuff;
 
   @Prop({ type: [ImprovementRequirement], default: [] })
   improvementRequirements?: ImprovementRequirement[];

@@ -7,8 +7,9 @@ import type {
   AnyInventoryItem,
 } from '@/lib/types/Inventory';
 import type { IHeroStats } from '@/lib/types/IHeroStat';
-import { defaultHeroStats } from '@/lib/constants/stat';
 import { trpcClient } from '@/trpc/vanilla';
+import { allWizards } from '../../../../common/wizards';
+import { defaultHeroStats } from '@/lib/constants/stat';
 
 export type EquippedSlots = Record<
   InventoryItemWearableArmorSlot,
@@ -16,27 +17,63 @@ export type EquippedSlots = Record<
 >;
 
 const defaultEquippedSlots: EquippedSlots = {
-  gem: null,
-  ring: null,
-  necklace: null,
-  arms: null,
-  legs: null,
-  belt: null,
+  Orb: null,
+  Belt: null,
+  Ring: null,
+  Amulet: null,
+  Boots: null,
+  Gloves: null,
+};
+
+// Helper function to get default stats for a wizard based on their type
+const getWizardDefaultStats = (wizardId: string): IHeroStats => {
+  const wizard = allWizards.find((w) => w.id.toString() === wizardId);
+
+  if (!wizard) {
+    return { ...defaultHeroStats };
+  }
+
+  const state = wizard.defaultState();
+  const playerStats = state.playerStats;
+
+  return {
+    hp: Number(playerStats.maxHp.toBigint()),
+    atk: Number(playerStats.attack.toBigInt()),
+    def: Number(playerStats.defense.toBigInt()),
+    crit: Number(playerStats.critChance.toBigInt()),
+    dodge: Number(playerStats.dodgeChance.toBigInt()),
+    accuracy: Number(playerStats.accuracy.toBigInt()),
+  };
+};
+
+// Mapping from buff keys to IHeroStats keys
+const buffToStatKeyMap: Record<string, keyof IHeroStats> = {
+  critChance: 'crit',
+  Accuracy: 'accuracy',
+  Attack: 'atk',
+  Dodge: 'dodge',
+  Defence: 'def',
+  // Movement has no direct mapping in IHeroStats
 };
 
 // Helper function to calculate stats from equipped items
-const calculateStats = (equippedSlots: EquippedSlots): IHeroStats => {
-  const stats: IHeroStats = { ...defaultHeroStats };
+const calculateStats = (
+  equippedSlots: EquippedSlots,
+  wizardId: string
+): IHeroStats => {
+  const stats: IHeroStats = getWizardDefaultStats(wizardId);
 
   Object.values(equippedSlots).forEach((userItem) => {
     if (userItem && userItem.item.type === 'armor') {
       const armorItem = userItem.item as IInventoryArmorItem;
-      armorItem.buff.forEach((buff) => {
-        const statKey = buff.effect as keyof IHeroStats;
-        if (statKey in stats) {
-          stats[statKey] += buff.value;
-        }
-      });
+      if (armorItem.buff) {
+        Object.entries(armorItem.buff).forEach(([buffKey, buffValue]) => {
+          const statKey = buffToStatKeyMap[buffKey];
+          if (statKey && statKey in stats && buffValue) {
+            stats[statKey] += Number(buffValue);
+          }
+        });
+      }
     }
   });
 
@@ -67,14 +104,16 @@ interface InventoryStore {
   getEquippedItems: (wizardId: string) => EquippedSlots;
   getStats: (wizardId: string) => IHeroStats;
   equipItem: (
+    userId: string,
     wizardId: string,
     slotId: InventoryItemWearableArmorSlot,
     userItem: IUserInventoryItem
-  ) => void;
+  ) => Promise<void>;
   unequipItem: (
+    userId: string,
     wizardId: string,
     slotId: InventoryItemWearableArmorSlot
-  ) => void;
+  ) => Promise<void>;
   setiteminventory: (items: IUserInventoryItem[]) => void;
   addToInventory: (item: IUserInventoryItem) => void;
   removeFromInventory: (itemId: string) => void;
@@ -146,7 +185,7 @@ export const useInventoryStore = create<InventoryStore>()(
           // Calculate stats for each wizard
           const statsByWizard: Record<string, IHeroStats> = {};
           Object.entries(equippedByWizard).forEach(([wizardId, slots]) => {
-            statsByWizard[wizardId] = calculateStats(slots);
+            statsByWizard[wizardId] = calculateStats(slots, wizardId);
           });
 
           // Extract currency balances
@@ -185,14 +224,23 @@ export const useInventoryStore = create<InventoryStore>()(
 
       getStats: (wizardId: string): IHeroStats => {
         const state = get();
-        return state.statsByWizard[wizardId] ?? { ...defaultHeroStats };
+        return state.statsByWizard[wizardId] ?? getWizardDefaultStats(wizardId);
       },
 
-      equipItem: (
+      equipItem: async (
+        userId: string,
         wizardId: string,
         slotId: InventoryItemWearableArmorSlot,
         userItem: IUserInventoryItem
-      ) =>
+      ) => {
+        // Call tRPC to persist the equip action
+        await trpcClient.items.equipItem.mutate({
+          userId,
+          itemId: userItem.item.id,
+          wizardId,
+        });
+
+        // Update local state
         set((state) => {
           // Get current equipped items for this wizard
           const currentEquipped = state.equippedItemsByWizard[wizardId] ?? {
@@ -218,7 +266,7 @@ export const useInventoryStore = create<InventoryStore>()(
           updatedEquipped[slotId] = equippedItem;
 
           // Recalculate stats for this wizard
-          const newStats = calculateStats(updatedEquipped);
+          const newStats = calculateStats(updatedEquipped, wizardId);
 
           // Update inventory: remove the equipped item, add back the previously equipped item if any
           let newInventory = state.iteminventory.filter(
@@ -244,9 +292,29 @@ export const useInventoryStore = create<InventoryStore>()(
             },
             iteminventory: newInventory,
           };
-        }),
+        });
+      },
 
-      unequipItem: (wizardId: string, slotId: InventoryItemWearableArmorSlot) =>
+      unequipItem: async (
+        userId: string,
+        wizardId: string,
+        slotId: InventoryItemWearableArmorSlot
+      ) => {
+        const state = get();
+        const currentEquipped = state.equippedItemsByWizard[wizardId] ?? {
+          ...defaultEquippedSlots,
+        };
+        const userItem = currentEquipped[slotId];
+
+        if (!userItem) return;
+
+        // Call tRPC to persist the unequip action
+        await trpcClient.items.unequipItem.mutate({
+          userId,
+          itemId: userItem.item.id,
+        });
+
+        // Update local state
         set((state) => {
           const currentEquipped = state.equippedItemsByWizard[wizardId] ?? {
             ...defaultEquippedSlots,
@@ -260,7 +328,7 @@ export const useInventoryStore = create<InventoryStore>()(
           updatedEquipped[slotId] = null;
 
           // Recalculate stats for this wizard
-          const newStats = calculateStats(updatedEquipped);
+          const newStats = calculateStats(updatedEquipped, wizardId);
 
           // Add item back to inventory
           const unequippedItem: IUserInventoryItem = {
@@ -280,7 +348,8 @@ export const useInventoryStore = create<InventoryStore>()(
             },
             iteminventory: [...state.iteminventory, unequippedItem],
           };
-        }),
+        });
+      },
 
       setiteminventory: (items: IUserInventoryItem[]) =>
         set({ iteminventory: items }),

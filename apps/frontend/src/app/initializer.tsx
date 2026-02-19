@@ -12,9 +12,10 @@ import {
   Position,
   PositionOption,
 } from '../../../common/stater/structs';
-import { useInventoryStore } from '@/lib/store';
+import { useInventoryStore, useUserDataStore } from '@/lib/store';
 import { useExpeditionStore } from '@/lib/store/expeditionStore';
 import { useMinaAppkit } from 'mina-appkit';
+import { api } from '@/trpc/react';
 
 export default function Initializer() {
   const { address } = useMinaAppkit();
@@ -26,6 +27,14 @@ export default function Initializer() {
   );
   const loadUserExpeditions = useExpeditionStore(
     (state) => state.loadUserExpeditions
+  );
+  const setUserData = useUserDataStore((state) => state.setUserData);
+  const clearUserData = useUserDataStore((state) => state.clearUserData);
+
+  // Fetch user data from database
+  const { data: userData } = api.users.get.useQuery(
+    { address: address ?? '' },
+    { enabled: !!address }
   );
 
   // Initialize socket and stater
@@ -85,8 +94,17 @@ export default function Initializer() {
     if (address) {
       void loadUserInventory(address);
       void loadUserExpeditions(address);
+    } else {
+      clearUserData();
     }
-  }, [address, loadUserInventory, loadUserExpeditions]);
+  }, [address, loadUserInventory, loadUserExpeditions, clearUserData]);
+
+  // Update store when user data is fetched
+  useEffect(() => {
+    if (userData) {
+      setUserData(userData);
+    }
+  }, [userData, setUserData]);
 
   return null;
 }

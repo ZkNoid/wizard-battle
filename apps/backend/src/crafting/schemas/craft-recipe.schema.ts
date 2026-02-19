@@ -34,7 +34,7 @@ export class CraftRecipe {
 
   @Prop({
     required: true,
-    enum: ['necklace', 'ring', 'belt', 'arms', 'legs', 'gem'],
+    enum: ['Orb', 'Belt', 'Ring', 'Amulet', 'Boots', 'Gloves'],
   })
   category!: InventoryItemWearableArmorSlot;
 

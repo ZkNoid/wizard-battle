@@ -862,32 +862,50 @@ export class GameSessionGateway {
             winnerData.wPlayerId.startsWith('100') ||
             winnerData.lPlayerId.startsWith('100');
 
-          // Try to extract winner's HP percentage from their trusted state
+          // Try to extract winner's HP percentage from their trusted state or lastKnownHp
           let winnerHpPercentage = 50; // Default to middle value
           if (gameState?.players) {
             const winnerPlayer = gameState.players.find(
               (p) => p.id === winnerData.wPlayerId
             );
-            if (winnerPlayer?.trustedState?.publicState?.fields) {
-              const fields = winnerPlayer.trustedState.publicState.fields as any;
+            if (winnerPlayer) {
               let hp = 100;
               let maxHp = 100;
+              let foundHp = false;
 
-              if (typeof fields === 'string') {
-                try {
-                  const parsed = JSON.parse(fields);
-                  hp = parseInt(parsed?.playerStats?.hp?.magnitude ?? '100');
-                  maxHp = parseInt(parsed?.playerStats?.maxHp?.magnitude ?? '100');
-                } catch (e) {
-                  console.error('Failed to parse fields JSON:', e);
+              // First try to get HP from trusted state (if available)
+              if (winnerPlayer.trustedState?.publicState?.fields) {
+                const fields = winnerPlayer.trustedState.publicState.fields as any;
+
+                if (typeof fields === 'string') {
+                  try {
+                    const parsed = JSON.parse(fields);
+                    hp = parseInt(parsed?.playerStats?.hp?.magnitude ?? '100');
+                    maxHp = parseInt(parsed?.playerStats?.maxHp?.magnitude ?? '100');
+                    foundHp = true;
+                  } catch (e) {
+                    console.error('Failed to parse fields JSON:', e);
+                  }
+                } else if (Array.isArray(fields) && fields.length > 0) {
+                  hp = parseInt((fields[0] as any)?.value ?? fields[0]);
+                  maxHp = parseInt((fields[1] as any)?.value ?? fields[1] ?? '100');
+                  foundHp = true;
                 }
-              } else if (Array.isArray(fields) && fields.length > 0) {
-                hp = parseInt((fields[0] as any)?.value ?? fields[0]);
-                // maxHp might be in a different index or default to 100
-                maxHp = parseInt((fields[1] as any)?.value ?? fields[1] ?? '100');
               }
 
-              winnerHpPercentage = maxHp > 0 ? (hp / maxHp) * 100 : 50;
+              // Fallback to lastKnownHp if trusted state wasn't available (cleared during turn transition)
+              if (!foundHp && winnerPlayer.lastKnownHp !== undefined) {
+                hp = winnerPlayer.lastKnownHp;
+                maxHp = winnerPlayer.lastKnownMaxHp ?? 100;
+                foundHp = true;
+                console.log(
+                  `📊 Using lastKnownHp for winner ${winnerData.wPlayerId}: ${hp}/${maxHp}`
+                );
+              }
+
+              if (foundHp) {
+                winnerHpPercentage = maxHp > 0 ? (hp / maxHp) * 100 : 50;
+              }
             }
           }
 
