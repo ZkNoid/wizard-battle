@@ -2,7 +2,15 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { GameStateService } from './game-state.service';
 import { GameSessionGateway } from './game-session.gateway';
-import { GamePhase } from '../../../common/types/gameplay.types';
+import { RewardService } from '../reward/reward.service';
+import {
+  GamePhase,
+  IUserActions,
+  ITrustedState,
+  IDead,
+  IGameEnd,
+  IReward,
+} from '../../../common/types/gameplay.types';
 
 /**
  * @title Game Phase Scheduler - Cron-Based Phase Management
@@ -18,7 +26,8 @@ export class GamePhaseSchedulerService {
   constructor(
     private readonly gameStateService: GameStateService,
     @Inject(forwardRef(() => GameSessionGateway))
-    private readonly gameSessionGateway: GameSessionGateway
+    private readonly gameSessionGateway: GameSessionGateway,
+    private readonly rewardService: RewardService
   ) {}
 
   /**
@@ -43,6 +52,120 @@ export class GamePhaseSchedulerService {
       }
     }
     throw lastError || new Error('Operation failed after max retries');
+  }
+
+  /**
+   * @notice Distribute rewards to the winner
+   * @param winnerData Winner and loser information
+   * @returns Game end object with rewards and experience
+   */
+  private async distributeRewards(
+    winnerData: {
+      wUserId: string | undefined;
+      wPlayerId: string;
+      lUserId: string | undefined;
+      lPlayerId: string;
+      wCharacter: string;
+      lCharacter: string;
+    } | null,
+    winnerId: string
+  ): Promise<IGameEnd> {
+    let reward: {
+      success: boolean;
+      itemId: string;
+      quantity: number;
+      total: number;
+    } | null = null;
+
+    let rewardItems: {
+      success: boolean;
+      items: { itemId: string; quantity: number; total: number }[];
+    } | null = null;
+
+    let xpData: {
+      success: boolean;
+      winnerXP: number;
+      looserXP: number;
+    } | null = null;
+
+    let gameEnd: IGameEnd = { winnerId: winnerData?.wPlayerId || '' };
+
+    if (winnerData && winnerData.wUserId) {
+      console.log(`winnerData.wCharacter: ${winnerData.wCharacter}`);
+      console.log(`winnerData.lCharacter: ${winnerData.lCharacter}`);
+      try {
+        xpData = await this.rewardService.rewardXP(
+          winnerData.wUserId,
+          '0x0', //no reward to looser
+          'win',
+          winnerData.wCharacter,
+          winnerData.lCharacter
+        );
+
+        reward = await this.rewardService.rewardGold(winnerData.wUserId);
+
+        console.log(
+          `💰 Rewarded ${reward?.quantity || 0} gold to winner ${winnerData.wPlayerId} (userId: ${winnerData.wUserId})`
+        );
+
+        rewardItems = await this.rewardService.rewardRandomItems(
+          winnerData.wUserId,
+          [
+            {
+              itemId: 'SoulStoneFragment',
+              quantity: 1,
+              chance: 0.2,
+            },
+            {
+              itemId: 'SoulStoneShard',
+              quantity: 2,
+              chance: 0.5,
+            },
+          ]
+        );
+        console.log(`💰 Rewarded items: ${JSON.stringify(rewardItems)}`);
+
+        const goldReward: IReward = {
+          itemId: 'Gold',
+          amount: reward ? reward.quantity : 0,
+          total: reward ? reward.total : 0,
+        };
+
+        const itemRewards: IReward[] = rewardItems
+          ? rewardItems.items.map((item) => ({
+              itemId: item.itemId,
+              amount: item.quantity,
+              total: item.total,
+            }))
+          : [];
+
+        gameEnd = {
+          winnerId: winnerData.wPlayerId,
+          experience: {
+            winnerXP: xpData?.winnerXP ?? 0,
+            looserXP: 0,
+          },
+          reward: [goldReward, ...itemRewards],
+        };
+
+        console.log(
+          `📢 Broadcasting game end: ${winnerData ? winnerData.wPlayerId : 'no winner id data'} wins`
+        );
+      } catch (error) {
+        console.error(
+          `❌ Failed to reward gold to winner ${winnerData.wPlayerId}:`,
+          error
+        );
+      }
+    } else {
+      console.log(
+        `⚠️ Winner ${winnerData ? winnerData.wPlayerId : 'no winner id data'} has no userId (wallet not connected), skipping reward distribution`
+      );
+      console.log(`📢 Broadcasting game end: ${winnerId} wins`);
+      gameEnd = { winnerId };
+    }
+
+    return gameEnd;
   }
 
   /**
@@ -72,9 +195,16 @@ export class GamePhaseSchedulerService {
    * */
   @Cron('*/2 * * * * *')
   async enforceSpellCastingTimeouts() {
-    if (!(await this.withRetry(() => this.isLeader()))) return;
+    // console.log('⏱️ [enforceSpellCastingTimeouts] Cron triggered');
+    const isLeader = await this.withRetry(() => this.isLeader());
+    // console.log(`⏱️ [enforceSpellCastingTimeouts] Is leader: ${isLeader}`);
+    if (!isLeader) {
+      // console.log('⏱️ [enforceSpellCastingTimeouts] Not a leader, skipping');
+      return;
+    }
     try {
       const roomIds = await this.withRetry(() => this.getAllRoomIdsWithScan());
+      // console.log(`⏱️ [enforceSpellCastingTimeouts] Found ${roomIds.length} rooms`);
       const now = Date.now();
 
       for (const roomId of roomIds) {
@@ -88,16 +218,25 @@ export class GamePhaseSchedulerService {
           gameState.phaseTimeout ||
           Number(process.env.SPELL_CAST_TIMEOUT || 120000);
         const timeSincePhaseStart = now - gameState.phaseStartTime;
+        // console.log(
+        //   `⏱️ [enforceSpellCastingTimeouts] Room ${roomId}: ${timeSincePhaseStart}ms / ${configuredTimeout}ms`
+        // );
         if (timeSincePhaseStart < configuredTimeout) continue;
 
         const timeoutMarker = `${roomId}:${gameState.turn}`;
-        const isProcessed = await this.withRetry(() =>
-          this.gameStateService.redisClient.sIsMember(
-            this.processedTimeoutsKey,
-            timeoutMarker
-          )
-        );
-        if (isProcessed) continue;
+        // console.log(
+        //   `⏱️ [enforceSpellCastingTimeouts] Checking timeout marker: ${timeoutMarker}`
+        // );
+        // const isProcessed = await this.withRetry(() =>
+        //   this.gameStateService.redisClient.sIsMember(
+        //     this.processedTimeoutsKey,
+        //     timeoutMarker
+        //   )
+        // );
+        // console.log(
+        //   `⏱️ [enforceSpellCastingTimeouts] isProcessed result: ${isProcessed}`
+        // );
+        // if (isProcessed) continue;
 
         const alivePlayers = gameState.players.filter((p) => p.isAlive);
         const submitters = alivePlayers.filter((p) => !!p.currentActions);
@@ -107,13 +246,7 @@ export class GamePhaseSchedulerService {
         console.log(
           `⏰ SPELL_CASTING timeout in room ${roomId} after ${timeSincePhaseStart}ms`
         );
-        await this.withRetry(() =>
-          this.gameStateService.redisClient.sAdd(
-            this.processedTimeoutsKey,
-            timeoutMarker
-          )
-        );
-
+        // New turn has been started and no one submited any acctions -> no rewards!
         if (submitters.length === 0) {
           console.log(`🤝 No actions submitted in room ${roomId} → draw`);
           await this.withRetry(() =>
@@ -132,6 +265,10 @@ export class GamePhaseSchedulerService {
               'spell_casting_timeout_draw'
             )
           );
+
+          console.log(
+            `⚠️ gameEnd event submited for room ${roomId}, with valuw draw`
+          );
           // Remove match and game state to allow rematch
           try {
             await this.withRetry(() =>
@@ -149,6 +286,13 @@ export class GamePhaseSchedulerService {
               cleanupErr
             );
           }
+          // Mark timeout as processed only after successful completion
+          await this.withRetry(() =>
+            this.gameStateService.redisClient.sAdd(
+              this.processedTimeoutsKey,
+              timeoutMarker
+            )
+          );
           // Expire the processed entry after some time
           await this.withRetry(() =>
             this.gameStateService.redisClient.expire(
@@ -165,14 +309,27 @@ export class GamePhaseSchedulerService {
               .map((p) => p.id)
               .join(', ')}`
           );
+          console.log(
+            `🤝 Only one player has submited action in room ${roomId}!`
+          );
 
           let winnerId: string | null = null;
+          let winnerData: {
+            wUserId: string | undefined;
+            wPlayerId: string;
+            lUserId: string | undefined;
+            lPlayerId: string;
+            wCharacter: string;
+            lCharacter: string;
+          } | null = null;
+
           for (const p of nonSubmitters) {
             const res = await this.withRetry(() =>
               this.gameStateService.markPlayerDead(roomId, p.id)
             );
             if (res && typeof res === 'object' && 'wPlayerId' in res) {
               winnerId = res.wPlayerId; // If this was the last alive player, we have a winner
+              winnerData = res;
             }
           }
 
@@ -180,13 +337,16 @@ export class GamePhaseSchedulerService {
             console.log(
               `🏆 Game finished - winner declared: ${winnerId} in room ${roomId}`
             );
+
+            // distribute rewards
+            const gameEnd = await this.distributeRewards(winnerData, winnerId);
+
             // Update game status to finished
             await this.withRetry(() =>
               this.gameStateService.updateGameState(roomId, {
                 status: 'finished',
               })
             );
-            const gameEnd = { winnerId };
             console.log(
               `📢 Broadcasting game end for room ${roomId}, winner: ${winnerId}`
             );
@@ -218,6 +378,9 @@ export class GamePhaseSchedulerService {
               );
             }
           } else {
+            console.log(
+              '⚠️ should not be called, only possible if previus winner determination is not valid'
+            );
             // Multiple submitters still alive - determine winner from remaining players
             const remainingPlayers = gameState.players.filter((p) => p.isAlive);
             if (remainingPlayers.length === 1) {
@@ -231,8 +394,22 @@ export class GamePhaseSchedulerService {
                   status: 'finished',
                 })
               );
-              const gameEnd = { winnerId };
-              this.gameSessionGateway.server.to(roomId).emit('gameEnd', gameEnd);
+
+              const result = await this.gameStateService.markPlayerDead(
+                roomId,
+                winnerId
+              );
+
+              let gameEnd: IGameEnd;
+              if (result === 'draw') {
+                gameEnd = { winnerId: 'draw' };
+              } else {
+                gameEnd = await this.distributeRewards(result, winnerId);
+              }
+
+              this.gameSessionGateway.server
+                .to(roomId)
+                .emit('gameEnd', gameEnd);
               await this.withRetry(() =>
                 this.gameStateService.publishToRoom(roomId, 'gameEnd', gameEnd)
               );
@@ -247,7 +424,9 @@ export class GamePhaseSchedulerService {
                 })
               );
               const gameEnd = { winnerId: 'draw' };
-              this.gameSessionGateway.server.to(roomId).emit('gameEnd', gameEnd);
+              this.gameSessionGateway.server
+                .to(roomId)
+                .emit('gameEnd', gameEnd);
               await this.withRetry(() =>
                 this.gameStateService.publishToRoom(roomId, 'gameEnd', gameEnd)
               );
@@ -276,10 +455,28 @@ export class GamePhaseSchedulerService {
               );
             }
           }
+          // Mark timeout as processed only after successful completion
+          await this.withRetry(() =>
+            this.gameStateService.redisClient.sAdd(
+              this.processedTimeoutsKey,
+              timeoutMarker
+            )
+          );
+          // Expire the processed entry after some time
+          await this.withRetry(() =>
+            this.gameStateService.redisClient.expire(
+              this.processedTimeoutsKey,
+              3600
+            )
+          ); // 1 hour
         }
       }
     } catch (error) {
-      console.error('Error enforcing SPELL_CASTING timeouts:', error);
+      console.error('❌ Error enforcing SPELL_CASTING timeouts:', error);
+      console.error(
+        'Stack trace:',
+        error instanceof Error ? error.stack : 'Unknown'
+      );
     }
   }
 

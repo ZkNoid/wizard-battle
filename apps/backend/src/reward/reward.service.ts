@@ -122,16 +122,10 @@ export class RewardService {
         looserXP = 0;
     }
 
-    // Get current XP before update to check for level ups
+    // Winner
     const winnerBefore = await this.userService.findByAddress(winnerId);
-    const looserBefore = await this.userService.findByAddress(looserId);
-
     await this.userService.addXP(winnerId, winnerXP, winnerCharacter);
-    await this.userService.addXP(looserId, looserXP, looserCharacter);
-
-    // Get updated XP after adding
-    const winnerAfter = await this.userService.findByAddress(winnerId);
-    const looserAfter = await this.userService.findByAddress(looserId);
+    const winnerAfter = await this.userService.findByAddress(winnerId); // Get winner updated XP after adding
 
     // Track level-based quests for winner
     if (winnerAfter) {
@@ -177,46 +171,58 @@ export class RewardService {
       }
     }
 
-    // Track level-based quests for loser
-    if (looserAfter) {
-      const normalizeCharacter = (
-        char: string
-      ): 'mage' | 'archer' | 'duelist' => {
-        const normalized = char?.toLowerCase() ?? 'mage';
-        if (
-          normalized === 'mage' ||
-          normalized === 'archer' ||
-          normalized === 'duelist'
-        ) {
-          return normalized;
-        }
-        return 'mage';
-      };
+    // Looser
+    if (looserId && looserId != '0x0') {
+      // incase looser is not passed, doe to giveup, timeout -> no rewards
+      const looserBefore = await this.userService.findByAddress(looserId);
+      await this.userService.addXP(looserId, looserXP, looserCharacter);
+      const looserAfter = await this.userService.findByAddress(looserId); // Get winner updated XP after adding
 
-      const lChar = normalizeCharacter(looserCharacter);
-      const newXp =
-        lChar === 'mage'
-          ? looserAfter.mage_xp
-          : lChar === 'archer'
-            ? looserAfter.archer_xp
-            : looserAfter.duelist_xp;
-      const oldXp = looserBefore
-        ? lChar === 'mage'
-          ? looserBefore.mage_xp
-          : lChar === 'archer'
-            ? looserBefore.archer_xp
-            : looserBefore.duelist_xp
-        : 0;
+      // Track level-based quests for loser
+      if (looserAfter) {
+        const normalizeCharacter = (
+          char: string
+        ): 'mage' | 'archer' | 'duelist' => {
+          const normalized = char?.toLowerCase() ?? 'mage';
+          if (
+            normalized === 'mage' ||
+            normalized === 'archer' ||
+            normalized === 'duelist'
+          ) {
+            return normalized;
+          }
+          return 'mage';
+        };
 
-      const newLevel = levelFromXp(newXp);
-      const oldLevel = levelFromXp(oldXp);
+        const lChar = normalizeCharacter(looserCharacter);
+        const newXp =
+          lChar === 'mage'
+            ? looserAfter.mage_xp
+            : lChar === 'archer'
+              ? looserAfter.archer_xp
+              : looserAfter.duelist_xp;
+        const oldXp = looserBefore
+          ? lChar === 'mage'
+            ? looserBefore.mage_xp
+            : lChar === 'archer'
+              ? looserBefore.archer_xp
+              : looserBefore.duelist_xp
+          : 0;
 
-      // Track wizard level if it changed
-      if (newLevel > oldLevel) {
-        try {
-          await this.questsService.trackWizardLevel(looserId, lChar, newLevel);
-        } catch (error) {
-          console.error('Failed to track wizard level quest:', error);
+        const newLevel = levelFromXp(newXp);
+        const oldLevel = levelFromXp(oldXp);
+
+        // Track wizard level if it changed
+        if (newLevel > oldLevel) {
+          try {
+            await this.questsService.trackWizardLevel(
+              looserId,
+              lChar,
+              newLevel
+            );
+          } catch (error) {
+            console.error('Failed to track wizard level quest:', error);
+          }
         }
       }
     }
