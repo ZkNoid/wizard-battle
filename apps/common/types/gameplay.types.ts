@@ -62,6 +62,7 @@ export interface IUpdateUserStates {
  */
 export interface IDead {
   playerId: string;
+  surrendered?: boolean;
 }
 
 /**
@@ -190,18 +191,22 @@ export class TransformedUpdateUserStates implements IUpdateUserStates {
 
 export class TransformedDead implements IDead {
   playerId: string;
+  surrendered?: boolean;
 
-  constructor(playerId: string) {
+  constructor(playerId: string, surrendered?: boolean) {
     this.playerId = playerId;
+    this.surrendered = surrendered;
   }
 }
 
 export class TransformedGameEnd implements IGameEnd {
   winnerId: string;
+  experience?: IExperience;
   reward?: IReward[];
 
-  constructor(winnerId: string, reward?: IReward[]) {
+  constructor(winnerId: string, experience?: IExperience, reward?: IReward[]) {
     this.winnerId = winnerId;
+    this.experience = experience;
     this.reward = reward;
   }
 }

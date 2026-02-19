@@ -777,7 +777,7 @@ export class GameSessionGateway {
           try {
             xpData = await this.rewardService.rewardXP(
               winnerData.wUserId,
-              winnerData.lUserId ?? '0x0',
+              data.dead.surrendered ? '0x0' : (winnerData.lUserId ?? '0x0'),
               'win',
               winnerData.wCharacter,
               winnerData.lCharacter
@@ -834,7 +834,7 @@ export class GameSessionGateway {
           winnerId: winnerData.wPlayerId,
           experience: {
             winnerXP: xpData?.winnerXP ?? 0,
-            looserXP: xpData?.looserXP ?? 0,
+            looserXP: data.dead.surrendered ? 0 : (xpData?.looserXP ?? 0),
           },
           reward: [goldReward, ...itemRewards],
         };
@@ -853,7 +853,9 @@ export class GameSessionGateway {
         // Track quest progress for both players
         try {
           // Get game state for turn count and HP data
-          const gameState = await this.gameStateService.getGameState(data.roomId);
+          const gameState = await this.gameStateService.getGameState(
+            data.roomId
+          );
           const roundsPlayed = gameState?.turn ?? 1;
 
           // Determine if this was a PvE (bot) or PvP match
@@ -875,20 +877,25 @@ export class GameSessionGateway {
 
               // First try to get HP from trusted state (if available)
               if (winnerPlayer.trustedState?.publicState?.fields) {
-                const fields = winnerPlayer.trustedState.publicState.fields as any;
+                const fields = winnerPlayer.trustedState.publicState
+                  .fields as any;
 
                 if (typeof fields === 'string') {
                   try {
                     const parsed = JSON.parse(fields);
                     hp = parseInt(parsed?.playerStats?.hp?.magnitude ?? '100');
-                    maxHp = parseInt(parsed?.playerStats?.maxHp?.magnitude ?? '100');
+                    maxHp = parseInt(
+                      parsed?.playerStats?.maxHp?.magnitude ?? '100'
+                    );
                     foundHp = true;
                   } catch (e) {
                     console.error('Failed to parse fields JSON:', e);
                   }
                 } else if (Array.isArray(fields) && fields.length > 0) {
                   hp = parseInt((fields[0] as any)?.value ?? fields[0]);
-                  maxHp = parseInt((fields[1] as any)?.value ?? fields[1] ?? '100');
+                  maxHp = parseInt(
+                    (fields[1] as any)?.value ?? fields[1] ?? '100'
+                  );
                   foundHp = true;
                 }
               }

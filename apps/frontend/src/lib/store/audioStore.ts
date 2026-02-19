@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { audioService } from '../services/audioService';
 import type { MusicTrack, SoundEffect } from '../constants/audioAssets';
 import { Howl } from 'howler';
+import { trackEvent } from '../analytics/posthog-utils';
+import { AnalyticsEvents } from '../analytics/events';
+import type { AudioMusicToggledProps } from '../analytics/types';
 
 /**
  * Audio Store - Manages audio state and playback
@@ -120,12 +123,27 @@ export const useAudioStore = create<AudioStore>((set, get) => {
       // Apply mute state to all cached music tracks
       musicCache.forEach((howl) => howl.mute(newMutedState));
 
+      // Track music toggle
+      const props: AudioMusicToggledProps = {
+        is_muted: newMutedState,
+      };
+      trackEvent(AnalyticsEvents.AUDIO_MUSIC_TOGGLED, props);
+
       set({ isMusicMuted: newMutedState });
     },
 
     // Set music mute state directly
     setMusicMuted: (muted: boolean) => {
-      const { musicCache } = get();
+      const { musicCache, isMusicMuted } = get();
+
+      // Only track if state actually changed
+      if (muted !== isMusicMuted) {
+        // Track music toggle
+        const props: AudioMusicToggledProps = {
+          is_muted: muted,
+        };
+        trackEvent(AnalyticsEvents.AUDIO_MUSIC_TOGGLED, props);
+      }
 
       // Apply mute state to all cached music tracks
       musicCache.forEach((howl) => howl.mute(muted));

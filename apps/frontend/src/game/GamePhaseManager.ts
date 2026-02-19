@@ -109,7 +109,7 @@ export class GamePhaseManager {
       if (!playerId) return;
       this.socket.emit('reportDead', {
         roomId: this.roomId,
-        dead: { playerId },
+        dead: { playerId, surrendered: true },
       });
     } catch (error) {
       console.error('Failed to surrender:', error);
