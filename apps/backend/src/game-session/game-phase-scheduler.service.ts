@@ -72,9 +72,18 @@ export class GamePhaseSchedulerService {
    * */
   @Cron('*/2 * * * * *')
   async enforceSpellCastingTimeouts() {
-    if (!(await this.withRetry(() => this.isLeader()))) return;
+    console.log('⏱️ [enforceSpellCastingTimeouts] Cron triggered');
+    const isLeader = await this.withRetry(() => this.isLeader());
+    console.log(`⏱️ [enforceSpellCastingTimeouts] Is leader: ${isLeader}`);
+    if (!isLeader) {
+      console.log('⏱️ [enforceSpellCastingTimeouts] Not a leader, skipping');
+      return;
+    }
     try {
       const roomIds = await this.withRetry(() => this.getAllRoomIdsWithScan());
+      console.log(
+        `⏱️ [enforceSpellCastingTimeouts] Found ${roomIds.length} rooms`
+      );
       const now = Date.now();
 
       for (const roomId of roomIds) {
@@ -88,16 +97,25 @@ export class GamePhaseSchedulerService {
           gameState.phaseTimeout ||
           Number(process.env.SPELL_CAST_TIMEOUT || 120000);
         const timeSincePhaseStart = now - gameState.phaseStartTime;
+        console.log(
+          `⏱️ [enforceSpellCastingTimeouts] Room ${roomId}: ${timeSincePhaseStart}ms / ${configuredTimeout}ms`
+        );
         if (timeSincePhaseStart < configuredTimeout) continue;
 
         const timeoutMarker = `${roomId}:${gameState.turn}`;
-        const isProcessed = await this.withRetry(() =>
-          this.gameStateService.redisClient.sIsMember(
-            this.processedTimeoutsKey,
-            timeoutMarker
-          )
+        console.log(
+          `⏱️ [enforceSpellCastingTimeouts] Checking timeout marker: ${timeoutMarker}`
         );
-        if (isProcessed) continue;
+        // const isProcessed = await this.withRetry(() =>
+        //   this.gameStateService.redisClient.sIsMember(
+        //     this.processedTimeoutsKey,
+        //     timeoutMarker
+        //   )
+        // );
+        // console.log(
+        //   `⏱️ [enforceSpellCastingTimeouts] isProcessed result: ${isProcessed}`
+        // );
+        // if (isProcessed) continue;
 
         const alivePlayers = gameState.players.filter((p) => p.isAlive);
         const submitters = alivePlayers.filter((p) => !!p.currentActions);
@@ -106,12 +124,6 @@ export class GamePhaseSchedulerService {
         // Only log action once per room to prevent spam
         console.log(
           `⏰ SPELL_CASTING timeout in room ${roomId} after ${timeSincePhaseStart}ms`
-        );
-        await this.withRetry(() =>
-          this.gameStateService.redisClient.sAdd(
-            this.processedTimeoutsKey,
-            timeoutMarker
-          )
         );
         // New turn has been started and no one submited any acctions -> no rewards!
         if (submitters.length === 0) {
@@ -153,6 +165,13 @@ export class GamePhaseSchedulerService {
               cleanupErr
             );
           }
+          // Mark timeout as processed only after successful completion
+          await this.withRetry(() =>
+            this.gameStateService.redisClient.sAdd(
+              this.processedTimeoutsKey,
+              timeoutMarker
+            )
+          );
           // Expire the processed entry after some time
           await this.withRetry(() =>
             this.gameStateService.redisClient.expire(
@@ -291,10 +310,28 @@ export class GamePhaseSchedulerService {
               );
             }
           }
+          // Mark timeout as processed only after successful completion
+          await this.withRetry(() =>
+            this.gameStateService.redisClient.sAdd(
+              this.processedTimeoutsKey,
+              timeoutMarker
+            )
+          );
+          // Expire the processed entry after some time
+          await this.withRetry(() =>
+            this.gameStateService.redisClient.expire(
+              this.processedTimeoutsKey,
+              3600
+            )
+          ); // 1 hour
         }
       }
     } catch (error) {
-      console.error('Error enforcing SPELL_CASTING timeouts:', error);
+      console.error('❌ Error enforcing SPELL_CASTING timeouts:', error);
+      console.error(
+        'Stack trace:',
+        error instanceof Error ? error.stack : 'Unknown'
+      );
     }
   }
 
