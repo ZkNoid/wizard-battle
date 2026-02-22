@@ -14,6 +14,8 @@ export interface MiscellaneousSessionStore {
   setIsTestnetModalOpen: (isTestnetModalOpen: boolean) => void;
   isQuickGuideModalOpen: boolean;
   setIsQuickGuideModalOpen: (isQuickGuideModalOpen: boolean) => void;
+  isSoundSettingsModalOpen: boolean;
+  setIsSoundSettingsModalOpen: (isSoundSettingsModalOpen: boolean) => void;
 }
 
 export const useMiscellaneousSessionStore = create<
@@ -45,6 +47,10 @@ export const useMiscellaneousSessionStore = create<
       isQuickGuideModalOpen: false,
       setIsQuickGuideModalOpen: (isQuickGuideModalOpen: boolean) => {
         set({ isQuickGuideModalOpen });
+      },
+      isSoundSettingsModalOpen: false,
+      setIsSoundSettingsModalOpen: (isSoundSettingsModalOpen: boolean) => {
+        set({ isSoundSettingsModalOpen });
       },
     }),
     {

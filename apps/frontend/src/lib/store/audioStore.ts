@@ -1,299 +1,243 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { audioService } from '../services/audioService';
 import type { MusicTrack, SoundEffect } from '../constants/audioAssets';
 import { Howl } from 'howler';
 import { trackEvent } from '../analytics/posthog-utils';
 import { AnalyticsEvents } from '../analytics/events';
-import type { AudioMusicToggledProps } from '../analytics/types';
-
-/**
- * Audio Store - Manages audio state and playback
- *
- * This store provides centralized audio management including:
- * - Volume control
- * - Mute state
- * - Current playing music with caching
- * - Sound effects playback
- * - Music preloading
- *
- * Usage:
- * ```typescript
- * const {
- *   volume,
- *   isMuted,
- *   setVolume,
- *   toggleMute,
- *   playMusic,
- *   preloadMusic,
- *   playSound
- * } = useAudioStore();
- *
- * // Preload music tracks
- * preloadMusic(['/audio/music/background/fantasy-village.mp3']);
- *
- * // Set volume
- * setVolume(75);
- *
- * // Play background music
- * playMusic('/audio/music/background/fantasy-village.mp3');
- *
- * // Play sound effect
- * playSound('/audio/sfx/ui/click.mp3');
- * ```
- */
 
 interface AudioStore {
   // State
-  volume: number; // 0-100
+  musicVolume: number;      // 0-100, controls background music
+  interfaceVolume: number;  // 0-100, controls UI sounds (hover, click, modals)
+  effectsVolume: number;    // 0-100, controls battle spell sounds
   isMuted: boolean;
-  isMusicMuted: boolean; // Separate mute for music only
-  musicCache: Map<MusicTrack, Howl>; // Cache of all loaded music tracks
-  currentMusicHowl: Howl | null; // Current playing Howl instance
-  currentMusicTrack: MusicTrack | null; // Current track path
+  musicCache: Map<MusicTrack, Howl>;
+  currentMusicHowl: Howl | null;
+  currentMusicTrack: MusicTrack | null;
   isInitialized: boolean;
 
   // Actions
-  setVolume: (volume: number) => void;
+  setMusicVolume: (volume: number) => void;
+  setInterfaceVolume: (volume: number) => void;
+  setEffectsVolume: (volume: number) => void;
   toggleMute: () => void;
   setMuted: (muted: boolean) => void;
-  toggleMusicMute: () => void;
-  setMusicMuted: (muted: boolean) => void;
   playMusic: (src: MusicTrack) => void;
   preloadMusic: (tracks: MusicTrack[]) => void;
   stopMusic: () => void;
   pauseMusic: () => void;
   resumeMusic: () => void;
   playSound: (src: SoundEffect) => void;
+  playInterfaceSound: (src: SoundEffect) => void;
+  playEffectsSound: (src: SoundEffect) => void;
   cleanup: () => void;
   initialize: () => void;
 }
 
-export const useAudioStore = create<AudioStore>((set, get) => {
-  // Auto-cleanup on window unload
-  if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', () => {
-      get().cleanup();
-    });
-  }
-
-  return {
-    // Initial state
-    volume: 50,
-    isMuted: false,
-    isMusicMuted: false,
-    musicCache: new Map<MusicTrack, Howl>(),
-    currentMusicHowl: null,
-    currentMusicTrack: null,
-    isInitialized: false,
-
-    // Initialize audio system
-    initialize: () => {
-      const { volume, isMuted } = get();
-      audioService.setMasterVolume(volume);
-      audioService.setMuted(isMuted);
-      set({ isInitialized: true });
-    },
-
-    // Set volume (0-100)
-    setVolume: (volume: number) => {
-      const clampedVolume = Math.max(0, Math.min(100, volume));
-      audioService.setMasterVolume(clampedVolume);
-      set({ volume: clampedVolume });
-    },
-
-    // Toggle mute state
-    toggleMute: () => {
-      const { isMuted } = get();
-      const newMutedState = !isMuted;
-      audioService.setMuted(newMutedState);
-      set({ isMuted: newMutedState });
-    },
-
-    // Set mute state directly
-    setMuted: (muted: boolean) => {
-      audioService.setMuted(muted);
-      set({ isMuted: muted });
-    },
-
-    // Toggle music mute state (only music, not SFX)
-    toggleMusicMute: () => {
-      const { isMusicMuted, musicCache } = get();
-      const newMutedState = !isMusicMuted;
-
-      // Apply mute state to all cached music tracks
-      musicCache.forEach((howl) => howl.mute(newMutedState));
-
-      // Track music toggle
-      const props: AudioMusicToggledProps = {
-        is_muted: newMutedState,
-      };
-      trackEvent(AnalyticsEvents.AUDIO_MUSIC_TOGGLED, props);
-
-      set({ isMusicMuted: newMutedState });
-    },
-
-    // Set music mute state directly
-    setMusicMuted: (muted: boolean) => {
-      const { musicCache, isMusicMuted } = get();
-
-      // Only track if state actually changed
-      if (muted !== isMusicMuted) {
-        // Track music toggle
-        const props: AudioMusicToggledProps = {
-          is_muted: muted,
-        };
-        trackEvent(AnalyticsEvents.AUDIO_MUSIC_TOGGLED, props);
+export const useAudioStore = create<AudioStore>()(
+  persist(
+    (set, get) => {
+      if (typeof window !== 'undefined') {
+        window.addEventListener('beforeunload', () => {
+          get().cleanup();
+        });
       }
 
-      // Apply mute state to all cached music tracks
-      musicCache.forEach((howl) => howl.mute(muted));
+      return {
+        // Initial state
+        musicVolume: 50,
+        interfaceVolume: 70,
+        effectsVolume: 80,
+        isMuted: false,
+        musicCache: new Map<MusicTrack, Howl>(),
+        currentMusicHowl: null,
+        currentMusicTrack: null,
+        isInitialized: false,
 
-      set({ isMusicMuted: muted });
-    },
+        initialize: () => {
+          const { musicVolume, interfaceVolume, effectsVolume, isMuted } = get();
+          audioService.setMusicVolume(musicVolume);
+          audioService.setInterfaceVolume(interfaceVolume);
+          audioService.setEffectsVolume(effectsVolume);
+          audioService.setMuted(isMuted);
+          set({ isInitialized: true });
+        },
 
-    // Preload music tracks into cache
-    preloadMusic: (tracks: MusicTrack[]) => {
-      const { musicCache, isMusicMuted, isInitialized } = get();
+        setMusicVolume: (volume: number) => {
+          const v = Math.max(0, Math.min(100, volume));
+          const { musicCache } = get();
+          // Update volume on all cached music Howls live
+          musicCache.forEach((howl) => howl.volume(v / 100));
+          audioService.setMusicVolume(v);
+          set({ musicVolume: v });
+        },
 
-      if (!isInitialized) {
-        get().initialize();
-      }
+        setInterfaceVolume: (volume: number) => {
+          const v = Math.max(0, Math.min(100, volume));
+          audioService.setInterfaceVolume(v);
+          set({ interfaceVolume: v });
+        },
 
-      let loadedCount = 0;
-      tracks.forEach((track) => {
-        if (!musicCache.has(track)) {
-          const howl = audioService.createMusicHowl(track);
+        setEffectsVolume: (volume: number) => {
+          const v = Math.max(0, Math.min(100, volume));
+          audioService.setEffectsVolume(v);
+          set({ effectsVolume: v });
+        },
 
-          // Apply current mute state to new track
-          if (isMusicMuted) {
-            howl.mute(true);
+        toggleMute: () => {
+          const { isMuted } = get();
+          const newMuted = !isMuted;
+          audioService.setMuted(newMuted);
+          set({ isMuted: newMuted });
+        },
+
+        setMuted: (muted: boolean) => {
+          audioService.setMuted(muted);
+          set({ isMuted: muted });
+        },
+
+        preloadMusic: (tracks: MusicTrack[]) => {
+          const { musicCache, musicVolume, isInitialized } = get();
+
+          if (!isInitialized) {
+            get().initialize();
           }
 
-          musicCache.set(track, howl);
-          loadedCount++;
-        }
-      });
+          let loadedCount = 0;
+          tracks.forEach((track) => {
+            if (!musicCache.has(track)) {
+              const howl = audioService.createMusicHowl(track);
+              howl.volume(musicVolume / 100);
+              musicCache.set(track, howl);
+              loadedCount++;
+            }
+          });
 
-      if (loadedCount > 0) {
-        set({ musicCache: new Map(musicCache) });
-      }
+          if (loadedCount > 0) {
+            set({ musicCache: new Map(musicCache) });
+          }
+        },
+
+        playMusic: (src: MusicTrack) => {
+          const {
+            isInitialized,
+            musicCache,
+            currentMusicHowl,
+            currentMusicTrack,
+            musicVolume,
+            isMuted,
+          } = get();
+
+          if (currentMusicTrack === src) {
+            return;
+          }
+
+          if (!isInitialized) {
+            get().initialize();
+          }
+
+          let newHowl = musicCache.get(src);
+          if (!newHowl) {
+            newHowl = audioService.createMusicHowl(src);
+            musicCache.set(src, newHowl);
+            set({ musicCache: new Map(musicCache) });
+          }
+
+          if (currentMusicHowl && currentMusicHowl !== newHowl) {
+            currentMusicHowl.stop();
+          }
+
+          if (newHowl.playing()) {
+            newHowl.stop();
+          }
+
+          set({
+            currentMusicHowl: newHowl,
+            currentMusicTrack: src,
+          });
+
+          newHowl.volume(isMuted ? 0 : musicVolume / 100);
+          newHowl.play();
+        },
+
+        stopMusic: () => {
+          const { currentMusicHowl } = get();
+          if (currentMusicHowl) {
+            currentMusicHowl.stop();
+          }
+          set({ currentMusicHowl: null, currentMusicTrack: null });
+        },
+
+        pauseMusic: () => {
+          const { currentMusicHowl } = get();
+          if (currentMusicHowl) {
+            currentMusicHowl.pause();
+          }
+        },
+
+        resumeMusic: () => {
+          const { currentMusicHowl } = get();
+          if (currentMusicHowl) {
+            currentMusicHowl.play();
+          }
+        },
+
+        playSound: (src: SoundEffect) => {
+          const { isInitialized } = get();
+          if (!isInitialized) {
+            get().initialize();
+          }
+          audioService.playInterfaceSound(src);
+        },
+
+        playInterfaceSound: (src: SoundEffect) => {
+          const { isInitialized } = get();
+          if (!isInitialized) {
+            get().initialize();
+          }
+          audioService.playInterfaceSound(src);
+        },
+
+        playEffectsSound: (src: SoundEffect) => {
+          const { isInitialized } = get();
+          if (!isInitialized) {
+            get().initialize();
+          }
+          audioService.playEffectsSound(src);
+        },
+
+        cleanup: () => {
+          const { musicCache, currentMusicHowl } = get();
+
+          if (currentMusicHowl) {
+            currentMusicHowl.stop();
+          }
+
+          musicCache.forEach((howl) => {
+            howl.unload();
+          });
+
+          audioService.cleanupSoundEffects();
+
+          set({
+            musicCache: new Map(),
+            currentMusicHowl: null,
+            currentMusicTrack: null,
+          });
+        },
+      };
     },
-
-    // Play background music
-    playMusic: (src: MusicTrack) => {
-      const {
-        isInitialized,
-        musicCache,
-        currentMusicHowl,
-        currentMusicTrack,
-        isMusicMuted,
-      } = get();
-
-      // If already set to play this track, do nothing
-      // (We set currentMusicTrack BEFORE calling play(), so this prevents duplicates)
-      if (currentMusicTrack === src) {
-        return;
-      }
-
-      if (!isInitialized) {
-        get().initialize();
-      }
-
-      // Get or create Howl from cache first
-      let newHowl = musicCache.get(src);
-      if (!newHowl) {
-        newHowl = audioService.createMusicHowl(src);
-
-        // Apply current mute state to new track
-        if (isMusicMuted) {
-          newHowl.mute(true);
-        }
-
-        musicCache.set(src, newHowl);
-        set({ musicCache: new Map(musicCache) });
-      }
-
-      // Stop current music if it's different
-      if (currentMusicHowl && currentMusicHowl !== newHowl) {
-        currentMusicHowl.stop();
-      }
-
-      // Stop the Howl first if it's already playing to prevent duplicate sounds
-      if (newHowl.playing()) {
-        newHowl.stop();
-      }
-
-      // Set state BEFORE calling play() to prevent race conditions
-      set({
-        currentMusicHowl: newHowl,
-        currentMusicTrack: src,
-      });
-
-      newHowl.volume(1);
-      newHowl.play();
-    },
-
-    // Stop background music
-    stopMusic: () => {
-      const { currentMusicHowl } = get();
-
-      if (currentMusicHowl) {
-        currentMusicHowl.stop();
-      }
-
-      set({
-        currentMusicHowl: null,
-        currentMusicTrack: null,
-      });
-    },
-
-    // Pause background music
-    pauseMusic: () => {
-      const { currentMusicHowl } = get();
-      if (currentMusicHowl) {
-        currentMusicHowl.pause();
-      }
-    },
-
-    // Resume background music
-    resumeMusic: () => {
-      const { currentMusicHowl } = get();
-      if (currentMusicHowl) {
-        currentMusicHowl.play();
-      }
-    },
-
-    // Play sound effect
-    playSound: (src: SoundEffect) => {
-      const { isInitialized } = get();
-      if (!isInitialized) {
-        get().initialize();
-      }
-      audioService.playSound(src);
-    },
-
-    // Cleanup all audio resources
-    cleanup: () => {
-      const { musicCache, currentMusicHowl } = get();
-
-      // Stop current music
-      if (currentMusicHowl) {
-        currentMusicHowl.stop();
-      }
-
-      // Unload all cached music tracks
-      musicCache.forEach((howl) => {
-        howl.unload();
-      });
-
-      // Cleanup sound effects
-      audioService.cleanupSoundEffects();
-
-      set({
-        musicCache: new Map(),
-        currentMusicHowl: null,
-        currentMusicTrack: null,
-      });
-    },
-  };
-});
+    {
+      name: '@zknoid/wizard-battle/audio-store',
+      storage: createJSONStorage(() => localStorage),
+      // Only persist volume settings, not runtime audio state
+      partialize: (state) => ({
+        musicVolume: state.musicVolume,
+        interfaceVolume: state.interfaceVolume,
+        effectsVolume: state.effectsVolume,
+        isMuted: state.isMuted,
+      }),
+    }
+  )
+);
