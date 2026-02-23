@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { trpcClient } from '@/trpc/vanilla';
-import type { ITestnetBlock, ITestnetLeaderboardItem } from '@/lib/types/ITestnet';
+import type {
+  ITestnetBlock,
+  ITestnetLeaderboardItem,
+} from '@/lib/types/ITestnet';
 
 interface QuestProgress {
   pveDuelsCompleted: number;
@@ -174,8 +177,7 @@ export const useQuestStore = create<QuestStore>()((set, get) => ({
       });
     } catch (error) {
       set({
-        error:
-          error instanceof Error ? error.message : 'Failed to load quests',
+        error: error instanceof Error ? error.message : 'Failed to load quests',
         isLoading: false,
       });
     }
@@ -185,9 +187,7 @@ export const useQuestStore = create<QuestStore>()((set, get) => ({
     set({ isLeaderboardLoading: true, error: null });
 
     try {
-      const leaderboard = await trpcClient.quests.getLeaderboard.query({
-        limit: 100,
-      });
+      const leaderboard = await trpcClient.quests.getLeaderboard.query({});
 
       set({
         leaderboard,
@@ -254,7 +254,10 @@ export const useQuestStore = create<QuestStore>()((set, get) => ({
             isCompleted: status.tier2.winWithLowHp,
             title: 'Win with <20% HP remaining',
           },
-          { isCompleted: status.tier2.levelUpWizard, title: 'Level up 1 wizard' },
+          {
+            isCompleted: status.tier2.levelUpWizard,
+            title: 'Level up 1 wizard',
+          },
           {
             isCompleted: status.tier2.craftGear,
             title: 'Craft 1 piece of gear',
@@ -340,6 +343,7 @@ export const useQuestStore = create<QuestStore>()((set, get) => ({
           {
             isCompleted: status.tier6.submitFeedback,
             title: 'Submit feedback',
+            link: 'https://forms.gle/k7ynkkUT53fpfnxH8',
           },
         ],
       },
@@ -354,9 +358,9 @@ export const useQuestStore = create<QuestStore>()((set, get) => ({
   getCompletedQuests: () => {
     const blocks = get().getTestnetBlocks();
     return blocks.reduce(
-      (sum, block) => sum + block.items.filter((item) => item.isCompleted).length,
+      (sum, block) =>
+        sum + block.items.filter((item) => item.isCompleted).length,
       0
     );
   },
 }));
-

@@ -99,7 +99,7 @@ export const AnimatedPhantomDuelist = memo(({ entity }: { entity: IEntity }) => 
       entityId: entity.id,
       animations: animations,
       defaultAnimation: 'idle',
-      defaultScale: 1,
+      defaultScale: 1.5,
     });
 
   if (isLoading) {
