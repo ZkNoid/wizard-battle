@@ -36,13 +36,24 @@ export function TestnetTaskBlock({
         {/* Tasks List */}
         <div className="flex flex-col gap-3 px-4 pb-4">
           {block.items.map((item, index) => (
-            <Checkbox
-              key={index}
-              checked={item.isCompleted}
-              onChange={() => onTaskToggle?.(index)}
-              label={item.title}
-              className="text-base"
-            />
+            <div key={index} className="flex items-center gap-2">
+              <Checkbox
+                checked={item.isCompleted}
+                onChange={() => onTaskToggle?.(index)}
+                label={item.title}
+                className="text-base"
+              />
+              {item.link && (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-pixel text-sm text-blue-600 underline hover:text-blue-800"
+                >
+                  (Open form)
+                </a>
+              )}
+            </div>
           ))}
         </div>
       </div>

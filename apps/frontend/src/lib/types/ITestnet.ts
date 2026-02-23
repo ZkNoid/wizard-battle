@@ -7,6 +7,7 @@ export interface ITestnetBlock {
 export interface ITestnetTask {
   isCompleted: boolean;
   title: string;
+  link?: string;
 }
 
 export interface ITestnetLeaderboardItem {

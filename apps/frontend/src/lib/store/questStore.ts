@@ -343,6 +343,7 @@ export const useQuestStore = create<QuestStore>()((set, get) => ({
           {
             isCompleted: status.tier6.submitFeedback,
             title: 'Submit feedback',
+            link: 'https://forms.gle/k7ynkkUT53fpfnxH8',
           },
         ],
       },
