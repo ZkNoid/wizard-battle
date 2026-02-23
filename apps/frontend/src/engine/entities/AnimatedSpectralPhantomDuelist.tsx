@@ -104,7 +104,7 @@ export const SpectralPhantomDuelist = memo(({ entity }: { entity: IEntity }) => 
       entityId: animationEntityId,
       animations: animations,
       defaultAnimation: 'idle',
-      defaultScale: 1,
+      defaultScale: 1.5,
     });
 
   if (isLoading) {
