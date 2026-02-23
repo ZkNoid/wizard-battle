@@ -9,12 +9,14 @@ interface TestnetTaskBlockProps {
   block: ITestnetBlock;
   onTaskToggle?: (taskIndex: number) => void;
   className?: string;
+  userPoints?: number;
 }
 
 export function TestnetTaskBlock({
   block,
   onTaskToggle,
   className,
+  userPoints = 0,
 }: TestnetTaskBlockProps) {
   return (
     <div className={cn('relative', className)}>
@@ -44,14 +46,20 @@ export function TestnetTaskBlock({
                 className="text-base"
               />
               {item.link && (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-pixel text-sm text-blue-600 underline hover:text-blue-800"
-                >
-                  (Open form)
-                </a>
+                userPoints > 100 ? (
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-pixel text-sm text-blue-600 underline hover:text-blue-800"
+                  >
+                    (Open form)
+                  </a>
+                ) : (
+                  <span className="font-pixel text-sm text-gray-500">
+                    (Not enough points)
+                  </span>
+                )
               )}
             </div>
           ))}

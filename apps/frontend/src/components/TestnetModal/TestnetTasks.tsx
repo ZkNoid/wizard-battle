@@ -30,6 +30,7 @@ export function TestnetTasks({ onCancel }: TestnetTasksProps) {
   const { address } = useMinaAppkit();
   const {
     isLoading,
+    questStatus,
     loadUserQuests,
     getTestnetBlocks,
     getTotalQuests,
@@ -118,6 +119,7 @@ export function TestnetTasks({ onCancel }: TestnetTasksProps) {
                   key={index}
                   block={block}
                   onTaskToggle={() => {}}
+                  userPoints={questStatus?.totalPoints}
                 />
               ))}
             </div>
