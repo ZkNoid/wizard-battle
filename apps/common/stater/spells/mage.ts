@@ -266,7 +266,7 @@ export const LaserModifier = (
   const sameColumn = selfPosition.y.equals(targetPosition.y);
   const hit = sameRow.or(sameColumn);
 
-  const damage = UInt64.from(50);
+  const damage = UInt64.from(30);
 
   const damageToApply = Provable.if(hit, damage, UInt64.from(0));
 
@@ -416,7 +416,7 @@ export const HealModifier = (
   spellCast: SpellCast<HealData>,
   opponentState: State
 ) => {
-  stater.state.playerStats.hp = stater.state.playerStats.hp.add(Int64.from(50));
+  stater.state.playerStats.hp = stater.state.playerStats.hp.add(Int64.from(30));
   // If the player has more health than the max health, set the health to the max health
   stater.state.playerStats.hp = Provable.if(
     stater.state.playerStats.hp
@@ -433,7 +433,7 @@ export const mageSpells: ISpell<any>[] = [
     wizardId: WizardId.MAGE,
     cooldown: Field(1),
     name: 'Lightning',
-    description: 'A powerful bolt of lightning. High one point damage',
+    description: 'A powerful bolt of lightning. Deals 80 damage on direct hit, 40 on adjacent cells',
     image: '/wizards/skills/lightning.png',
     modifierData: LightningBoldData,
     modifier: LightningBoldModifier,
@@ -453,7 +453,7 @@ export const mageSpells: ISpell<any>[] = [
     wizardId: WizardId.MAGE,
     cooldown: Field(1),
     name: 'FireBall',
-    description: 'A ball of fire. Deals damage to a single target',
+    description: 'A ball of fire. Deals 50 damage on direct hit, 25 nearby, 15 at distance 2',
     image: '/wizards/skills/fireball.png',
     modifierData: FireBallData,
     modifier: FireBallModifier,
@@ -473,7 +473,7 @@ export const mageSpells: ISpell<any>[] = [
     wizardId: WizardId.MAGE,
     cooldown: Field(1),
     name: 'Teleport',
-    description: 'Teleport to a random position',
+    description: 'Teleport to a selected position',
     image: '/wizards/skills/teleport.png',
     modifierData: TeleportData,
     modifier: TeleportModifier,
@@ -493,7 +493,7 @@ export const mageSpells: ISpell<any>[] = [
     wizardId: WizardId.MAGE,
     cooldown: Field(1),
     name: 'Heal',
-    description: 'Heal yourself for 100 health',
+    description: 'Heal yourself for 30 health',
     image: '/wizards/skills/heal.png',
     modifierData: HealData,
     modifier: HealModifier,
@@ -503,7 +503,7 @@ export const mageSpells: ISpell<any>[] = [
     priority: 1,
     defaultValue: {
       spellId: CircuitString.fromString('Heal').hash(),
-      cooldown: Int64.from(2),
+      cooldown: Int64.from(5),
       currentCooldown: Int64.from(0),
     },
   },
@@ -512,7 +512,7 @@ export const mageSpells: ISpell<any>[] = [
     wizardId: WizardId.MAGE,
     cooldown: Field(1),
     name: 'Laser',
-    description: 'A beam of laser. Deals damage to a single target',
+    description: 'A beam of laser. Deals 30 damage to all targets in the same row or column',
     image: '/wizards/skills/laser.png',
     modifierData: LaserData,
     modifier: LaserModifier,
