@@ -49,7 +49,7 @@ export function Leaderboard({ onCancel }: LeaderboardProps) {
     }
   }, [address, loadLeaderboard, loadUserQuests]);
 
-  // Combine user rank with leaderboard, but don't duplicate if user is already in top 100
+  // Combine user rank with leaderboard, but don't duplicate if user is already in the list
   const displayList = (() => {
     if (!userRank) return leaderboard;
 
@@ -61,7 +61,7 @@ export function Leaderboard({ onCancel }: LeaderboardProps) {
       return leaderboard;
     }
 
-    // User is not in top 100, add them at the top for visibility
+    // User is not in leaderboard, add them at the top for visibility
     return [userRank, ...leaderboard];
   })();
 

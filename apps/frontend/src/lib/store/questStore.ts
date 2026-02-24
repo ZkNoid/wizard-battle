@@ -187,7 +187,9 @@ export const useQuestStore = create<QuestStore>()((set, get) => ({
     set({ isLeaderboardLoading: true, error: null });
 
     try {
-      const leaderboard = await trpcClient.quests.getLeaderboard.query({});
+      const leaderboard = await trpcClient.quests.getLeaderboard.query({
+        limit: 1000,
+      });
 
       set({
         leaderboard,
