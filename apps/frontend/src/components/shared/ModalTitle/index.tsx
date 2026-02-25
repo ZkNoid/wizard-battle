@@ -15,7 +15,7 @@ export default function ModalTitle({
 
   return (
     <div className="font-pixel text-main-gray relative w-full pt-0 text-3xl font-bold">
-      <div className={`mt-4 w-full text-center ${textSizeClass}`}>{title}</div>
+      <div className={`mt-6 w-full text-center ${textSizeClass}`}>{title}</div>
       <Image
         src="/icons/cross.png"
         width={30}

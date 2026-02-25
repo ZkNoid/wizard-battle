@@ -7,18 +7,31 @@ import Image from 'next/image';
 import { useAudioControls } from '@/lib/hooks/useAudio';
 
 export default function AudioSelector() {
-  const {
-    volume,
-    isMuted,
-    isMusicMuted,
-    setVolume,
-    toggleMute,
-    toggleMusicMute,
-  } = useAudioControls();
+  const { musicVolume, isMuted, setMusicVolume, toggleMute } =
+    useAudioControls();
 
   return (
     <div className="flex items-center gap-4">
-      {/* All Audio On/Off button */}
+      {/* Background music volume slider */}
+      <div className="w-50 relative h-7">
+        <VolumeBar className="pointer-events-none h-full w-full" />
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={musicVolume}
+          onChange={(e) => setMusicVolume(Number(e.target.value))}
+          className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+        />
+        <div
+          className="pointer-events-none absolute top-1/2 -translate-y-1/2 transition-transform duration-100"
+          style={{ left: `${musicVolume - 8}%` }}
+        >
+          <VolumeHandle className="h-8 w-8" />
+        </div>
+      </div>
+
+      {/* Master mute button */}
       <BoxButton
         onClick={toggleMute}
         color="blue"
@@ -47,41 +60,6 @@ export default function AudioSelector() {
             className="w-7.5 h-6"
           />
         )}
-      </BoxButton>
-
-      {/* Volume Slider */}
-      <div className="w-50 relative h-7">
-        <VolumeBar className="pointer-events-none h-full w-full" />
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={volume}
-          onChange={(e) => setVolume(Number(e.target.value))}
-          className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-        />
-        {/* Handle */}
-        <div
-          className="pointer-events-none absolute top-1/2 -translate-y-1/2 transition-transform duration-100"
-          style={{
-            left: `${volume - 8}%`,
-          }}
-        >
-          <VolumeHandle className="h-8 w-8" />
-        </div>
-      </div>
-
-      {/* Music Only On/Off button */}
-      <BoxButton
-        onClick={toggleMusicMute}
-        color="blue"
-        className="size-16"
-        enableHoverSound
-        enableClickSound
-      >
-        <div className="flex items-center justify-center text-2xl">
-          {!isMusicMuted ? '🎵' : '🔇'}
-        </div>
       </BoxButton>
     </div>
   );
