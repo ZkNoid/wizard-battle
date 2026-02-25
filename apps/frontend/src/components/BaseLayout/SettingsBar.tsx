@@ -8,8 +8,10 @@ import Image from 'next/image';
 import { trackEvent } from '@/lib/analytics/posthog-utils';
 import { AnalyticsEvents } from '@/lib/analytics/events';
 import type { GuideOpenedProps } from '@/lib/analytics/types';
+import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 
 export function SettingsBar({ setTab }: { setTab?: (tab: Tab) => void }) {
+  const { setIsSoundSettingsModalOpen } = useMiscellaneousSessionStore();
   return (
     <motion.div className="flex items-center gap-4">
       {/* Support button */}
@@ -38,7 +40,7 @@ export function SettingsBar({ setTab }: { setTab?: (tab: Tab) => void }) {
       </BoxButton>
       {/* Settings button */}
       <BoxButton
-        onClick={() => {}}
+        onClick={() => setIsSoundSettingsModalOpen(true)}
         color="gray"
         className="size-16"
         enableHoverSound

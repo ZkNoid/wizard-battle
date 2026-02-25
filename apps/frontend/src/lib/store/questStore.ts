@@ -187,7 +187,9 @@ export const useQuestStore = create<QuestStore>()((set, get) => ({
     set({ isLeaderboardLoading: true, error: null });
 
     try {
-      const leaderboard = await trpcClient.quests.getLeaderboard.query({});
+      const leaderboard = await trpcClient.quests.getLeaderboard.query({
+        limit: 1000,
+      });
 
       set({
         leaderboard,
@@ -337,7 +339,7 @@ export const useQuestStore = create<QuestStore>()((set, get) => ({
         ],
       },
       {
-        title: 'Tier 6: Leave feedback(Available after 23.02.2026)',
+        title: 'Tier 6: Leave feedback',
         points: 30,
         items: [
           {

@@ -24,7 +24,7 @@ const formatTime = (milliseconds: number): string => {
 
 export function TestnetTasks({ onCancel }: TestnetTasksProps) {
   // TODO: Replace with actual testnet end date
-  const testnetEndDate = new Date('2026-03-31T23:59:59');
+  const testnetEndDate = new Date('2026-03-02T00:00:00');
   const [remainingTime, setRemainingTime] = useState(0);
 
   const { address } = useMinaAppkit();

@@ -5,6 +5,7 @@ import CraftModal from '../CraftModal';
 import ExpeditionModal from '../ExpeditionModal';
 import TestnetModal from '../TestnetModal';
 import QuickGuideModal from '../QuickGuideModal';
+import SoundSettingsModal from '../SoundSettingsModal';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 
 export default function Modals() {
@@ -19,6 +20,8 @@ export default function Modals() {
     setIsTestnetModalOpen,
     isQuickGuideModalOpen,
     setIsQuickGuideModalOpen,
+    isSoundSettingsModalOpen,
+    setIsSoundSettingsModalOpen,
   } = useMiscellaneousSessionStore();
 
   return (
@@ -41,6 +44,10 @@ export default function Modals() {
 
       {isQuickGuideModalOpen && (
         <QuickGuideModal onClose={() => setIsQuickGuideModalOpen(false)} />
+      )}
+
+      {isSoundSettingsModalOpen && (
+        <SoundSettingsModal onClose={() => setIsSoundSettingsModalOpen(false)} />
       )}
     </>
   );
