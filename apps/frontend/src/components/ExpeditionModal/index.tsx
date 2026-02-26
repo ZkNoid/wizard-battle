@@ -38,7 +38,7 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
       <div
-        className="w-160 h-215 relative"
+        className="w-160 h-215 relative mt-16"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex w-full flex-row justify-between gap-1 px-5">
