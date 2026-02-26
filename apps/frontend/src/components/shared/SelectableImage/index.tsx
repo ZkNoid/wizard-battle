@@ -74,7 +74,7 @@ export function SelectableImage({
               'polygon(0% 0%, 100% 0%, 100% 75%, 95% 85%, 85% 100%, 15% 100%, 5% 85%, 0% 75%)',
           }}
         >
-          <span className="font-pixel-klein text-main-gray text-bold text-base">
+          <span className="font-pixel-klein text-main-gray text-bold text-xs">
             {name}
           </span>
         </div>
