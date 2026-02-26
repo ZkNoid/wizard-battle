@@ -3,8 +3,8 @@ import type { IExpeditionReward } from '@/lib/types/Expedition';
 import Image from 'next/image';
 
 const MAX_FULL_SIZE_COUNT = 4;
-const FULL_ITEM_SIZE = 24;
-const MIN_ITEM_SIZE = 12;
+const FULL_ITEM_SIZE = 36;
+const MIN_ITEM_SIZE = 20;
 
 export default function ExpeditionRewards({
   rewards,
@@ -13,7 +13,10 @@ export default function ExpeditionRewards({
 }) {
   const itemSize =
     rewards.length > MAX_FULL_SIZE_COUNT
-      ? Math.max(MIN_ITEM_SIZE, Math.floor((FULL_ITEM_SIZE * MAX_FULL_SIZE_COUNT) / rewards.length))
+      ? Math.max(
+          MIN_ITEM_SIZE,
+          Math.floor((FULL_ITEM_SIZE * MAX_FULL_SIZE_COUNT) / rewards.length)
+        )
       : FULL_ITEM_SIZE;
 
   return (
@@ -31,7 +34,7 @@ export default function ExpeditionRewards({
           {rewards.map((reward) => (
             <div
               key={reward.id}
-              className="relative flex flex-col items-center gap-1 bg-gray-400/50 p-1.5"
+              className="relative flex flex-col items-center gap-1 bg-gray-400/50 p-1"
             >
               <div
                 className="flex items-center justify-center"
