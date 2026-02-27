@@ -16,13 +16,25 @@ import { TopBarIcon } from '../BaseLayout/assets/top-bar-icon';
 // Format large numbers (e.g., 1000000 -> "1M", 1250 -> "1.25K")
 function formatCurrency(value: number): string {
   if (value >= 1_000_000_000) {
-    return (value / 1_000_000_000).toFixed(value % 1_000_000_000 === 0 ? 0 : 2).replace(/\.?0+$/, '') + 'B';
+    return (
+      (value / 1_000_000_000)
+        .toFixed(value % 1_000_000_000 === 0 ? 0 : 2)
+        .replace(/\.?0+$/, '') + 'B'
+    );
   }
   if (value >= 1_000_000) {
-    return (value / 1_000_000).toFixed(value % 1_000_000 === 0 ? 0 : 2).replace(/\.?0+$/, '') + 'M';
+    return (
+      (value / 1_000_000)
+        .toFixed(value % 1_000_000 === 0 ? 0 : 2)
+        .replace(/\.?0+$/, '') + 'M'
+    );
   }
   if (value >= 1_000) {
-    return (value / 1_000).toFixed(value % 1_000 === 0 ? 0 : 2).replace(/\.?0+$/, '') + 'K';
+    return (
+      (value / 1_000)
+        .toFixed(value % 1_000 === 0 ? 0 : 2)
+        .replace(/\.?0+$/, '') + 'K'
+    );
   }
   return value.toString();
 }
@@ -54,7 +66,7 @@ export default function Header({ onTabChange }: HeaderProps) {
       </div>
 
       {/* Header content */}
-      <div className="absolute left-0 top-2.5 z-50 grid w-full grid-cols-3 items-center pl-20 pr-10">
+      <div className="absolute left-0 top-2.5 z-50 grid w-full grid-cols-3 items-center px-20">
         <SettingsBar setTab={onTabChange} />
         <div className="flex w-full items-center justify-center gap-5">
           <BoxButton color="gray" onClick={() => {}} className="size-16">
@@ -108,10 +120,10 @@ export default function Header({ onTabChange }: HeaderProps) {
             />
           </BoxButton>
         </div>
-        <div className="flex w-full items-center justify-between gap-2 px-0">
+        <div className="ml-10 flex w-full items-center justify-between gap-2 px-0">
           <Button
             variant="gray"
-            className="h-15 flex w-32 items-center justify-center gap-2.5"
+            className="h-15 w-45 flex items-center justify-center gap-2.5"
           >
             <Image
               src={'/icons/gold-coin.png'}
@@ -120,7 +132,7 @@ export default function Header({ onTabChange }: HeaderProps) {
               unoptimized={true}
               alt="gold-coin"
               quality={100}
-              className="h-8 w-8"
+              className="h-8 w-10"
             />
             <span>{formatCurrency(gold)}</span>
           </Button>
@@ -139,7 +151,7 @@ export default function Header({ onTabChange }: HeaderProps) {
             />
             <span>{formatCurrency(blackOrb)}</span>
           </Button> */}
-          <div className="w-40 shrink-0">
+          <div className="w-80 shrink-0">
             <Wallet />
           </div>
           {/* <div className="w-40 shrink-0">
