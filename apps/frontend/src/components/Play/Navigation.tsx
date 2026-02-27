@@ -46,7 +46,7 @@ export function Navigation({
       {currentIndex >= 0 && (
         <Button
           variant="blue"
-          className="w-70 h-15 -ml-8 mr-auto"
+          className="w-70 h-15 mr-auto"
           onClick={() => {
             if (currentIndex === 0) router.push('/');
 
@@ -55,6 +55,7 @@ export function Navigation({
               if (prevStep) setPlayStep(prevStep);
             }
           }}
+          isLong={true}
           enableHoverSound
           enableClickSound
         >
@@ -67,7 +68,10 @@ export function Navigation({
           <div className="relative -mr-8 ml-auto">
             <Button
               variant="blue"
-              className={cn('w-70 h-15', isNextDisabled && 'cursor-not-allowed opacity-50')}
+              className={cn(
+                'w-70 h-15',
+                isNextDisabled && 'cursor-not-allowed opacity-50'
+              )}
               onClick={() => {
                 if (isNextDisabled) return;
                 if (currentIndex < PlayStepOrder.length - 1) {
@@ -81,7 +85,7 @@ export function Navigation({
               Next
             </Button>
             {isNextDisabled && (
-              <span className="font-pixel text-red-400 absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs">
+              <span className="font-pixel absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-red-400">
                 Fill all tiles first
               </span>
             )}
