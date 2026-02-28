@@ -3,7 +3,7 @@ export const ALL_TILES = [
     id: 'water',
     name: 'Lake',
     description:
-      'An unpassable map feature that provide a strategic vantage point for ranged attacks. Wizards can cast spells from its shores to enhance their elemental magic.',
+      'An unpassable map feature that provide a strategic vantage point for ranged attacks. Wizards can cast spells from its shores to enhance their elemental and spirit magic.',
   },
   {
     id: 'grass',
@@ -13,6 +13,13 @@ export const ALL_TILES = [
   {
     id: 'forest',
     name: 'Forest',
-    description: 'Home for the monsters at night...',
+    description:
+      'A passable map feature that grants invisibility and 50% projectile resistance.',
+  },
+  {
+    id: 'mountain',
+    name: 'Mountain',
+    description:
+      'An unpassable map feature that blocks line of sight and protects from projectile damage.',
   },
 ];
