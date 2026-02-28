@@ -1,6 +1,5 @@
 'use client';
 
-import { ArrowLeft } from './assets/arrow-left';
 import { AvatarBg } from './assets/avatar-bg';
 import Image from 'next/image';
 import { allWizards, type Wizard } from '../../../../common/wizards';
@@ -25,7 +24,7 @@ export function Carousel({
         }}
         className="cursor-pointer transition-transform duration-300 hover:scale-110"
       >
-        <ArrowLeft className="h-22.5 w-20" />
+        <Image src="/arrow-left-blue.png" alt="arrow left" width={80} height={90} />
       </button>
       {/* Wizard image */}
       <div className="w-106 h-143 relative overflow-hidden">
@@ -54,7 +53,7 @@ export function Carousel({
         }}
         className="cursor-pointer transition-transform duration-300 hover:scale-110"
       >
-        <ArrowLeft className="h-22.5 w-20 rotate-180" />
+        <Image src="/arrow-right-blue.png" alt="arrow right" width={80} height={90} />
       </button>
     </div>
   );
