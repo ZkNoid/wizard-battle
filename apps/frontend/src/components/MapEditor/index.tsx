@@ -9,6 +9,7 @@ import { TrashBtn } from './assets/trash-btn';
 import { RandomBtn } from './assets/random-btn';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
 import { Button } from '../shared/Button';
+import { Scroll } from '../shared/Scroll';
 import { useMinaAppkit } from 'mina-appkit';
 import { ALL_TILES } from '@/lib/constants/tiles';
 import {
@@ -284,19 +285,21 @@ export default function MapEditor() {
           Map Generation
         </span>
         <div className="gap-17.5 mt-6 flex flex-row">
-          <div className="max-h-120 flex flex-col gap-10 overflow-scroll">
-            {[TileType.Water, TileType.Grass, TileType.Forest].map(
-              (tile, index) => (
-                <Tile
-                  key={index}
-                  image={`/assets/tiles/${tile}.png`}
-                  title={ALL_TILES[index]!.name}
-                  description={ALL_TILES[index]!.description}
-                  onClick={() => setSelectedTile(tile)}
-                />
-              )
-            )}
-          </div>
+          <Scroll height="380px" alwaysShowScrollbar>
+            <div className="flex flex-col gap-10">
+              {[TileType.Water, TileType.Grass, TileType.Forest].map(
+                (tile, index) => (
+                  <Tile
+                    key={index}
+                    image={`/assets/tiles/${tile}.png`}
+                    title={ALL_TILES[index]!.name}
+                    description={ALL_TILES[index]!.description}
+                    onClick={() => setSelectedTile(tile)}
+                  />
+                )
+              )}
+            </div>
+          </Scroll>
           <div className="flex flex-col gap-2">
             <Tilemap
               width={MEGA_WIDTH}
