@@ -139,7 +139,7 @@ export default function CharacterSelect({
           <Button
             variant="gray"
             className="w-106 h-15"
-            // disabled={selectedSkillsLength != 4}
+            disabled={selectedSkillsLength !== MAX_SELECTED_SKILLS}
             onClick={() => {
               // Track character creation for funnel
               const funnelProps: FunnelCharacterCreatedProps = {
