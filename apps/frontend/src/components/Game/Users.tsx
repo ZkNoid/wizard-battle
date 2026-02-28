@@ -50,7 +50,7 @@ export function Users() {
   // }, [opponentAccount, opponentAddress]);
 
   return (
-    <div className="col-span-6 row-span-1 grid grid-cols-6 items-center gap-x-5 pt-20">
+    <div className="col-span-6 row-span-1 grid grid-cols-6 items-center gap-x-5 pt-5">
       {/* Left user bar */}
       <UserBar
         name={playerName}
