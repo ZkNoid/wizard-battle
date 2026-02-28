@@ -65,7 +65,7 @@ export function Navigation({
       {currentIndex < PlayStepOrder.length - 1 &&
         playStep !== PlaySteps.SELECT_MODE &&
         playStep !== PlaySteps.SELECT_CHARACTER && (
-          <div className="relative -mr-8 ml-auto">
+          <div className="relative ml-auto">
             <Button
               variant="blue"
               className={cn(
@@ -81,6 +81,7 @@ export function Navigation({
               }}
               enableHoverSound={!isNextDisabled}
               enableClickSound={!isNextDisabled}
+              isLong={true}
             >
               Next
             </Button>
