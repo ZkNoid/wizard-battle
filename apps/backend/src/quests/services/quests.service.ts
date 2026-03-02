@@ -48,6 +48,8 @@ const QUEST_REQUIREMENTS = {
 
 type WizardType = 'mage' | 'archer' | 'duelist';
 
+const ACTIVE = false;
+
 @Injectable()
 export class QuestsService {
   constructor(
@@ -92,9 +94,15 @@ export class QuestsService {
       points += TIER_POINTS.TIER_1;
     if (quest.pvpDuelsCompleted >= QUEST_REQUIREMENTS.PVP_DUELS_REQUIRED)
       points += TIER_POINTS.TIER_1;
-    if (quest.expeditionsStarted >= QUEST_REQUIREMENTS.EXPEDITIONS_STARTED_REQUIRED)
+    if (
+      quest.expeditionsStarted >=
+      QUEST_REQUIREMENTS.EXPEDITIONS_STARTED_REQUIRED
+    )
       points += TIER_POINTS.TIER_1;
-    if (quest.expeditionsCompleted >= QUEST_REQUIREMENTS.EXPEDITIONS_COMPLETED_REQUIRED)
+    if (
+      quest.expeditionsCompleted >=
+      QUEST_REQUIREMENTS.EXPEDITIONS_COMPLETED_REQUIRED
+    )
       points += TIER_POINTS.TIER_1;
 
     // Tier 2 (10 points each)
@@ -186,6 +194,7 @@ export class QuestsService {
    * Track: Start your game (first matchmaking join)
    */
   async trackGameStart(userId: string): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
     if (!quest.startGame) {
       quest.startGame = true;
@@ -198,6 +207,7 @@ export class QuestsService {
    * Track: Complete PvE duel (battle vs bot completed)
    */
   async trackPveDuelComplete(userId: string): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
     quest.pveDuelsCompleted += 1;
     quest.totalBattlesPlayed += 1;
@@ -211,6 +221,7 @@ export class QuestsService {
    * Track: Complete PvP duel (battle vs human completed)
    */
   async trackPvpDuelComplete(userId: string): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
     quest.pvpDuelsCompleted += 1;
     quest.totalBattlesPlayed += 1;
@@ -224,6 +235,7 @@ export class QuestsService {
    * Track: Embark on an expedition
    */
   async trackExpeditionStart(userId: string): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
     quest.expeditionsStarted += 1;
     await this.saveAndRecalculatePoints(quest);
@@ -236,6 +248,7 @@ export class QuestsService {
    * Track: Complete an expedition
    */
   async trackExpeditionComplete(userId: string): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
     quest.expeditionsCompleted += 1;
     await this.saveAndRecalculatePoints(quest);
@@ -254,6 +267,7 @@ export class QuestsService {
     wizardType: WizardType,
     hpPercentage: number
   ): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
 
     quest.pvpBattlesWon += 1;
@@ -290,6 +304,7 @@ export class QuestsService {
     wizardType: WizardType,
     hpPercentage: number
   ): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
 
     quest.pveBattlesWon += 1;
@@ -322,6 +337,7 @@ export class QuestsService {
    * Track: Rounds played in a match
    */
   async trackRoundsPlayed(userId: string, roundsCount: number): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
     quest.totalRoundsPlayed += roundsCount;
     await this.saveAndRecalculatePoints(quest);
@@ -338,6 +354,7 @@ export class QuestsService {
     wizardType: WizardType,
     newLevel: number
   ): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
 
     // Update wizard level if higher
@@ -370,18 +387,18 @@ export class QuestsService {
    * Track: Item crafted
    */
   async trackItemCrafted(userId: string): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
     quest.itemsCrafted += 1;
     await this.saveAndRecalculatePoints(quest);
-    console.log(
-      `🎯 Quest: User ${userId} crafted item #${quest.itemsCrafted}`
-    );
+    console.log(`🎯 Quest: User ${userId} crafted item #${quest.itemsCrafted}`);
   }
 
   /**
    * Track: Gear upgraded
    */
   async trackGearUpgrade(userId: string): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
     if (!quest.hasUpgradedGear) {
       quest.hasUpgradedGear = true;
@@ -394,6 +411,7 @@ export class QuestsService {
    * Track: Fully geared wizard
    */
   async trackFullyGearedWizard(userId: string): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
     if (!quest.hasFullyGearedWizard) {
       quest.hasFullyGearedWizard = true;
@@ -406,6 +424,7 @@ export class QuestsService {
    * Track: Full set of level 2 gear
    */
   async trackFullSetLevelTwoGear(userId: string): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
     if (!quest.hasFullSetLevelTwoGear) {
       quest.hasFullSetLevelTwoGear = true;
@@ -418,6 +437,7 @@ export class QuestsService {
    * Track: Feedback submitted
    */
   async trackFeedbackSubmitted(userId: string): Promise<void> {
+    if (!ACTIVE) return;
     const quest = await this.getOrCreateUserQuest(userId);
     if (!quest.submittedFeedback) {
       quest.submittedFeedback = true;
@@ -593,4 +613,3 @@ export class QuestsService {
       .exec();
   }
 }
-
