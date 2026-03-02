@@ -76,9 +76,7 @@ export function TestnetTasks({ onCancel }: TestnetTasksProps) {
               alt="timer-icon"
               className="size-6 object-contain object-center"
             />
-            <span className="text-sm">
-              Time left: {formatTime(remainingTime)}
-            </span>
+            <span className="text-sm">Quest is over</span>
           </span>
         </Button>
 
