@@ -250,3 +250,5 @@ async function aggregateUserQuests() {
 // Run the script
 aggregateUserQuests();
 
+
+
