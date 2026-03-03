@@ -222,6 +222,46 @@ export class BlockchainService {
     return balance;
   }
 
+  /**
+   * Get the on-chain balance of a game element (resource, item, coin, etc.) for a player.
+   * Resolves the token contract and type (ERC1155 vs ERC721) via GameRegistry, then queries balanceOf.
+   *
+   * @param elementName - Name registered in GameRegistry (e.g. "Iron Ore")
+   * @param playerAddress - Player's Ethereum address
+   * @returns Balance as bigint (0 if provider not initialized)
+   */
+  async getGameElementBalance(
+    tokenId: number,
+    tokenAddress: string,
+    requiresTokenId: boolean,
+    playerAddress: string
+  ): Promise<bigint> {
+    if (!this.provider) {
+      console.warn('Blockchain service not initialized, returning balance 0');
+      return 0n;
+    }
+
+    if (requiresTokenId) {
+      // ERC1155: balanceOf(address account, uint256 id)
+      const contract = new ethers.Contract(
+        tokenAddress,
+        [
+          'function balanceOf(address account, uint256 id) view returns (uint256)',
+        ],
+        this.provider
+      );
+      return await contract.balanceOf!(playerAddress, tokenId);
+    } else {
+      // ERC721: balanceOf(address owner)
+      const contract = new ethers.Contract(
+        tokenAddress,
+        ['function balanceOf(address owner) view returns (uint256)'],
+        this.provider
+      );
+      return await contract.balanceOf!(playerAddress);
+    }
+  }
+
   async getGameElement(name: string): Promise<{
     tokenAddress: string;
     tokenId: number;

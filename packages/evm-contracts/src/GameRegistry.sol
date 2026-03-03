@@ -7,6 +7,7 @@ import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/crypt
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {IGameRegistry} from "./interfaces/IGameRegistry.sol";
 import {StringArray} from "./libraries/StringArray.sol";
 
 /**
@@ -33,124 +34,12 @@ import {StringArray} from "./libraries/StringArray.sol";
  * - GAME_SIGNER_ROLE: can sign commit data, to mint, burn, transfer, etc game elements
  * - MARKET_ROLE: can sign commit marketplace transactions only for game elements that are registered in the registry
  */
-contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeable, EIP712Upgradeable, ReentrancyGuard, UUPSUpgradeable {
+contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeable, EIP712Upgradeable, ReentrancyGuard, UUPSUpgradeable, IGameRegistry {
     using StringArray for string[];
-
-    /*//////////////////////////////////////////////////////////////
-                               ERRORS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev Thrown when attempting to revoke admin role in an unauthorized way
-    error GameRegistry__AdminRoleRevokeNotAllowed();
-    /// @dev Thrown when attempting to grant admin role in an unauthorized way
-    error GameRegistry__AdminRoleGrantNotAllowed();
-    /// @dev Thrown when attempting to renounce admin role (not allowed)
-    error GameRegistry__AdminRoleRenounceNotAllowed();
-    /// @dev Thrown when caller doesn't have GAME_SIGNER_ROLE
-    error GameRegistry__OnlyGameSignerRole();
-    /// @dev Thrown when caller doesn't have GAME_SIGNER_ROLE or MARKET_ROLE
-    error GameRegistry__OnlyGameSignerOrMarketRole();
-    /// @dev Thrown when signature verification fails
-    error GameRegistry__InvalidSignatureMessage();
-    /// @dev Thrown when commit transaction execution fails
-    error GameRegistry__CommitFailed();
-    /// @dev Thrown when target address is invalid or zero
-    error GameRegistry__InvalidTarget();
-    /// @dev Thrown when player/account address is invalid or zero
-    error GameRegistry__InvalidPlayer();
-    /// @dev Thrown when signer address doesn't have required role
-    error GameRegistry__InvalidSigner();
-    /// @dev Thrown when commit data is malformed or empty
-    error GameRegistry__InvalidCommitData();
-    /// @dev Thrown when resource hash doesn't match any registered game element
-    error GameRegistry__InvalidResource();
-    /// @dev Thrown when attempting to use a nonce that's already been used
-    error GameRegistry__NonceAlreadyUsed();
-    /// @dev Thrown when game signer address is invalid during initialization
-    error GameRegistry__InvalidGameSigner();
-    /// @dev Thrown when account with special roles tries to commit
-    error GameRegistry__NotAllowedToCommit();
-    /// @dev Thrown when batch array is empty
-    error GameRegistry__BatchLengthZero();
-    /// @dev Thrown when batch array exceeds maximum allowed length
-    error GameRegistry__BatchLengthTooLong();
-    /// @dev Thrown when nonce is zero or invalid
-    error GameRegistry__InvalidNonce();
-    /// @dev Thrown when attempting to add a game element that already exists
-    error GameRegistry__GameElementExists();
-    /// @dev Thrown when game element index is out of range
-    error GameRegistry__GameElementIndexOuntOfRange();
-    /// @dev Thrown when address parameter is zero address
-    error GameRegistry__AddressZero();
-    /// @dev Thrown when game element name is empty string
-    error GameRegistry__GameElementNameIsEmpty();
-    /// @dev Thrown when target address doesn't match registered token address
-    error GameRegistry__UnknownTargetAddress();
-    /// @dev Thrown when signature recovery fails or signer doesn't match
-    error GameRegistry__NotSigner();
-    /*//////////////////////////////////////////////////////////////
-                               ENUMS
-    //////////////////////////////////////////////////////////////*/
-
-    /**
-     * @notice Types of game elements that can be registered in the system
-     * @dev Used to categorize different game assets for organizational purposes
-     */
-    enum GameElementType {
-        COIN, /// @dev Game currency tokens (ERC20)
-        RESOURCE, /// @dev Game resources (ERC1155)
-        CHARACTER, /// @dev Character NFTs (ERC721)
-        UNIQUE_ITEM /// @dev Unique/special items (ERC1155 or ERC721)
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                               STRUCTS
-    //////////////////////////////////////////////////////////////*/
-
-    /**
-     * @notice Unified structure for any type of game element
-     * @dev Stores the contract address and token information for game assets
-     */
-    struct GameElementStruct {
-        /// @dev Contract address of the token (ERC20/ERC721/ERC1155)
-        address tokenAddress;
-        /// @dev Token ID (relevant for ERC721/ERC1155, may be 0 for ERC20)
-        uint256 tokenId;
-        /// @dev If true, tokenId must be included in commit data
-        bool requiresTokenId;
-    }
-
-    /**
-     * @notice Structure for commit data that gets signed and verified
-     * @dev Used in EIP-712 signature verification for secure commits
-     */
-    struct CommitStruct {
-        /// @dev Target token contract address to interact with
-        address target;
-        /// @dev Player account that owns or will receive the resources
-        address account;
-        /// @dev Authorized game signer address
-        address signer;
-        /// @dev Unique nonce to prevent replay attacks
-        uint256 nonce;
-        /// @dev Encoded function call data for the target contract
-        bytes32 callData;
-    }
 
     /*//////////////////////////////////////////////////////////////
                                MAPPINGS
     //////////////////////////////////////////////////////////////*/
-
-    //Aave implementation:
-    //       mapping(bytes32 => address) private _addresses;
-    //   // Main identifiers
-    //   bytes32 private constant POOL = 'POOL';
-    //   bytes32 private constant POOL_CONFIGURATOR = 'POOL_CONFIGURATOR';
-    //   bytes32 private constant PRICE_ORACLE = 'PRICE_ORACLE';
-    //   bytes32 private constant ACL_MANAGER = 'ACL_MANAGER';
-    //   bytes32 private constant ACL_ADMIN = 'ACL_ADMIN';
-    //   bytes32 private constant PRICE_ORACLE_SENTINEL = 'PRICE_ORACLE_SENTINEL';
-    //   bytes32 private constant DATA_PROVIDER = 'DATA_PROVIDER';
 
     /**
      * @notice Mapping of game element types to their respective name arrays
@@ -170,7 +59,7 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      * @notice Tracks used nonces to prevent replay attacks
      * @dev Once a nonce is used in a commit, it's marked true and cannot be reused
      */
-    mapping(uint256 => bool) private s_usedNonces;
+    mapping(address => mapping(uint256 => bool)) private s_usedNonces;
 
     /*//////////////////////////////////////////////////////////////
                                CONSTANTS
@@ -189,62 +78,6 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
     uint256 private constant BATCH_LENGTH_MAX = 100;
     //address private s_market; // use hasRole MARKET_ROLE to commit marketplace transactions
     //address private s_gameSigner; // use hasRole GAME_SIGNER_ROLE to verify signature of the message from a player
-
-    /*//////////////////////////////////////////////////////////////
-                                 EVENTS
-    //////////////////////////////////////////////////////////////*/
-
-    /**
-     * @notice Emitted when resources are committed to the registry
-     * @param commit The commit data that was processed
-     */
-    event Commit(bytes indexed commit);
-
-    /**
-     * @notice Emitted when a batch of commits is processed
-     * @param nonce The nonce associated with this batch
-     * @param commits Array of commit data in the batch
-     */
-    event CommitBatch(uint256 indexed nonce, bytes[] indexed commits);
-
-    /**
-     * @notice Emitted when admin role is revoked from an account
-     * @param account Address that had admin role revoked
-     */
-    event RevokeAdminRole(address indexed account);
-
-    /**
-     * @notice Emitted when admin role is granted to an account
-     * @param account Address that was granted admin role
-     */
-    event GrantAdminRole(address indexed account);
-
-    /**
-     * @notice Emitted when a commit is successfully confirmed and executed
-     * @param commit The commit data that was confirmed
-     */
-    event CommitConfirmed(bytes indexed commit);
-
-    /**
-     * @notice Emitted when a commit is rejected
-     * @param commit The commit data that was rejected
-     */
-    event CommitRejected(bytes indexed commit);
-
-    /**
-     * @notice Emitted when a new game element is added to the registry
-     * @param nameHash Keccak256 hash of the element name
-     * @param tokenAddress Contract address of the token
-     * @param tokenId Token ID (if applicable)
-     * @param requiresTokenId Whether this element requires a token ID
-     */
-    event AddGameElement(bytes32 indexed nameHash, address indexed tokenAddress, uint256 indexed tokenId, bool requiresTokenId);
-
-    /**
-     * @notice Emitted when a game element is removed from the registry
-     * @param nameHash Keccak256 hash of the element name
-     */
-    event RemoveGameElement(bytes32 indexed nameHash);
 
     /*//////////////////////////////////////////////////////////////
                                MODIFIERS
@@ -324,7 +157,7 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
         if (batch.length > BATCH_LENGTH_MAX) {
             revert GameRegistry__BatchLengthTooLong();
         }
-        s_usedNonces[nonce] = true;
+        s_usedNonces[msg.sender][nonce] = true;
 
         emit CommitBatch(nonce, batch);
 
@@ -387,7 +220,7 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      */
     function addGameElement(
         GameElementType elementType,
-        string memory name,
+        string calldata name,
         address elementTokenAddress,
         uint256 elementTokenId,
         bool elementHasTokenId
@@ -442,7 +275,7 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
         (uint256 nonce, address target, bytes memory callData) = _verifyInputs(resourceHash, commit, signature);
 
         emit Commit(commit);
-        s_usedNonces[nonce] = true;
+        s_usedNonces[msg.sender][nonce] = true;
         _commitDispatcher(target, callData);
 
         _verifyAfter();
@@ -502,7 +335,7 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
 
         (target, account, signer, nonce, callData) = abi.decode(commit, (address, address, address, uint256, bytes));
 
-        if (s_usedNonces[nonce]) {
+        if (s_usedNonces[msg.sender][nonce]) {
             revert GameRegistry__NonceAlreadyUsed();
         }
         if (gameElement.tokenAddress == address(0)) {
@@ -633,7 +466,7 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      * @return bool True if nonce has been used, false otherwise
      */
     function getIsNonceUsed(uint256 nonce) external view returns (bool) {
-        return s_usedNonces[nonce];
+        return s_usedNonces[msg.sender][nonce];
     }
 
     /**
