@@ -44,7 +44,8 @@ interface WalletProps {
 export default function Wallet({ className }: WalletProps = {}) {
   const pathname = usePathname();
   const isHomePage = pathname === '/';
-  const { address, isConnected, triggerWallet, disconnect, isWalletInstalled } = useMinaAppkit();
+  const { address, isConnected, triggerWallet, disconnect, isWalletInstalled } =
+    useMinaAppkit();
   const [isEditing, setIsEditing] = useState(false);
   const [originalName, setOriginalName] = useState('');
   const editRef = useRef<HTMLDivElement>(null);
@@ -52,11 +53,15 @@ export default function Wallet({ className }: WalletProps = {}) {
 
   const triggerWalletOrRedirect = () => {
     if (isWalletInstalled) {
-      handleConnectClick()
+      handleConnectClick();
     } else {
-      window.open('https://www.aurowallet.com/', '_blank', 'noopener,noreferrer');
+      window.open(
+        'https://www.aurowallet.com/',
+        '_blank',
+        'noopener,noreferrer'
+      );
     }
-  }
+  };
 
   const {
     data: user,
@@ -95,7 +100,9 @@ export default function Wallet({ className }: WalletProps = {}) {
         wallet_address: address,
       };
       trackEvent(AnalyticsEvents.WALLET_CONNECTION_SUCCESS, props);
-      trackEvent(AnalyticsEvents.FUNNEL_WALLET_CONNECTED, { wallet_type: 'Auro' });
+      trackEvent(AnalyticsEvents.FUNNEL_WALLET_CONNECTED, {
+        wallet_type: 'Auro',
+      });
       identifyUser(address, 'Auro');
       hasTrackedConnection.current = true;
     } else if (!isConnected) {
@@ -200,6 +207,7 @@ export default function Wallet({ className }: WalletProps = {}) {
           text={` ${displayName} `}
           onClick={disconnect}
           className="h-15 w-full text-base font-bold"
+          isLong={true}
         />
       ) : (
         <Button
@@ -207,6 +215,7 @@ export default function Wallet({ className }: WalletProps = {}) {
           text="Connect Wallet"
           onClick={triggerWalletOrRedirect}
           className="h-15 w-full text-base font-bold"
+          isLong={true}
         />
       )}
     </motion.div>
