@@ -6,6 +6,7 @@ import ExpeditionModal from '../ExpeditionModal';
 import TestnetModal from '../TestnetModal';
 import QuickGuideModal from '../QuickGuideModal';
 import SoundSettingsModal from '../SoundSettingsModal';
+import MarketModal from '../MarketModal';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 
 export default function Modals() {
@@ -22,6 +23,8 @@ export default function Modals() {
     setIsQuickGuideModalOpen,
     isSoundSettingsModalOpen,
     setIsSoundSettingsModalOpen,
+    isMarketModalOpen,
+    setIsMarketModalOpen,
   } = useMiscellaneousSessionStore();
 
   return (
@@ -48,6 +51,10 @@ export default function Modals() {
 
       {isSoundSettingsModalOpen && (
         <SoundSettingsModal onClose={() => setIsSoundSettingsModalOpen(false)} />
+      )}
+
+      {isMarketModalOpen && (
+        <MarketModal onClose={() => setIsMarketModalOpen(false)} />
       )}
     </>
   );
