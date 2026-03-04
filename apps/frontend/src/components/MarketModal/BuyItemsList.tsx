@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import Image from 'next/image';
 import { BuyItemsListItem } from './BuyItemsListItem';
-import { Button } from '../shared/Button';
 import type { IMarketBuyItem } from '@/lib/types/IMarket';
 
 const COLS = 4;
@@ -42,30 +42,38 @@ export function BuyItemsList({ items, onItemClick }: BuyItemsListProps) {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4">
-          <Button
-            variant="lightGray"
-            className="h-9 w-9"
-            disabled={safePage === 0}
+        <div className="flex items-center justify-center gap-5">
+          <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
-            enableClickSound
+            disabled={safePage === 0}
+            className="transition-transform duration-300 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <span className="font-pixel-klein text-main-gray text-sm">{'<'}</span>
-          </Button>
+            <Image
+              src="/inventory/arrow-left.png"
+              width={36}
+              height={48}
+              alt="previous-page"
+              className="h-12 w-16 object-contain object-center"
+            />
+          </button>
 
-          <span className="font-pixel-klein text-main-gray text-sm">
+          <span className="font-pixel text-main-gray text-xl font-bold">
             {safePage + 1} / {totalPages}
           </span>
 
-          <Button
-            variant="lightGray"
-            className="h-9 w-9"
-            disabled={safePage === totalPages - 1}
+          <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            enableClickSound
+            disabled={safePage === totalPages - 1}
+            className="transition-transform duration-300 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <span className="font-pixel-klein text-main-gray text-sm">{'>'}</span>
-          </Button>
+            <Image
+              src="/inventory/arrow-right.png"
+              width={36}
+              height={48}
+              alt="next-page"
+              className="h-12 w-16 object-contain object-center"
+            />
+          </button>
         </div>
       )}
     </div>
