@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import type { IMarketBuyItem } from '@/lib/types/IMarket';
 import { BuyItemBg } from './assets/buy-item-bg';
+import { Button } from '../shared/Button';
 
 interface BuyItemsListItemProps {
   item: IMarketBuyItem;
@@ -9,38 +10,62 @@ interface BuyItemsListItemProps {
 
 export function BuyItemsListItem({ item, onClick }: BuyItemsListItemProps) {
   return (
-    <div
-      onClick={() => onClick?.(item)}
-      className="group relative flex w-full flex-col items-center gap-1 px-3 py-2 transition-opacity hover:opacity-80"
-    >
+    <div className="relative flex h-full min-h-40 w-full flex-col gap-0 p-4 pb-3">
       <BuyItemBg className="pointer-events-none absolute inset-0 h-full w-full" />
-      {/* Image */}
-      <div className="relative z-10 flex h-16 w-16 items-center justify-center">
+
+      {/* Top: info + image */}
+      <div className="relative z-10 flex flex-1 flex-row items-start justify-between gap-2">
+        {/* Left: title, quantity, price */}
+        <div className="flex h-full flex-1 flex-col">
+          <span className="font-pixel-klein text-main-gray text-md font-bold leading-tight">
+            {item.title} Lv{item.level}
+          </span>
+          <span className="font-pixel-klein text-main-gray/70 text-xs">
+            Quantity: {item.quantity}
+          </span>
+          <div className="mt-auto flex items-center gap-1 pt-3">
+            <Image
+              src={
+                item.priceCurrency === 'gold'
+                  ? '/icons/gold-coin.png'
+                  : '/icons/usdс-coin.png'
+              }
+              width={16}
+              height={16}
+              alt={item.priceCurrency}
+              className="h-4 w-4 object-contain"
+              unoptimized
+            />
+            <span className="font-pixel-klein text-sm font-bold text-red-500">
+              {item.price}
+            </span>
+          </div>
+        </div>
+
+        {/* Right: item image */}
         <Image
           src={`/items/${item.image}`}
           width={64}
           height={64}
           alt={item.title}
-          className="h-full w-full object-contain object-center"
+          className="h-20 w-20 flex-shrink-0 object-contain object-center"
           unoptimized
         />
       </div>
 
-      {/* Title */}
-      <span className="font-pixel-klein text-main-gray relative z-10 w-full text-center text-xs leading-tight">
-        {item.title}
-      </span>
-
-      {/* Level & quantity */}
-      <div className="font-pixel-klein text-main-gray/60 relative z-10 flex w-full items-center justify-between px-1 text-xs">
-        <span>Lv.{item.level}</span>
-        <span>x{item.quantity}</span>
-      </div>
-
-      {/* Price */}
-      <div className="font-pixel-klein text-main-gray relative z-10 flex w-full items-center justify-center gap-1 text-xs">
-        <span>{item.price}</span>
-        <span className="uppercase opacity-60">{item.priceCurrency}</span>
+      {/* Bottom: Buy button */}
+      <div className="relative z-10 mt-2">
+        <Button
+          variant="gray"
+          className="h-10 w-full"
+          onClick={() => onClick?.(item)}
+          enableHoverSound
+          enableClickSound
+        >
+          <span className="font-pixel-klein text-main-gray text-base font-bold">
+            Buy
+          </span>
+        </Button>
       </div>
     </div>
   );
