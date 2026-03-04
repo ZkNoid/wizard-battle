@@ -25,7 +25,7 @@ export function MarketModalForm({ onClose }: MarketModalFormProps) {
   const getForm = (tabName: string): React.ReactNode => {
     switch (tabName) {
       case 'buy':
-        return <BuyItemsForm onClose={onClose} />;
+        return <BuyItemsForm onClose={onClose} onTabChange={setActiveTab} />;
       case 'selling':
         return <ItemsSellingForm onClose={onClose} />;
       case 'history':

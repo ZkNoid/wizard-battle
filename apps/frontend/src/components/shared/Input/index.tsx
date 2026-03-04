@@ -21,7 +21,7 @@ export function Input({
   type = 'text',
 }: InputProps) {
   return (
-    <div className={cn('relative w-full', className)}>
+    <div className={cn('relative h-[50px] w-full', className)}>
       <input
         type={type}
         value={value}
