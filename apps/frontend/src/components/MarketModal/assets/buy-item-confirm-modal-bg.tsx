@@ -5,6 +5,7 @@ export const BuyItemConfirmModalBg = ({ className }: { className: string }) => {
       height="297"
       viewBox="0 0 277 297"
       fill="none"
+      preserveAspectRatio="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >

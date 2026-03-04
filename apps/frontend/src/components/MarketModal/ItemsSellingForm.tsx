@@ -7,7 +7,9 @@ import {
   type ItemsSellingFilters,
 } from './ItemsSellingFilterPanel';
 import { SellingList } from './SellingList';
+import { CancelSaleConfirmModal } from './CancelSaleConfirmModal';
 import { MARKET_SELLING_ITEMS } from '@/lib/constants/market';
+import type { IMarketSellingItem } from '@/lib/types/IMarket';
 
 interface ItemsSellingFormProps {
   onClose?: () => void;
@@ -25,6 +27,9 @@ export function ItemsSellingForm({
 }: ItemsSellingFormProps) {
   const [filters, setFilters] = useState<ItemsSellingFilters>(DEFAULT_FILTERS);
   const [items, setItems] = useState(MARKET_SELLING_ITEMS);
+  const [cancelTarget, setCancelTarget] = useState<IMarketSellingItem | null>(
+    null
+  );
 
   const filteredItems = useMemo(() => {
     let result = [...items];
@@ -63,8 +68,14 @@ export function ItemsSellingForm({
     return result;
   }, [items, filters]);
 
-  const handleCancel = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  const handleCancelRequest = (id: string) => {
+    const item = items.find((i) => i.id === id) ?? null;
+    setCancelTarget(item);
+  };
+
+  const handleCancelConfirm = (item: IMarketSellingItem) => {
+    setItems((prev) => prev.filter((i) => i.id !== item.id));
+    setCancelTarget(null);
   };
 
   return (
@@ -77,7 +88,15 @@ export function ItemsSellingForm({
         onTabChange={onTabChange}
       />
 
-      <SellingList items={filteredItems} onCancel={handleCancel} />
+      <SellingList items={filteredItems} onCancel={handleCancelRequest} />
+
+      {cancelTarget && (
+        <CancelSaleConfirmModal
+          item={cancelTarget}
+          onConfirm={handleCancelConfirm}
+          onBack={() => setCancelTarget(null)}
+        />
+      )}
     </div>
   );
 }
