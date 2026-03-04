@@ -7,6 +7,7 @@ import {
   type BuyItemsFilters,
 } from './BuyItemsFilterPanel';
 import { BuyItemsList } from './BuyItemsList';
+import { BuyConfirmModal } from './BuyConfirmModal';
 import { MARKET_BUY_ITEMS } from '@/lib/constants/market';
 import type { IMarketBuyItem } from '@/lib/types/IMarket';
 
@@ -23,6 +24,12 @@ const DEFAULT_FILTERS: BuyItemsFilters = {
 
 export function BuyItemsForm({ onClose, onTabChange }: BuyItemsFormProps) {
   const [filters, setFilters] = useState<BuyItemsFilters>(DEFAULT_FILTERS);
+  const [selectedItem, setSelectedItem] = useState<IMarketBuyItem | null>(null);
+
+  const handleBuyConfirm = (item: IMarketBuyItem, quantity: number) => {
+    console.log('Buying', quantity, 'x', item.title);
+    setSelectedItem(null);
+  };
 
   const filteredItems = useMemo<IMarketBuyItem[]>(() => {
     let items = [...MARKET_BUY_ITEMS];
@@ -71,7 +78,15 @@ export function BuyItemsForm({ onClose, onTabChange }: BuyItemsFormProps) {
         onTabChange={onTabChange}
       />
 
-      <BuyItemsList items={filteredItems} />
+      <BuyItemsList items={filteredItems} onItemClick={setSelectedItem} />
+
+      {selectedItem && (
+        <BuyConfirmModal
+          item={selectedItem}
+          onConfirm={handleBuyConfirm}
+          onCancel={() => setSelectedItem(null)}
+        />
+      )}
     </div>
   );
 }
