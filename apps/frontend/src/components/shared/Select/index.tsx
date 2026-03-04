@@ -22,8 +22,6 @@ interface SelectProps {
   disabled?: boolean;
 }
 
-// Trigger height matches SelectTriggerBg viewBox height (50px)
-const TRIGGER_HEIGHT = 50;
 // Fixed dropdown height matches SelectDropdownBg viewBox height (166px)
 const DROPDOWN_HEIGHT = 166;
 // Inner scrollable area: dropdown height minus top/bottom borders (~10px each)
@@ -68,10 +66,10 @@ export function Select({
   return (
     <div
       ref={containerRef}
-      className={cn('relative w-[277px] select-none', className)}
+      className={cn('relative w-full select-none', className)}
     >
       {/* Trigger — always visible */}
-      <div className="relative" style={{ height: TRIGGER_HEIGHT }}>
+      <div className="relative h-16">
         <button
           type="button"
           disabled={disabled}

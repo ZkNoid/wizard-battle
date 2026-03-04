@@ -62,10 +62,10 @@ export function BuyItemsFilterPanel({
         value={filters.sortBy}
         onChange={(sortBy) => update({ sortBy })}
       />
-      <div className="flex flex-col justify-end px-2">
+      <div className="flex flex-col justify-end px-2 pb-1">
         <Button
           variant="blue"
-          className="h-[50px] w-full"
+          className="h-14 w-full"
           onClick={() => onTabChange?.('selling')}
           enableHoverSound
           enableClickSound
