@@ -17,7 +17,10 @@ export function BuyItemsList({ items, onItemClick }: BuyItemsListProps) {
 
   const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
-  const pageItems = items.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  const pageItems = items.slice(
+    safePage * PAGE_SIZE,
+    (safePage + 1) * PAGE_SIZE
+  );
 
   // Fill remaining slots with nulls so the grid stays uniform
   const slots: (IMarketBuyItem | null)[] = [
@@ -27,55 +30,58 @@ export function BuyItemsList({ items, onItemClick }: BuyItemsListProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Grid */}
-      <div className="grid grid-cols-4 grid-rows-3 gap-3">
-        {slots.map((item, idx) => (
-          <div key={item?.id ?? `empty-${idx}`} className="flex items-center justify-center">
-            {item ? (
-              <BuyItemsListItem item={item} onClick={onItemClick} />
-            ) : (
-              <div className="h-full w-full opacity-20" />
-            )}
-          </div>
-        ))}
+      {/* Grid wrapper — fixed height to prevent layout jumps */}
+      <div className="h-127 flex items-start">
+        <div className="grid w-full grid-cols-4 grid-rows-3 gap-3">
+          {slots.map((item, idx) => (
+            <div
+              key={item?.id ?? `empty-${idx}`}
+              className="flex items-center justify-center"
+            >
+              {item ? (
+                <BuyItemsListItem item={item} onClick={onItemClick} />
+              ) : (
+                <div className="h-full w-full opacity-20" />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-5">
-          <button
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            disabled={safePage === 0}
-            className="transition-transform duration-300 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Image
-              src="/inventory/arrow-left.png"
-              width={36}
-              height={48}
-              alt="previous-page"
-              className="h-12 w-16 object-contain object-center"
-            />
-          </button>
+      {/* Pagination — always visible to prevent layout jumps */}
+      <div className="flex items-center justify-center gap-5">
+        <button
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          disabled={safePage === 0}
+          className="transition-transform duration-300 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Image
+            src="/inventory/arrow-left.png"
+            width={36}
+            height={48}
+            alt="previous-page"
+            className="h-12 w-16 object-contain object-center"
+          />
+        </button>
 
-          <span className="font-pixel text-main-gray text-xl font-bold">
-            {safePage + 1} / {totalPages}
-          </span>
+        <span className="font-pixel text-main-gray text-xl font-bold">
+          {safePage + 1} / {totalPages}
+        </span>
 
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={safePage === totalPages - 1}
-            className="transition-transform duration-300 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Image
-              src="/inventory/arrow-right.png"
-              width={36}
-              height={48}
-              alt="next-page"
-              className="h-12 w-16 object-contain object-center"
-            />
-          </button>
-        </div>
-      )}
+        <button
+          onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+          disabled={safePage === totalPages - 1}
+          className="transition-transform duration-300 hover:scale-110 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Image
+            src="/inventory/arrow-right.png"
+            width={36}
+            height={48}
+            alt="next-page"
+            className="h-12 w-16 object-contain object-center"
+          />
+        </button>
+      </div>
     </div>
   );
 }
