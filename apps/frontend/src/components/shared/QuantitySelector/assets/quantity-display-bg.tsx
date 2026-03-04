@@ -5,6 +5,7 @@ export const QuantityDisplayBg = ({ className }: { className: string }) => {
       height="40"
       viewBox="0 0 141 40"
       fill="none"
+      preserveAspectRatio="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
@@ -33,8 +34,11 @@ export const QuantityDisplayBg = ({ className }: { className: string }) => {
       <path d="M106 30H101V35H106V30Z" fill="#070C19" />
       <path d="M40 35H10V40H40V35Z" fill="#070C19" />
       <path d="M131 35H40V40H131V35Z" fill="#070C19" />
-      <path d="M19 19H24V22H19V27H16V22H11V19H16V14H19V19Z" fill="#747C8F" />
-      <rect x="117" y="18" width="13" height="3" fill="#747C8F" />
+      <rect x="11" y="19" width="13" height="3" fill="#747C8F" />
+      <path
+        d="M124 19H129V22H124V27H121V22H116V19H121V14H124V19Z"
+        fill="#747C8F"
+      />
     </svg>
   );
 };

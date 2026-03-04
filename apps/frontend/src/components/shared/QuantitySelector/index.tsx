@@ -42,10 +42,10 @@ export function QuantitySelector({
       <div className="relative flex h-10 shrink-0" style={{ width: '141px' }}>
         <QuantityDisplayBg className="pointer-events-none absolute inset-0 h-full w-full" />
 
-        {/* + zone */}
+        {/* - zone */}
         <button
-          onClick={increment}
-          disabled={value >= max}
+          onClick={decrement}
+          disabled={value <= min}
           className="absolute left-0 top-0 h-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
           style={{ width: '35px' }}
         />
@@ -60,10 +60,10 @@ export function QuantitySelector({
           </span>
         </div>
 
-        {/* - zone */}
+        {/* + zone */}
         <button
-          onClick={decrement}
-          disabled={value <= min}
+          onClick={increment}
+          disabled={value >= max}
           className="absolute right-0 top-0 h-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
           style={{ width: '35px' }}
         />
