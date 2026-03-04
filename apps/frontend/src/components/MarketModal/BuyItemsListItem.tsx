@@ -5,10 +5,11 @@ import { Button } from '../shared/Button';
 
 interface BuyItemsListItemProps {
   item: IMarketBuyItem;
+  canAfford?: boolean;
   onClick?: (item: IMarketBuyItem) => void;
 }
 
-export function BuyItemsListItem({ item, onClick }: BuyItemsListItemProps) {
+export function BuyItemsListItem({ item, canAfford = true, onClick }: BuyItemsListItemProps) {
   return (
     <div className="relative flex h-full min-h-40 w-full flex-col gap-0 p-4 pb-3">
       <BuyItemBg className="pointer-events-none absolute inset-0 h-full w-full" />
@@ -36,7 +37,7 @@ export function BuyItemsListItem({ item, onClick }: BuyItemsListItemProps) {
               className="h-4 w-4 object-contain"
               unoptimized
             />
-            <span className="font-pixel-klein text-sm font-bold text-red-500">
+            <span className={`font-pixel-klein text-sm font-bold ${canAfford ? 'text-main-gray' : 'text-red-500'}`}>
               {item.price}
             </span>
           </div>
