@@ -21,3 +21,16 @@ export interface IMarketHistoryItem {
   date: string;
   status: 'bought' | 'sold';
 }
+
+export interface IMarketSellingItem {
+  id: string;
+  title: string;
+  level: number;
+  image: string;
+  quantity: number;
+  type: string;
+  price: number;
+  priceCurrency: 'gold' | 'usdc';
+  listedAt: string;
+  status: 'on_sale' | 'sold';
+}

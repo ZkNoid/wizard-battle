@@ -1,4 +1,8 @@
-import type { IMarketBuyItem, IMarketHistoryItem } from '../types/IMarket';
+import type {
+  IMarketBuyItem,
+  IMarketHistoryItem,
+  IMarketSellingItem,
+} from '../types/IMarket';
 
 export const MARKET_CATEGORY_OPTIONS = [
   { value: 'all', label: 'All' },
@@ -10,6 +14,7 @@ export const MARKET_CATEGORY_OPTIONS = [
 ];
 
 export const MARKET_BUY_SORT_OPTIONS = [
+  { value: 'all_time', label: 'All time' },
   { value: 'new_to_old', label: 'From new to old' },
   { value: 'old_to_new', label: 'From old to new' },
   { value: 'price_high', label: 'Price: From high to low' },
@@ -468,5 +473,120 @@ export const MARKET_HISTORY_ITEMS: IMarketHistoryItem[] = [
     priceCurrency: 'gold',
     date: '2026-02-18T07:25:00Z',
     status: 'sold',
+  },
+];
+
+export const MARKET_SELLING_SORT_OPTIONS = [
+  { value: 'all_time', label: 'All time' },
+  { value: 'new_to_old', label: 'From new to old' },
+  { value: 'old_to_new', label: 'From old to new' },
+  { value: 'price_high', label: 'Price: From high to low' },
+  { value: 'price_low', label: 'Price: From low to high' },
+  { value: 'only_gold', label: 'Only for gold' },
+  { value: 'only_usdc', label: 'Only for USDC' },
+];
+
+const now = new Date('2026-03-04T20:00:00Z').getTime();
+
+export const MARKET_SELLING_ITEMS: IMarketSellingItem[] = [
+  {
+    id: 'sell_1',
+    title: 'Shadowstep Leather',
+    level: 2,
+    image: 'ShadowstepLeather.png',
+    quantity: 35,
+    type: 'crafting',
+    price: 400,
+    priceCurrency: 'gold',
+    listedAt: new Date(now - 10 * 60 * 1000).toISOString(),
+    status: 'on_sale',
+  },
+  {
+    id: 'sell_2',
+    title: 'Water Essence',
+    level: 1,
+    image: 'WaterEssence.png',
+    quantity: 45,
+    type: 'crafting',
+    price: 400,
+    priceCurrency: 'gold',
+    listedAt: new Date(now - 54 * 60 * 1000).toISOString(),
+    status: 'sold',
+  },
+  {
+    id: 'sell_3',
+    title: 'Chain Link',
+    level: 1,
+    image: 'ChainLink.png',
+    quantity: 50,
+    type: 'crafting',
+    price: 400,
+    priceCurrency: 'gold',
+    listedAt: new Date(now - (1 * 60 + 3) * 60 * 1000).toISOString(),
+    status: 'on_sale',
+  },
+  {
+    id: 'sell_4',
+    title: 'Pearl',
+    level: 2,
+    image: 'Pearl.png',
+    quantity: 99,
+    type: 'crafting',
+    price: 400,
+    priceCurrency: 'gold',
+    listedAt: new Date(now - (10 * 60 + 15) * 60 * 1000).toISOString(),
+    status: 'on_sale',
+  },
+  {
+    id: 'sell_5',
+    title: 'Astral Alloy',
+    level: 2,
+    image: 'AstralAlloy.png',
+    quantity: 100,
+    type: 'crafting',
+    price: 20,
+    priceCurrency: 'usdc',
+    listedAt: new Date(now - (15 * 60 + 3) * 60 * 1000).toISOString(),
+    status: 'sold',
+  },
+  {
+    id: 'sell_6',
+    title: 'Duelist Ring',
+    level: 2,
+    image: 'DuelistRing.png',
+    quantity: 1,
+    type: 'gear_duelist',
+    price: 400,
+    priceCurrency: 'gold',
+    listedAt: new Date(now - (21 * 60 + 56) * 60 * 1000).toISOString(),
+    status: 'sold',
+  },
+  {
+    id: 'sell_7',
+    title: 'Sorcerer Ring',
+    level: 3,
+    image: 'SorcererRing.png',
+    quantity: 2,
+    type: 'gear_sorcerer',
+    price: 15,
+    priceCurrency: 'usdc',
+    listedAt: new Date(
+      now - ((1 * 24 + 1) * 60 + 45) * 60 * 1000
+    ).toISOString(),
+    status: 'on_sale',
+  },
+  {
+    id: 'sell_8',
+    title: 'Archer Boots',
+    level: 5,
+    image: 'ArcherBoots.png',
+    quantity: 1,
+    type: 'gear_archer',
+    price: 10,
+    priceCurrency: 'usdc',
+    listedAt: new Date(
+      now - ((3 * 24 + 15) * 60 + 3) * 60 * 1000
+    ).toISOString(),
+    status: 'on_sale',
   },
 ];
