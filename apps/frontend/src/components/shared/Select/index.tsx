@@ -18,17 +18,18 @@ interface SelectProps {
   placeholder?: string;
   className?: string;
   optionClassName?: string;
+  optionHeight?: number;
   disabled?: boolean;
 }
 
 // Trigger height matches SelectTriggerBg viewBox height (50px)
 const TRIGGER_HEIGHT = 50;
-// Each option row height
-const OPTION_HEIGHT = 33;
 // Fixed dropdown height matches SelectDropdownBg viewBox height (166px)
 const DROPDOWN_HEIGHT = 166;
 // Inner scrollable area: dropdown height minus top/bottom borders (~10px each)
 const DROPDOWN_INNER_HEIGHT = DROPDOWN_HEIGHT - 20;
+// Default option row height: inner area / 5 visible items
+const DEFAULT_OPTION_HEIGHT = Math.floor(DROPDOWN_INNER_HEIGHT / 5);
 
 export function Select({
   options,
@@ -37,6 +38,7 @@ export function Select({
   placeholder = 'Select...',
   className,
   optionClassName,
+  optionHeight = DEFAULT_OPTION_HEIGHT,
   disabled = false,
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -74,7 +76,7 @@ export function Select({
           type="button"
           disabled={disabled}
           onClick={() => setIsOpen((prev) => !prev)}
-          className="font-pixel text-main-gray relative z-10 flex h-full w-full cursor-pointer items-center justify-between px-3 disabled:cursor-not-allowed disabled:opacity-50"
+          className="font-pixel-klein text-main-gray relative z-10 flex h-full w-full cursor-pointer items-center justify-between px-3 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="text-base">{selectedLabel}</span>
           <SelectArrow
@@ -103,10 +105,10 @@ export function Select({
                 key={option.value}
                 type="button"
                 onClick={() => handleSelect(option.value)}
-                style={{ height: OPTION_HEIGHT }}
+                style={{ height: optionHeight }}
                 className={cn(
-                  'font-pixel text-main-gray flex w-full cursor-pointer items-center px-3 text-base transition-opacity hover:opacity-70',
-                  value === option.value && 'opacity-50',
+                  'font-pixel-klein text-main-gray flex w-full cursor-pointer items-center px-3 text-base transition-opacity hover:opacity-100',
+                  value === option.value ? 'opacity-100' : 'opacity-40',
                   optionClassName
                 )}
               >
