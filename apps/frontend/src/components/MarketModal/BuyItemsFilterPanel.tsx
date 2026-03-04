@@ -3,24 +3,10 @@
 import { SelectWithLabel } from '../shared/Select/SelectWithLabel';
 import { InputWithLabel } from '../shared/Input/InputWithLabel';
 import { Button } from '../shared/Button';
-
-export const SORT_OPTIONS = [
-  { value: 'new_to_old', label: 'From new to old' },
-  { value: 'old_to_new', label: 'From old to new' },
-  { value: 'price_high', label: 'Price: From high to low' },
-  { value: 'price_low', label: 'Price: From low to high' },
-  { value: 'only_gold', label: 'Only for gold' },
-  { value: 'only_usdc', label: 'Only for USDC' },
-];
-
-export const CATEGORY_OPTIONS = [
-  { value: 'all', label: 'All' },
-  { value: 'crafting', label: 'Crafting Items' },
-  { value: 'crystals', label: 'Crystals' },
-  { value: 'gear_archer', label: 'Gear: Archer' },
-  { value: 'gear_duelist', label: 'Gear: Duelist' },
-  { value: 'gear_sorcerer', label: 'Gear: Sorcerer' },
-];
+import {
+  MARKET_CATEGORY_OPTIONS,
+  MARKET_BUY_SORT_OPTIONS,
+} from '@/lib/constants/market';
 
 export interface BuyItemsFilters {
   search: string;
@@ -52,13 +38,13 @@ export function BuyItemsFilterPanel({
       />
       <SelectWithLabel
         label="Item type"
-        options={CATEGORY_OPTIONS}
+        options={MARKET_CATEGORY_OPTIONS}
         value={filters.category}
         onChange={(category) => update({ category })}
       />
       <SelectWithLabel
         label="Sort by"
-        options={SORT_OPTIONS}
+        options={MARKET_BUY_SORT_OPTIONS}
         value={filters.sortBy}
         onChange={(sortBy) => update({ sortBy })}
       />

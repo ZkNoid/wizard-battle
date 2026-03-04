@@ -29,7 +29,7 @@ export function MarketModalForm({ onClose }: MarketModalFormProps) {
       case 'selling':
         return <ItemsSellingForm onClose={onClose} />;
       case 'history':
-        return <TradingHistoryForm onClose={onClose} />;
+        return <TradingHistoryForm onClose={onClose} onTabChange={setActiveTab} />;
       default:
         return null;
     }
