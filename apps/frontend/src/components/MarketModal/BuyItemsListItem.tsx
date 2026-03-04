@@ -9,7 +9,11 @@ interface BuyItemsListItemProps {
   onClick?: (item: IMarketBuyItem) => void;
 }
 
-export function BuyItemsListItem({ item, canAfford = true, onClick }: BuyItemsListItemProps) {
+export function BuyItemsListItem({
+  item,
+  canAfford = true,
+  onClick,
+}: BuyItemsListItemProps) {
   return (
     <div className="relative flex h-full min-h-40 w-full flex-col gap-0 p-4 pb-3">
       <BuyItemBg className="pointer-events-none absolute inset-0 h-full w-full" />
@@ -18,10 +22,10 @@ export function BuyItemsListItem({ item, canAfford = true, onClick }: BuyItemsLi
       <div className="relative z-10 flex flex-1 flex-row items-start justify-between gap-2">
         {/* Left: title, quantity, price */}
         <div className="flex h-full flex-1 flex-col">
-          <span className="font-pixel-klein text-main-gray text-md font-bold leading-tight">
+          <span className="font-pixel text-main-gray text-sm font-bold leading-tight">
             {item.title} Lv{item.level}
           </span>
-          <span className="font-pixel-klein text-main-gray/70 text-xs">
+          <span className="font-pixel-klein text-main-gray/70 mt-1 text-sm">
             Quantity: {item.quantity}
           </span>
           <div className="mt-auto flex items-center gap-1 pt-3">
@@ -37,7 +41,9 @@ export function BuyItemsListItem({ item, canAfford = true, onClick }: BuyItemsLi
               className="h-4 w-4 object-contain"
               unoptimized
             />
-            <span className={`font-pixel-klein text-sm font-bold ${canAfford ? 'text-main-gray' : 'text-red-500'}`}>
+            <span
+              className={`font-pixel-klein text-sm font-bold ${canAfford ? 'text-main-gray' : 'text-red-500'}`}
+            >
               {item.price}
             </span>
           </div>
