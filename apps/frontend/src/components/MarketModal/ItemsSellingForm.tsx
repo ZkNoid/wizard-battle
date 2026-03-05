@@ -82,11 +82,7 @@ export function ItemsSellingForm({
     <div className="flex h-full w-full flex-col gap-4">
       <ModalTitle title="Items on Market" onClose={onClose ?? (() => {})} />
 
-      <ItemsSellingFilterPanel
-        filters={filters}
-        onFiltersChange={setFilters}
-        onTabChange={onTabChange}
-      />
+      <ItemsSellingFilterPanel filters={filters} onFiltersChange={setFilters} />
 
       <SellingList items={filteredItems} onCancel={handleCancelRequest} />
 

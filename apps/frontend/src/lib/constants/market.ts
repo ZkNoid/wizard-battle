@@ -486,6 +486,19 @@ export const MARKET_SELLING_SORT_OPTIONS = [
   { value: 'only_usdc', label: 'Only for USDC' },
 ];
 
+export const MARKET_CURRENCY_OPTIONS = [
+  { value: 'gold', label: 'Gold' },
+  { value: 'usdc', label: 'USDC' },
+];
+
+export const MARKET_SELL_ITEM_TYPE_OPTIONS = [
+  { value: 'crafting', label: 'Crafting Items' },
+  { value: 'crystals', label: 'Crystals' },
+  { value: 'gear_archer', label: 'Gear: Archer' },
+  { value: 'gear_duelist', label: 'Gear: Duelist' },
+  { value: 'gear_sorcerer', label: 'Gear: Sorcerer' },
+];
+
 const now = new Date('2026-03-04T20:00:00Z').getTime();
 
 export const MARKET_SELLING_ITEMS: IMarketSellingItem[] = [

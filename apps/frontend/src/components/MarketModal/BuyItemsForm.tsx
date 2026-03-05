@@ -23,7 +23,11 @@ const DEFAULT_FILTERS: BuyItemsFilters = {
   category: 'all',
 };
 
-export function BuyItemsForm({ onClose, onTabChange, onOpenSellItems }: BuyItemsFormProps) {
+export function BuyItemsForm({
+  onClose,
+  onTabChange,
+  onOpenSellItems,
+}: BuyItemsFormProps) {
   const [filters, setFilters] = useState<BuyItemsFilters>(DEFAULT_FILTERS);
   const [selectedItem, setSelectedItem] = useState<IMarketBuyItem | null>(null);
 
@@ -41,9 +45,7 @@ export function BuyItemsForm({ onClose, onTabChange, onOpenSellItems }: BuyItems
 
     if (filters.search.trim()) {
       const query = filters.search.trim().toLowerCase();
-      items = items.filter((item) =>
-        item.title.toLowerCase().includes(query)
-      );
+      items = items.filter((item) => item.title.toLowerCase().includes(query));
     }
 
     switch (filters.sortBy) {
@@ -73,11 +75,7 @@ export function BuyItemsForm({ onClose, onTabChange, onOpenSellItems }: BuyItems
     <div className="flex h-full w-full flex-col gap-4">
       <ModalTitle title="P2P Market" onClose={onClose ?? (() => {})} />
 
-      <BuyItemsFilterPanel
-        filters={filters}
-        onFiltersChange={setFilters}
-        onTabChange={onTabChange}
-      />
+      <BuyItemsFilterPanel filters={filters} onFiltersChange={setFilters} />
 
       <BuyItemsList items={filteredItems} onItemClick={setSelectedItem} />
 

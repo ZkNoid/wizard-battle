@@ -18,13 +18,11 @@ export interface BuyItemsFilters {
 interface BuyItemsFilterPanelProps {
   filters: BuyItemsFilters;
   onFiltersChange: (filters: BuyItemsFilters) => void;
-  onTabChange?: (tab: string) => void;
 }
 
 export function BuyItemsFilterPanel({
   filters,
   onFiltersChange,
-  onTabChange,
 }: BuyItemsFilterPanelProps) {
   const { setIsSellItemsModalOpen } = useMiscellaneousSessionStore();
 

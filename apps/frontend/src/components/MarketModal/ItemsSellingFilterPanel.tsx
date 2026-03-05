@@ -16,13 +16,11 @@ export interface ItemsSellingFilters {
 interface ItemsSellingFilterPanelProps {
   filters: ItemsSellingFilters;
   onFiltersChange: (filters: ItemsSellingFilters) => void;
-  onTabChange?: (tab: string) => void;
 }
 
 export function ItemsSellingFilterPanel({
   filters,
   onFiltersChange,
-  onTabChange,
 }: ItemsSellingFilterPanelProps) {
   const { setIsSellItemsModalOpen } = useMiscellaneousSessionStore();
   const update = (patch: Partial<ItemsSellingFilters>) =>
