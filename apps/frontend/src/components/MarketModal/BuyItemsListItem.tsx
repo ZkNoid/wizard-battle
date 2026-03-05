@@ -2,6 +2,7 @@ import Image from 'next/image';
 import type { IMarketBuyItem } from '@/lib/types/IMarket';
 import { BuyItemBg } from './assets/buy-item-bg';
 import { Button } from '../shared/Button';
+import { InventoryTooltip } from '../InventoryModal/InventoryTooltip';
 
 interface BuyItemsListItemProps {
   item: IMarketBuyItem;
@@ -50,14 +51,29 @@ export function BuyItemsListItem({
         </div>
 
         {/* Right: item image */}
-        <Image
-          src={`/items/${item.image}`}
-          width={64}
-          height={64}
-          alt={item.title}
-          className="h-20 w-20 flex-shrink-0 object-contain object-center"
-          unoptimized
-        />
+        {item.tooltipItem ? (
+          <InventoryTooltip
+            userItem={{ item: item.tooltipItem, quantity: item.quantity }}
+          >
+            <Image
+              src={`/items/${item.image}`}
+              width={64}
+              height={64}
+              alt={item.title}
+              className="h-20 w-20 flex-shrink-0 cursor-pointer object-contain object-center"
+              unoptimized
+            />
+          </InventoryTooltip>
+        ) : (
+          <Image
+            src={`/items/${item.image}`}
+            width={64}
+            height={64}
+            alt={item.title}
+            className="h-20 w-20 flex-shrink-0 object-contain object-center"
+            unoptimized
+          />
+        )}
       </div>
 
       {/* Bottom: Buy button */}

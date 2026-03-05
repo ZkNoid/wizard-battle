@@ -1,3 +1,5 @@
+import type { AnyInventoryItem } from './Inventory';
+
 export interface IMarketBuyItem {
   id: string;
   title: string;
@@ -7,6 +9,7 @@ export interface IMarketBuyItem {
   type: string;
   price: number;
   priceCurrency: string;
+  tooltipItem?: AnyInventoryItem;
 }
 
 export interface IMarketHistoryItem {

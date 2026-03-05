@@ -3,6 +3,11 @@ import type {
   IMarketHistoryItem,
   IMarketSellingItem,
 } from '../types/IMarket';
+import {
+  ALL_ITEMS,
+  ALL_ARMOR_ITEMS,
+  ALL_ACCESSORIES,
+} from './items';
 
 export const MARKET_CATEGORY_OPTIONS = [
   { value: 'all', label: 'All' },
@@ -50,6 +55,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'crafting',
     price: 80,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ITEMS[0],
   },
   {
     id: 'market_astral_alloy_1',
@@ -60,6 +66,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'crafting',
     price: 120,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ITEMS[1],
   },
   {
     id: 'market_phoenix_ember_1',
@@ -70,6 +77,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'crafting',
     price: 250,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ITEMS[9],
   },
   {
     id: 'market_rune_1',
@@ -80,6 +88,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'crafting',
     price: 95,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ITEMS[13],
   },
   {
     id: 'market_serpent_scale_1',
@@ -90,6 +99,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'crafting',
     price: 110,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ITEMS[14],
   },
   {
     id: 'market_frostdust_1',
@@ -100,6 +110,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'crafting',
     price: 60,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ITEMS[5],
   },
   {
     id: 'market_crystal_1',
@@ -110,6 +121,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'crystals',
     price: 150,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ITEMS[4],
   },
   {
     id: 'market_soulstone1_1',
@@ -120,6 +132,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'crystals',
     price: 200,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ITEMS[19],
   },
   {
     id: 'market_soulstone3_1',
@@ -130,6 +143,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'crystals',
     price: 380,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ITEMS[21],
   },
   {
     id: 'market_moonlight_gem_1',
@@ -140,6 +154,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'crystals',
     price: 5,
     priceCurrency: 'usdc',
+    tooltipItem: ALL_ACCESSORIES[0],
   },
   {
     id: 'market_mystic_robe_1',
@@ -150,6 +165,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'gear_sorcerer',
     price: 500,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ARMOR_ITEMS[0],
   },
   {
     id: 'market_astral_belt_1',
@@ -160,6 +176,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'gear_sorcerer',
     price: 350,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ARMOR_ITEMS[2],
   },
   {
     id: 'market_frost_necklace_1',
@@ -170,6 +187,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'gear_sorcerer',
     price: 8,
     priceCurrency: 'usdc',
+    tooltipItem: ALL_ACCESSORIES[5],
   },
   {
     id: 'market_shadow_leggings_1',
@@ -180,6 +198,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'gear_duelist',
     price: 450,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ARMOR_ITEMS[1],
   },
   {
     id: 'market_shadow_ring_1',
@@ -190,6 +209,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'gear_duelist',
     price: 480,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ACCESSORIES[2],
   },
   {
     id: 'market_serpent_necklace_1',
@@ -200,6 +220,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'gear_duelist',
     price: 6,
     priceCurrency: 'usdc',
+    tooltipItem: ALL_ACCESSORIES[6],
   },
   {
     id: 'market_rune_ring_1',
@@ -210,6 +231,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'gear_archer',
     price: 520,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ACCESSORIES[3],
   },
   {
     id: 'market_phoenix_necklace_1',
@@ -220,6 +242,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'gear_archer',
     price: 12,
     priceCurrency: 'usdc',
+    tooltipItem: ALL_ACCESSORIES[4],
   },
   {
     id: 'market_crimson_gem_1',
@@ -230,6 +253,7 @@ export const MARKET_BUY_ITEMS: IMarketBuyItem[] = [
     type: 'gear_archer',
     price: 550,
     priceCurrency: 'gold',
+    tooltipItem: ALL_ACCESSORIES[1],
   },
 ];
 
