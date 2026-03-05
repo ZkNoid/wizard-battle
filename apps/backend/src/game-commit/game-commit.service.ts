@@ -252,7 +252,7 @@ export class GameCommitService {
       }
 
       // 2. We pull GameElementStruct from chain and verify it is valid resource
-      const metaData = await this.blockchainService.getGameElement(name);
+      const metaData = await this.blockchainService.getGameElementHash(name);
 
       if (
         !metaData ||
@@ -318,7 +318,7 @@ export class GameCommitService {
       }
 
       // 2. We pull GameElementStruct from chain and verify it is valid resource
-      const metaData = await this.blockchainService.getGameElement(name);
+      const metaData = await this.blockchainService.getGameElementHash(name);
 
       if (
         !metaData ||
@@ -389,7 +389,7 @@ export class GameCommitService {
       }
 
       // 2. We pull GameElementStruct from chain and verify it is valid resource
-      const metaData = await this.blockchainService.getGameElement(name);
+      const metaData = await this.blockchainService.getGameElementHash(name);
 
       if (
         !metaData ||
@@ -453,7 +453,7 @@ export class GameCommitService {
       }
 
       // 2. We pull GameElementStruct from chain and verify it is valid resource
-      const metaData = await this.blockchainService.getGameElement(name);
+      const metaData = await this.blockchainService.getGameElementHash(name);
 
       if (
         !metaData ||
@@ -534,7 +534,7 @@ export class GameCommitService {
       // - Item type is regestered as resource or item in GameItem collection?
       for (const invItem of userInventoryItems) {
         // Check if it's a resource or item by looking up the GameItem collection
-        const metaData = await this.blockchainService.getGameElement(
+        const metaData = await this.blockchainService.getGameElementHash(
           invItem.itemId
         );
 

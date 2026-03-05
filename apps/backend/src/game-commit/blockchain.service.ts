@@ -262,7 +262,7 @@ export class BlockchainService {
     }
   }
 
-  async getGameElement(name: string): Promise<{
+  async getGameElementHash(name: string): Promise<{
     tokenAddress: string;
     tokenId: number;
     requiresTokenId: boolean;
@@ -277,7 +277,7 @@ export class BlockchainService {
       this.gameRegistryAddress,
       [
         // GameElementStruct is: (address tokenAddress, uint256 tokenId, bool requiresTokenId)
-        'function getGameElement(bytes32 resourceHash) external view returns (tuple(address tokenAddress, uint256 tokenId, bool requiresTokenId))',
+        'function getGameElementHash(bytes32 resourceHash) external view returns (tuple(address tokenAddress, uint256 tokenId, bool requiresTokenId))',
       ],
       this.provider
     );
@@ -286,7 +286,7 @@ export class BlockchainService {
     console.log(`🔍 [getGameElement] Fetching element for "${name}"`);
     console.log(`   Resource hash: ${resourceHash}`);
 
-    const result = await gameRegistryContract.getGameElement!(resourceHash);
+    const result = await gameRegistryContract.getGameElementHash!(resourceHash);
 
     console.log(`🔍 [getGameElement] Raw result:`, result);
 
