@@ -68,6 +68,13 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
   const totalPrice =
     price && Number(price) > 0 ? Number(price) * quantity : null;
 
+  const isFormValid =
+    itemName.trim() !== '' &&
+    selectedItemId !== '' &&
+    itemType !== '' &&
+    price !== '' &&
+    Number(price) > 0;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
@@ -155,8 +162,10 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
             variant="gray"
             className="mt-auto h-14 w-full"
             onClick={handlePlaceOrder}
+            disabled={!isFormValid}
             enableHoverSound
             enableClickSound
+            isLong
           >
             <span className="font-pixel text-main-gray text-lg font-bold">
               Place order
