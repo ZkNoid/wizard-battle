@@ -30,14 +30,17 @@ export function OfferPreview({
         />
 
         {/* Info */}
-        <div className="flex flex-col gap-1">
-          <span className="font-pixel text-main-gray text-sm font-bold">
-            {selectedUserItem?.item.title ?? 'Name of the item'}
-          </span>
-          <span className="font-pixel text-main-gray/70 text-xs">
-            Quantity: {selectedUserItem ? quantity : 'X'}
-          </span>
-          <div className="flex items-center gap-1">
+        <div className="h-25 flex flex-col">
+          <div className="flex flex-col gap-1">
+            <span className="font-pixel text-main-gray text-base font-bold">
+              {selectedUserItem?.item.title ?? 'Name of the item'}
+            </span>
+            <span className="font-pixel-klein text-main-gray/70 text-xs">
+              Quantity: {selectedUserItem ? quantity : 'X'}
+            </span>
+          </div>
+
+          <div className="mt-auto flex items-center gap-1">
             <Image
               src={currencyIcon}
               width={14}
@@ -46,7 +49,7 @@ export function OfferPreview({
               className="h-3.5 w-3.5 object-contain"
               unoptimized
             />
-            <span className="font-pixel text-main-gray text-sm font-bold">
+            <span className="font-pixel text-main-gray text-base font-bold">
               {totalPrice ?? '0000'}
             </span>
           </div>
