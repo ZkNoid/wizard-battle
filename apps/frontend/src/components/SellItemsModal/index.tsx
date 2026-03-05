@@ -5,7 +5,6 @@ import Image from 'next/image';
 import ModalTitle from '../shared/ModalTitle';
 import { Button } from '../shared/Button';
 import { QuantitySelector } from '../shared/QuantitySelector';
-import { Select } from '../shared/Select';
 import { SelectWithLabel } from '../shared/Select/SelectWithLabel';
 import { InputWithLabel } from '../shared/Input/InputWithLabel';
 import { BuyItemBg } from '../MarketModal/assets/buy-item-bg';
@@ -96,18 +95,17 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
             />
 
             {/* Choose Item & Quantity */}
-            <div className="flex flex-col gap-1">
-              <span className="font-pixel text-main-gray text-base font-bold">
-                Choose Item & Quantity
-              </span>
-              <div className="flex items-center gap-3">
-                <Select
-                  className="flex-1"
+            <div className="flex w-full flex-row items-end gap-3">
+              <div className="w-[60%]">
+                <SelectWithLabel
+                  label="Choose Item & Quantity"
                   options={inventoryOptions}
                   value={selectedItemId}
                   onChange={handleItemChange}
                   placeholder="Choose item you want to sale"
                 />
+              </div>
+              <div className="flex flex-1 justify-center pb-3">
                 <QuantitySelector
                   value={quantity}
                   onChange={setQuantity}
