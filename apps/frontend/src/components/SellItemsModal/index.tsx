@@ -10,6 +10,7 @@ import { SellsItemsModalBg } from './assets/sells-items-modal-bg';
 import { OfferPreview } from './OfferPreview';
 import { useInventoryStore } from '@/lib/store';
 import { useModalSound } from '@/lib/hooks/useAudio';
+import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 import {
   MARKET_CURRENCY_OPTIONS,
   MARKET_SELL_ITEM_TYPE_OPTIONS,
@@ -23,6 +24,8 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
   useModalSound();
 
   const iteminventory = useInventoryStore((state) => state.iteminventory);
+  const { setIsRequestSuccessModalOpen, setIsRequestFailureModalOpen } =
+    useMiscellaneousSessionStore();
 
   const [itemName, setItemName] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
@@ -54,15 +57,12 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
 
   const handlePlaceOrder = () => {
     if (!selectedItemId || !price || Number(price) <= 0) return;
-    console.log('Placing order:', {
-      selectedItemId,
-      itemName,
-      quantity,
-      itemType,
-      currency,
-      price,
-    });
-    onClose();
+
+    if (Math.random() < 0.5) {
+      setIsRequestSuccessModalOpen(true);
+    } else {
+      setIsRequestFailureModalOpen(true);
+    }
   };
 
   const totalPrice =

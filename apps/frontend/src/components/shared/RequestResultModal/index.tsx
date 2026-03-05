@@ -35,7 +35,7 @@ export function RequestResultModal({
       className="fixed inset-0 z-50 flex items-center justify-center"
       onClick={onClose}
     >
-      <div className="h-90 relative w-80" onClick={(e) => e.stopPropagation()}>
+      <div className="w-70 relative h-80" onClick={(e) => e.stopPropagation()}>
         <BuyItemConfirmModalBg className="pointer-events-none absolute inset-0 h-full w-full" />
 
         <div className="relative z-10 flex h-full flex-col items-center justify-between px-6 py-5">
