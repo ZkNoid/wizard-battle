@@ -96,7 +96,7 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
 
             {/* Choose Item & Quantity */}
             <div className="flex w-full flex-row items-end gap-3">
-              <div className="w-[60%]">
+              <div className="w-[55%]">
                 <SelectWithLabel
                   label="Choose Item & Quantity"
                   options={inventoryOptions}
@@ -116,13 +116,15 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
             </div>
 
             {/* Choose type of items */}
-            <SelectWithLabel
-              label="Choose type of items"
-              options={MARKET_SELL_ITEM_TYPE_OPTIONS}
-              value={itemType}
-              onChange={setItemType}
-              placeholder="item type"
-            />
+            <div className="w-[55%]">
+              <SelectWithLabel
+                label="Choose type of items"
+                options={MARKET_SELL_ITEM_TYPE_OPTIONS}
+                value={itemType}
+                onChange={setItemType}
+                placeholder="item type"
+              />
+            </div>
 
             {/* Currency + Amount */}
             <div className="flex flex-row gap-4">
