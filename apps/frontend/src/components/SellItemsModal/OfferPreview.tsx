@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { BuyItemBg } from '../MarketModal/assets/buy-item-bg';
+import { ItemSlot } from '../shared/ItemSlot';
 import type { IUserInventoryItem } from '@/lib/types/Inventory';
 
 interface OfferPreviewProps {
@@ -24,28 +24,10 @@ export function OfferPreview({
         Your offer for sale
       </span>
       <div className="flex flex-row items-center gap-4">
-        {/* Item image */}
-        <div className="relative size-20 flex-shrink-0 p-3">
-          {selectedUserItem ? (
-            <Image
-              src={`/items/${selectedUserItem.item.image}`}
-              width={80}
-              height={80}
-              alt={selectedUserItem.item.title}
-              quality={100}
-              unoptimized
-              className="size-full object-contain object-center"
-            />
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-1">
-              <div className="size-8 bg-[#ACB0BC]/40" />
-              <span className="font-pixel text-main-gray/50 text-[9px]">
-                Resource
-              </span>
-            </div>
-          )}
-          <BuyItemBg className="pointer-events-none absolute inset-0 h-full w-full" />
-        </div>
+        <ItemSlot
+          item={selectedUserItem?.item ?? null}
+          label={selectedUserItem ? undefined : 'Resource'}
+        />
 
         {/* Info */}
         <div className="flex flex-col gap-1">
