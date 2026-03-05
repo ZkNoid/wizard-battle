@@ -8,6 +8,7 @@ import QuickGuideModal from '../QuickGuideModal';
 import SoundSettingsModal from '../SoundSettingsModal';
 import MarketModal from '../MarketModal';
 import SellItemsModal from '../SellItemsModal';
+import { RequestResultModal } from '../shared/RequestResultModal';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 
 export default function Modals() {
@@ -28,6 +29,10 @@ export default function Modals() {
     setIsMarketModalOpen,
     isSellItemsModalOpen,
     setIsSellItemsModalOpen,
+    isRequestSuccessModalOpen,
+    setIsRequestSuccessModalOpen,
+    isRequestFailureModalOpen,
+    setIsRequestFailureModalOpen,
   } = useMiscellaneousSessionStore();
 
   return (
@@ -62,6 +67,20 @@ export default function Modals() {
 
       {isSellItemsModalOpen && (
         <SellItemsModal onClose={() => setIsSellItemsModalOpen(false)} />
+      )}
+
+      {isRequestSuccessModalOpen && (
+        <RequestResultModal
+          status="success"
+          onClose={() => setIsRequestSuccessModalOpen(false)}
+        />
+      )}
+
+      {isRequestFailureModalOpen && (
+        <RequestResultModal
+          status="failure"
+          onClose={() => setIsRequestFailureModalOpen(false)}
+        />
       )}
     </>
   );

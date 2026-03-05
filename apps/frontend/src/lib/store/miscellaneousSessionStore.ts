@@ -20,6 +20,10 @@ export interface MiscellaneousSessionStore {
   setIsMarketModalOpen: (isMarketModalOpen: boolean) => void;
   isSellItemsModalOpen: boolean;
   setIsSellItemsModalOpen: (isSellItemsModalOpen: boolean) => void;
+  isRequestSuccessModalOpen: boolean;
+  setIsRequestSuccessModalOpen: (isRequestSuccessModalOpen: boolean) => void;
+  isRequestFailureModalOpen: boolean;
+  setIsRequestFailureModalOpen: (isRequestFailureModalOpen: boolean) => void;
 }
 
 export const useMiscellaneousSessionStore = create<
@@ -63,6 +67,14 @@ export const useMiscellaneousSessionStore = create<
       isSellItemsModalOpen: false,
       setIsSellItemsModalOpen: (isSellItemsModalOpen: boolean) => {
         set({ isSellItemsModalOpen });
+      },
+      isRequestSuccessModalOpen: false,
+      setIsRequestSuccessModalOpen: (isRequestSuccessModalOpen: boolean) => {
+        set({ isRequestSuccessModalOpen });
+      },
+      isRequestFailureModalOpen: false,
+      setIsRequestFailureModalOpen: (isRequestFailureModalOpen: boolean) => {
+        set({ isRequestFailureModalOpen });
       },
     }),
     {
