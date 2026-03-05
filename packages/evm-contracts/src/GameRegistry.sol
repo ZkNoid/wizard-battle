@@ -79,6 +79,8 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
     //address private s_market; // use hasRole MARKET_ROLE to commit marketplace transactions
     //address private s_gameSigner; // use hasRole GAME_SIGNER_ROLE to verify signature of the message from a player
 
+    /// @dev Gap for upgrade safety
+    uint256[50] private __gap;
     /*//////////////////////////////////////////////////////////////
                                MODIFIERS
     //////////////////////////////////////////////////////////////*/
@@ -144,22 +146,17 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      * @notice Processes a batch of resource commits to the registry
      * @dev Uses reentrancy guard. Validates batch size and nonce before processing.
      *      Each batch item is decoded and processed individually.
-     * @param nonce Unique identifier to prevent replay attacks (must not be zero or previously used)
      * @param batch Array of encoded commit data (resourceHash, commit, signature)
      */
-    function commitBatch(uint256 nonce, bytes[] calldata batch) external nonReentrant {
-        if (nonce == 0) {
-            revert GameRegistry__InvalidNonce();
-        }
+    function commitBatch(bytes[] calldata batch) external nonReentrant {
         if (batch.length == 0) {
             revert GameRegistry__BatchLengthZero();
         }
         if (batch.length > BATCH_LENGTH_MAX) {
             revert GameRegistry__BatchLengthTooLong();
         }
-        s_usedNonces[msg.sender][nonce] = true;
 
-        emit CommitBatch(nonce, batch);
+        emit CommitBatch(msg.sender, batch);
 
         for (uint256 i = 0; i < batch.length;) {
             (bytes32 resourceHash, bytes memory commit, bytes memory signature) = abi.decode(batch[i], (bytes32, bytes, bytes));
@@ -273,6 +270,10 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
         }
 
         (uint256 nonce, address target, bytes memory callData) = _verifyInputs(resourceHash, commit, signature);
+
+        if (s_usedNonces[msg.sender][nonce]) {
+            revert GameRegistry__InvalidNonce();
+        }
 
         emit Commit(commit);
         s_usedNonces[msg.sender][nonce] = true;
@@ -456,8 +457,17 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
      * @param resourceHash Keccak256 hash of the element name
      * @return GameElementStruct containing token address, token ID, and requirements
      */
-    function getGameElement(bytes32 resourceHash) external view returns (GameElementStruct memory) {
+    function getGameElementHash(bytes32 resourceHash) external view returns (GameElementStruct memory) {
         return s_resourceHashToGameElement[resourceHash];
+    }
+
+    /**
+     * @notice Retrieves game element details by resource hash
+     * @param name The name of the element
+     * @return GameElementStruct containing token address, token ID, and requirements
+     */
+    function getGameElementName(string calldata name) external view returns (GameElementStruct memory) {
+        return s_resourceHashToGameElement[_hashString(name)];
     }
 
     /**

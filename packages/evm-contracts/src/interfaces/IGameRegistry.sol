@@ -70,7 +70,7 @@ interface IGameRegistry {
     //////////////////////////////////////////////////////////////*/
 
     event Commit(bytes indexed commit);
-    event CommitBatch(uint256 indexed nonce, bytes[] indexed commits);
+    event CommitBatch(address indexed sender, bytes[] indexed commits);
     event RevokeAdminRole(address indexed account);
     event GrantAdminRole(address indexed account);
     event CommitConfirmed(bytes indexed commit);
@@ -96,14 +96,14 @@ interface IGameRegistry {
         string[] memory _characters,
         string[] memory _uiniqueItems,
         address _gameSigner
-    ) external;
+    )
+        external;
 
     /**
      * @notice Processes a batch of resource commits to the registry
-     * @param nonce Unique identifier to prevent replay attacks (must not be zero or previously used)
      * @param batch Array of encoded commit data (resourceHash, commit, signature)
      */
-    function commitBatch(uint256 nonce, bytes[] calldata batch) external;
+    function commitBatch(bytes[] calldata batch) external;
 
     /**
      * @notice Commits a single resource transaction to the registry
@@ -134,7 +134,8 @@ interface IGameRegistry {
         address elementTokenAddress,
         uint256 elementTokenId,
         bool elementHasTokenId
-    ) external;
+    )
+        external;
 
     /*//////////////////////////////////////////////////////////////
                         EXTERNAL VIEW FUNCTIONS
@@ -169,7 +170,14 @@ interface IGameRegistry {
      * @param resourceHash Keccak256 hash of the element name
      * @return GameElementStruct containing token address, token ID, and requirements
      */
-    function getGameElement(bytes32 resourceHash) external view returns (GameElementStruct memory);
+    function getGameElementHash(bytes32 resourceHash) external view returns (GameElementStruct memory);
+
+    /**
+     * @notice Retrieves game element details by element name
+     * @param name The name of the element
+     * @return GameElementStruct containing token address, token ID, and requirements
+     */
+    function getGameElementName(string calldata name) external view returns (GameElementStruct memory);
 
     /**
      * @notice Checks if a nonce has been used in a previous commit
