@@ -154,9 +154,11 @@ export default function Header({ onTabChange }: HeaderProps) {
           <div className="w-80 shrink-0">
             <Wallet />
           </div>
-          {/* <div className="w-40 shrink-0">
-            <WalletReown />
-          </div> */}
+          {
+            <div className="w-40 shrink-0">
+              <WalletReown />
+            </div>
+          }
         </div>
       </div>
     </>

@@ -13,6 +13,8 @@ import { ItemBg } from '../InventoryModal/assets/item-bg';
 import { InventoryModalFormBg } from './assets/inventory-bg';
 import { Button } from '../shared/Button';
 import { useInventoryStore } from '@/lib/store';
+import { api } from '@/trpc/react';
+import { useInventorySync } from '@/lib/hooks/useInventorySync';
 
 const ITEMS_PER_PAGE = 28; // 7 columns × 4 rows
 const ROWS = 4;
@@ -69,6 +71,7 @@ InventoryItem.displayName = 'InventoryItem';
 
 export interface IInventoryModalFormProps {
   onClose: () => void;
+  address?: string;
   /**
    * Callback called when item drag starts
    */
@@ -89,6 +92,7 @@ export interface IInventoryModalFormProps {
 
 export function InventoryModalForm({
   onClose,
+  address,
   onItemDragStart,
   onItemDragEnd,
   onItemRemove,
@@ -169,6 +173,27 @@ export function InventoryModalForm({
     },
     [removeFromInventory, onItemRemove]
   );
+
+  const syncAllMutation = api.inventory.syncAll.useMutation();
+  const { processInventoryData } = useInventorySync();
+
+  const hadleCommitData = (data: unknown) => {
+    processInventoryData(data);
+  };
+
+  const handleCommitInventory = useCallback(() => {
+    alert(`Committing inventory to blockchain... address: ${address}`);
+    if (!address) return;
+    syncAllMutation.mutate(
+      { userId: address },
+      {
+        onSuccess: (data) => {
+          hadleCommitData(data);
+        },
+        onError: (err) => console.error('syncAll error:', err),
+      }
+    );
+  }, [address, syncAllMutation, processInventoryData]);
 
   const handleItemDragStart = useCallback(
     (userItem: IUserInventoryItem, e: React.DragEvent) => {
@@ -261,7 +286,7 @@ export function InventoryModalForm({
           <div className="relative mt-5 flex w-full items-center">
             {/* Action button - left side */}
             <div className="flex-1">
-              <div
+              {/*<div
                 onDragOver={(e) => {
                   e.preventDefault();
                   e.dataTransfer.dropEffect = 'move';
@@ -287,9 +312,17 @@ export function InventoryModalForm({
                     className="h-7 w-8 object-contain object-center"
                   />
                   <span className="font-pixel text-main-gray text-lg font-bold">
-                    Delete
+                    Delete1
                   </span>
                 </Button>
+              </div>*/}
+              <div>
+                <Button
+                  variant="gray"
+                  text="Commit"
+                  onClick={handleCommitInventory}
+                  className={`flex h-16 w-auto flex-row items-center gap-2.5 px-6 transition-all duration-200`}
+                />
               </div>
             </div>
 

@@ -35,6 +35,7 @@ export default function CraftModal({ onClose }: { onClose: () => void }) {
       <CraftModalForm onClose={onClose} address={address} />
       <InventoryModalForm
         onClose={onClose}
+        address={address}
         onItemDragStart={handleItemDragStart}
         onItemDragEnd={handleItemDragEnd}
         onItemRemove={handleItemRemove}
