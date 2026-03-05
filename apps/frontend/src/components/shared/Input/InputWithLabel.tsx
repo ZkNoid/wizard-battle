@@ -11,11 +11,13 @@ interface InputWithLabelProps {
   className?: string;
   disabled?: boolean;
   type?: 'text' | 'number' | 'password';
+  size?: 'md' | 'xl';
 }
 
 export function InputWithLabel({
   label,
   className,
+  size = 'md',
   ...inputProps
 }: InputWithLabelProps) {
   return (
@@ -23,7 +25,7 @@ export function InputWithLabel({
       <span className="font-pixel text-main-gray text-base font-bold">
         {label}
       </span>
-      <Input {...inputProps} />
+      <Input {...inputProps} size={size} />
     </div>
   );
 }

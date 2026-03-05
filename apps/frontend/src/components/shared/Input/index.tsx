@@ -1,7 +1,8 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { InputBg } from './assets/input-bg';
+import { InputMdBg } from './assets/input-md-bg';
+import { InputXlBg } from './assets/input-xl-bg';
 
 interface InputProps {
   value: string;
@@ -10,6 +11,7 @@ interface InputProps {
   className?: string;
   disabled?: boolean;
   type?: 'text' | 'number' | 'password';
+  size?: 'md' | 'xl';
 }
 
 export function Input({
@@ -19,7 +21,10 @@ export function Input({
   className,
   disabled = false,
   type = 'text',
+  size = 'md',
 }: InputProps) {
+  const InputBg = size === 'md' ? InputMdBg : InputXlBg;
+
   return (
     <div className={cn('relative h-16 w-full', className)}>
       <input

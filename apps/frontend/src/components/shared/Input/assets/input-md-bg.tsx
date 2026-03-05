@@ -1,10 +1,11 @@
-export const InputBg = ({ className }: { className?: string }) => {
+export const InputMdBg = ({ className }: { className?: string }) => {
   return (
     <svg
       width="277"
       height="50"
       viewBox="0 0 277 50"
       fill="none"
+      preserveAspectRatio="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
