@@ -1,5 +1,6 @@
 'use client';
 
+import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 import { Button } from '../shared/Button';
 import { SelectWithLabel } from '../shared/Select/SelectWithLabel';
 import {
@@ -23,6 +24,7 @@ export function ItemsSellingFilterPanel({
   onFiltersChange,
   onTabChange,
 }: ItemsSellingFilterPanelProps) {
+  const { setIsSellItemsModalOpen } = useMiscellaneousSessionStore();
   const update = (patch: Partial<ItemsSellingFilters>) =>
     onFiltersChange({ ...filters, ...patch });
 
@@ -32,7 +34,7 @@ export function ItemsSellingFilterPanel({
         <Button
           variant="blue"
           className="h-12 w-full"
-          onClick={() => onTabChange?.('selling')}
+          onClick={() => setIsSellItemsModalOpen(true)}
           enableHoverSound
           enableClickSound
         >

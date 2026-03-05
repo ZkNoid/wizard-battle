@@ -14,6 +14,7 @@ import type { IMarketBuyItem } from '@/lib/types/IMarket';
 interface BuyItemsFormProps {
   onClose?: () => void;
   onTabChange?: (tab: string) => void;
+  onOpenSellItems?: () => void;
 }
 
 const DEFAULT_FILTERS: BuyItemsFilters = {
@@ -22,7 +23,7 @@ const DEFAULT_FILTERS: BuyItemsFilters = {
   category: 'all',
 };
 
-export function BuyItemsForm({ onClose, onTabChange }: BuyItemsFormProps) {
+export function BuyItemsForm({ onClose, onTabChange, onOpenSellItems }: BuyItemsFormProps) {
   const [filters, setFilters] = useState<BuyItemsFilters>(DEFAULT_FILTERS);
   const [selectedItem, setSelectedItem] = useState<IMarketBuyItem | null>(null);
 

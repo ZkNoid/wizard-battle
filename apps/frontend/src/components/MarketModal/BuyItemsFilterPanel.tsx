@@ -7,6 +7,7 @@ import {
   MARKET_CATEGORY_OPTIONS,
   MARKET_BUY_SORT_OPTIONS,
 } from '@/lib/constants/market';
+import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 
 export interface BuyItemsFilters {
   search: string;
@@ -25,6 +26,8 @@ export function BuyItemsFilterPanel({
   onFiltersChange,
   onTabChange,
 }: BuyItemsFilterPanelProps) {
+  const { setIsSellItemsModalOpen } = useMiscellaneousSessionStore();
+
   const update = (patch: Partial<BuyItemsFilters>) =>
     onFiltersChange({ ...filters, ...patch });
 
@@ -52,7 +55,7 @@ export function BuyItemsFilterPanel({
         <Button
           variant="blue"
           className="h-14 w-full"
-          onClick={() => onTabChange?.('selling')}
+          onClick={() => setIsSellItemsModalOpen(true)}
           enableHoverSound
           enableClickSound
         >

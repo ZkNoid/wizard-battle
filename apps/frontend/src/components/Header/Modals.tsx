@@ -7,6 +7,7 @@ import TestnetModal from '../TestnetModal';
 import QuickGuideModal from '../QuickGuideModal';
 import SoundSettingsModal from '../SoundSettingsModal';
 import MarketModal from '../MarketModal';
+import SellItemsModal from '../SellItemsModal';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 
 export default function Modals() {
@@ -25,6 +26,8 @@ export default function Modals() {
     setIsSoundSettingsModalOpen,
     isMarketModalOpen,
     setIsMarketModalOpen,
+    isSellItemsModalOpen,
+    setIsSellItemsModalOpen,
   } = useMiscellaneousSessionStore();
 
   return (
@@ -55,6 +58,10 @@ export default function Modals() {
 
       {isMarketModalOpen && (
         <MarketModal onClose={() => setIsMarketModalOpen(false)} />
+      )}
+
+      {isSellItemsModalOpen && (
+        <SellItemsModal onClose={() => setIsSellItemsModalOpen(false)} />
       )}
     </>
   );
