@@ -91,11 +91,11 @@ export function BuyConfirmModal({
           </div>
 
           {/* Actions */}
-          <div className="mt-4 flex w-full gap-2">
+          <div className="mt-2 flex w-full gap-2">
             <Button
               variant="red"
               onClick={onCancel}
-              className="h-12 flex-1 text-sm"
+              className="h-10 flex-1 text-sm"
               enableHoverSound
               enableClickSound
             >
@@ -104,9 +104,9 @@ export function BuyConfirmModal({
               </span>
             </Button>
             <Button
-              variant="gray"
+              variant="green"
               onClick={() => onConfirm(item, qty)}
-              className="h-12 flex-1 text-sm"
+              className="h-10 flex-1 text-sm"
               enableHoverSound
               enableClickSound
             >
