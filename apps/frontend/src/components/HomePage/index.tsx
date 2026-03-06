@@ -39,6 +39,7 @@ export default function HomePage() {
     setIsCraftModalOpen,
     setIsExpeditionModalOpen,
     setIsTestnetModalOpen,
+    setIsMarketModalOpen,
   } = useMiscellaneousSessionStore();
   const { playMainTheme, stopMusic } = useBackgroundMusic();
   const preloadMusic = usePreloadMusic();
@@ -197,7 +198,7 @@ export default function HomePage() {
         <button
           className="col-span-2 col-start-5 row-span-2 size-full cursor-pointer"
           onClick={() => {
-            alert('Coming soon...');
+            setIsMarketModalOpen(true);
           }}
           onMouseEnter={() => setTabHover(TabHover.MARKET)}
           onMouseLeave={() => setTabHover(undefined)}
