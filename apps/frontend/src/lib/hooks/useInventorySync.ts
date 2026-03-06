@@ -107,7 +107,7 @@ export function useInventorySync() {
         } catch (error) {
           console.log(`Chunk ${chunkIndex + 1} failed:`, error);
           alert(
-            `Chunk ${chunkIndex + 1}/${chunks.length} failed: ${receipt?.transactionHash}, error: ${error}`
+            `Chunk ${chunkIndex + 1}/${chunks.length} failed: ${receipt?.transactionHash}, error: ${String(error)}`
           );
           break;
         }

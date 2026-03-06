@@ -8,7 +8,7 @@ export class User {
   @Prop({ required: true, unique: true, index: true })
   address!: string;
 
-  @Prop({ required: false, unique: true, index: true })
+  @Prop({ required: false, unique: true, sparse: true, index: true })
   address_evm!: string;
 
   @Prop({ type: Number, required: true, default: 0 })
