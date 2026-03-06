@@ -13,6 +13,7 @@ ARG MINA_ADMIN_PRIVATE_KEY
 ARG MINA_CONTRACT_ADDRESS
 ARG BULLMQ_REDIS_HOST
 ARG BULLMQ_REDIS_PORT
+ARG RPC_URL
 
 WORKDIR /usr/share/nestjs/main
 COPY . .
@@ -64,6 +65,14 @@ echo "MINA_ADMIN_PRIVATE_KEY=${MINA_ADMIN_PRIVATE_KEY}" >> /usr/share/nestjs/mai
 echo "MINA_CONTRACT_ADDRESS=${MINA_CONTRACT_ADDRESS}" >> /usr/share/nestjs/main/.env
 echo "BULLMQ_REDIS_HOST=${BULLMQ_REDIS_HOST}" >> /usr/share/nestjs/main/.env
 echo "BULLMQ_REDIS_PORT=${BULLMQ_REDIS_PORT}" >> /usr/share/nestjs/main/.env
+echo "RPC_URL=${RPC_URL}" >> /usr/share/nestjs/main/.env
+echo "GAME_SIGNER_PUBLIC_KEY=${GAME_SIGNER_PUBLIC_KEY}" >> /usr/share/nestjs/main/.env
+echo "GAME_SIGNER_PRIVATE_KEY=${GAME_SIGNER_PRIVATE_KEY}" >> /usr/share/nestjs/main/.env
+echo "GAME_REGISTRY_ADDRESS=${GAME_REGISTRY_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "WB_RESOURCES_ADDRESS=${WB_RESOURCES_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "WB_CHARACTER_ADDRESS=${WB_CHARACTER_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "WB_COINS_ADDRESS=${WB_COINS_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "WB_ITEMS_ADDRESS=${WB_ITEMS_ADDRESS}" >> /usr/share/nestjs/main/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/backend/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/frontend/.env
 pnpm turbo run build
