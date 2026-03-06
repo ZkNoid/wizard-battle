@@ -26,7 +26,7 @@ export const env = createEnv({
       .string()
       .default('An epic wizard battle game'),
     NEXT_PUBLIC_REOWN_PROJECT_ID: z.string(),
-    NEXT_PUBLIC_GAME_REGISTRY_ADDRESS: z.string(),
+    NEXT_PUBLIC_GAME_REGISTRY_ADDRESS: z.string().optional(),
     NEXT_PUBLIC_NETWORK_ID: z.string().optional(),
   },
 
