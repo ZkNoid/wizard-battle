@@ -224,6 +224,7 @@ jobs:
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_DB=${{ secrets.POSTGRES_DB }}
             REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            RPC_URL=${{ secrets.RPC_URL }}
             EOT
 
             chmod 600 .env

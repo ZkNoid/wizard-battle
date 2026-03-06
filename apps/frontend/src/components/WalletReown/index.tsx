@@ -10,6 +10,8 @@ import {
   useAppKitNetwork,
 } from '@reown/appkit/react';
 import { avalanche } from '@reown/appkit/networks';
+import * as allNetworks from '@reown/appkit/networks';
+import { env } from '@/env';
 import { useEffect, useRef } from 'react';
 import { trackEvent, identifyUser } from '@/lib/analytics/posthog-utils';
 import { AnalyticsEvents } from '@/lib/analytics/events';
@@ -27,6 +29,16 @@ const formatAddress = (address: string): string => {
 interface WalletReownProps {
   className?: string;
 }
+
+const targetNetwork = env.NEXT_PUBLIC_NETWORK_ID
+  ? (Object.values(allNetworks).find(
+      (n) =>
+        typeof n === 'object' &&
+        n !== null &&
+        'id' in n &&
+        String((n as { id: number }).id) === env.NEXT_PUBLIC_NETWORK_ID
+    ) as (typeof avalanche) | undefined) ?? avalanche
+  : avalanche;
 
 export default function WalletReown({ className }: WalletReownProps = {}) {
   const pathname = usePathname();
@@ -49,9 +61,13 @@ export default function WalletReown({ className }: WalletReownProps = {}) {
     }
 
     // Only attempt network switch once per session to avoid popup loops
-    if (isConnected && chainId !== avalanche.id && !hasAttemptedSwitch.current) {
+    if (
+      isConnected &&
+      chainId !== targetNetwork.id &&
+      !hasAttemptedSwitch.current
+    ) {
       hasAttemptedSwitch.current = true;
-      switchNetwork(avalanche);
+      switchNetwork(targetNetwork);
     }
 
     // Reset the switch flag when disconnected
@@ -68,7 +84,9 @@ export default function WalletReown({ className }: WalletReownProps = {}) {
         wallet_address: address,
       };
       trackEvent(AnalyticsEvents.WALLET_CONNECTION_SUCCESS, props);
-      trackEvent(AnalyticsEvents.FUNNEL_WALLET_CONNECTED, { wallet_type: 'Reown' });
+      trackEvent(AnalyticsEvents.FUNNEL_WALLET_CONNECTED, {
+        wallet_type: 'Reown',
+      });
       identifyUser(address, 'Reown');
       hasTrackedConnection.current = true;
     } else if (!isConnected) {
@@ -78,7 +96,8 @@ export default function WalletReown({ className }: WalletReownProps = {}) {
 
   const handleButtonClick = () => {
     if (isConnected) {
-      disconnect();
+      //disconnect();
+      open();
     } else {
       const props: WalletConnectionInitiatedProps = {
         wallet_type: 'Reown',

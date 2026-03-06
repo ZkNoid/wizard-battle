@@ -2,6 +2,7 @@
 pragma solidity 0.8.30;
 
 import {Test, console} from "forge-std/Test.sol";
+import {IGameRegistry} from "src/interfaces/IGameRegistry.sol";
 import {GameRegistry} from "src/GameRegistry.sol";
 import {WBResources} from "src/tokens/ERC1155/WBResources.sol";
 import {WBCoin} from "src/tokens/ERC20/WBCoin.sol";
@@ -71,19 +72,19 @@ contract GameRegistryIntTest is Test {
 
     modifier addCoinResourceType() {
         vm.prank(GAME_SIGNER);
-        gameRegistry.addGameElement(GameRegistry.GameElementType.COIN, "WBCoin", address(wBCoin), 0, false);
+        gameRegistry.addGameElement(IGameRegistry.GameElementType.COIN, "WBCoin", address(wBCoin), 0, false);
         _;
     }
 
     modifier addResourceType() {
         vm.prank(GAME_SIGNER);
-        gameRegistry.addGameElement(GameRegistry.GameElementType.RESOURCE, "Wood", address(wbResources), 1, true);
+        gameRegistry.addGameElement(IGameRegistry.GameElementType.RESOURCE, "Wood", address(wbResources), 100, true);
         _;
     }
 
     modifier addCharacterType() {
         vm.prank(GAME_SIGNER);
-        gameRegistry.addGameElement(GameRegistry.GameElementType.CHARACTER, "Wizard", address(wbCharacters), 0, false);
+        gameRegistry.addGameElement(IGameRegistry.GameElementType.CHARACTER, "Wizard", address(wbCharacters), 0, false);
         _;
     }
 
@@ -134,6 +135,30 @@ contract GameRegistryIntTest is Test {
 
         console.log("WBResources total supply:", wbResources.totalSupply(1));
         console.log("PLAYER's WBResources balance:", playerWBCResourcelance);
+    }
+
+    function test_mintWBResourceToPlayerBatch() public addResourceType {
+        // vm.assume(player != address(0));
+        // vm.assume(amount > 0 && amount < 1e24);
+
+        console.log("Minting wood to player:", PLAYER);
+        console.log("Game signer:", GAME_SIGNER);
+        uint256 amount = 1000;
+
+        bytes memory callData = abi.encodeWithSignature("mint(address,uint256,uint256,bytes)", PLAYER, 1, amount, "");
+        (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage("Wood", address(wbResources), 0, callData);
+
+        // vm.expectEmit(true, false, false, true);
+        // emit CommitConfirmed(callData);
+        bytes[] memory batch = new bytes[](1);
+        batch[0] = abi.encode(resourceHash, commit, signature);
+        gameRegistry.commitBatch(batch);
+
+        uint256 playerWBCResourceBalance = wbResources.balanceOf(PLAYER, 1);
+        assertEq(playerWBCResourceBalance, amount);
+
+        console.log("WBResources total supply:", wbResources.totalSupply(1));
+        console.log("PLAYER's WBResources balance:", playerWBCResourceBalance);
     }
 
     function test_burnWBResourceToPlayer() public addResourceType {
@@ -201,7 +226,7 @@ contract GameRegistryIntTest is Test {
 
         bytes32 hashStruct = keccak256(
             abi.encode(
-                MESSAGE_TYPEHASH, GameRegistry.CommitStruct({target: target, account: account, signer: signer, nonce: nonce, callData: keccak256(callData)})
+                MESSAGE_TYPEHASH, IGameRegistry.CommitStruct({target: target, account: account, signer: signer, nonce: nonce, callData: keccak256(callData)})
             )
         );
 

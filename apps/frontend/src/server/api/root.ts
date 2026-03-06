@@ -6,6 +6,7 @@ import { usersRouter } from './routers/users';
 import { expeditionsRouter } from './routers/expeditions';
 import { craftingRouter } from './routers/crafting';
 import { questsRouter } from './routers/quests';
+import { inventoryRouter } from './routers/inventory';
 
 /**
  * This is the primary router for your server.
@@ -20,6 +21,7 @@ export const appRouter = createTRPCRouter({
   expeditions: expeditionsRouter,
   crafting: craftingRouter,
   quests: questsRouter,
+  inventory: inventoryRouter,
 });
 
 // export type definition of API
