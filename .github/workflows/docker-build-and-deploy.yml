@@ -8,6 +8,8 @@ on:
 jobs:
   test-build:
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
