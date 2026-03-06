@@ -186,10 +186,17 @@ jobs:
             --build-arg SPELL_CAST_TIMEOUT=${{ secrets.SPELL_CAST_TIMEOUT }} \
             --build-arg MINA_NETWORK_URL=${{ secrets.MINA_NETWORK_URL }} \
             --build-arg MINA_ADMIN_PRIVATE_KEY=${{ secrets.MINA_ADMIN_PRIVATE_KEY }} \
-            --build-arg MINA_CONTRACT_ADDRESS=${{ secrets.MINa_CONTRACT_ADDRESS }} \
+            --build-arg MINA_CONTRACT_ADDRESS=${{ secrets.MINA_CONTRACT_ADDRESS }} \
             --build-arg BULLMQ_REDIS_HOST=${{ secrets.BULLMQ_REDIS_HOST }} \
             --build-arg BULLMQ_REDIS_PORT=${{ secrets.BULLMQ_REDIS_PORT }} \
             --build-arg RPC_URL=${{ secrets.RPC_URL }} \
+            --build-arg GAME_SIGNER_PUBLIC_KEY=${{ secrets.GAME_SIGNER_PUBLIC_KEY }} \
+            --build-arg GAME_SIGNER_PRIVATE_KEY=${{ secrets.GAME_SIGNER_PRIVATE_KEY }} \
+            --build-arg GAME_REGISTRY_ADDRESS=${{ secrets.GAME_REGISTRY_ADDRESS }} \
+            --build-arg WB_RESOURCES_ADDRESS=${{ secrets.WB_RESOURCES_ADDRESS }} \
+            --build-arg WB_CHARACTER_ADDRESS=${{ secrets.WB_CHARACTER_ADDRESS }} \
+            --build-arg WB_COINS_ADDRESS=${{ secrets.WB_COINS_ADDRESS }} \
+            --build-arg WB_ITEMS_ADDRESS=${{ secrets.WB_ITEMS_ADDRESS }} \
             -t ${{ steps.calc-container.outputs.container_name }} .
 
       - name: Save Docker image to tar
@@ -228,7 +235,6 @@ jobs:
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_DB=${{ secrets.POSTGRES_DB }}
             REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-            RPC_URL=${{ secrets.RPC_URL }}
             EOT
 
             chmod 600 .env
