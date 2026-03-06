@@ -35,6 +35,7 @@ interface IGameRegistry {
     error GameRegistry__GameElementNameIsEmpty();
     error GameRegistry__UnknownTargetAddress();
     error GameRegistry__NotSigner();
+    error GameRegistry__NotAccountOwner();
 
     /*//////////////////////////////////////////////////////////////
                                ENUMS

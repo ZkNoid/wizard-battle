@@ -339,6 +339,9 @@ contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeabl
         if (s_usedNonces[msg.sender][nonce]) {
             revert GameRegistry__NonceAlreadyUsed();
         }
+        if (account != msg.sender) {
+            revert GameRegistry__NotAccountOwner();
+        }
         if (gameElement.tokenAddress == address(0)) {
             revert GameRegistry__InvalidResource();
         }
