@@ -116,19 +116,19 @@ export default function ChooseCharacter({
                 variant={selectedDuration === '1hour' ? 'blue' : 'gray'}
                 text="1 hour"
                 onClick={() => handleSelectDuration('1hour')}
-                className="h-12 w-28 px-6 py-1 text-xs"
+                className="font-pixel h-12 w-28 px-6 py-4 text-xs"
               />
               <Button
                 variant={selectedDuration === '3hour' ? 'blue' : 'gray'}
                 text="3 hour"
                 onClick={() => handleSelectDuration('3hour')}
-                className="h-12 w-28 px-6 py-1 text-xs"
+                className="font-pixel h-12 w-28 px-6 py-4 text-xs"
               />
               <Button
                 variant={selectedDuration === '8hour' ? 'blue' : 'gray'}
                 text="8 hour"
                 onClick={() => handleSelectDuration('8hour')}
-                className="h-12 w-28 px-6 py-4 text-sm"
+                className="font-pixel h-12 w-28 px-6 py-4 text-xs"
               />
             </div>
           </div>

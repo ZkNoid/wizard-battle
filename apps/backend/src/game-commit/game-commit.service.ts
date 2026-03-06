@@ -4,6 +4,10 @@ import { UserInventoryService } from '../user-inventory/services/user-inventory.
 import { GameCharacterService } from '../game-character/game-character.service';
 import { BlockchainService } from './blockchain.service';
 import { GameItem } from '../game-item/schemas/game-item.schema';
+import { iteminventoryervice } from '../game-item/services/inventory-item.service';
+import { UserService } from '../user/user.service';
+import { ethers } from 'ethers';
+
 import { error } from 'console';
 
 type GameElementStruct = {
@@ -18,7 +22,9 @@ export class GameCommitService {
     private readonly gameItemService: GameItemService,
     private readonly userInventoryService: UserInventoryService,
     private readonly gameCharacterService: GameCharacterService,
-    private readonly blockchainService: BlockchainService
+    private readonly blockchainService: BlockchainService,
+    private readonly inventoryItemService: iteminventoryervice,
+    private readonly userService: UserService
   ) {}
 
   // Generic handler or specific logic per resource type
@@ -103,7 +109,8 @@ export class GameCommitService {
           found: false,
           userHasIt: false,
           resource: null,
-          inventoryDetails: null,
+          inventoryItem: null,
+          userInventory: null,
         };
       }
 
@@ -117,84 +124,108 @@ export class GameCommitService {
       console.log(`   Is Resource: ${resource.isResource}`);
       console.log(`   Resource ID: ${(resource as any)._id}`);
 
-      // 3. Check if user has this resource in their inventory
       const resourceId = (resource as any)._id.toString();
+
+      // 3. Find the corresponding InventoryItem (match by title or name)
+      let inventoryItem: any = null;
+      try {
+        inventoryItem = await this.inventoryItemService.findOne(itemName);
+      } catch (error) {
+        // InventoryItem might not exist, continue with only GameItem data
+        console.log(`   ⚠️ InventoryItem not found for "${itemName}"`);
+      }
+
+      if (inventoryItem) {
+        console.log(`\n📋 Inventory Item Details:`);
+        console.log(`   Title: ${inventoryItem.title}`);
+        console.log(`   Type: ${inventoryItem.type}`);
+        console.log(`   Rarity: ${inventoryItem.rarity}`);
+        console.log(`   Price: ${inventoryItem.price}`);
+        console.log(`   Image: ${inventoryItem.image}`);
+      }
+
+      // 4. Check if user has this resource in their inventory
       console.log(`\n🔍 Checking user inventory:`);
       console.log(`   userId: ${userId}`);
-      console.log(`   itemResourceId: ${resourceId}`);
+      console.log(`   itemId: ${inventoryItem?.id || 'N/A'}`);
 
       const userHasIt = await this.userInventoryService.hasItem(
         userId,
-        resourceId
+        inventoryItem?.id || resourceId
       );
 
       console.log(
         `   User has "${itemName}": ${userHasIt ? '✅ YES' : '❌ NO'}`
       );
 
-      // 4. Get detailed inventory information if user has it
-      let inventoryDetails: any = null;
+      // 5. Get detailed user inventory information if user has it
+      let userInventory: any = null;
       if (userHasIt) {
         try {
-          inventoryDetails =
-            await this.userInventoryService.getUserInventoryItem(
-              userId,
-              resourceId
+          userInventory = await this.userInventoryService.getUserInventoryItem(
+            userId,
+            inventoryItem?.id || resourceId
+          );
+          console.log(`\n📦 User Inventory Details:`);
+          console.log(`   Quantity: ${userInventory.quantity}`);
+          console.log(`   Is Equipped: ${userInventory.isEquipped || false}`);
+          if (userInventory.equippedToWizardId) {
+            console.log(
+              `   Equipped To Wizard: ${userInventory.equippedToWizardId}`
             );
-          console.log(`   Quantity: ${inventoryDetails.quantity}`);
+          }
           console.log(
-            `   Is Equipped: ${inventoryDetails.isEquipped || false}`
+            `   Acquired From: ${userInventory.acquiredFrom || 'unknown'}`
           );
           console.log(
-            `   Acquired From: ${inventoryDetails.acquiredFrom || 'unknown'}`
-          );
-          console.log(
-            `   Acquired At: ${inventoryDetails.acquiredAt || 'unknown'}`
+            `   Acquired At: ${userInventory.acquiredAt || 'unknown'}`
           );
         } catch (error: any) {
-          // Item exists but couldn't fetch details
           console.log(
-            `   ⚠️ Could not fetch detailed inventory info: ${error?.message || 'unknown error'}`
+            `   ⚠️ Could not fetch user inventory details: ${error?.message || 'unknown error'}`
           );
         }
-
-        return {
-          found: true,
-          userHasIt,
-          resource: {
-            id: resourceId,
-            name: resource.name,
-            rarity: resource.rarity,
-            origin: resource.origin,
-            description: resource.desc,
-            isCraftable: resource.isCraftable,
-            isResource: resource.isResource,
-          },
-          inventoryDetails: inventoryDetails
-            ? {
-                quantity: inventoryDetails.quantity,
-                isEquipped: inventoryDetails.isEquipped,
-                acquiredFrom: inventoryDetails.acquiredFrom,
-                acquiredAt: inventoryDetails.acquiredAt,
-              }
-            : null,
-        };
-      } else {
-        return {
-          found: true, // Resource exists in database
-          userHasIt: false, // But user doesn't have it in inventory
-          resource: {
-            id: resourceId,
-            name: resource.name,
-            rarity: resource.rarity,
-            origin: resource.origin,
-            description: resource.desc,
-            isCraftable: resource.isCraftable,
-            isResource: resource.isResource,
-          },
-          inventoryDetails: null,
-        };
       }
+
+      return {
+        found: true,
+        userHasIt,
+        resource: {
+          id: resourceId,
+          name: resource.name,
+          rarity: resource.rarity,
+          origin: resource.origin,
+          description: resource.desc,
+          isCraftable: resource.isCraftable,
+          isResource: resource.isResource,
+        },
+        inventoryItem: inventoryItem
+          ? {
+              id: inventoryItem.id,
+              title: inventoryItem.title,
+              description: inventoryItem.description,
+              image: inventoryItem.image,
+              type: inventoryItem.type,
+              rarity: inventoryItem.rarity,
+              price: inventoryItem.price,
+              amount: inventoryItem.amount,
+              wearableSlot: inventoryItem.wearableSlot,
+              level: inventoryItem.level,
+              buff: inventoryItem.buff,
+              improvementRequirements: inventoryItem.improvementRequirements,
+              wearRequirements: inventoryItem.wearRequirements,
+            }
+          : null,
+        userInventory: userInventory
+          ? {
+              quantity: userInventory.quantity,
+              isEquipped: userInventory.isEquipped,
+              equippedToWizardId: userInventory.equippedToWizardId,
+              acquiredFrom: userInventory.acquiredFrom,
+              acquiredAt: userInventory.acquiredAt,
+            }
+          : null,
+      };
     } catch (error: any) {
       console.error(
         `❌ Error loading and verifying resource: ${error?.message || 'unknown error'}`
@@ -221,7 +252,7 @@ export class GameCommitService {
       }
 
       // 2. We pull GameElementStruct from chain and verify it is valid resource
-      const metaData = await this.blockchainService.getGameElement(name);
+      const metaData = await this.blockchainService.getGameElementHash(name);
 
       if (
         !metaData ||
@@ -242,7 +273,7 @@ export class GameCommitService {
             name,
             payload.playerAddress,
             metaData.tokenId,
-            result.inventoryDetails?.quantity || 1000
+            result.userInventory?.quantity || 1000
           );
           break;
         case 'burn':
@@ -251,7 +282,7 @@ export class GameCommitService {
             name,
             payload.playerAddress,
             metaData.tokenId,
-            result.inventoryDetails?.quantity || 1000
+            result.userInventory?.quantity || 1000
           );
           break;
         default:
@@ -287,7 +318,7 @@ export class GameCommitService {
       }
 
       // 2. We pull GameElementStruct from chain and verify it is valid resource
-      const metaData = await this.blockchainService.getGameElement(name);
+      const metaData = await this.blockchainService.getGameElementHash(name);
 
       if (
         !metaData ||
@@ -308,7 +339,7 @@ export class GameCommitService {
             name,
             payload.playerAddress,
             metaData.tokenId,
-            result.inventoryDetails?.quantity || 1000
+            result.userInventory?.quantity || 1000
           );
           break;
         case 'burn':
@@ -317,7 +348,7 @@ export class GameCommitService {
             name,
             payload.playerAddress,
             metaData.tokenId,
-            result.inventoryDetails?.quantity || 1000
+            result.userInventory?.quantity || 1000
           );
           break;
         default:
@@ -358,7 +389,7 @@ export class GameCommitService {
       }
 
       // 2. We pull GameElementStruct from chain and verify it is valid resource
-      const metaData = await this.blockchainService.getGameElement(name);
+      const metaData = await this.blockchainService.getGameElementHash(name);
 
       if (
         !metaData ||
@@ -379,7 +410,7 @@ export class GameCommitService {
             name,
             payload.playerAddress
             //metaData.tokenId
-            //result.inventoryDetails?.quantity || 1000
+            //result.userInventory?.quantity || 1000
           );
           break;
         case 'burn':
@@ -388,7 +419,7 @@ export class GameCommitService {
             name,
             payload.playerAddress,
             metaData.tokenId
-            //result.inventoryDetails?.quantity || 1000
+            //result.userInventory?.quantity || 1000
           );
           break;
         default:
@@ -422,7 +453,7 @@ export class GameCommitService {
       }
 
       // 2. We pull GameElementStruct from chain and verify it is valid resource
-      const metaData = await this.blockchainService.getGameElement(name);
+      const metaData = await this.blockchainService.getGameElementHash(name);
 
       if (
         !metaData ||
@@ -473,5 +504,115 @@ export class GameCommitService {
     // In case of failure
     console.log('❌ Failed to generate callData for resource commit');
     return { success: false, resource: name, action, commit: null };
+  }
+
+  async commitIinventory(payload: any) {
+    try {
+      let failedItems: string[] = [];
+      let signedData: any[] = [];
+
+      console.log(`Committing inventory sync - payload:`, payload);
+
+      const userId = payload.userId || payload.playerAddress; // Extract userId from payload
+      const user = await this.userService.findByAddress(userId);
+
+      console.log(`user: ${JSON.stringify(user)}`);
+      const evmAddress = user?.address_evm;
+
+      if (!evmAddress || evmAddress == ethers.ZeroAddress) {
+        throw new Error(
+          `User ${userId} does not have a valid EVM address for inventory sync.`
+        ); // Ensure user has a valid EVM address
+      }
+
+      // 1. Query all items from user inventory with full item details in a single query
+      // 1.1 Call user inventory service to get all items for this user with combined data
+      const userInventoryItems =
+        await this.userInventoryService.getUserInventory(userId);
+
+      // 1.2 For each inventory item:
+      // - Item type is regestered as resource or item in GameItem collection?
+      for (const invItem of userInventoryItems) {
+        // Check if it's a resource or item by looking up the GameItem collection
+        const metaData = await this.blockchainService.getGameElementHash(
+          invItem.itemId
+        );
+
+        console.log(`📦 Inventory Item: ${invItem.itemId}`);
+
+        // In case item is not regestered add it failed list and skip.
+        if (metaData?.tokenAddress == ethers.ZeroAddress) {
+          failedItems.push(invItem.itemId);
+          // console.log(
+          //   `   ❌ Item ${invItem.itemId} not found in GameItem collection, skipping...`
+          // );
+          continue;
+        }
+
+        const userHasAmount = invItem.quantity || 0;
+        // const userHasBalance = await this.blockchainService.getResourceBalance(
+        //   evmAddress || ethers.ZeroAddress,
+        //   metaData?.tokenId || 0
+        // );
+        const userHasBalance =
+          await this.blockchainService.getGameElementBalance(
+            metaData?.tokenId || 0,
+            metaData?.tokenAddress || ethers.ZeroAddress,
+            metaData?.requiresTokenId || true,
+            evmAddress || ethers.ZeroAddress
+          );
+
+        console.log(
+          `   User has ${userHasAmount} of item ${invItem.itemId} in inventory, on-chain balance: ${userHasBalance}`
+        );
+        let commitData;
+        if (userHasAmount > 0 && userHasBalance < userHasAmount) {
+          // 2. For each item, we call BlockchainService to generate signed mint callData to sync the inventory on-chain
+          console.log(
+            `   Generating mint callData to sync ${userHasAmount} of item ${invItem.itemId}...`
+          );
+          commitData = await this.blockchainService.mintResource(
+            invItem.itemId,
+            evmAddress,
+            metaData?.tokenId || 0,
+            userHasAmount
+          );
+        } else if (userHasAmount > 0 && userHasBalance > userHasAmount) {
+          // If user has more than what's in inventory, we need to burn the excess
+          const amountToBurn =
+            Number(userHasBalance.toString()) - userHasAmount;
+          console.log(
+            `   Generating burn callData to remove ${amountToBurn} of item ${invItem.itemId}...`
+          );
+          commitData = await this.blockchainService.burnResource(
+            invItem.itemId,
+            evmAddress,
+            metaData?.tokenId || 0,
+            amountToBurn
+          );
+        } else {
+          continue; // No action needed if balances match or user has none
+        }
+
+        signedData.push(commitData);
+        console.log(`   Commit data for item ${invItem.itemId}:`, commitData);
+      }
+      console.log(
+        `Failed to sync:`,
+        failedItems.length > 0 ? failedItems : 'None'
+      );
+
+      return {
+        success: true,
+        signedData: signedData,
+        failedItems: failedItems,
+      };
+    } catch (err) {
+      console.error(`❌ Crash syncing inventory:`, err);
+      return {
+        success: false,
+        error: (err as Error)?.message || 'unknown error',
+      };
+    }
   }
 }

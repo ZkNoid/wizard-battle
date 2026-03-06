@@ -16,6 +16,14 @@ export interface MiscellaneousSessionStore {
   setIsQuickGuideModalOpen: (isQuickGuideModalOpen: boolean) => void;
   isSoundSettingsModalOpen: boolean;
   setIsSoundSettingsModalOpen: (isSoundSettingsModalOpen: boolean) => void;
+  isMarketModalOpen: boolean;
+  setIsMarketModalOpen: (isMarketModalOpen: boolean) => void;
+  isSellItemsModalOpen: boolean;
+  setIsSellItemsModalOpen: (isSellItemsModalOpen: boolean) => void;
+  isRequestSuccessModalOpen: boolean;
+  setIsRequestSuccessModalOpen: (isRequestSuccessModalOpen: boolean) => void;
+  isRequestFailureModalOpen: boolean;
+  setIsRequestFailureModalOpen: (isRequestFailureModalOpen: boolean) => void;
 }
 
 export const useMiscellaneousSessionStore = create<
@@ -51,6 +59,22 @@ export const useMiscellaneousSessionStore = create<
       isSoundSettingsModalOpen: false,
       setIsSoundSettingsModalOpen: (isSoundSettingsModalOpen: boolean) => {
         set({ isSoundSettingsModalOpen });
+      },
+      isMarketModalOpen: false,
+      setIsMarketModalOpen: (isMarketModalOpen: boolean) => {
+        set({ isMarketModalOpen });
+      },
+      isSellItemsModalOpen: false,
+      setIsSellItemsModalOpen: (isSellItemsModalOpen: boolean) => {
+        set({ isSellItemsModalOpen });
+      },
+      isRequestSuccessModalOpen: false,
+      setIsRequestSuccessModalOpen: (isRequestSuccessModalOpen: boolean) => {
+        set({ isRequestSuccessModalOpen });
+      },
+      isRequestFailureModalOpen: false,
+      setIsRequestFailureModalOpen: (isRequestFailureModalOpen: boolean) => {
+        set({ isRequestFailureModalOpen });
       },
     }),
     {

@@ -5,9 +5,10 @@ import { BlockchainService } from './blockchain.service';
 import { GameItemModule } from '../game-item/game-item.module';
 import { UserInventoryModule } from '../user-inventory/user-inventory.module';
 import { GameCharacterModule } from '../game-character/game-character.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [GameItemModule, UserInventoryModule, GameCharacterModule],
+  imports: [GameItemModule, UserInventoryModule, GameCharacterModule, UserModule],
   providers: [GameCommitService, BlockchainService],
   controllers: [GameCommitController],
 })

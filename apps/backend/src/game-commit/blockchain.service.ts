@@ -222,7 +222,47 @@ export class BlockchainService {
     return balance;
   }
 
-  async getGameElement(name: string): Promise<{
+  /**
+   * Get the on-chain balance of a game element (resource, item, coin, etc.) for a player.
+   * Resolves the token contract and type (ERC1155 vs ERC721) via GameRegistry, then queries balanceOf.
+   *
+   * @param elementName - Name registered in GameRegistry (e.g. "Iron Ore")
+   * @param playerAddress - Player's Ethereum address
+   * @returns Balance as bigint (0 if provider not initialized)
+   */
+  async getGameElementBalance(
+    tokenId: number,
+    tokenAddress: string,
+    requiresTokenId: boolean,
+    playerAddress: string
+  ): Promise<bigint> {
+    if (!this.provider) {
+      console.warn('Blockchain service not initialized, returning balance 0');
+      return 0n;
+    }
+
+    if (requiresTokenId) {
+      // ERC1155: balanceOf(address account, uint256 id)
+      const contract = new ethers.Contract(
+        tokenAddress,
+        [
+          'function balanceOf(address account, uint256 id) view returns (uint256)',
+        ],
+        this.provider
+      );
+      return await contract.balanceOf!(playerAddress, tokenId);
+    } else {
+      // ERC721: balanceOf(address owner)
+      const contract = new ethers.Contract(
+        tokenAddress,
+        ['function balanceOf(address owner) view returns (uint256)'],
+        this.provider
+      );
+      return await contract.balanceOf!(playerAddress);
+    }
+  }
+
+  async getGameElementHash(name: string): Promise<{
     tokenAddress: string;
     tokenId: number;
     requiresTokenId: boolean;
@@ -237,7 +277,7 @@ export class BlockchainService {
       this.gameRegistryAddress,
       [
         // GameElementStruct is: (address tokenAddress, uint256 tokenId, bool requiresTokenId)
-        'function getGameElement(bytes32 resourceHash) external view returns (tuple(address tokenAddress, uint256 tokenId, bool requiresTokenId))',
+        'function getGameElementHash(bytes32 resourceHash) external view returns (tuple(address tokenAddress, uint256 tokenId, bool requiresTokenId))',
       ],
       this.provider
     );
@@ -246,7 +286,7 @@ export class BlockchainService {
     console.log(`🔍 [getGameElement] Fetching element for "${name}"`);
     console.log(`   Resource hash: ${resourceHash}`);
 
-    const result = await gameRegistryContract.getGameElement!(resourceHash);
+    const result = await gameRegistryContract.getGameElementHash!(resourceHash);
 
     console.log(`🔍 [getGameElement] Raw result:`, result);
 
