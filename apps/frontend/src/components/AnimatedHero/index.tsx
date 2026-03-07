@@ -1,44 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { WIZARD_ANIMATIONS, HERO_BACKGROUND } from '@/lib/constants/wizardAnimations';
-import type { SpriteAnimationData } from '@/lib/types/SpriteAnimationData';
-
-function computeDisplaySize(
-  containerEl: HTMLElement,
-  animData: SpriteAnimationData
-): { w: number; h: number } {
-  const { width, height } = containerEl.getBoundingClientRect();
-  const scale = Math.min(width / animData.frameWidth, height / animData.frameHeight);
-  return {
-    w: Math.round(animData.frameWidth * scale),
-    h: Math.round(animData.frameHeight * scale),
-  };
-}
-
-function useSpriteAnimation(
-  spriteRef: React.RefObject<HTMLDivElement | null>,
-  animData: SpriteAnimationData | undefined,
-  displaySize: { w: number; h: number } | null
-): void {
-  const frameRef = useRef(0);
-
-  useEffect(() => {
-    if (!animData || !spriteRef.current || !displaySize) return;
-
-    frameRef.current = 0;
-    spriteRef.current.style.backgroundPositionX = '0px';
-
-    const interval = setInterval(() => {
-      frameRef.current = (frameRef.current + 1) % animData.frameCount;
-      if (spriteRef.current) {
-        spriteRef.current.style.backgroundPositionX = `-${frameRef.current * displaySize.w}px`;
-      }
-    }, animData.frameDuration);
-
-    return () => clearInterval(interval);
-  }, [animData, displaySize, spriteRef]);
-}
+import {
+  WIZARD_ANIMATIONS,
+  HERO_BACKGROUND,
+} from '@/lib/constants/wizardAnimations';
+import { AnimatedHeroBg } from './assets/amimated-hero-bg';
+import { computeDisplaySize, useSpriteAnimation } from './utils';
 
 export function AnimatedHero({
   wizardId,
@@ -51,8 +19,14 @@ export function AnimatedHero({
   const bgSpriteRef = useRef<HTMLDivElement>(null);
   const heroSpriteRef = useRef<HTMLDivElement>(null);
 
-  const [bgDisplaySize, setBgDisplaySize] = useState<{ w: number; h: number } | null>(null);
-  const [heroDisplaySize, setHeroDisplaySize] = useState<{ w: number; h: number } | null>(null);
+  const [bgDisplaySize, setBgDisplaySize] = useState<{
+    w: number;
+    h: number;
+  } | null>(null);
+  const [heroDisplaySize, setHeroDisplaySize] = useState<{
+    w: number;
+    h: number;
+  } | null>(null);
 
   const heroData = WIZARD_ANIMATIONS[wizardId];
 
@@ -80,19 +54,20 @@ export function AnimatedHero({
       ref={containerRef}
       className={`relative flex h-full w-full items-center justify-center${className ? ` ${className}` : ''}`}
     >
+      <AnimatedHeroBg className="absolute left-0 top-0 -z-[1] h-full w-full" />
       {/* Background layer */}
       {bgDisplaySize && (
         <div
           ref={bgSpriteRef}
-          className="absolute"
+          className="absolute py-4"
           style={{
             backgroundImage: `url(${HERO_BACKGROUND.sheetUrl})`,
             backgroundSize: `${bgDisplaySize.w * HERO_BACKGROUND.frameCount}px ${bgDisplaySize.h}px`,
             backgroundPositionX: '0px',
             backgroundPositionY: '0px',
             backgroundRepeat: 'no-repeat',
-            width: `${bgDisplaySize.w}px`,
-            height: `${bgDisplaySize.h}px`,
+            width: `${bgDisplaySize.w + 20}px`,
+            height: `${bgDisplaySize.h - 10}px`,
             imageRendering: 'pixelated',
           }}
         />
@@ -101,7 +76,7 @@ export function AnimatedHero({
       {heroData && heroDisplaySize && (
         <div
           ref={heroSpriteRef}
-          className="absolute"
+          className="absolute py-4"
           style={{
             backgroundImage: `url(${heroData.sheetUrl})`,
             backgroundSize: `${heroDisplaySize.w * heroData.frameCount}px ${heroDisplaySize.h}px`,

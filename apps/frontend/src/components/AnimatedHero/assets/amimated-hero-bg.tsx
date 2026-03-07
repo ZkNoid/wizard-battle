@@ -6,6 +6,8 @@ export const AnimatedHeroBg = ({ className }: { className: string }) => {
       viewBox="0 0 276 340"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      preserveAspectRatio="none"
     >
       <rect y="10" width="5" height="320" fill="#070C19" />
       <rect
@@ -22,8 +24,6 @@ export const AnimatedHeroBg = ({ className }: { className: string }) => {
         height="256"
         transform="rotate(90 266 335)"
         fill="#070C19"
-        className={className}
-        preserveAspectRatio="none"
       />
       <rect x="271" y="10" width="5" height="320" fill="#070C19" />
       <rect x="5" y="5" width="5" height="5" fill="#070C19" />
