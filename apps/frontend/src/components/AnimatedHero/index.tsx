@@ -15,7 +15,10 @@ export function AnimatedHero({
   wizardId: string;
   className?: string;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  // innerRef measures the usable area inside the SVG frame border.
+  // CSS positions it via percentage insets that match the SVG viewBox border:
+  // horizontal: 10/276 ≈ 3.62% per side, vertical: 10/340 ≈ 2.94% per side.
+  const innerRef = useRef<HTMLDivElement>(null);
   const bgSpriteRef = useRef<HTMLDivElement>(null);
   const heroSpriteRef = useRef<HTMLDivElement>(null);
 
@@ -33,9 +36,9 @@ export function AnimatedHero({
   useEffect(() => {
     setBgDisplaySize(null);
     setHeroDisplaySize(null);
-    if (!containerRef.current) return;
+    if (!innerRef.current) return;
 
-    const el = containerRef.current;
+    const el = innerRef.current;
     const measure = () => {
       setBgDisplaySize(computeDisplaySize(el, HERO_BACKGROUND));
       if (heroData) setHeroDisplaySize(computeDisplaySize(el, heroData));
@@ -51,44 +54,49 @@ export function AnimatedHero({
 
   return (
     <div
-      ref={containerRef}
       className={`relative flex h-full w-full items-center justify-center${className ? ` ${className}` : ''}`}
     >
       <AnimatedHeroBg className="absolute left-0 top-0 -z-[1] h-full w-full" />
-      {/* Background layer */}
-      {bgDisplaySize && (
-        <div
-          ref={bgSpriteRef}
-          className="absolute py-4"
-          style={{
-            backgroundImage: `url(${HERO_BACKGROUND.sheetUrl})`,
-            backgroundSize: `${bgDisplaySize.w * HERO_BACKGROUND.frameCount}px ${bgDisplaySize.h}px`,
-            backgroundPositionX: '0px',
-            backgroundPositionY: '0px',
-            backgroundRepeat: 'no-repeat',
-            width: `${bgDisplaySize.w + 20}px`,
-            height: `${bgDisplaySize.h - 10}px`,
-            imageRendering: 'pixelated',
-          }}
-        />
-      )}
-      {/* Hero layer */}
-      {heroData && heroDisplaySize && (
-        <div
-          ref={heroSpriteRef}
-          className="absolute py-4"
-          style={{
-            backgroundImage: `url(${heroData.sheetUrl})`,
-            backgroundSize: `${heroDisplaySize.w * heroData.frameCount}px ${heroDisplaySize.h}px`,
-            backgroundPositionX: '0px',
-            backgroundPositionY: '0px',
-            backgroundRepeat: 'no-repeat',
-            width: `${heroDisplaySize.w}px`,
-            height: `${heroDisplaySize.h}px`,
-            imageRendering: 'pixelated',
-          }}
-        />
-      )}
+      {/* Inner area matching SVG frame interior, sized via CSS percentage insets */}
+      <div
+        ref={innerRef}
+        className="absolute inset-x-[3.62%] inset-y-[2.94%] flex items-center justify-center"
+      >
+        {/* Background layer */}
+        {bgDisplaySize && (
+          <div
+            ref={bgSpriteRef}
+            className="absolute"
+            style={{
+              backgroundImage: `url(${HERO_BACKGROUND.sheetUrl})`,
+              backgroundSize: `${bgDisplaySize.w * HERO_BACKGROUND.frameCount}px ${bgDisplaySize.h}px`,
+              backgroundPositionX: '0px',
+              backgroundPositionY: '0px',
+              backgroundRepeat: 'no-repeat',
+              width: `${bgDisplaySize.w}px`,
+              height: `${bgDisplaySize.h}px`,
+              imageRendering: 'pixelated',
+            }}
+          />
+        )}
+        {/* Hero layer */}
+        {heroData && heroDisplaySize && (
+          <div
+            ref={heroSpriteRef}
+            className="absolute"
+            style={{
+              backgroundImage: `url(${heroData.sheetUrl})`,
+              backgroundSize: `${heroDisplaySize.w * heroData.frameCount}px ${heroDisplaySize.h}px`,
+              backgroundPositionX: '0px',
+              backgroundPositionY: '0px',
+              backgroundRepeat: 'no-repeat',
+              width: `${heroDisplaySize.w}px`,
+              height: `${heroDisplaySize.h}px`,
+              imageRendering: 'pixelated',
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }
