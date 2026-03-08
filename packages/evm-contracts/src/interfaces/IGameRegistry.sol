@@ -6,6 +6,7 @@ pragma solidity 0.8.30;
  * @author Alexander Scherbatyuk (http://x.com/AlexScherbatyuk)
  * @notice Interface for the GameRegistry contract
  */
+
 interface IGameRegistry {
     /*//////////////////////////////////////////////////////////////
                                ERRORS

@@ -8,6 +8,7 @@ import {WBResources} from "../src/tokens/ERC1155/WBResources.sol";
 import {WBCoin} from "../src/tokens/ERC20/WBCoin.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
+import {GameMarket} from "src/GameMarket.sol";
 
 contract DeployAll is Script {
     HelperConfig helperConfig;
@@ -29,6 +30,12 @@ contract DeployAll is Script {
                 abi.encodeCall(GameRegistry.initialize, (new string[](0), new string[](0), new string[](0), new string[](0), config.gameSigner))
             )
         );
+        vm.stopBroadcast();
+    }
+
+    function _deployGameMarket() internal returns (address gameMarket) {
+        vm.startBroadcast();
+        gameMarket = address(new ERC1967Proxy(address(new GameMarket()), abi.encodeCall(GameMarket.initialize, (3000, address(0)))));
         vm.stopBroadcast();
     }
 
@@ -82,6 +89,10 @@ contract DeployAll is Script {
 
         address wbItems =
             address(new ERC1967Proxy(address(new WBItems()), abi.encodeCall(WBItems.initialize, (msg.sender, msg.sender, msg.sender, msg.sender))));
+
+        address gameMarket = address(new ERC1967Proxy(address(new GameMarket()), abi.encodeCall(GameMarket.initialize, (3000, address(0)))));
+
+        GameMarket(payable(gameMarket)).setGameRegistry(gameRegistry);
 
         WBCharacters(wbCharacters).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
         WBCharacters(wbCharacters).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
