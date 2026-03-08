@@ -4,7 +4,7 @@ pragma solidity 0.8.30;
 import {AccessControlDefaultAdminRulesUpgradeable} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlDefaultAdminRulesUpgradeable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {ReentrancyGuardTransient} from "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {IGameRegistry} from "./interfaces/IGameRegistry.sol";
@@ -34,7 +34,7 @@ import {StringArray} from "./libraries/StringArray.sol";
  * - GAME_SIGNER_ROLE: can sign commit data, to mint, burn, transfer, etc game elements
  * - MARKET_ROLE: can sign commit marketplace transactions only for game elements that are registered in the registry
  */
-contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeable, EIP712Upgradeable, ReentrancyGuard, UUPSUpgradeable, IGameRegistry {
+contract GameRegistry is Initializable, AccessControlDefaultAdminRulesUpgradeable, EIP712Upgradeable, UUPSUpgradeable, ReentrancyGuardTransient, IGameRegistry {
     using StringArray for string[];
 
     /*//////////////////////////////////////////////////////////////
