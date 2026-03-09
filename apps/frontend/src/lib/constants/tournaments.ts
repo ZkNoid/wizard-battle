@@ -27,7 +27,7 @@ export const ALL_TOURNAMENTS: ITournament[] = [
       { type: 'currency', currency: 'gold', amount: 10000 },
       { type: 'inventory-item', itemId: 'staff-of-eternity', quantity: 1 },
     ],
-    sponsors: [{ name: 'Arcane Guild' }, { name: 'ZkNoid Labs' }],
+    sponsors: [{ name: 'Arcane Guild' }, { name: 'ZkNoid Labs', url: 'https://zknoid.io' }],
   },
   {
     id: '2',
@@ -59,7 +59,7 @@ export const ALL_TOURNAMENTS: ITournament[] = [
       { type: 'inventory-item', itemId: 'shadow-cloak', quantity: 1 },
       { type: 'inventory-item', itemId: 'void-potion', quantity: 3 },
     ],
-    sponsors: [{ name: 'Shadow Council' }],
+    sponsors: [{ name: 'Shadow Council', url: 'https://zknoid.io' }],
   },
   {
     id: '4',

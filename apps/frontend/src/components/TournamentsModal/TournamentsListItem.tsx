@@ -6,6 +6,16 @@ import { TournamentListItemImageBg } from './assets/tournament-list-item-image-b
 import { TournamentActionButton } from './TournamentActionButton';
 import type { ITournament, ITournamentAsset } from '@/lib/types/ITournament';
 
+function formatDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
 interface TournamentsListItemProps {
   tournament: ITournament;
   onClick?: (tournament: ITournament) => void;
@@ -77,7 +87,7 @@ export function TournamentsListItem({
           </span>
           &nbsp;
           <span className="font-pixel text-main-gray text-xs">
-            {tournament.dateFrom} — {tournament.dateTo}
+            {formatDate(tournament.dateFrom)} — {formatDate(tournament.dateTo)}
           </span>
         </span>
 
@@ -113,22 +123,39 @@ export function TournamentsListItem({
         </div>
 
         {/* Tournament sponsors */}
-        <div className="flex flex-row items-center gap-2">
-          <span className="font-pixel-klein text-main-gray/60 text-md">
-            Sponsors:
-          </span>
-          &nbsp;
-          <span className="font-pixel text-main-gray text-xs">
+        {tournament.sponsors.length > 0 && (
+          <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="font-pixel-klein text-main-gray/60 text-md">
+              Sponsors:
+            </span>
             {tournament.sponsors.map((sponsor, i) => (
-              <span key={i}>{sponsor.name}</span>
+              <span key={i}>
+                {sponsor.url ? (
+                  <a
+                    href={sponsor.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-pixel text-main-gray text-xs underline-offset-2 hover:underline"
+                  >
+                    {sponsor.name}
+                  </a>
+                ) : (
+                  <span className="font-pixel text-main-gray text-xs">
+                    {sponsor.name}
+                  </span>
+                )}
+              </span>
             ))}
-          </span>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Col 3 — action button */}
-      <div className="relative z-10 flex w-1/4 shrink-0 items-center justify-center px-4">
+      <div className="relative z-10 flex w-1/4 shrink-0 flex-col items-center justify-between self-stretch px-4 py-4">
         <TournamentActionButton tournament={tournament} onClick={onClick} />
+        <span className="font-pixel text-main-gray cursor-pointer text-xs underline-offset-2 hover:underline">
+          View tournament details
+        </span>
       </div>
     </div>
   );
