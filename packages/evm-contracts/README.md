@@ -6,14 +6,14 @@
 
 ### Avalanche Fuji (chain ID 43113)
 
-| Contract     | Proxy                                        | Implementation                               |
-| ------------ | -------------------------------------------- | -------------------------------------------- |
-| GameRegistry | `0x4e590B45fB999d93e981af65eB6A4eC06652A04D` | `0xF6ea80fA07C4FE3A45399A4b1d81ceF6Cc81D9B8` |
-| GameMarket   | `0x8865d8738E37671138D5270A7B4befeE83DeE904` | `0xD6Acb26f17F3C8c87C32cD781C97c86071562672` |
-| WBCoin       | `0x5D7Ea21B4FBfF8e607fedb76ed0681ae5CfA814f` | `0x02f2Ce71317AF30A1B6a98481ab0feb59fcdB0bf` |
-| WBResources  | `0xee52Ce7D2c46F8B728D74a030efCB78885F90E25` | `0xfBA871cFfc473fbcAC883663a38d5FdAa4586D5E` |
-| WBCharacters | `0x55e1cCD651A3e3e0EfC6b61e8c94878cbe87F64B` | `0x0a9054161D69de45d2016720cE663417e7627598` |
-| WBItems      | `0x6fC43f3cf1B27199F52F160f05645b1541292484` | `0x4B4b53E9FB8B2928D3aE423d91F6c8fd7aa322A6` |
+| Contract     | Proxy                                                                                                                                               | Implementation                                                                                                                                      |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GameRegistry | [`0x4e590B45fB999d93e981af65eB6A4eC06652A04D`](https://testnet.snowtrace.io/address/0x4e590B45fB999d93e981af65eB6A4eC06652A04D/contract/43113/code) | [`0xF6ea80fA07C4FE3A45399A4b1d81ceF6Cc81D9B8`](https://testnet.snowtrace.io/address/0xF6ea80fA07C4FE3A45399A4b1d81ceF6Cc81D9B8/contract/43113/code) |
+| GameMarket   | [`0x8865d8738E37671138D5270A7B4befeE83DeE904`](https://testnet.snowtrace.io/address/0x8865d8738E37671138D5270A7B4befeE83DeE904/contract/43113/code) | [`0xD6Acb26f17F3C8c87C32cD781C97c86071562672`](https://testnet.snowtrace.io/address/0xD6Acb26f17F3C8c87C32cD781C97c86071562672/contract/43113/code) |
+| WBCoin       | [`0x5D7Ea21B4FBfF8e607fedb76ed0681ae5CfA814f`](https://testnet.snowtrace.io/address/0x5D7Ea21B4FBfF8e607fedb76ed0681ae5CfA814f/contract/43113/code) | [`0x02f2Ce71317AF30A1B6a98481ab0feb59fcdB0bf`](https://testnet.snowtrace.io/address/0x02f2Ce71317AF30A1B6a98481ab0feb59fcdB0bf/contract/43113/code) |
+| WBResources  | [`0xee52Ce7D2c46F8B728D74a030efCB78885F90E25`](https://testnet.snowtrace.io/address/0xee52Ce7D2c46F8B728D74a030efCB78885F90E25/contract/43113/code) | [`0xfBA871cFfc473fbcAC883663a38d5FdAa4586D5E`](https://testnet.snowtrace.io/address/0xfBA871cFfc473fbcAC883663a38d5FdAa4586D5E/contract/43113/code) |
+| WBCharacters | [`0x55e1cCD651A3e3e0EfC6b61e8c94878cbe87F64B`](https://testnet.snowtrace.io/address/0x55e1cCD651A3e3e0EfC6b61e8c94878cbe87F64B/contract/43113/code) | [`0x0a9054161D69de45d2016720cE663417e7627598`](https://testnet.snowtrace.io/address/0x0a9054161D69de45d2016720cE663417e7627598/contract/43113/code) |
+| WBItems      | [`0x6fC43f3cf1B27199F52F160f05645b1541292484`](https://testnet.snowtrace.io/address/0x6fC43f3cf1B27199F52F160f05645b1541292484/contract/43113/code) | [`0x4B4b53E9FB8B2928D3aE423d91F6c8fd7aa322A6`](https://testnet.snowtrace.io/address/0x4B4b53E9FB8B2928D3aE423d91F6c8fd7aa322A6/contract/43113/code) |
 
 Explorer: https://testnet.snowtrace.io (routescan)
 
