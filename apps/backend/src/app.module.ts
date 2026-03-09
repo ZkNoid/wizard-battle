@@ -17,6 +17,7 @@ import { CraftingModule } from './crafting/crafting.module';
 import { RewardModule } from './reward/reward.module';
 import { UserModule } from './user/user.module';
 import { QuestsModule } from './quests/quests.module';
+import { MarketModule } from './market/market.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { QuestsModule } from './quests/quests.module';
     RewardModule,
     UserModule,
     QuestsModule,
+    MarketModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, RedisHealthService, GameStateService],

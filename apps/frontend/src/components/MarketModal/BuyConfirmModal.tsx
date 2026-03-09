@@ -11,12 +11,14 @@ interface BuyConfirmModalProps {
   item: IMarketBuyItem;
   onConfirm: (item: IMarketBuyItem, quantity: number) => void;
   onCancel: () => void;
+  isLoading?: boolean;
 }
 
 export function BuyConfirmModal({
   item,
   onConfirm,
   onCancel,
+  isLoading = false,
 }: BuyConfirmModalProps) {
   const [qty, setQty] = useState(1);
 
@@ -94,6 +96,7 @@ export function BuyConfirmModal({
               className="h-10 flex-1 text-sm"
               enableHoverSound
               enableClickSound
+              disabled={isLoading}
             >
               <span className="font-pixel text-base font-bold text-white">
                 Cancel
@@ -105,9 +108,10 @@ export function BuyConfirmModal({
               className="h-10 flex-1 text-sm"
               enableHoverSound
               enableClickSound
+              disabled={isLoading}
             >
               <span className="font-pixel text-main-gray text-base font-bold">
-                Buy
+                {isLoading ? 'Processing...' : 'Buy'}
               </span>
             </Button>
           </div>

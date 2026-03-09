@@ -27,6 +27,7 @@ export const env = createEnv({
       .default('An epic wizard battle game'),
     NEXT_PUBLIC_REOWN_PROJECT_ID: z.string(),
     NEXT_PUBLIC_GAME_REGISTRY_ADDRESS: z.string().optional(),
+    NEXT_PUBLIC_GAME_MARKET_ADDRESS: z.string().optional(),
     NEXT_PUBLIC_NETWORK_ID: z.string().optional(),
   },
 
@@ -41,6 +42,7 @@ export const env = createEnv({
     BACKEND_URL: process.env.BACKEND_URL,
     NEXT_PUBLIC_REOWN_PROJECT_ID: process.env.NEXT_PUBLIC_REOWN_PROJECT_ID,
     NEXT_PUBLIC_GAME_REGISTRY_ADDRESS: process.env.NEXT_PUBLIC_GAME_REGISTRY_ADDRESS,
+    NEXT_PUBLIC_GAME_MARKET_ADDRESS: process.env.NEXT_PUBLIC_GAME_MARKET_ADDRESS,
     NEXT_PUBLIC_NETWORK_ID: process.env.NEXT_PUBLIC_NETWORK_ID,
     NEXT_PUBLIC_PROJECT_NAME: process.env.NEXT_PUBLIC_PROJECT_NAME,
     NEXT_PUBLIC_PROJECT_URL: process.env.NEXT_PUBLIC_PROJECT_URL,

@@ -8,3 +8,4 @@ export { useAudioStore } from './audioStore';
 export { useCraftStore } from './craftStore';
 export { useQuestStore } from './questStore';
 export { useUserDataStore } from './userDataStore';
+export { useMarketStore } from './marketStore';

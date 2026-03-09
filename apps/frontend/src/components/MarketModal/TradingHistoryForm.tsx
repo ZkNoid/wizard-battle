@@ -1,12 +1,16 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useAppKitAccount } from '@reown/appkit/react';
 import ModalTitle from '../shared/ModalTitle';
 import {
   TradingHistoryFilterPanel,
   type TradingHistoryFilters,
 } from './TradingHistoryFilterPanel';
 import { TradingHistoryList } from './TradingHistoryList';
+import { useMarketStore } from '@/lib/store';
+import { mapOrderToHistoryItem } from '@/lib/utils/marketUtils';
+import type { IMarketHistoryItem } from '@/lib/types/IMarket';
 import { MARKET_HISTORY_ITEMS } from '@/lib/constants/market';
 
 interface TradingHistoryFormProps {
@@ -26,53 +30,66 @@ export function TradingHistoryForm({
   const [filters, setFilters] =
     useState<TradingHistoryFilters>(DEFAULT_FILTERS);
 
+  const { address } = useAppKitAccount();
+  const { userHistory, isLoadingHistory } = useMarketStore();
+
+  const items = useMemo<IMarketHistoryItem[]>(() => {
+    if (userHistory.length === 0) {
+      return MARKET_HISTORY_ITEMS;
+    }
+
+    return userHistory.map((order) =>
+      mapOrderToHistoryItem(order, address || '')
+    );
+  }, [userHistory, address]);
+
   const filteredItems = useMemo(() => {
-    let items = [...MARKET_HISTORY_ITEMS];
+    let result = [...items];
 
     if (filters.category !== 'all') {
-      items = items.filter((item) => item.type === filters.category);
+      result = result.filter((item) => item.type === filters.category);
     }
 
     const now = Date.now();
     switch (filters.sortBy) {
       case 'all_time':
-        items = items.sort(
+        result = result.sort(
           (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
         break;
       case 'last_24h':
-        items = items.filter(
+        result = result.filter(
           (item) => now - new Date(item.date).getTime() <= 24 * 60 * 60 * 1000
         );
         break;
       case 'last_week':
-        items = items.filter(
+        result = result.filter(
           (item) =>
             now - new Date(item.date).getTime() <= 7 * 24 * 60 * 60 * 1000
         );
         break;
       case 'last_month':
-        items = items.filter(
+        result = result.filter(
           (item) =>
             now - new Date(item.date).getTime() <= 30 * 24 * 60 * 60 * 1000
         );
         break;
       case 'price_high':
-        items = items.sort((a, b) => b.price - a.price);
+        result = result.sort((a, b) => b.price - a.price);
         break;
       case 'price_low':
-        items = items.sort((a, b) => a.price - b.price);
+        result = result.sort((a, b) => a.price - b.price);
         break;
       case 'only_gold':
-        items = items.filter((item) => item.priceCurrency === 'gold');
+        result = result.filter((item) => item.priceCurrency === 'gold');
         break;
       case 'only_usdc':
-        items = items.filter((item) => item.priceCurrency === 'usdc');
+        result = result.filter((item) => item.priceCurrency === 'usdc');
         break;
     }
 
-    return items;
-  }, [filters]);
+    return result;
+  }, [items, filters]);
 
   return (
     <div className="flex h-full w-full flex-col gap-4">
@@ -84,7 +101,13 @@ export function TradingHistoryForm({
         onTabChange={onTabChange}
       />
 
-      <TradingHistoryList items={filteredItems} />
+      {isLoadingHistory ? (
+        <div className="flex flex-1 items-center justify-center">
+          <span className="font-pixel text-main-gray">Loading history...</span>
+        </div>
+      ) : (
+        <TradingHistoryList items={filteredItems} />
+      )}
     </div>
   );
 }
