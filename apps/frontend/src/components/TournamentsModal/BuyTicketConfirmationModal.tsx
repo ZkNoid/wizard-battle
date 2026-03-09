@@ -25,7 +25,10 @@ export function BuyTicketConfirmationModal({
       className="fixed inset-0 z-50 flex items-center justify-center"
       onClick={onBack}
     >
-      <div className="relative h-80 w-80" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="relative h-auto min-h-80 w-80 min-w-80"
+        onClick={(e) => e.stopPropagation()}
+      >
         <BuyTicketConfirmBg className="pointer-events-none absolute inset-0 h-full w-full" />
 
         <div className="relative z-10 flex h-full flex-col items-center px-6 py-5">

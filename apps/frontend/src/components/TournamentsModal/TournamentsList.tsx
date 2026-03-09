@@ -6,12 +6,14 @@ import type { ITournament } from '@/lib/types/ITournament';
 
 interface TournamentsListProps {
   tournaments: ITournament[];
-  onItemClick?: (tournament: ITournament) => void;
+  onJoin?: (tournament: ITournament) => void;
+  onClaim?: (tournament: ITournament) => void;
 }
 
 export function TournamentsList({
   tournaments,
-  onItemClick,
+  onJoin,
+  onClaim,
 }: TournamentsListProps) {
   return (
     <div className="h-140">
@@ -26,7 +28,8 @@ export function TournamentsList({
               <TournamentsListItem
                 key={tournament.id}
                 tournament={tournament}
-                onClick={onItemClick}
+                onJoin={onJoin}
+                onClaim={onClaim}
               />
             ))}
           </div>

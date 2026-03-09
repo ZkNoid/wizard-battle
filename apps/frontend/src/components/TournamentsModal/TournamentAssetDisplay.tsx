@@ -1,18 +1,20 @@
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 import type { ITournamentAsset } from '@/lib/types/ITournament';
 
 interface TournamentAssetDisplayProps {
   asset: ITournamentAsset;
+  className?: string;
 }
 
-export function TournamentAssetDisplay({ asset }: TournamentAssetDisplayProps) {
+export function TournamentAssetDisplay({ asset, className }: TournamentAssetDisplayProps) {
   if (asset.type === 'currency') {
     const icon =
       asset.currency === 'gold'
         ? '/icons/gold-coin.png'
         : '/icons/usdс-coin.png';
     return (
-      <span className="font-pixel-klein flex items-center gap-1 text-sm font-bold">
+      <span className={cn('font-pixel-klein flex items-center gap-1 text-sm font-bold', className)}>
         <Image
           src={icon}
           width={14}
@@ -27,7 +29,7 @@ export function TournamentAssetDisplay({ asset }: TournamentAssetDisplayProps) {
   }
 
   return (
-    <span className="font-pixel-klein text-sm font-bold">
+    <span className={cn('font-pixel-klein text-sm font-bold', className)}>
       {asset.itemId} ×{asset.quantity}
     </span>
   );

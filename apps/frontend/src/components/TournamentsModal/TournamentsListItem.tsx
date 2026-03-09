@@ -10,12 +10,14 @@ import type { ITournament } from '@/lib/types/ITournament';
 
 interface TournamentsListItemProps {
   tournament: ITournament;
-  onClick?: (tournament: ITournament) => void;
+  onJoin?: (tournament: ITournament) => void;
+  onClaim?: (tournament: ITournament) => void;
 }
 
 export function TournamentsListItem({
   tournament,
-  onClick,
+  onJoin,
+  onClaim,
 }: TournamentsListItemProps) {
   return (
     <div className="font-pixel text-main-gray relative flex w-full flex-row items-stretch gap-0">
@@ -112,7 +114,7 @@ export function TournamentsListItem({
 
       {/* Col 3 — action button */}
       <div className="relative z-10 flex w-1/4 shrink-0 flex-col items-center justify-between self-stretch px-4 py-4">
-        <TournamentActionButton tournament={tournament} onClick={onClick} />
+        <TournamentActionButton tournament={tournament} onJoin={onJoin} onClaim={onClaim} />
         <span className="font-pixel text-main-gray cursor-pointer text-xs underline-offset-2 hover:underline">
           View tournament details
         </span>

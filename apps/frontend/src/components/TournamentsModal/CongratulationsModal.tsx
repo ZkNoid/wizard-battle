@@ -22,7 +22,10 @@ export function CongratulationsModal({
       className="fixed inset-0 z-50 flex items-center justify-center"
       onClick={onClose}
     >
-      <div className="relative h-80 w-80" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="relative h-96 w-80"
+        onClick={(e) => e.stopPropagation()}
+      >
         <BuyTicketConfirmBg className="pointer-events-none absolute inset-0 h-full w-full" />
 
         <div className="relative z-10 flex h-full flex-col items-center px-6 py-5">
@@ -30,12 +33,12 @@ export function CongratulationsModal({
           <h2 className="font-pixel text-main-gray text-lg font-bold">
             Congratulations!
           </h2>
-          <h2 className="font-pixel text-main-gray text-lg font-bold">
+          <h2 className="font-pixel text-main-gray text-center text-lg font-bold">
             You are the Champion!
           </h2>
 
           {/* Medal image */}
-          <div className="flex flex-1 items-center justify-center py-2">
+          <div className="flex flex-1 items-center justify-center">
             <Image
               src="/tournaments/medal.png"
               width={96}
@@ -47,19 +50,17 @@ export function CongratulationsModal({
           </div>
 
           {/* Rewards list */}
-          <div className="flex w-full flex-col gap-1">
-            <span className="font-pixel-klein text-main-gray/60 text-xs">
-              Your rewards:
-            </span>
+          <div className="flex w-full flex-row justify-between gap-1">
+            <span className="font-pixel text-main-gray text-lg">Rewards:</span>
             <div className="flex flex-col gap-1">
               {rewards.map((asset, i) => (
-                <TournamentAssetDisplay key={i} asset={asset} />
+                <TournamentAssetDisplay key={i} asset={asset} className="text-main-gray" />
               ))}
             </div>
           </div>
 
           {/* Actions */}
-          <div className="mt-4 flex w-full gap-2">
+          <div className="mt-auto flex w-full pt-4">
             <Button
               variant="green"
               onClick={onClaim}

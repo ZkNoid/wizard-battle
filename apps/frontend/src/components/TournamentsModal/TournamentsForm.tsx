@@ -7,6 +7,8 @@ import {
   type TournamentsFilters,
 } from './TournamentsFilterPanel';
 import { TournamentsList } from './TournamentsList';
+import { BuyTicketConfirmationModal } from './BuyTicketConfirmationModal';
+import { CongratulationsModal } from './CongratulationsModal';
 import { ALL_TOURNAMENTS } from '@/lib/constants/tournaments';
 import type { ITournament, ITournamentAsset } from '@/lib/types/ITournament';
 
@@ -49,8 +51,24 @@ function sortTournaments(
 
 export function TournamentsForm({ onClose }: TournamentsFormProps) {
   const [filters, setFilters] = useState<TournamentsFilters>(DEFAULT_FILTERS);
+  const [joinTournament, setJoinTournament] = useState<ITournament | null>(
+    null
+  );
+  const [claimTournament, setClaimTournament] = useState<ITournament | null>(
+    null
+  );
 
   const tournaments = sortTournaments(ALL_TOURNAMENTS, filters.sortBy);
+
+  const handleConfirmJoin = (tournament: ITournament) => {
+    // TODO: trigger buy ticket transaction and show result modal
+    setJoinTournament(null);
+  };
+
+  const handleConfirmClaim = () => {
+    // TODO: trigger claim rewards transaction
+    setClaimTournament(null);
+  };
 
   return (
     <div className="flex h-full w-full flex-col gap-4">
@@ -58,7 +76,27 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
 
       <TournamentsFilterPanel filters={filters} onFiltersChange={setFilters} />
 
-      <TournamentsList tournaments={tournaments} />
+      <TournamentsList
+        tournaments={tournaments}
+        onJoin={setJoinTournament}
+        onClaim={setClaimTournament}
+      />
+
+      {joinTournament && (
+        <BuyTicketConfirmationModal
+          tournament={joinTournament}
+          onConfirm={handleConfirmJoin}
+          onBack={() => setJoinTournament(null)}
+        />
+      )}
+
+      {claimTournament && (
+        <CongratulationsModal
+          rewards={claimTournament.prizePool}
+          onClaim={handleConfirmClaim}
+          onClose={() => setClaimTournament(null)}
+        />
+      )}
     </div>
   );
 }
