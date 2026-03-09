@@ -2,7 +2,6 @@
 
 import { Button } from '../shared/Button';
 import { motion } from 'motion/react';
-import { usePathname } from 'next/navigation';
 import {
   useAppKit,
   useAppKitAccount,
@@ -43,7 +42,6 @@ const targetNetwork = env.NEXT_PUBLIC_NETWORK_ID
   : avalanche;
 
 export default function WalletReown({ className }: WalletReownProps = {}) {
-  const pathname = usePathname();
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const { disconnect } = useDisconnect();
@@ -105,19 +103,27 @@ export default function WalletReown({ className }: WalletReownProps = {}) {
 
   // Save EVM address to DB when both wallets are connected and address_evm not yet set
   useEffect(() => {
-    if (isConnected && address && minaAddress && user && !user.address_evm) {
+    if (!isConnected || !address || !minaAddress || !user) return;
+
+    if (!user.address_evm) {
+      // No EVM address saved yet — save it
       setEvmAddress(
         { address: minaAddress, evmAddress: address },
         {
+          onSuccess: () => console.log('EVM address saved successfully'),
           onError: (err) => {
             console.warn('Failed to link EVM address:', err.message);
             alert(err.message);
-            void disconnect();
+            disconnect();
           },
         }
       );
+    } else if (user.address_evm.toLowerCase() !== address.toLowerCase()) {
+      // A different EVM address is already linked to this account
+      alert('This Mina account is already linked to a different EVM address.');
+      disconnect();
     }
-  }, [isConnected, address, minaAddress, user]);
+  }, [isConnected, address, minaAddress, user, setEvmAddress, disconnect]);
 
   const handleButtonClick = () => {
     if (isConnected) {
