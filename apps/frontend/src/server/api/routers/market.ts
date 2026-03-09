@@ -12,6 +12,7 @@ const MarketOrderSchema = z.object({
   token: z.string(),
   tokenId: z.string(),
   paymentToken: z.string(),
+  paymentTokenId: z.string().optional(),
   amount: z.string(),
   price: z.string(),
   status: OrderStatusEnum,

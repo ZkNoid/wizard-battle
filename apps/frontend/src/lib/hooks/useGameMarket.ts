@@ -21,6 +21,7 @@ const GAME_MARKET_ABI = [
       { name: 'price', type: 'uint256' },
       { name: 'amount', type: 'uint256' },
       { name: 'paymentToken', type: 'address' },
+      { name: 'paymentTokenId', type: 'uint256' },
       { name: 'nameHash', type: 'bytes32' },
     ],
     outputs: [{ name: 'orderId', type: 'uint256' }],
@@ -29,11 +30,7 @@ const GAME_MARKET_ABI = [
   {
     type: 'function',
     name: 'fillOrder',
-    inputs: [
-      { name: 'orderId', type: 'uint256' },
-      { name: 'paymentToken', type: 'address' },
-      { name: 'paymentTokenId', type: 'uint256' },
-    ],
+    inputs: [{ name: 'orderId', type: 'uint256' }],
     outputs: [],
     stateMutability: 'payable',
   },
@@ -236,6 +233,7 @@ export function useGameMarket() {
       price: bigint;
       amount: bigint;
       paymentToken: `0x${string}`;
+      paymentTokenId?: bigint;
       itemName: string;
     }) => {
       if (!requireWallet()) return;
@@ -252,6 +250,7 @@ export function useGameMarket() {
           params.price,
           params.amount,
           params.paymentToken,
+          params.paymentTokenId ?? 0n,
           nameHash,
         ],
       });
@@ -278,23 +277,14 @@ export function useGameMarket() {
   );
 
   const fillOrder = useCallback(
-    async (params: {
-      orderId: bigint;
-      paymentToken: `0x${string}`;
-      paymentTokenId?: bigint;
-      value?: bigint;
-    }) => {
+    async (params: { orderId: bigint; value?: bigint }) => {
       if (!requireWallet()) return;
 
       const txHash = await writeContractAsync({
         address: GAME_MARKET_ADDRESS,
         abi: GAME_MARKET_ABI,
         functionName: 'fillOrder',
-        args: [
-          params.orderId,
-          params.paymentToken,
-          params.paymentTokenId ?? 0n,
-        ],
+        args: [params.orderId],
         value: params.value,
       });
 
@@ -390,7 +380,6 @@ export function useGameMarket() {
 
       return fillOrder({
         orderId,
-        paymentToken: ZERO_ADDRESS,
         value: totalPrice,
       });
     },
@@ -398,21 +387,14 @@ export function useGameMarket() {
   );
 
   const buyWithERC20 = useCallback(
-    async (
-      orderId: bigint,
-      price: bigint,
-      paymentToken: `0x${string}`
-    ) => {
+    async (orderId: bigint, price: bigint, paymentToken: `0x${string}`) => {
       const totalPrice = await previewTotalPrice(price);
 
       // First approve the payment token
       await approveERC20(paymentToken, totalPrice);
 
-      // Then fill the order
-      return fillOrder({
-        orderId,
-        paymentToken,
-      });
+      // Then fill the order (payment token is already stored in the order)
+      return fillOrder({ orderId });
     },
     [fillOrder, previewTotalPrice, approveERC20]
   );

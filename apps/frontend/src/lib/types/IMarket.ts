@@ -16,6 +16,7 @@ export interface IMarketBuyItem {
   tokenAddress?: string;
   tokenId?: string;
   paymentToken?: string;
+  paymentTokenId?: string;
   nameHash?: string;
 }
 

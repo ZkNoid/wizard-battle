@@ -41,6 +41,7 @@ export function mapOrderToBuyItem(
     tokenAddress: order.token,
     tokenId: order.tokenId,
     paymentToken: order.paymentToken,
+    paymentTokenId: order.paymentTokenId,
     nameHash: order.nameHash,
   };
 }

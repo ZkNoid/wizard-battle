@@ -31,6 +31,9 @@ export class MarketOrder {
   @Prop({ required: true, lowercase: true })
   paymentToken!: string;
 
+  @Prop({ required: true, default: '0' })
+  paymentTokenId!: string;
+
   @Prop({ required: true })
   amount!: string;
 

@@ -18,13 +18,13 @@ import {
 } from '../schemas/indexer-state.schema';
 
 const GAME_MARKET_ABI = [
-  'event CreateOrder(uint256 indexed orderId, address indexed token, uint256 indexed tokenId, uint256 price, uint256 amount)',
-  'event OrderFilled(uint256 indexed orderId, address indexed maker, address indexed taker, address token, uint256 tokenId, uint256 amount, bytes32 nameHash)',
+  'event CreateOrder(uint256 indexed orderId, address indexed maker, address indexed token, uint256 tokenId, uint256 price, uint256 amount, address paymentToken, uint256 paymentTokenId, bytes32 nameHash)',
+  'event OrderFilled(uint256 indexed orderId, address indexed maker, address indexed taker, address token, uint256 tokenId, uint256 price, uint256 amount, address paymentToken, uint256 paymentTokenId, bytes32 nameHash)',
   'event CancelOrder(uint256 indexed orderId)',
   'event PauseOrder(uint256 indexed orderId)',
   'event UnpauseOrder(uint256 indexed orderId)',
-  'function getOrder(uint256 orderId) view returns (tuple(address maker, address taker, address token, uint256 tokenId, address paymentToken, uint256 amount, uint256 price, uint8 status, bytes32 nameHash))',
-  'function getOrderCount() view returns (uint256)',
+  'function getOrder(uint256 orderId) view returns (tuple(address maker, address taker, address token, uint256 tokenId, address paymentToken, uint256 paymentTokenId, uint256 amount, uint256 price, uint8 status, bytes32 nameHash))',
+  'function getnextOrderId() view returns (uint256)',
 ];
 
 @Injectable()
@@ -210,11 +210,17 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async handleCreateOrderEvent(event: ethers.EventLog) {
-    const contract = this.contract;
-    if (!contract) return;
-
     try {
+      // New event format: CreateOrder(orderId, maker, token, tokenId, price, amount, paymentToken, paymentTokenId, nameHash)
       const orderId = Number(event.args[0]);
+      const maker = (event.args[1] as string).toLowerCase();
+      const token = (event.args[2] as string).toLowerCase();
+      const tokenId = event.args[3].toString();
+      const price = event.args[4].toString();
+      const amount = event.args[5].toString();
+      const paymentToken = (event.args[6] as string).toLowerCase();
+      const paymentTokenId = event.args[7].toString();
+      const nameHash = event.args[8] as string;
 
       const existingOrder = await this.orderModel.findOne({ orderId });
       if (existingOrder) {
@@ -222,19 +228,18 @@ export class MarketIndexerService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
-      const order = await (contract as any).getOrder(orderId);
-
       await this.orderModel.create({
         orderId,
-        maker: order.maker.toLowerCase(),
+        maker,
         taker: undefined,
-        token: order.token.toLowerCase(),
-        tokenId: order.tokenId.toString(),
-        paymentToken: order.paymentToken.toLowerCase(),
-        amount: order.amount.toString(),
-        price: order.price.toString(),
+        token,
+        tokenId,
+        paymentToken,
+        paymentTokenId,
+        amount,
+        price,
         status: OrderStatus.OPEN,
-        nameHash: order.nameHash,
+        nameHash,
         blockNumber: event.blockNumber,
         transactionHash: event.transactionHash,
       });
