@@ -24,7 +24,7 @@ export function BuyItemsListItem({
         {/* Left: title, quantity, price */}
         <div className="flex h-full flex-1 flex-col">
           <span className="font-pixel text-main-gray text-sm font-bold leading-tight">
-            {item.title} Lv{item.level}
+            {item.title}
           </span>
           <span className="font-pixel-klein text-main-gray/70 mt-1 text-sm">
             Quantity: {item.quantity}

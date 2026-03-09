@@ -22,6 +22,8 @@ const MarketOrderSchema = z.object({
   createdAt: z.string().optional(),
   filledAt: z.string().optional(),
   canceledAt: z.string().optional(),
+  image: z.string().optional(),
+  title: z.string().optional(),
 });
 
 export type MarketOrder = z.infer<typeof MarketOrderSchema>;
