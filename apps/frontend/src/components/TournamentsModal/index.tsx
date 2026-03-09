@@ -1,0 +1,14 @@
+'use client';
+
+import { useModalSound } from '@/lib/hooks/useAudio';
+import { TournamentsModalForm } from './TournamentsModalForm';
+
+export default function TournamentsModal({ onClose }: { onClose: () => void }) {
+  useModalSound();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
+      <TournamentsModalForm onClose={onClose} />
+    </div>
+  );
+}
