@@ -76,6 +76,23 @@ const GAME_MARKET_ABI = [
     outputs: [{ name: '', type: 'bool' }],
     stateMutability: 'view',
   },
+  {
+    type: 'function',
+    name: 'getGameElementHash',
+    inputs: [{ name: 'resourceHash', type: 'bytes32' }],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple',
+        components: [
+          { name: 'tokenAddress', type: 'address' },
+          { name: 'tokenId', type: 'uint256' },
+          { name: 'requiresTokenId', type: 'bool' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
 ] as const;
 
 const ERC20_ABI = [
@@ -173,6 +190,32 @@ export function useGameMarket() {
   const generateNameHash = useCallback((itemName: string): `0x${string}` => {
     return keccak256(toBytes(itemName));
   }, []);
+
+  const getGameElement = useCallback(
+    async (
+      resourceHash: `0x${string}`
+    ): Promise<{
+      tokenAddress: `0x${string}`;
+      tokenId: bigint;
+      requiresTokenId: boolean;
+    } | null> => {
+      if (!publicClient) return null;
+
+      const result = await publicClient.readContract({
+        address: GAME_MARKET_ADDRESS,
+        abi: GAME_MARKET_ABI,
+        functionName: 'getGameElementHash',
+        args: [resourceHash],
+      });
+
+      return result as {
+        tokenAddress: `0x${string}`;
+        tokenId: bigint;
+        requiresTokenId: boolean;
+      };
+    },
+    [publicClient]
+  );
 
   const previewTotalPrice = useCallback(
     async (price: bigint): Promise<bigint> => {
@@ -409,6 +452,7 @@ export function useGameMarket() {
     // Utilities
     generateNameHash,
     previewTotalPrice,
+    getGameElement,
 
     // Approvals
     approveERC20,
