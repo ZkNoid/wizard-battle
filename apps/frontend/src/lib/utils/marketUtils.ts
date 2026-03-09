@@ -16,7 +16,7 @@ export function getPaymentCurrency(
   return 'gold';
 }
 
-export function formatPrice(priceWei: string, decimals: number = 18): number {
+export function formatPrice(priceWei: string, decimals = 18): number {
   const price = BigInt(priceWei);
   const divisor = BigInt(10 ** decimals);
   return Number(price) / Number(divisor);
@@ -88,6 +88,6 @@ export function mapOrderToHistoryItem(
   };
 }
 
-export function parsePrice(price: number, decimals: number = 18): bigint {
+export function parsePrice(price: number, decimals = 18): bigint {
   return BigInt(Math.floor(price * 10 ** decimals));
 }

@@ -208,7 +208,7 @@ export function useGameMarket() {
   );
 
   const approveNFT = useCallback(
-    async (tokenAddress: `0x${string}`, isERC1155: boolean = false) => {
+    async (tokenAddress: `0x${string}`, isERC1155 = false) => {
       if (!requireWallet()) return;
 
       const abi = isERC1155 ? ERC1155_ABI : ERC721_ABI;
