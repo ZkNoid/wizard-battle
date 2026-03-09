@@ -376,7 +376,7 @@ export class BlockchainService {
       }
 
       console.log(
-        `🪙 Minting ${amount} ${name} (tokenId: ${tokenId}) to player: ${playerAddress}`
+        `🪙 Burning ${amount} ${name} (tokenId: ${tokenId}) to player: ${playerAddress}`
       );
 
       // Step 1: Encode callData for mint function

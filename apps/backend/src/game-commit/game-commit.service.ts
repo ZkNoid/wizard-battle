@@ -566,8 +566,10 @@ export class GameCommitService {
           `   User has ${userHasAmount} of item ${invItem.itemId} in inventory, on-chain balance: ${userHasBalance}`
         );
         let commitData;
+        let amountToBurn;
         if (userHasAmount > 0 && userHasBalance < userHasAmount) {
           // 2. For each item, we call BlockchainService to generate signed mint callData to sync the inventory on-chain
+          amountToBurn = userHasAmount - Number(userHasBalance.toString());
           console.log(
             `   Generating mint callData to sync ${userHasAmount} of item ${invItem.itemId}...`
           );
@@ -575,12 +577,11 @@ export class GameCommitService {
             invItem.itemId,
             evmAddress,
             metaData?.tokenId || 0,
-            userHasAmount
+            amountToBurn
           );
         } else if (userHasAmount > 0 && userHasBalance > userHasAmount) {
           // If user has more than what's in inventory, we need to burn the excess
-          const amountToBurn =
-            Number(userHasBalance.toString()) - userHasAmount;
+          amountToBurn = Number(userHasBalance.toString()) - userHasAmount;
           console.log(
             `   Generating burn callData to remove ${amountToBurn} of item ${invItem.itemId}...`
           );
