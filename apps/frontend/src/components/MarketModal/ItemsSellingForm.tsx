@@ -12,7 +12,6 @@ import { useMarketStore } from '@/lib/store';
 import { useGameMarket } from '@/lib/hooks/useGameMarket';
 import { mapOrderToSellingItem } from '@/lib/utils/marketUtils';
 import type { IMarketSellingItem } from '@/lib/types/IMarket';
-import { MARKET_SELLING_ITEMS } from '@/lib/constants/market';
 
 interface ItemsSellingFormProps {
   onClose?: () => void;
@@ -34,15 +33,10 @@ export function ItemsSellingForm({
   );
   const [isCanceling, setIsCanceling] = useState(false);
 
-  const { userSellingOrders, isLoadingUserOrders, removeOrder } =
-    useMarketStore();
+  const { userSellingOrders, isLoadingUserOrders } = useMarketStore();
   const { cancelOrder, pauseOrder, unpauseOrder, isPending } = useGameMarket();
 
   const items = useMemo<IMarketSellingItem[]>(() => {
-    if (userSellingOrders.length === 0) {
-      return MARKET_SELLING_ITEMS;
-    }
-
     return userSellingOrders.map((order) => mapOrderToSellingItem(order));
   }, [userSellingOrders]);
 
@@ -90,8 +84,7 @@ export function ItemsSellingForm({
 
   const handleCancelConfirm = async (item: IMarketSellingItem) => {
     if (!item.orderId) {
-      removeOrder(parseInt(item.id, 10));
-      setCancelTarget(null);
+      console.error('Invalid order: missing orderId');
       return;
     }
 
@@ -116,6 +109,12 @@ export function ItemsSellingForm({
         <div className="flex flex-1 items-center justify-center">
           <span className="font-pixel text-main-gray">
             Loading your listings...
+          </span>
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center">
+          <span className="font-pixel text-main-gray/70">
+            You have no items listed for sale
           </span>
         </div>
       ) : (

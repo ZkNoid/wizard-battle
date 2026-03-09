@@ -12,7 +12,6 @@ import { useMarketStore } from '@/lib/store';
 import { useGameMarket } from '@/lib/hooks/useGameMarket';
 import { mapOrderToBuyItem } from '@/lib/utils/marketUtils';
 import type { IMarketBuyItem } from '@/lib/types/IMarket';
-import { MARKET_BUY_ITEMS } from '@/lib/constants/market';
 
 interface BuyItemsFormProps {
   onClose?: () => void;
@@ -39,17 +38,12 @@ export function BuyItemsForm({
   const { buyWithETH, buyWithERC20, isPending } = useGameMarket();
 
   const items = useMemo<IMarketBuyItem[]>(() => {
-    if (openOrders.length === 0) {
-      return MARKET_BUY_ITEMS;
-    }
-
     return openOrders.map((order) => mapOrderToBuyItem(order));
   }, [openOrders]);
 
-  const handleBuyConfirm = async (item: IMarketBuyItem, quantity: number) => {
-    if (!item.orderId || !item.paymentToken) {
-      console.log('Mock buy:', quantity, 'x', item.title);
-      setSelectedItem(null);
+  const handleBuyConfirm = async (item: IMarketBuyItem, _quantity: number) => {
+    if (!item.orderId) {
+      console.error('Invalid order: missing orderId');
       return;
     }
 
@@ -60,8 +54,11 @@ export function BuyItemsForm({
 
       if (item.priceCurrency === 'eth') {
         await buyWithETH(orderId, priceWei);
-      } else {
+      } else if (item.paymentToken) {
         await buyWithERC20(orderId, priceWei, item.paymentToken as `0x${string}`);
+      } else {
+        console.error('Invalid order: missing paymentToken for ERC20 payment');
+        return;
       }
 
       setSelectedItem(null);
@@ -118,6 +115,12 @@ export function BuyItemsForm({
       {isLoadingOrders ? (
         <div className="flex flex-1 items-center justify-center">
           <span className="font-pixel text-main-gray">Loading orders...</span>
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center">
+          <span className="font-pixel text-main-gray/70">
+            No items available for sale
+          </span>
         </div>
       ) : (
         <BuyItemsList items={filteredItems} onItemClick={setSelectedItem} />
