@@ -1,5 +1,6 @@
 export interface IUser {
   address: string;
+  address_evm?: string;
   name?: string;
   xp: number;
   archer_xp: number;
