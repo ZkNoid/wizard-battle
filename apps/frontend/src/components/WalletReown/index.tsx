@@ -19,6 +19,8 @@ import type {
   WalletConnectionInitiatedProps,
   WalletConnectionSuccessProps,
 } from '@/lib/analytics/types';
+import { useMinaAppkit } from 'mina-appkit';
+import { api } from '@/trpc/react';
 
 // Helper function to format address (similar to Mina's formatAddress)
 const formatAddress = (address: string): string => {
@@ -47,6 +49,13 @@ export default function WalletReown({ className }: WalletReownProps = {}) {
   const { disconnect } = useDisconnect();
   const { chainId, switchNetwork } = useAppKitNetwork();
   const hasTrackedConnection = useRef(false);
+
+  const { address: minaAddress } = useMinaAppkit();
+  const { data: user } = api.users.get.useQuery(
+    { address: minaAddress ?? '' },
+    { enabled: !!minaAddress }
+  );
+  const { mutate: setEvmAddress } = api.users.setEvmAddress.useMutation();
 
   // Track if this is the initial mount to prevent auto-popup
   const isInitialMount = useRef(true);
@@ -93,6 +102,22 @@ export default function WalletReown({ className }: WalletReownProps = {}) {
       hasTrackedConnection.current = false;
     }
   }, [isConnected, address]);
+
+  // Save EVM address to DB when both wallets are connected and address_evm not yet set
+  useEffect(() => {
+    if (isConnected && address && minaAddress && user && !user.address_evm) {
+      setEvmAddress(
+        { address: minaAddress, evmAddress: address },
+        {
+          onError: (err) => {
+            console.warn('Failed to link EVM address:', err.message);
+            alert(err.message);
+            void disconnect();
+          },
+        }
+      );
+    }
+  }, [isConnected, address, minaAddress, user]);
 
   const handleButtonClick = () => {
     if (isConnected) {

@@ -15,9 +15,9 @@ deployGR-fuji:; forge script script/DeployGameRegestry.s.sol:DeployGameRegestry 
 
 deployGM-fuji:; forge script script/DeployGameMarket.s.sol:DeployGameMarket --broadcast --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
 
-deployAll-anvil:;forge script script/DeployAll.s.sol:DeployAll --broadcast --rpc-url 127.0.0.1:8545 --account defaultKey --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 -vvvv
+deployAll-anvil:;forge script script/DeployAll.s.sol:DeployAll --broadcast --rpc-url 127.0.0.1:8545 --account defaultKey --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
 
-upgradeMarket-fuji:; forge script script/UpgradeMarket.s.sol --rpc-url ${AVALANCHE_FUJI_RPC_URL} --broadcast --account devKey -vvvv
+upgradeMarket-fuji:; forge script script/UpgradeMarket.s.sol --rpc-url ${AVALANCHE_FUJI_RPC_URL} --broadcast --account devKey --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
 
 test-fuji:
 
