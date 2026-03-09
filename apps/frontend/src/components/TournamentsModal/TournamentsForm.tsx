@@ -7,7 +7,8 @@ import {
   type TournamentsFilters,
 } from './TournamentsFilterPanel';
 import { TournamentsList } from './TournamentsList';
-import type { ITournament } from './TournamentsListItem';
+import { ALL_TOURNAMENTS } from '@/lib/constants/tournaments';
+import type { ITournament, ITournamentAsset } from '@/lib/types/ITournament';
 
 interface TournamentsFormProps {
   onClose?: () => void;
@@ -17,24 +18,39 @@ const DEFAULT_FILTERS: TournamentsFilters = {
   sortBy: 'new_to_old',
 };
 
+function getPrizeScore(prizePool: ITournamentAsset[]): number {
+  return prizePool.reduce((sum, asset) => {
+    if (asset.type === 'currency') return sum + asset.amount;
+    return sum;
+  }, 0);
+}
+
+function sortTournaments(
+  tournaments: ITournament[],
+  sortBy: string
+): ITournament[] {
+  const sorted = [...tournaments];
+  switch (sortBy) {
+    case 'old_to_new':
+      return sorted.sort((a, b) => a.startDate.localeCompare(b.startDate));
+    case 'prize_high':
+      return sorted.sort(
+        (a, b) => getPrizeScore(b.prizePool) - getPrizeScore(a.prizePool)
+      );
+    case 'prize_low':
+      return sorted.sort(
+        (a, b) => getPrizeScore(a.prizePool) - getPrizeScore(b.prizePool)
+      );
+    case 'new_to_old':
+    default:
+      return sorted.sort((a, b) => b.startDate.localeCompare(a.startDate));
+  }
+}
+
 export function TournamentsForm({ onClose }: TournamentsFormProps) {
   const [filters, setFilters] = useState<TournamentsFilters>(DEFAULT_FILTERS);
 
-  const tournaments: ITournament[] = [];
-
-  const sortedTournaments = [...tournaments].sort((a, b) => {
-    switch (filters.sortBy) {
-      case 'old_to_new':
-        return a.startDate.localeCompare(b.startDate);
-      case 'prize_high':
-        return b.prizePool - a.prizePool;
-      case 'prize_low':
-        return a.prizePool - b.prizePool;
-      case 'new_to_old':
-      default:
-        return b.startDate.localeCompare(a.startDate);
-    }
-  });
+  const tournaments = sortTournaments(ALL_TOURNAMENTS, filters.sortBy);
 
   return (
     <div className="flex h-full w-full flex-col gap-4">
@@ -42,7 +58,7 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
 
       <TournamentsFilterPanel filters={filters} onFiltersChange={setFilters} />
 
-      <TournamentsList tournaments={sortedTournaments} />
+      <TournamentsList tournaments={tournaments} />
     </div>
   );
 }
