@@ -41,6 +41,6 @@ export interface ITournamentInventoryAsset {
 }
 
 export interface ITournamentSponsor {
-  // TODO: mb add url to sponsor's page?
   name: string;
+  url?: string;
 }
