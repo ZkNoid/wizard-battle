@@ -10,6 +10,13 @@ export interface IMarketBuyItem {
   price: number;
   priceCurrency: string;
   tooltipItem?: AnyInventoryItem;
+  // Extended fields for contract interaction
+  orderId?: number;
+  maker?: string;
+  tokenAddress?: string;
+  tokenId?: string;
+  paymentToken?: string;
+  nameHash?: string;
 }
 
 export interface IMarketHistoryItem {
@@ -36,4 +43,7 @@ export interface IMarketSellingItem {
   priceCurrency: 'gold' | 'usdc';
   listedAt: string;
   status: 'on_sale' | 'sold';
+  // Extended fields for contract interaction
+  orderId?: number;
+  orderStatus?: string;
 }

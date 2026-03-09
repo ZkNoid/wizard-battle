@@ -8,8 +8,11 @@ import {
 } from './ItemsSellingFilterPanel';
 import { SellingList } from './SellingList';
 import { CancelSaleConfirmModal } from './CancelSaleConfirmModal';
-import { MARKET_SELLING_ITEMS } from '@/lib/constants/market';
+import { useMarketStore } from '@/lib/store';
+import { useGameMarket } from '@/lib/hooks/useGameMarket';
+import { mapOrderToSellingItem } from '@/lib/utils/marketUtils';
 import type { IMarketSellingItem } from '@/lib/types/IMarket';
+import { MARKET_SELLING_ITEMS } from '@/lib/constants/market';
 
 interface ItemsSellingFormProps {
   onClose?: () => void;
@@ -26,10 +29,22 @@ export function ItemsSellingForm({
   onTabChange,
 }: ItemsSellingFormProps) {
   const [filters, setFilters] = useState<ItemsSellingFilters>(DEFAULT_FILTERS);
-  const [items, setItems] = useState(MARKET_SELLING_ITEMS);
   const [cancelTarget, setCancelTarget] = useState<IMarketSellingItem | null>(
     null
   );
+  const [isCanceling, setIsCanceling] = useState(false);
+
+  const { userSellingOrders, isLoadingUserOrders, removeOrder } =
+    useMarketStore();
+  const { cancelOrder, pauseOrder, unpauseOrder, isPending } = useGameMarket();
+
+  const items = useMemo<IMarketSellingItem[]>(() => {
+    if (userSellingOrders.length === 0) {
+      return MARKET_SELLING_ITEMS;
+    }
+
+    return userSellingOrders.map((order) => mapOrderToSellingItem(order));
+  }, [userSellingOrders]);
 
   const filteredItems = useMemo(() => {
     let result = [...items];
@@ -73,9 +88,22 @@ export function ItemsSellingForm({
     setCancelTarget(item);
   };
 
-  const handleCancelConfirm = (item: IMarketSellingItem) => {
-    setItems((prev) => prev.filter((i) => i.id !== item.id));
-    setCancelTarget(null);
+  const handleCancelConfirm = async (item: IMarketSellingItem) => {
+    if (!item.orderId) {
+      removeOrder(parseInt(item.id, 10));
+      setCancelTarget(null);
+      return;
+    }
+
+    setIsCanceling(true);
+    try {
+      await cancelOrder(BigInt(item.orderId));
+      setCancelTarget(null);
+    } catch (error) {
+      console.error('Cancel failed:', error);
+    } finally {
+      setIsCanceling(false);
+    }
   };
 
   return (
@@ -84,13 +112,22 @@ export function ItemsSellingForm({
 
       <ItemsSellingFilterPanel filters={filters} onFiltersChange={setFilters} />
 
-      <SellingList items={filteredItems} onCancel={handleCancelRequest} />
+      {isLoadingUserOrders ? (
+        <div className="flex flex-1 items-center justify-center">
+          <span className="font-pixel text-main-gray">
+            Loading your listings...
+          </span>
+        </div>
+      ) : (
+        <SellingList items={filteredItems} onCancel={handleCancelRequest} />
+      )}
 
       {cancelTarget && (
         <CancelSaleConfirmModal
           item={cancelTarget}
           onConfirm={handleCancelConfirm}
           onBack={() => setCancelTarget(null)}
+          isLoading={isCanceling || isPending}
         />
       )}
     </div>

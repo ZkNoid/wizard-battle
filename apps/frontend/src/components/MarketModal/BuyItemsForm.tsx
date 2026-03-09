@@ -8,8 +8,11 @@ import {
 } from './BuyItemsFilterPanel';
 import { BuyItemsList } from './BuyItemsList';
 import { BuyConfirmModal } from './BuyConfirmModal';
-import { MARKET_BUY_ITEMS } from '@/lib/constants/market';
+import { useMarketStore } from '@/lib/store';
+import { useGameMarket } from '@/lib/hooks/useGameMarket';
+import { mapOrderToBuyItem } from '@/lib/utils/marketUtils';
 import type { IMarketBuyItem } from '@/lib/types/IMarket';
+import { MARKET_BUY_ITEMS } from '@/lib/constants/market';
 
 interface BuyItemsFormProps {
   onClose?: () => void;
@@ -30,46 +33,81 @@ export function BuyItemsForm({
 }: BuyItemsFormProps) {
   const [filters, setFilters] = useState<BuyItemsFilters>(DEFAULT_FILTERS);
   const [selectedItem, setSelectedItem] = useState<IMarketBuyItem | null>(null);
+  const [isBuying, setIsBuying] = useState(false);
 
-  const handleBuyConfirm = (item: IMarketBuyItem, quantity: number) => {
-    console.log('Buying', quantity, 'x', item.title);
-    setSelectedItem(null);
+  const { openOrders, isLoadingOrders } = useMarketStore();
+  const { buyWithETH, buyWithERC20, isPending } = useGameMarket();
+
+  const items = useMemo<IMarketBuyItem[]>(() => {
+    if (openOrders.length === 0) {
+      return MARKET_BUY_ITEMS;
+    }
+
+    return openOrders.map((order) => mapOrderToBuyItem(order));
+  }, [openOrders]);
+
+  const handleBuyConfirm = async (item: IMarketBuyItem, quantity: number) => {
+    if (!item.orderId || !item.paymentToken) {
+      console.log('Mock buy:', quantity, 'x', item.title);
+      setSelectedItem(null);
+      return;
+    }
+
+    setIsBuying(true);
+    try {
+      const orderId = BigInt(item.orderId);
+      const priceWei = BigInt(Math.floor(item.price * 1e18));
+
+      if (item.priceCurrency === 'eth') {
+        await buyWithETH(orderId, priceWei);
+      } else {
+        await buyWithERC20(orderId, priceWei, item.paymentToken as `0x${string}`);
+      }
+
+      setSelectedItem(null);
+    } catch (error) {
+      console.error('Buy failed:', error);
+    } finally {
+      setIsBuying(false);
+    }
   };
 
   const filteredItems = useMemo<IMarketBuyItem[]>(() => {
-    let items = [...MARKET_BUY_ITEMS];
+    let result = [...items];
 
     if (filters.category !== 'all') {
-      items = items.filter((item) => item.type === filters.category);
+      result = result.filter((item) => item.type === filters.category);
     }
 
     if (filters.search.trim()) {
       const query = filters.search.trim().toLowerCase();
-      items = items.filter((item) => item.title.toLowerCase().includes(query));
+      result = result.filter((item) =>
+        item.title.toLowerCase().includes(query)
+      );
     }
 
     switch (filters.sortBy) {
       case 'new_to_old':
         break;
       case 'old_to_new':
-        items = items.reverse();
+        result = result.reverse();
         break;
       case 'price_high':
-        items = items.sort((a, b) => b.price - a.price);
+        result = result.sort((a, b) => b.price - a.price);
         break;
       case 'price_low':
-        items = items.sort((a, b) => a.price - b.price);
+        result = result.sort((a, b) => a.price - b.price);
         break;
       case 'only_gold':
-        items = items.filter((item) => item.priceCurrency === 'gold');
+        result = result.filter((item) => item.priceCurrency === 'gold');
         break;
       case 'only_usdc':
-        items = items.filter((item) => item.priceCurrency === 'usdc');
+        result = result.filter((item) => item.priceCurrency === 'usdc');
         break;
     }
 
-    return items;
-  }, [filters]);
+    return result;
+  }, [items, filters]);
 
   return (
     <div className="flex h-full w-full flex-col gap-4">
@@ -77,13 +115,20 @@ export function BuyItemsForm({
 
       <BuyItemsFilterPanel filters={filters} onFiltersChange={setFilters} />
 
-      <BuyItemsList items={filteredItems} onItemClick={setSelectedItem} />
+      {isLoadingOrders ? (
+        <div className="flex flex-1 items-center justify-center">
+          <span className="font-pixel text-main-gray">Loading orders...</span>
+        </div>
+      ) : (
+        <BuyItemsList items={filteredItems} onItemClick={setSelectedItem} />
+      )}
 
       {selectedItem && (
         <BuyConfirmModal
           item={selectedItem}
           onConfirm={handleBuyConfirm}
           onCancel={() => setSelectedItem(null)}
+          isLoading={isBuying || isPending}
         />
       )}
     </div>
