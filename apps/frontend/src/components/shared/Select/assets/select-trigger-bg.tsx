@@ -7,6 +7,7 @@ export const SelectTriggerBg = ({ className }: { className: string }) => {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      preserveAspectRatio="none"
     >
       <rect y="10" width="5" height="30" fill="#070C19" />
       <rect
