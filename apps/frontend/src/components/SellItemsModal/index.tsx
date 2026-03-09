@@ -20,6 +20,8 @@ import {
 
 const GAME_REGISTRY_ADDRESS = process.env
   .NEXT_PUBLIC_GAME_REGISTRY_ADDRESS as `0x${string}`;
+const RESOURCES_CONTRACT_ADDRESS = process.env
+  .NEXT_PUBLIC_RESOURCES_CONTRACT_ADDRESS as `0x${string}`;
 const USDC_TOKEN_ADDRESS = process.env
   .NEXT_PUBLIC_USDC_TOKEN_ADDRESS as `0x${string}`;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
@@ -84,8 +86,8 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
         ? BigInt(keccak256(toBytes(GOLD_RESOURCE_ID)))
         : 0n;
 
-      if (GAME_REGISTRY_ADDRESS) {
-        await approveNFT(GAME_REGISTRY_ADDRESS, true);
+      if (RESOURCES_CONTRACT_ADDRESS) {
+        await approveNFT(RESOURCES_CONTRACT_ADDRESS, true);
       }
 
       await createOrder({
