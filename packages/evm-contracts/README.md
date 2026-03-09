@@ -9,7 +9,7 @@
 | Contract     | Proxy                                        | Implementation                               |
 | ------------ | -------------------------------------------- | -------------------------------------------- |
 | GameRegistry | `0x4e590B45fB999d93e981af65eB6A4eC06652A04D` | `0xF6ea80fA07C4FE3A45399A4b1d81ceF6Cc81D9B8` |
-| GameMarket   | `0xdf767a5d5D14c60e5C31fDBD839106AA6dAe34F8` | `0x5A8536EdBDB699D2EAfdC9341F0d434424914d43` |
+| GameMarket   | `0x8865d8738E37671138D5270A7B4befeE83DeE904` | `0xD6Acb26f17F3C8c87C32cD781C97c86071562672` |
 | WBCoin       | `0x5D7Ea21B4FBfF8e607fedb76ed0681ae5CfA814f` | `0x02f2Ce71317AF30A1B6a98481ab0feb59fcdB0bf` |
 | WBResources  | `0xee52Ce7D2c46F8B728D74a030efCB78885F90E25` | `0xfBA871cFfc473fbcAC883663a38d5FdAa4586D5E` |
 | WBCharacters | `0x55e1cCD651A3e3e0EfC6b61e8c94878cbe87F64B` | `0x0a9054161D69de45d2016720cE663417e7627598` |
@@ -24,7 +24,7 @@ Default addresses when deploying with `make deployAll-anvil` (deterministic, sen
 | Contract     | Proxy                                        | Implementation                               |
 | ------------ | -------------------------------------------- | -------------------------------------------- |
 | GameRegistry | `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512` | `0x5FbDB2315678afecb367f032d93F642f64180aa3` |
-| GameMarket   | `0x8865d8738E37671138D5270A7B4befeE83DeE904` | `0xD6Acb26f17F3C8c87C32cD781C97c86071562672` |
+| GameMarket   | `0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e` | `0x610178dA211FEF7D417bC0e6FeD39F05609AD788` |
 | WBCoin       | `0xa513E6E4b8f2a923D98304ec87F64353C4D5C853` | `0x0165878A594ca255338adfa4d48449f69242Eb8F` |
 | WBResources  | `0x5FC8d32690cc91D4c39d9d3abcBD16989F875707` | `0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9` |
 | WBCharacters | `0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9` | `0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0` |
