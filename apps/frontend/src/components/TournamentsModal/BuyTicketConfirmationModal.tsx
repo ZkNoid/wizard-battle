@@ -11,24 +11,19 @@ interface BuyTicketConfirmationModalProps {
   tournament: ITournament;
   onConfirm: (tournament: ITournament) => void;
   onBack: () => void;
-  isLoading?: boolean;
 }
 
 export function BuyTicketConfirmationModal({
   tournament,
   onConfirm,
   onBack,
-  isLoading = false,
 }: BuyTicketConfirmationModalProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
       onClick={onBack}
     >
-      <div
-        className="relative h-auto min-h-80 w-80 min-w-80"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="h-90 relative w-80" onClick={(e) => e.stopPropagation()}>
         <BuyTicketConfirmBg className="pointer-events-none absolute inset-0 h-full w-full" />
 
         <div className="relative z-10 flex h-full flex-col items-center px-6 py-5">
@@ -37,40 +32,37 @@ export function BuyTicketConfirmationModal({
             Buy ticket
           </h2>
 
-          {/* Tournament image */}
-          <div className="flex flex-1 items-center justify-center py-2">
+          {/* Ticket image */}
+          <div className="flex items-center justify-center">
             <Image
-              src={tournament.imageURL}
+              src="/tournaments/ticket.png"
               width={96}
               height={96}
-              alt={tournament.title}
-              className="h-20 w-20 object-contain object-center"
+              alt="medal"
+              className="h-30 w-30 object-contain object-center"
               unoptimized
             />
           </div>
 
           {/* Tournament name */}
-          <span className="font-pixel text-main-gray w-full text-sm font-bold">
+          {/* <span className="font-pixel text-main-gray w-full text-sm font-bold">
             {tournament.title}
-          </span>
+          </span> */}
 
-          {/* Dates */}
-          <div className="mt-1 flex w-full items-center justify-between">
-            <span className="font-pixel-klein text-main-gray/60 text-xs">
-              Dates:
-            </span>
-            <span className="font-pixel-klein text-main-gray text-xs">
-              {formatDateRange(tournament.dateFrom, tournament.dateTo)}
-            </span>
+          {/* Description */}
+          <div className="font-pixel-klein text-main-gray/60 text-center text-sm">
+            To participate in the tournament, you need to buy an entrance
+            ticket. Its cost is shown below
           </div>
 
           {/* Ticket cost */}
           <div className="mt-1 flex w-full items-center justify-between">
-            <span className="font-pixel-klein text-main-gray/60 text-xs">
-              Ticket cost:
-            </span>
+            <span className="font-pixel text-main-gray text-xs">Price:</span>
             {tournament.ticketCost ? (
-              <TournamentAssetDisplay asset={tournament.ticketCost} />
+              <TournamentAssetDisplay
+                asset={tournament.ticketCost}
+                className="text-main-gray"
+              />
             ) : (
               <span className="font-pixel-klein text-sm font-bold text-green-400">
                 Free
@@ -79,30 +71,26 @@ export function BuyTicketConfirmationModal({
           </div>
 
           {/* Actions */}
-          <div className="mt-4 flex w-full gap-2">
+          <div className="mt-auto flex w-full gap-2 pt-4">
             <Button
-              variant="gray"
+              variant="red"
               onClick={onBack}
               className="h-12 flex-1"
               enableHoverSound
               enableClickSound
-              disabled={isLoading}
             >
-              <span className="font-pixel text-main-gray text-base font-bold">
-                Back
+              <span className="font-pixel text-main-white text-base font-bold">
+                Cancel
               </span>
             </Button>
             <Button
-              variant="blue"
+              variant="green"
               onClick={() => onConfirm(tournament)}
               className="h-12 flex-1"
               enableHoverSound
               enableClickSound
-              disabled={isLoading}
             >
-              <span className="font-pixel text-base font-bold text-white">
-                {isLoading ? 'Processing...' : 'Confirm'}
-              </span>
+              <span className="font-pixel text-base font-bold">Buy</span>
             </Button>
           </div>
         </div>
