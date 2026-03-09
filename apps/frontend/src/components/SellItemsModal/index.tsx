@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { parseEther, keccak256, toBytes } from 'viem';
 import ModalTitle from '../shared/ModalTitle';
 import { Button } from '../shared/Button';
 import { QuantitySelector } from '../shared/QuantitySelector';
@@ -11,10 +12,18 @@ import { OfferPreview } from './OfferPreview';
 import { useInventoryStore } from '@/lib/store';
 import { useModalSound } from '@/lib/hooks/useAudio';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
+import { useGameMarket } from '@/lib/hooks/useGameMarket';
 import {
   MARKET_CURRENCY_OPTIONS,
   MARKET_SELL_ITEM_TYPE_OPTIONS,
 } from '@/lib/constants/market';
+
+const GAME_REGISTRY_ADDRESS = process.env
+  .NEXT_PUBLIC_GAME_REGISTRY_ADDRESS as `0x${string}`;
+const USDC_TOKEN_ADDRESS = process.env
+  .NEXT_PUBLIC_USDC_TOKEN_ADDRESS as `0x${string}`;
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+const GOLD_RESOURCE_ID = 'gold';
 
 interface SellItemsModalProps {
   onClose: () => void;
@@ -26,6 +35,7 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
   const iteminventory = useInventoryStore((state) => state.iteminventory);
   const { setIsRequestSuccessModalOpen, setIsRequestFailureModalOpen } =
     useMiscellaneousSessionStore();
+  const { createOrder, approveNFT, isPending } = useGameMarket();
 
   const [itemName, setItemName] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
@@ -33,6 +43,7 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
   const [itemType, setItemType] = useState('');
   const [currency, setCurrency] = useState('gold');
   const [price, setPrice] = useState('');
+  const [isPlacing, setIsPlacing] = useState(false);
 
   const inventoryOptions = useMemo(
     () =>
@@ -55,13 +66,45 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
     setQuantity(1);
   };
 
-  const handlePlaceOrder = () => {
-    if (!selectedItemId || !price || Number(price) <= 0) return;
+  const handlePlaceOrder = async () => {
+    if (!selectedItemId || !price || Number(price) <= 0 || !selectedUserItem)
+      return;
 
-    if (Math.random() < 0.5) {
+    setIsPlacing(true);
+    try {
+      const tokenId = BigInt(keccak256(toBytes(selectedUserItem.item.id)));
+
+      const priceWei = parseEther(price);
+
+      const isGoldPayment = currency === 'gold';
+      const paymentToken = isGoldPayment
+        ? (GAME_REGISTRY_ADDRESS ?? ZERO_ADDRESS)
+        : (USDC_TOKEN_ADDRESS ?? ZERO_ADDRESS);
+      const paymentTokenId = isGoldPayment
+        ? BigInt(keccak256(toBytes(GOLD_RESOURCE_ID)))
+        : 0n;
+
+      if (GAME_REGISTRY_ADDRESS) {
+        await approveNFT(GAME_REGISTRY_ADDRESS, true);
+      }
+
+      await createOrder({
+        token: GAME_REGISTRY_ADDRESS ?? ZERO_ADDRESS,
+        tokenId,
+        price: priceWei,
+        amount: BigInt(quantity),
+        paymentToken,
+        paymentTokenId,
+        itemName: itemName || selectedUserItem.item.title,
+      });
+
       setIsRequestSuccessModalOpen(true);
-    } else {
+      onClose();
+    } catch (error) {
+      console.error('Failed to place order:', error);
       setIsRequestFailureModalOpen(true);
+    } finally {
+      setIsPlacing(false);
     }
   };
 
@@ -162,13 +205,13 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
             variant="gray"
             className="mt-auto h-14 w-full"
             onClick={handlePlaceOrder}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isPlacing || isPending}
             enableHoverSound
             enableClickSound
             isLong
           >
             <span className="font-pixel text-main-gray text-lg font-bold">
-              Place order
+              {isPlacing || isPending ? 'Placing order...' : 'Place order'}
             </span>
           </Button>
         </div>
