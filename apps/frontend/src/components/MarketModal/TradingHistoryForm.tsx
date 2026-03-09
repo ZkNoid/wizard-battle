@@ -11,7 +11,6 @@ import { TradingHistoryList } from './TradingHistoryList';
 import { useMarketStore } from '@/lib/store';
 import { mapOrderToHistoryItem } from '@/lib/utils/marketUtils';
 import type { IMarketHistoryItem } from '@/lib/types/IMarket';
-import { MARKET_HISTORY_ITEMS } from '@/lib/constants/market';
 
 interface TradingHistoryFormProps {
   onClose?: () => void;
@@ -34,10 +33,6 @@ export function TradingHistoryForm({
   const { userHistory, isLoadingHistory } = useMarketStore();
 
   const items = useMemo<IMarketHistoryItem[]>(() => {
-    if (userHistory.length === 0) {
-      return MARKET_HISTORY_ITEMS;
-    }
-
     return userHistory.map((order) =>
       mapOrderToHistoryItem(order, address || '')
     );
@@ -104,6 +99,12 @@ export function TradingHistoryForm({
       {isLoadingHistory ? (
         <div className="flex flex-1 items-center justify-center">
           <span className="font-pixel text-main-gray">Loading history...</span>
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center">
+          <span className="font-pixel text-main-gray/70">
+            No trading history yet
+          </span>
         </div>
       ) : (
         <TradingHistoryList items={filteredItems} />
