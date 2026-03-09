@@ -20,8 +20,6 @@ import {
 
 const GAME_REGISTRY_ADDRESS = process.env
   .NEXT_PUBLIC_GAME_REGISTRY_ADDRESS as `0x${string}`;
-const RESOURCES_CONTRACT_ADDRESS = process.env
-  .NEXT_PUBLIC_RESOURCES_CONTRACT_ADDRESS as `0x${string}`;
 const USDC_TOKEN_ADDRESS = process.env
   .NEXT_PUBLIC_USDC_TOKEN_ADDRESS as `0x${string}`;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
@@ -37,7 +35,7 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
   const iteminventory = useInventoryStore((state) => state.iteminventory);
   const { setIsRequestSuccessModalOpen, setIsRequestFailureModalOpen } =
     useMiscellaneousSessionStore();
-  const { createOrder, approveNFT, isPending } = useGameMarket();
+  const { createOrder, approveNFT, isPending, getGameElement } = useGameMarket();
 
   const [itemName, setItemName] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
@@ -74,25 +72,34 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
 
     setIsPlacing(true);
     try {
-      const tokenId = BigInt(keccak256(toBytes(selectedUserItem.item.id)));
+      const resourceHash = keccak256(toBytes(selectedUserItem.item.id));
+      const gameElement = await getGameElement(resourceHash);
+      if (!gameElement) {
+        throw new Error('Failed to get game element');
+      }
 
       const priceWei = parseEther(price);
 
       const isGoldPayment = currency === 'gold';
+      const goldResourceHash = keccak256(toBytes(GOLD_RESOURCE_ID));
+      const goldElement = isGoldPayment
+        ? await getGameElement(goldResourceHash)
+        : null;
+
       const paymentToken = isGoldPayment
         ? (GAME_REGISTRY_ADDRESS ?? ZERO_ADDRESS)
         : (USDC_TOKEN_ADDRESS ?? ZERO_ADDRESS);
-      const paymentTokenId = isGoldPayment
-        ? BigInt(keccak256(toBytes(GOLD_RESOURCE_ID)))
+      const paymentTokenId = isGoldPayment && goldElement
+        ? goldElement.tokenId
         : 0n;
 
-      if (RESOURCES_CONTRACT_ADDRESS) {
-        await approveNFT(RESOURCES_CONTRACT_ADDRESS, true);
+      if (gameElement.tokenAddress) {
+        await approveNFT(gameElement.tokenAddress, true);
       }
 
       await createOrder({
-        token: RESOURCES_CONTRACT_ADDRESS ?? ZERO_ADDRESS,
-        tokenId,
+        token: gameElement.tokenAddress,
+        tokenId: gameElement.tokenId,
         price: priceWei,
         amount: BigInt(quantity),
         paymentToken,
