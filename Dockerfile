@@ -21,6 +21,9 @@ ARG WB_RESOURCES_ADDRESS
 ARG WB_CHARACTER_ADDRESS
 ARG WB_COINS_ADDRESS
 ARG WB_ITEMS_ADDRESS
+ARG GAME_MARKET_ADDRESS
+ARG RPC_WS_URL
+ARG GAME_MARKET_DEPLOYMENT_BLOCK
 
 WORKDIR /usr/share/nestjs/main
 COPY . .
@@ -80,6 +83,9 @@ echo "WB_RESOURCES_ADDRESS=${WB_RESOURCES_ADDRESS}" >> /usr/share/nestjs/main/.e
 echo "WB_CHARACTER_ADDRESS=${WB_CHARACTER_ADDRESS}" >> /usr/share/nestjs/main/.env
 echo "WB_COINS_ADDRESS=${WB_COINS_ADDRESS}" >> /usr/share/nestjs/main/.env
 echo "WB_ITEMS_ADDRESS=${WB_ITEMS_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "GAME_MARKET_ADDRESS=${GAME_MARKET_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "RPC_WS_URL=${RPC_WS_URL}" >> /usr/share/nestjs/main/.env
+echo "GAME_MARKET_DEPLOYMENT_BLOCK=${GAME_MARKET_DEPLOYMENT_BLOCK}" >> /usr/share/nestjs/main/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/backend/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/frontend/.env
 pnpm turbo run build

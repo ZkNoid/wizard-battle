@@ -236,7 +236,7 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
         Order storage order = orders[orderId];
         address paymentToken = order.paymentToken;
 
-        if (orderId == 0 || orderId > nextOrderId) {
+        if (orderId == 0 || orderId >= nextOrderId) {
             revert GameMarket_BadOrder();
         }
         if (msg.value > 0 && paymentToken != address(0)) {

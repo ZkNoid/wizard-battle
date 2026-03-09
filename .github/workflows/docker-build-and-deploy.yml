@@ -197,6 +197,9 @@ jobs:
             --build-arg WB_CHARACTER_ADDRESS=${{ secrets.WB_CHARACTER_ADDRESS }} \
             --build-arg WB_COINS_ADDRESS=${{ secrets.WB_COINS_ADDRESS }} \
             --build-arg WB_ITEMS_ADDRESS=${{ secrets.WB_ITEMS_ADDRESS }} \
+            --build-arg GAME_MARKET_ADDRESS=${{ secrets.GAME_MARKET_ADDRESS }} \
+            --build-arg RPC_WS_URL=${{ secrets.RPC_WS_URL }} \
+            --build-arg GAME_MARKET_DEPLOYMENT_BLOCK=${{ secrets.GAME_MARKET_DEPLOYMENT_BLOCK }} \
             -t ${{ steps.calc-container.outputs.container_name }} .
 
       - name: Save Docker image to tar
