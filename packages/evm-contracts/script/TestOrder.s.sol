@@ -14,7 +14,7 @@ contract CreateOrder is Script {
     WBResources wbResources;
 
     function run() public {
-        gameMarket = GameMarket(payable(0xdf767a5d5D14c60e5C31fDBD839106AA6dAe34F8));
+        gameMarket = GameMarket(payable(0x8865d8738E37671138D5270A7B4befeE83DeE904));
         gameRegestry = IGameRegistry(0x4e590B45fB999d93e981af65eB6A4eC06652A04D);
         // wbResources = WBResources(0xee52Ce7D2c46F8B728D74a030efCB78885F90E25);
 
@@ -39,6 +39,7 @@ contract CreateOrder is Script {
             price: 0.02 ether,
             amount: 5,
             paymentToken: address(0),
+            paymentTokenId: 0,
             nameHash: keccak256("InfusedCrystal")
         });
 
@@ -56,7 +57,7 @@ contract FillOrder is Script {
     WBResources wbResources;
 
     function run() public {
-        gameMarket = GameMarket(payable(0xdf767a5d5D14c60e5C31fDBD839106AA6dAe34F8));
+        gameMarket = GameMarket(payable(0x8865d8738E37671138D5270A7B4befeE83DeE904));
         gameRegestry = IGameRegistry(0x4e590B45fB999d93e981af65eB6A4eC06652A04D);
 
         fillOrder();
@@ -72,10 +73,10 @@ contract FillOrder is Script {
         console2.log("balance", balance);
         console2.log("taker balance: ", address(msg.sender).balance);
 
-        uint256 orderId = 4;
+        uint256 orderId = 1;
         GameMarket.Order memory order = gameMarket.getOrder(orderId);
         uint256 totalPrice = gameMarket.previewTotalPrice(order.price);
-        gameMarket.fillOrder{value: totalPrice}(orderId, address(0), 0);
+        gameMarket.fillOrder{value: totalPrice}(orderId);
 
         vm.stopBroadcast();
 

@@ -9,9 +9,11 @@ test:
 deployAll-fuji:; forge script script/DeployAll.s.sol:DeployAll --broadcast --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey --sender 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218 --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
 
 
-deployGM-sepolia:; forge script script/Deploy.s.sol:Deploy --rpc-url $(SEPOLIA_RPC_URL) --account devKey --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
+deployGR-sepolia:; forge script script/Deploy.s.sol:Deploy --rpc-url $(SEPOLIA_RPC_URL) --account devKey --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
 
-deployGM-fuji:; forge script script/DeployGameRegestry.s.sol:DeployGameRegestry --broadcast --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
+deployGR-fuji:; forge script script/DeployGameRegestry.s.sol:DeployGameRegestry --broadcast --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
+
+deployGM-fuji:; forge script script/DeployGameMarket.s.sol:DeployGameMarket --broadcast --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
 
 deployAll-anvil:;forge script script/DeployAll.s.sol:DeployAll --broadcast --rpc-url 127.0.0.1:8545 --account defaultKey --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 -vvvv
 
@@ -55,8 +57,13 @@ test-fuji-fillOrder:; forge script script/TestOrder.s.sol:FillOrder --rpc-url ${
 # WBItems implementation:		0x4B4b53E9FB8B2928D3aE423d91F6c8fd7aa322A6
 # WBItems proxy:   				0x6fC43f3cf1B27199F52F160f05645b1541292484
 
-# GameMarket implementation:		0x5A8536EdBDB699D2EAfdC9341F0d434424914d43
-# GameMarket proxy:   				0xdf767a5d5D14c60e5C31fDBD839106AA6dAe34F8
+# GameMarket implementation:	0xD6Acb26f17F3C8c87C32cD781C97c86071562672
+# GameMarket proxy:   			0x8865d8738E37671138D5270A7B4befeE83DeE904
+
+postDeployGM-fuji:
+	cast send 0x8865d8738E37671138D5270A7B4befeE83DeE904 "setGameRegistry(address)" 0x4e590B45fB999d93e981af65eB6A4eC06652A04D --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey -vvvv
+	cast send 0x8865d8738E37671138D5270A7B4befeE83DeE904 "allowToken(address)" 0xee52Ce7D2c46F8B728D74a030efCB78885F90E25 --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey -vvvv
+	cast send 0x8865d8738E37671138D5270A7B4befeE83DeE904 "allowToken(address)" 0x5425890298aed601595a70AB815c96711a31Bc65 --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey -vvvv
 
 add-fuji-elements:
 	cast send 0x85fBD99b6cc4Dfc9c147E0Db57116E78c79F72A6 "addGameElement(uint8,string,address,uint256,bool)" 1 'Gold' 0x0681F916879746acCD6d176940466cD3fa4EfeAE 1 true --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account gameSigner -vvvv

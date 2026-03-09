@@ -7,7 +7,12 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract DeployGameMarket is Script {
+    HelperConfig helperConfig;
+    HelperConfig.NetworkConfig config;
+
     function run() public returns (address proxyGameMarket) {
+        helperConfig = new HelperConfig();
+        config = helperConfig.getConfig();
         proxyGameMarket = deploy();
     }
 
