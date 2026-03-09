@@ -57,7 +57,7 @@ export function BuyTicketConfirmationModal({
 
           {/* Ticket cost */}
           <div className="mt-1 flex w-full items-center justify-between">
-            <span className="font-pixel text-main-gray text-xs">Price:</span>
+            <span className="font-pixel text-main-gray text-md">Price:</span>
             {tournament.ticketCost ? (
               <TournamentAssetDisplay
                 asset={tournament.ticketCost}

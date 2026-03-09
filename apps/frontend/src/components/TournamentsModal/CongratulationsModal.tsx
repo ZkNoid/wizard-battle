@@ -22,10 +22,7 @@ export function CongratulationsModal({
       className="fixed inset-0 z-50 flex items-center justify-center"
       onClick={onClose}
     >
-      <div
-        className="relative h-96 w-80"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="h-105 w-95 relative" onClick={(e) => e.stopPropagation()}>
         <BuyTicketConfirmBg className="pointer-events-none absolute inset-0 h-full w-full" />
 
         <div className="relative z-10 flex h-full flex-col items-center px-6 py-5">
@@ -44,7 +41,7 @@ export function CongratulationsModal({
               width={96}
               height={96}
               alt="medal"
-              className="h-20 w-20 object-contain object-center"
+              className="h-40 w-40 object-contain object-center"
               unoptimized
             />
           </div>
@@ -54,7 +51,11 @@ export function CongratulationsModal({
             <span className="font-pixel text-main-gray text-lg">Rewards:</span>
             <div className="flex flex-col gap-1">
               {rewards.map((asset, i) => (
-                <TournamentAssetDisplay key={i} asset={asset} className="text-main-gray" />
+                <TournamentAssetDisplay
+                  key={i}
+                  asset={asset}
+                  className="text-main-gray"
+                />
               ))}
             </div>
           </div>
