@@ -6,7 +6,7 @@ import {GameMarket} from "../src/GameMarket.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 contract UpgradeGameMarket is Script {
-    address public constant PROXY = 0xdf767a5d5D14c60e5C31fDBD839106AA6dAe34F8;
+    address public constant PROXY = 0x8865d8738E37671138D5270A7B4befeE83DeE904;
 
     function run() public returns (address newImplementation) {
         newImplementation = upgrade(PROXY);
