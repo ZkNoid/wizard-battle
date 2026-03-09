@@ -58,7 +58,7 @@ contract HelperConfigTest is Test {
 
     function test_ActiveNetworkConfigIsSet() public view {
         // Access the public state variable - it returns all struct fields
-        (address defaultAdmin, address gameSigner, address pauser, address minter, address upgrader) = helperConfig.activeNetworkConfig();
+        (address defaultAdmin, address gameSigner, address pauser, address minter, address upgrader, address usdc) = helperConfig.activeNetworkConfig();
 
         // Verify active config is set (should be Anvil by default in tests)
         assertNotEq(defaultAdmin, address(0));
@@ -66,5 +66,6 @@ contract HelperConfigTest is Test {
         assertNotEq(pauser, address(0));
         assertNotEq(minter, address(0));
         assertNotEq(upgrader, address(0));
+        assertNotEq(usdc, address(0));
     }
 }

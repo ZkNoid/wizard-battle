@@ -6,14 +6,14 @@
 
 ### Avalanche Fuji (chain ID 43113)
 
-| Contract | Proxy | Implementation |
-|----------|-------|----------------|
+| Contract     | Proxy                                        | Implementation                               |
+| ------------ | -------------------------------------------- | -------------------------------------------- |
 | GameRegistry | `0x4e590B45fB999d93e981af65eB6A4eC06652A04D` | `0xF6ea80fA07C4FE3A45399A4b1d81ceF6Cc81D9B8` |
-| GameMarket | `0xdf767a5d5D14c60e5C31fDBD839106AA6dAe34F8` | `0x5A8536EdBDB699D2EAfdC9341F0d434424914d43` |
-| WBCoin | `0x5D7Ea21B4FBfF8e607fedb76ed0681ae5CfA814f` | `0x02f2Ce71317AF30A1B6a98481ab0feb59fcdB0bf` |
-| WBResources | `0xee52Ce7D2c46F8B728D74a030efCB78885F90E25` | `0xfBA871cFfc473fbcAC883663a38d5FdAa4586D5E` |
+| GameMarket   | `0xdf767a5d5D14c60e5C31fDBD839106AA6dAe34F8` | `0x5A8536EdBDB699D2EAfdC9341F0d434424914d43` |
+| WBCoin       | `0x5D7Ea21B4FBfF8e607fedb76ed0681ae5CfA814f` | `0x02f2Ce71317AF30A1B6a98481ab0feb59fcdB0bf` |
+| WBResources  | `0xee52Ce7D2c46F8B728D74a030efCB78885F90E25` | `0xfBA871cFfc473fbcAC883663a38d5FdAa4586D5E` |
 | WBCharacters | `0x55e1cCD651A3e3e0EfC6b61e8c94878cbe87F64B` | `0x0a9054161D69de45d2016720cE663417e7627598` |
-| WBItems | `0x6fC43f3cf1B27199F52F160f05645b1541292484` | `0x4B4b53E9FB8B2928D3aE423d91F6c8fd7aa322A6` |
+| WBItems      | `0x6fC43f3cf1B27199F52F160f05645b1541292484` | `0x4B4b53E9FB8B2928D3aE423d91F6c8fd7aa322A6` |
 
 Explorer: https://testnet.snowtrace.io (routescan)
 
@@ -21,14 +21,14 @@ Explorer: https://testnet.snowtrace.io (routescan)
 
 Default addresses when deploying with `make deployAll-anvil` (deterministic, sender `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`):
 
-| Contract | Proxy | Implementation |
-|----------|-------|----------------|
+| Contract     | Proxy                                        | Implementation                               |
+| ------------ | -------------------------------------------- | -------------------------------------------- |
 | GameRegistry | `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512` | `0x5FbDB2315678afecb367f032d93F642f64180aa3` |
-| GameMarket | `0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e` | `0x610178dA211FEF7D417bC0e6FeD39F05609AD788` |
-| WBCoin | `0xa513E6E4b8f2a923D98304ec87F64353C4D5C853` | `0x0165878A594ca255338adfa4d48449f69242Eb8F` |
-| WBResources | `0x5FC8d32690cc91D4c39d9d3abcBD16989F875707` | `0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9` |
+| GameMarket   | `0x8865d8738E37671138D5270A7B4befeE83DeE904` | `0xD6Acb26f17F3C8c87C32cD781C97c86071562672` |
+| WBCoin       | `0xa513E6E4b8f2a923D98304ec87F64353C4D5C853` | `0x0165878A594ca255338adfa4d48449f69242Eb8F` |
+| WBResources  | `0x5FC8d32690cc91D4c39d9d3abcBD16989F875707` | `0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9` |
 | WBCharacters | `0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9` | `0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0` |
-| WBItems | `0x8A791620dd6260079BF849Dc5567aDC3F2FdC318` | `0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6` |
+| WBItems      | `0x8A791620dd6260079BF849Dc5567aDC3F2FdC318` | `0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6` |
 
 ---
 
@@ -40,6 +40,7 @@ Default addresses when deploying with `make deployAll-anvil` (deterministic, sen
 - `.env` file with required variables (see `.env.example`)
 
 Required `.env` variables:
+
 ```
 AVALANCHE_FUJI_RPC_URL=
 SEPOLIA_RPC_URL=
@@ -96,17 +97,17 @@ forge coverage --report lcov
 
 **Test layout:**
 
-| File | Type | Coverage |
-|------|------|----------|
-| `test/unit/GameRegistry.t.sol` | Unit | GameRegistry |
-| `test/unit/GameMarket.t.sol` | Unit | GameMarket |
-| `test/unit/WBCharacter.t.sol` | Unit | WBCharacters |
-| `test/unit/WBItems.sol` | Unit | WBItems |
-| `test/unit/WBRresources.t.sol` | Unit | WBResources |
-| `test/unit/WebCoin.t.sol` | Unit | WBCoin |
-| `test/unit/DeployAll.t.sol` | Unit | Deployment script |
+| File                                     | Type        | Coverage                |
+| ---------------------------------------- | ----------- | ----------------------- |
+| `test/unit/GameRegistry.t.sol`           | Unit        | GameRegistry            |
+| `test/unit/GameMarket.t.sol`             | Unit        | GameMarket              |
+| `test/unit/WBCharacter.t.sol`            | Unit        | WBCharacters            |
+| `test/unit/WBItems.sol`                  | Unit        | WBItems                 |
+| `test/unit/WBRresources.t.sol`           | Unit        | WBResources             |
+| `test/unit/WebCoin.t.sol`                | Unit        | WBCoin                  |
+| `test/unit/DeployAll.t.sol`              | Unit        | Deployment script       |
 | `test/integration/GameRegistryInt.t.sol` | Integration | GameRegistry end-to-end |
-| `test/integration/GameMarketInt.t.sol` | Integration | GameMarket end-to-end |
+| `test/integration/GameMarketInt.t.sol`   | Integration | GameMarket end-to-end   |
 
 ### Deployment
 
@@ -146,6 +147,7 @@ make test-fuji
 ```
 
 This runs a series of `cast call` checks:
+
 - GameMarket has GameRegistry set
 - Admin role is granted to the deployer on all contracts
 - GameRegistry holds `MINTER_ROLE` on all token contracts
@@ -172,10 +174,10 @@ make test-fuji-fillOrder     # fills the test order (account: devKey)
 ┌─────────────────────────────────────────────────────────────────────┐
 │                          OFF-CHAIN                                  │
 │                                                                     │
-│   ┌──────────────┐      EIP-712 sign       ┌──────────────────┐    │
-│   │    Player    │ ──── CommitStruct ────► │   Game Server    │    │
+│   ┌──────────────┐      EIP-712 sign       ┌──────────────────┐     │
+│   │    Player    │ ──── CommitStruct ────► │   Game Server    │     │
 │   └──────┬───────┘                         │ (GAME_SIGNER_ROLE)│    │
-│          │  signed commit                  └──────────────────┘    │
+│          │  signed commit                  └──────────────────┘     │
 └──────────│──────────────────────────────────────────────────────────┘
            │
            ▼  ON-CHAIN
@@ -223,40 +225,40 @@ make test-fuji-fillOrder     # fills the test order (account: devKey)
 
 ### Roles summary
 
-| Role | Contract | Permissions |
-|------|----------|-------------|
-| `DEFAULT_ADMIN_ROLE` | GameRegistry, GameMarket | Upgrade contract, manage roles (1-day delay) |
-| `GAME_SIGNER_ROLE` | GameRegistry | Sign commits, add/remove game elements |
-| `MARKET_ROLE` | GameRegistry | Reserved; accounts with this role cannot submit commits |
-| `MINTER_ROLE` | WBCoin, WBResources, WBCharacters, WBItems | Mint and burn tokens |
-| `PAUSER_ROLE` | WBCoin, WBResources, WBCharacters, WBItems | Pause/unpause transfers |
-| `UPGRADER_ROLE` | WBCoin, WBResources, WBCharacters, WBItems | Authorize UUPS upgrades |
+| Role                 | Contract                                   | Permissions                                             |
+| -------------------- | ------------------------------------------ | ------------------------------------------------------- |
+| `DEFAULT_ADMIN_ROLE` | GameRegistry, GameMarket                   | Upgrade contract, manage roles (1-day delay)            |
+| `GAME_SIGNER_ROLE`   | GameRegistry                               | Sign commits, add/remove game elements                  |
+| `MARKET_ROLE`        | GameRegistry                               | Reserved; accounts with this role cannot submit commits |
+| `MINTER_ROLE`        | WBCoin, WBResources, WBCharacters, WBItems | Mint and burn tokens                                    |
+| `PAUSER_ROLE`        | WBCoin, WBResources, WBCharacters, WBItems | Pause/unpause transfers                                 |
+| `UPGRADER_ROLE`      | WBCoin, WBResources, WBCharacters, WBItems | Authorize UUPS upgrades                                 |
 
 ### Commit flow (detailed)
 
 ```
-Player                  GameRegistry              Token Contract
-  │                          │                          │
-  │── commitSingle(          │                          │
-  │     resourceHash,        │                          │
-  │     commit,              │                          │
-  │     signature) ─────────►│                          │
-  │                          │ _verifyInputs()           │
-  │                          │  · decode commit          │
-  │                          │    (nonce,target,callData)│
-  │                          │  · check nonce unused     │
-  │                          │  · check account==sender  │
-  │                          │  · check target==registry │
-  │                          │  · verify EIP-712 sig     │
-  │                          │  · signer has SIGNER_ROLE │
-  │                          │                          │
-  │                          │ mark nonce used           │
-  │                          │                          │
-  │                          │── target.call(callData) ─►│
-  │                          │                          │ mint/burn/transfer
-  │                          │◄─────────────────────────│
-  │                          │ _verifyAfter() [hook]     │
-  │◄─────────────────────────│                          │
+Player                  GameRegistry                Token Contract
+  │                          │                            │
+  │── commitSingle(          │                            │
+  │     resourceHash,        │                            │
+  │     commit,              │                            │
+  │     signature) ─────────►│                            │
+  │                          │ _verifyInputs()            │
+  │                          │  · decode commit           │
+  │                          │    (nonce,target,callData) │
+  │                          │  · check nonce unused      │
+  │                          │  · check account==sender   │
+  │                          │  · check target==registry  │
+  │                          │  · verify EIP-712 sig      │
+  │                          │  · signer has SIGNER_ROLE  │
+  │                          │                            │
+  │                          │ mark nonce used            │
+  │                          │                            │
+  │                          │── target.call(callData) ─► │
+  │                          │                            │ mint/burn/transfer
+  │                          │◄───────────────────────────│
+  │                          │ _verifyAfter() [hook]      │
+  │◄─────────────────────────│                            │
 ```
 
 ---

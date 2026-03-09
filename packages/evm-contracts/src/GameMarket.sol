@@ -53,13 +53,15 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
         address token;
         uint256 tokenId;
         address paymentToken;
+        uint256 paymentTokenId;
         uint256 amount;
         uint256 price;
         OrderStatus status;
         bytes32 nameHash;
     }
     uint256 private fee;
-    uint256 private orderNextId;
+    uint256 private nextOrderId;
+    address private treasury;
 
     IGameRegistry private gameRegistry;
 
@@ -68,13 +70,34 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
 
     uint256 private constant BASIS_POINTS_SCALE = 10_000;
 
-    event CreateOrder(uint256 indexed orderId, address indexed token, uint256 indexed tokenId, uint256 price, uint256 amount);
+    event CreateOrder(
+        uint256 indexed orderId,
+        address indexed maker,
+        address indexed token,
+        uint256 tokenId,
+        uint256 price,
+        uint256 amount,
+        address paymentToken,
+        uint256 paymentTokenId,
+        bytes32 nameHash
+    );
     event PauseOrder(uint256 indexed orderId);
     event UnpauseOrder(uint256 indexed orderId);
     event CancelOrder(uint256 indexed orderId);
     event AllowToken(address indexed token);
     event DisallowToken(address indexed token);
-    event OrderFilled(uint256 indexed orderId, address indexed maker, address indexed taker, address token, uint256 tokenId, uint256 amount, bytes32 nameHash);
+    event OrderFilled(
+        uint256 indexed orderId,
+        address indexed maker,
+        address indexed taker,
+        address token,
+        uint256 tokenId,
+        uint256 price,
+        uint256 amount,
+        address paymentToken,
+        uint256 paymentTokenId,
+        bytes32 nameHash
+    );
 
     modifier isOwner(uint256 orderId) {
         _isOrderOwner(orderId);
@@ -97,7 +120,8 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
         __AccessControlDefaultAdminRules_init(1 days, msg.sender);
         fee = _fee;
         gameRegistry = IGameRegistry(_gameRegistry);
-        orderNextId = 1;
+        nextOrderId = 1;
+        treasury = msg.sender;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -160,12 +184,23 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
         uint256 price,
         uint256 amount,
         address paymentToken,
+        uint256 paymentTokenId,
         bytes32 nameHash
     )
         external
         returns (uint256 orderId)
     {
-        orderId = orderNextId++;
+        if (IERC165(token).supportsInterface(type(IERC1155).interfaceId)) {
+            if (IERC1155(token).balanceOf(msg.sender, tokenId) < amount) {
+                revert GameMarket_InsufficientAmount();
+            }
+        } else {
+            if (IERC721(token).ownerOf(tokenId) != msg.sender) {
+                revert GameMarket_InsufficientAmount();
+            }
+        }
+
+        orderId = nextOrderId++;
 
         orders[orderId] = Order({
             maker: msg.sender,
@@ -173,13 +208,14 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
             token: token,
             tokenId: tokenId,
             paymentToken: paymentToken,
+            paymentTokenId: paymentTokenId,
             amount: amount,
             status: OrderStatus.OPEN,
             nameHash: nameHash,
             price: price
         });
 
-        emit CreateOrder(orderId, token, tokenId, price, amount);
+        emit CreateOrder(orderId, msg.sender, token, tokenId, price, amount, paymentToken, paymentTokenId, nameHash);
     }
 
     /**
@@ -195,11 +231,12 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
      * @notice Fills an existing marketplace order
      * @dev Handles both ETH and ERC20 token payments. Supports ERC721 and ERC1155 transfers
      * @param orderId The ID of the order to fill
-     * @param paymentToken The token to use for payment (address(0) for ETH)
      */
-    function fillOrder(uint256 orderId, address paymentToken, uint256 paymentTokenId) external payable nonReentrant {
+    function fillOrder(uint256 orderId) external payable nonReentrant {
         Order storage order = orders[orderId];
-        if (orderId == 0 || orderId > orderNextId) {
+        address paymentToken = order.paymentToken;
+
+        if (orderId == 0 || orderId > nextOrderId) {
             revert GameMarket_BadOrder();
         }
         if (msg.value > 0 && paymentToken != address(0)) {
@@ -217,8 +254,11 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
         uint256 amount = order.amount;
         address maker = order.maker;
         address token = order.token;
+        bytes32 nameHash = order.nameHash;
 
-        emit OrderFilled(orderId, maker, msg.sender, token, tokenId, amount, order.nameHash);
+        uint256 paymentTokenId = order.paymentTokenId;
+
+        emit OrderFilled(orderId, maker, msg.sender, token, tokenId, price, amount, paymentToken, paymentTokenId, nameHash);
 
         uint256 feeAmount = Math.mulDiv(price, fee, BASIS_POINTS_SCALE);
         uint256 totalPrice = price + feeAmount; // Price with fee included
@@ -227,9 +267,14 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
             if (totalPrice != msg.value) {
                 revert GameMarket_InsufficientAmount();
             }
+            bool success;
+            // trasfer funds to token  the owner
+            (success,) = payable(address(maker)).call{value: price}("");
+            if (!success) {
+                revert GameMarket_TransferFaild();
+            }
 
-            // trasfer funds to token owners
-            (bool success,) = payable(address(maker)).call{value: price}("");
+            (success,) = payable(treasury).call{value: feeAmount}("");
             if (!success) {
                 revert GameMarket_TransferFaild();
             }
@@ -239,13 +284,13 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
             }
 
             if (paymentToken != address(0) && paymentTokenId > 0) {
-                if (!IERC165(token).supportsInterface(type(IERC1155).interfaceId)) {
+                if (!IERC165(paymentToken).supportsInterface(type(IERC1155).interfaceId)) {
                     revert GameMarket_InvalidPaymentMethod();
                 }
                 IERC1155(paymentToken).safeTransferFrom({from: msg.sender, to: maker, id: paymentTokenId, value: price, data: bytes("")});
             } else {
                 IERC20(paymentToken).safeTransferFrom(msg.sender, maker, price);
-                IERC20(paymentToken).safeTransferFrom(msg.sender, address(this), feeAmount);
+                IERC20(paymentToken).safeTransferFrom(msg.sender, treasury, feeAmount);
             }
         } else {
             revert GameMarket_InvalidPaymentMethod();
@@ -280,6 +325,14 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
         emit UnpauseOrder(orderId);
     }
 
+    /**
+     * @notice Sets the treasury address that receives protocol fees
+     * @param _treasury The new treasury address
+     */
+    function setTreasury(address _treasury) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        treasury = _treasury;
+    }
+
     /*//////////////////////////////////////////////////////////////
                            INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -309,6 +362,11 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
                         EXTERNAL VIEW FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @notice Returns the full details of a marketplace order
+     * @param orderId The ID of the order to retrieve
+     * @return The Order struct containing all order data
+     */
     function getOrder(uint256 orderId) external view returns (Order memory) {
         return orders[orderId];
     }
@@ -372,10 +430,27 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
         return whitelistedTokens[token];
     }
 
+    /**
+     * @notice Returns the address of the game registry contract
+     * @return The address of the IGameRegistry implementation
+     */
     function getGameRegistry() external view returns (address) {
         return address(gameRegistry);
     }
 
+    /**
+     * @notice Returns the next order ID that will be assigned
+     * @return The next order ID
+     */
+    function getnextOrderId() external view returns (uint256) {
+        return nextOrderId;
+    }
+
+    /**
+     * @notice Previews the total price a buyer must pay including protocol fee
+     * @param price The base price of the order
+     * @return totalPrice The total amount including the protocol fee
+     */
     function previewTotalPrice(uint256 price) public view returns (uint256 totalPrice) {
         uint256 feeAmount = Math.mulDiv(price, fee, BASIS_POINTS_SCALE);
         totalPrice = price + feeAmount; // Price with fee included

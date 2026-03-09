@@ -93,6 +93,8 @@ contract DeployAll is Script {
         address gameMarket = address(new ERC1967Proxy(address(new GameMarket()), abi.encodeCall(GameMarket.initialize, (3000, address(0)))));
 
         GameMarket(payable(gameMarket)).setGameRegistry(gameRegistry);
+        GameMarket(payable(gameMarket)).allowToken(wbResources);
+        GameMarket(payable(gameMarket)).allowToken(config.usdc);
 
         WBCharacters(wbCharacters).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
         WBCharacters(wbCharacters).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);

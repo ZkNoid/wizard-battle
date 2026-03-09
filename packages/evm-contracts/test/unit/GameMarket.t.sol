@@ -7,6 +7,7 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {DeployGameMarket} from "script/DeployGameMarket.s.sol";
 import {WBResources} from "src/tokens/ERC1155/WBResources.sol";
+import {DeployWBResources} from "script/DeployWBResources.s.sol";
 
 contract GameMarketTest is Test {
     GameMarket public gameMarket;
@@ -14,6 +15,8 @@ contract GameMarketTest is Test {
 
     address public ADMIN;
     address public USER;
+
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     function setUp() public {
         address gameMarketAddress = new DeployGameMarket().deploy();
@@ -93,13 +96,17 @@ contract GameMarketTest is Test {
                               LOGIC TESTS
     //////////////////////////////////////////////////////////////*/
     function test_createOrder() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
+
         address maker = makeAddr("maker");
         address maker2 = makeAddr("maker2");
+        token.mint(maker, 1, 1000, "");
+        token.mint(maker2, 1, 1000, "");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         GameMarket.Order memory order = gameMarket.getOrder(orderId);
         assertEq(order.maker, maker);
@@ -110,8 +117,9 @@ contract GameMarketTest is Test {
         assertEq(uint8(order.status), uint8(GameMarket.OrderStatus.OPEN));
 
         vm.prank(maker2);
-        uint256 orderId2 =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId2 = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         GameMarket.Order memory order2 = gameMarket.getOrder(orderId2);
         assertEq(order2.maker, maker2);
@@ -251,13 +259,15 @@ contract GameMarketTest is Test {
                         ORDER MANAGEMENT TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function test_cancelOrder() public {
-        WBResources token = new WBResources();
+    function test_cancelOrder1() public {
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
+        token.mint(maker, 1, 1000, "");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         GameMarket.Order memory order = gameMarket.getOrder(orderId);
         assertEq(uint8(order.status), uint8(GameMarket.OrderStatus.OPEN));
@@ -270,12 +280,14 @@ contract GameMarketTest is Test {
     }
 
     function test_cancelOrderEmitsEvent() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
+        token.mint(maker, 1, 1000, "");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         vm.prank(maker);
         vm.expectEmit(true, false, false, false);
@@ -284,13 +296,15 @@ contract GameMarketTest is Test {
     }
 
     function test_cancelOrderRevertsIfNotOwner() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
         address nonOwner = makeAddr("nonOwner");
+        token.mint(maker, 1, 1000, "");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         vm.prank(nonOwner);
         vm.expectRevert(GameMarket.GameMarket_NotOwner.selector);
@@ -298,12 +312,14 @@ contract GameMarketTest is Test {
     }
 
     function test_pauseOrder() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
+        token.mint(maker, 1, 1000, "");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         GameMarket.Order memory order = gameMarket.getOrder(orderId);
         assertEq(uint8(order.status), uint8(GameMarket.OrderStatus.OPEN));
@@ -316,12 +332,14 @@ contract GameMarketTest is Test {
     }
 
     function test_pauseOrderEmitsEvent() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
+        token.mint(maker, 1, 1000, "");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         vm.prank(maker);
         vm.expectEmit(true, false, false, false);
@@ -330,13 +348,15 @@ contract GameMarketTest is Test {
     }
 
     function test_pauseOrderRevertsIfNotOwner() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
+        token.mint(maker, 1, 1000, "");
         address nonOwner = makeAddr("nonOwner");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         vm.prank(nonOwner);
         vm.expectRevert(GameMarket.GameMarket_NotOwner.selector);
@@ -344,12 +364,14 @@ contract GameMarketTest is Test {
     }
 
     function test_unpauseOrder() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
+        token.mint(maker, 1, 1000, "");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         vm.prank(maker);
         gameMarket.pauseOrder(orderId);
@@ -365,12 +387,14 @@ contract GameMarketTest is Test {
     }
 
     function test_unpauseOrderEmitsEvent() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
+        token.mint(maker, 1, 1000, "");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         vm.prank(maker);
         gameMarket.pauseOrder(orderId);
@@ -382,13 +406,15 @@ contract GameMarketTest is Test {
     }
 
     function test_unpauseOrderRevertsIfNotOwner() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
+        token.mint(maker, 1, 1000, "");
         address nonOwner = makeAddr("nonOwner");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         vm.prank(maker);
         gameMarket.pauseOrder(orderId);
@@ -399,12 +425,14 @@ contract GameMarketTest is Test {
     }
 
     function test_unpauseOrderRevertsIfNotPaused() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
+        token.mint(maker, 1, 1000, "");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         vm.prank(maker);
         vm.expectRevert(GameMarket.GameMarket_NotPausedOrder.selector);
@@ -417,53 +445,59 @@ contract GameMarketTest is Test {
 
     function test_fillOrderRevertsWithBadOrderId() public {
         vm.expectRevert(GameMarket.GameMarket_BadOrder.selector);
-        gameMarket.fillOrder(0, address(0), 0);
+        gameMarket.fillOrder(0);
     }
 
     function test_fillOrderRevertsWithInvalidOrderId() public {
         vm.expectRevert(GameMarket.GameMarket_BadOrder.selector);
-        gameMarket.fillOrder(9999, address(0), 0);
+        gameMarket.fillOrder(9999);
     }
 
     function test_fillOrderRevertsWithInvalidPaymentMethod() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
+        token.mint(maker, 1, 1000, "");
         address tokenPayment = makeAddr("paymentToken");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: tokenPayment, nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: tokenPayment, paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         address taker = makeAddr("taker");
         vm.prank(taker);
         vm.deal(taker, 2e18);
         vm.expectRevert(GameMarket.GameMarket_InvalidPaymentMethod.selector);
-        gameMarket.fillOrder{value: 2e18}(orderId, tokenPayment, 0);
+        gameMarket.fillOrder{value: 2e18}(orderId);
     }
 
     function test_fillOrderRevertsWithInsufficientAmount() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
+        token.mint(maker, 1, 1000, "");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         // Price 1e18 + 30% fee (3000 bp) = 1.3e18, but only sending 1e18
         address taker = makeAddr("taker");
         vm.prank(taker);
         vm.deal(taker, 1e18);
         vm.expectRevert(GameMarket.GameMarket_InsufficientAmount.selector);
-        gameMarket.fillOrder{value: 1e18}(orderId, address(0), 0);
+        gameMarket.fillOrder{value: 1e18}(orderId);
     }
 
     function test_fillOrderRevertsWhenOrderNotOpen() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
+        token.mint(maker, 1, 1000, "");
 
         vm.prank(maker);
-        uint256 orderId =
-            gameMarket.createOrder({token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), nameHash: keccak256("Wood")});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 1, price: 1e18, amount: 100, paymentToken: address(0), paymentTokenId: 0, nameHash: keccak256("Wood")
+        });
 
         vm.prank(maker);
         gameMarket.cancelOrder(orderId);
@@ -472,7 +506,7 @@ contract GameMarketTest is Test {
         vm.prank(taker);
         vm.deal(taker, 2e18);
         vm.expectRevert(GameMarket.GameMarket_InvalidOrderState.selector);
-        gameMarket.fillOrder{value: 2e18}(orderId, address(0), 0);
+        gameMarket.fillOrder{value: 2e18}(orderId);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -480,12 +514,15 @@ contract GameMarketTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_getOrder() public {
-        WBResources token = new WBResources();
+        WBResources token = WBResources(new DeployWBResources().deploy());
         address maker = makeAddr("maker");
+        token.mint(maker, 5, 1000, "");
         bytes32 nameHash = keccak256("Wood");
 
         vm.prank(maker);
-        uint256 orderId = gameMarket.createOrder({token: address(token), tokenId: 5, price: 2e18, amount: 50, paymentToken: address(0), nameHash: nameHash});
+        uint256 orderId = gameMarket.createOrder({
+            token: address(token), tokenId: 5, price: 2e18, amount: 50, paymentToken: address(0), paymentTokenId: 0, nameHash: nameHash
+        });
 
         GameMarket.Order memory order = gameMarket.getOrder(orderId);
         assertEq(order.maker, maker);
