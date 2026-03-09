@@ -28,9 +28,9 @@ export function mapOrderToBuyItem(
 ): IMarketBuyItem {
   return {
     id: order.orderId.toString(),
-    title: itemMetadata?.title || `Item #${order.tokenId}`,
+    title: order.title || itemMetadata?.title || `Item #${order.tokenId}`,
     level: itemMetadata?.level || 1,
-    image: itemMetadata?.image || 'default.png',
+    image: order.image || itemMetadata?.image || 'default.png',
     quantity: parseInt(order.amount, 10),
     type: itemMetadata?.type || 'unknown',
     price: formatPrice(order.price),
@@ -52,9 +52,9 @@ export function mapOrderToSellingItem(
 ): IMarketSellingItem {
   return {
     id: order.orderId.toString(),
-    title: itemMetadata?.title || `Item #${order.tokenId}`,
+    title: order.title || itemMetadata?.title || `Item #${order.tokenId}`,
     level: itemMetadata?.level || 1,
-    image: itemMetadata?.image || 'default.png',
+    image: order.image || itemMetadata?.image || 'default.png',
     quantity: parseInt(order.amount, 10),
     type: itemMetadata?.type || 'unknown',
     price: formatPrice(order.price),
@@ -76,9 +76,9 @@ export function mapOrderToHistoryItem(
 
   return {
     id: order.orderId.toString(),
-    title: itemMetadata?.title || `Item #${order.tokenId}`,
+    title: order.title || itemMetadata?.title || `Item #${order.tokenId}`,
     level: itemMetadata?.level || 1,
-    image: itemMetadata?.image || 'default.png',
+    image: order.image || itemMetadata?.image || 'default.png',
     quantity: parseInt(order.amount, 10),
     type: itemMetadata?.type || 'unknown',
     price: formatPrice(order.price),
