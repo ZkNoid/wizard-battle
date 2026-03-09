@@ -91,7 +91,7 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
       }
 
       await createOrder({
-        token: GAME_REGISTRY_ADDRESS ?? ZERO_ADDRESS,
+        token: RESOURCES_CONTRACT_ADDRESS ?? ZERO_ADDRESS,
         tokenId,
         price: priceWei,
         amount: BigInt(quantity),
