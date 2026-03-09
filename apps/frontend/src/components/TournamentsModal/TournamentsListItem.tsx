@@ -4,48 +4,13 @@ import Image from 'next/image';
 import { TournamentListItemBg } from './assets/tournament-list-item-bg';
 import { TournamentListItemImageBg } from './assets/tournament-list-item-image-bg';
 import { TournamentActionButton } from './TournamentActionButton';
-import type { ITournament, ITournamentAsset } from '@/lib/types/ITournament';
-
-function formatDate(dateStr: string): string {
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-  return date.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-}
+import { TournamentAssetDisplay } from './TournamentAssetDisplay';
+import { formatDateRange } from './tournamentUtils';
+import type { ITournament } from '@/lib/types/ITournament';
 
 interface TournamentsListItemProps {
   tournament: ITournament;
   onClick?: (tournament: ITournament) => void;
-}
-
-function AssetDisplay({ asset }: { asset: ITournamentAsset }) {
-  if (asset.type === 'currency') {
-    const icon =
-      asset.currency === 'gold'
-        ? '/icons/gold-coin.png'
-        : '/icons/usdс-coin.png';
-    return (
-      <span className="font-pixel-klein flex items-center gap-1 text-sm font-bold">
-        <Image
-          src={icon}
-          width={14}
-          height={14}
-          alt={asset.currency}
-          unoptimized
-          className="h-3.5 w-3.5 object-contain"
-        />
-        {asset.amount.toLocaleString()}
-      </span>
-    );
-  }
-  return (
-    <span className="font-pixel-klein text-sm font-bold">
-      {asset.itemId} ×{asset.quantity}
-    </span>
-  );
 }
 
 export function TournamentsListItem({
@@ -73,12 +38,8 @@ export function TournamentsListItem({
 
       {/* Col 2 — tournament info */}
       <div className="relative z-10 flex flex-1 flex-col justify-center gap-2 py-4 pr-4">
-        {/* Title + status */}
-        <div className="flex items-center gap-3">
-          <span className="truncate text-base font-bold">
-            {tournament.title}
-          </span>
-        </div>
+        {/* Title */}
+        <span className="truncate text-base font-bold">{tournament.title}</span>
 
         {/* Dates */}
         <span className="">
@@ -87,25 +48,24 @@ export function TournamentsListItem({
           </span>
           &nbsp;
           <span className="font-pixel text-main-gray text-xs">
-            {formatDate(tournament.dateFrom)} — {formatDate(tournament.dateTo)}
+            {formatDateRange(tournament.dateFrom, tournament.dateTo)}
           </span>
         </span>
 
-        {/* Prize pool + entry fee + slots */}
+        {/* Prize pool */}
         <div className="flex flex-row items-center gap-2">
           <span className="font-pixel-klein text-main-gray/60 text-md">
             Prize:
           </span>
           &nbsp;
-          <span className="font-pixel text-main-gray flex flex-row items-center gap-2 text-xs">
+          <span className="font-pixel text-main-gray flex flex-row items-center gap-4 text-xs">
             {tournament.prizePool.map((asset, i) => (
-              <AssetDisplay key={i} asset={asset} />
+              <TournamentAssetDisplay key={i} asset={asset} />
             ))}
           </span>
         </div>
 
         {/* Ticket cost */}
-
         <div className="flex flex-row items-center gap-2">
           <span className="font-pixel-klein text-main-gray/60 text-md">
             Ticket cost:
@@ -113,7 +73,7 @@ export function TournamentsListItem({
           &nbsp;
           <span className="font-pixel text-main-gray text-xs">
             {tournament.ticketCost ? (
-              <AssetDisplay asset={tournament.ticketCost} />
+              <TournamentAssetDisplay asset={tournament.ticketCost} />
             ) : (
               <span className="font-pixel-klein text-main-gray text-sm font-bold">
                 Free
@@ -122,7 +82,7 @@ export function TournamentsListItem({
           </span>
         </div>
 
-        {/* Tournament sponsors */}
+        {/* Sponsors */}
         {tournament.sponsors.length > 0 && (
           <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-pixel-klein text-main-gray/60 text-md">
