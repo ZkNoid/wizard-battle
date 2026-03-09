@@ -417,12 +417,12 @@ contract GameMarketTest is Test {
 
     function test_fillOrderRevertsWithBadOrderId() public {
         vm.expectRevert(GameMarket.GameMarket_BadOrder.selector);
-        gameMarket.fillOrder(0, address(0));
+        gameMarket.fillOrder(0, address(0), 0);
     }
 
     function test_fillOrderRevertsWithInvalidOrderId() public {
         vm.expectRevert(GameMarket.GameMarket_BadOrder.selector);
-        gameMarket.fillOrder(9999, address(0));
+        gameMarket.fillOrder(9999, address(0), 0);
     }
 
     function test_fillOrderRevertsWithInvalidPaymentMethod() public {
@@ -438,7 +438,7 @@ contract GameMarketTest is Test {
         vm.prank(taker);
         vm.deal(taker, 2e18);
         vm.expectRevert(GameMarket.GameMarket_InvalidPaymentMethod.selector);
-        gameMarket.fillOrder{value: 2e18}(orderId, tokenPayment);
+        gameMarket.fillOrder{value: 2e18}(orderId, tokenPayment, 0);
     }
 
     function test_fillOrderRevertsWithInsufficientAmount() public {
@@ -454,7 +454,7 @@ contract GameMarketTest is Test {
         vm.prank(taker);
         vm.deal(taker, 1e18);
         vm.expectRevert(GameMarket.GameMarket_InsufficientAmount.selector);
-        gameMarket.fillOrder{value: 1e18}(orderId, address(0));
+        gameMarket.fillOrder{value: 1e18}(orderId, address(0), 0);
     }
 
     function test_fillOrderRevertsWhenOrderNotOpen() public {
@@ -472,7 +472,7 @@ contract GameMarketTest is Test {
         vm.prank(taker);
         vm.deal(taker, 2e18);
         vm.expectRevert(GameMarket.GameMarket_InvalidOrderState.selector);
-        gameMarket.fillOrder{value: 2e18}(orderId, address(0));
+        gameMarket.fillOrder{value: 2e18}(orderId, address(0), 0);
     }
 
     /*//////////////////////////////////////////////////////////////

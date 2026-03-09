@@ -15,6 +15,7 @@ import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/Messa
 import {DeployGameMarket} from "script/DeployGameMarket.s.sol";
 import {GameMarket} from "src/GameMarket.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
+import {ERC1155Mock} from "test/mocks/ERC1155Mock.sol";
 
 contract GameRegistryIntTest is Test {
     event commitSingles(bytes indexed commit);
@@ -33,6 +34,7 @@ contract GameRegistryIntTest is Test {
     WBCharacters public wbCharacters;
 
     ERC20Mock public usdc;
+    ERC1155Mock public gold;
 
     bytes32 private constant GAME_SIGNER_ROLE = keccak256("GAME_SIGNER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -65,11 +67,16 @@ contract GameRegistryIntTest is Test {
         usdc = new ERC20Mock();
         usdc.mint(TAKER, 1000e18);
 
+        gold = new ERC1155Mock();
+        gold.mint(TAKER, 1, 1000e18, "");
+
         ADMIN = msg.sender;
 
         vm.startPrank(ADMIN);
         gameRegistry.grantRole(GAME_SIGNER_ROLE, GAME_SIGNER);
         gameMarket.setGameRegistry(gameRegistryAddress);
+        gameMarket.allowToken(address(gold));
+        gameMarket.allowToken(address(usdc));
         vm.stopPrank();
 
         wBCoin = WBCoin(new DeployWBCoin().deploy());
@@ -146,7 +153,7 @@ contract GameRegistryIntTest is Test {
 
         uint256 totalPrice = gameMarket.previewTotalPrice(order.price);
         vm.prank(TAKER);
-        gameMarket.fillOrder{value: totalPrice}(orderId, address(0));
+        gameMarket.fillOrder{value: totalPrice}(orderId, address(0), 0);
 
         order = gameMarket.getOrder(orderId);
 
@@ -199,7 +206,7 @@ contract GameRegistryIntTest is Test {
         uint256 totalPrice = gameMarket.previewTotalPrice(order.price);
         vm.startPrank(TAKER);
         usdc.approve(address(gameMarket), totalPrice);
-        gameMarket.fillOrder(orderId, address(usdc));
+        gameMarket.fillOrder(orderId, address(usdc), 0);
         vm.stopPrank();
 
         order = gameMarket.getOrder(orderId);
@@ -221,6 +228,61 @@ contract GameRegistryIntTest is Test {
         console2.log("nameHash:", vm.toString(order.nameHash));
 
         assertEq(WBResources(gameElement.tokenAddress).balanceOf(TAKER, order.tokenId), order.amount, "TAKER has the order amount");
+    }
+
+    function test_fillTokenIdOrder() public mintResourceToPlayer {
+        IGameRegistry.GameElementStruct memory gameElement = gameMarket.getGameElementName("Wood");
+
+        vm.startPrank(PLAYER);
+        uint256 orderId = gameMarket.createOrder({
+            token: gameElement.tokenAddress, tokenId: gameElement.tokenId, price: 1e18, amount: 100, paymentToken: address(usdc), nameHash: keccak256("Wood")
+        });
+        WBResources(gameElement.tokenAddress).setApprovalForAll(address(gameMarket), true);
+        vm.stopPrank();
+
+        GameMarket.Order memory order = gameMarket.getOrder(orderId);
+
+        uint256 takerGoldBalanceBefore = gold.balanceOf(TAKER, 1);
+        console2.log("maker balance: ", gold.balanceOf(order.maker, 1));
+        console2.log("taker balance: ", takerGoldBalanceBefore);
+        console2.log("gameMarket balance: ", gold.balanceOf(address(gameMarket), 1));
+
+        console2.log("orderId: ", orderId);
+        console2.log("maker: ", order.maker);
+        console2.log("taker: ", order.taker);
+        console2.log("token: ", order.token);
+        console2.log("tokenId: ", order.tokenId);
+        console2.log("paymentToken: ", order.paymentToken);
+        console2.log("amount: ", order.amount);
+        console2.log("price: ", order.price);
+        console2.log("status: ", uint8(order.status));
+        console2.log("nameHash:", vm.toString(order.nameHash));
+
+        vm.startPrank(TAKER);
+        gold.setApprovalForAll(address(gameMarket), true);
+        gameMarket.fillOrder(orderId, address(gold), 1);
+        vm.stopPrank();
+
+        order = gameMarket.getOrder(orderId);
+
+        console2.log("\n after");
+        console2.log("maker balance: ", gold.balanceOf(order.maker, 1));
+        console2.log("taker balance: ", gold.balanceOf(order.taker, 1));
+        console2.log("gameMarket balance: ", gold.balanceOf(address(gameMarket), 1));
+
+        console2.log("orderId: ", orderId);
+        console2.log("maker: ", order.maker);
+        console2.log("taker: ", order.taker);
+        console2.log("token: ", order.token);
+        console2.log("tokenId: ", order.tokenId);
+        console2.log("paymentToken: ", order.paymentToken);
+        console2.log("amount: ", order.amount);
+        console2.log("price: ", order.price);
+        console2.log("status: ", uint8(order.status));
+        console2.log("nameHash:", vm.toString(order.nameHash));
+
+        assertEq(WBResources(gameElement.tokenAddress).balanceOf(TAKER, order.tokenId), order.amount, "TAKER has the order amount");
+        assertEq(takerGoldBalanceBefore - order.price, gold.balanceOf(order.taker, 1), "TAKER paid with gold");
     }
 
     function test_fillOrderWithMultipleResources() public {
@@ -249,7 +311,7 @@ contract GameRegistryIntTest is Test {
         uint256 totalPrice = gameMarket.previewTotalPrice(1e18);
         vm.prank(TAKER);
         vm.deal(TAKER, totalPrice);
-        gameMarket.fillOrder{value: totalPrice}(orderId1, address(0));
+        gameMarket.fillOrder{value: totalPrice}(orderId1, address(0), 0);
 
         assertEq(wbResources.balanceOf(TAKER, 2), 100);
     }
@@ -271,7 +333,7 @@ contract GameRegistryIntTest is Test {
         vm.prank(TAKER);
         vm.deal(TAKER, totalPrice);
         vm.expectRevert(GameMarket.GameMarket_InvalidOrderState.selector);
-        gameMarket.fillOrder{value: totalPrice}(orderId, address(0));
+        gameMarket.fillOrder{value: totalPrice}(orderId, address(0), 0);
     }
 
     function test_pauseAndUnpauseOrder() public mintResourceToPlayer {
@@ -296,7 +358,7 @@ contract GameRegistryIntTest is Test {
         vm.prank(TAKER);
         vm.deal(TAKER, totalPrice);
         vm.expectRevert(GameMarket.GameMarket_InvalidOrderState.selector);
-        gameMarket.fillOrder{value: totalPrice}(orderId, address(0));
+        gameMarket.fillOrder{value: totalPrice}(orderId, address(0), 0);
 
         // Unpause order
         vm.prank(PLAYER);
@@ -308,7 +370,7 @@ contract GameRegistryIntTest is Test {
         // Now can fill
         vm.prank(TAKER);
         vm.deal(TAKER, totalPrice);
-        gameMarket.fillOrder{value: totalPrice}(orderId, address(0));
+        gameMarket.fillOrder{value: totalPrice}(orderId, address(0), 0);
 
         order = gameMarket.getOrder(orderId);
         assertEq(uint8(order.status), uint8(GameMarket.OrderStatus.FILLED));
@@ -349,7 +411,7 @@ contract GameRegistryIntTest is Test {
 
         vm.startPrank(TAKER);
         usdc.approve(address(gameMarket), totalPrice);
-        gameMarket.fillOrder(orderId, address(usdc));
+        gameMarket.fillOrder(orderId, address(usdc), 0);
         vm.stopPrank();
 
         uint256 finalBalance = usdc.balanceOf(address(gameMarket));
@@ -372,7 +434,7 @@ contract GameRegistryIntTest is Test {
         vm.prank(TAKER);
         usdc.approve(address(gameMarket), totalPrice - 1); // One less than needed
         vm.expectRevert();
-        gameMarket.fillOrder(orderId, address(usdc));
+        gameMarket.fillOrder(orderId, address(usdc), 0);
     }
 
     function test_fillOrderWithERC721Token() public {
@@ -402,7 +464,7 @@ contract GameRegistryIntTest is Test {
         uint256 totalPrice = gameMarket.previewTotalPrice(1e18);
         vm.prank(TAKER);
         vm.deal(TAKER, totalPrice);
-        gameMarket.fillOrder{value: totalPrice}(orderId, address(0));
+        gameMarket.fillOrder{value: totalPrice}(orderId, address(0), 0);
 
         // Verify character was transferred to taker
         assertEq(wbCharacters.ownerOf(tokenId), TAKER);

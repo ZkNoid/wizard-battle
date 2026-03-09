@@ -37,7 +37,7 @@ contract CreateOrder is Script {
             token: gameElement.tokenAddress,
             tokenId: gameElement.tokenId,
             price: 0.02 ether,
-            amount: 10,
+            amount: 5,
             paymentToken: address(0),
             nameHash: keccak256("InfusedCrystal")
         });
@@ -72,10 +72,10 @@ contract FillOrder is Script {
         console2.log("balance", balance);
         console2.log("taker balance: ", address(msg.sender).balance);
 
-        uint256 orderId = 3;
+        uint256 orderId = 4;
         GameMarket.Order memory order = gameMarket.getOrder(orderId);
         uint256 totalPrice = gameMarket.previewTotalPrice(order.price);
-        gameMarket.fillOrder{value: totalPrice}(orderId, address(0));
+        gameMarket.fillOrder{value: totalPrice}(orderId, address(0), 0);
 
         vm.stopBroadcast();
 

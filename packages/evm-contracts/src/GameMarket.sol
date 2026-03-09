@@ -197,7 +197,7 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
      * @param orderId The ID of the order to fill
      * @param paymentToken The token to use for payment (address(0) for ETH)
      */
-    function fillOrder(uint256 orderId, address paymentToken) external payable nonReentrant {
+    function fillOrder(uint256 orderId, address paymentToken, uint256 paymentTokenId) external payable nonReentrant {
         Order storage order = orders[orderId];
         if (orderId == 0 || orderId > orderNextId) {
             revert GameMarket_BadOrder();
@@ -233,9 +233,22 @@ contract GameMarket is Initializable, AccessControlDefaultAdminRulesUpgradeable,
             if (!success) {
                 revert GameMarket_TransferFaild();
             }
+        } else if (paymentToken != address(0)) {
+            if (!whitelistedTokens[paymentToken]) {
+                revert GameMarket_InvalidPaymentMethod();
+            }
+
+            if (paymentToken != address(0) && paymentTokenId > 0) {
+                if (!IERC165(token).supportsInterface(type(IERC1155).interfaceId)) {
+                    revert GameMarket_InvalidPaymentMethod();
+                }
+                IERC1155(paymentToken).safeTransferFrom({from: msg.sender, to: maker, id: paymentTokenId, value: price, data: bytes("")});
+            } else {
+                IERC20(paymentToken).safeTransferFrom(msg.sender, maker, price);
+                IERC20(paymentToken).safeTransferFrom(msg.sender, address(this), feeAmount);
+            }
         } else {
-            IERC20(paymentToken).safeTransferFrom(msg.sender, maker, price);
-            IERC20(paymentToken).safeTransferFrom(msg.sender, address(this), feeAmount);
+            revert GameMarket_InvalidPaymentMethod();
         }
 
         // Transfer order token(s)
