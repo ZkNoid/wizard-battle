@@ -7,8 +7,8 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract DeployGameMarket is Script {
-    function run() public returns (address proxyGameRegistry) {
-        proxyGameRegistry = deploy();
+    function run() public returns (address proxyGameMarket) {
+        proxyGameMarket = deploy();
     }
 
     function deploy() public returns (address) {

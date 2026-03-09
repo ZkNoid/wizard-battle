@@ -15,6 +15,8 @@ deployGM-fuji:; forge script script/DeployGameRegestry.s.sol:DeployGameRegestry 
 
 deployAll-anvil:;forge script script/DeployAll.s.sol:DeployAll --broadcast --rpc-url 127.0.0.1:8545 --account defaultKey --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 -vvvv
 
+upgradeMarket-fuji:; forge script script/UpgradeMarket.s.sol --rpc-url ${AVALANCHE_FUJI_RPC_URL} --broadcast --account devKey -vvvv
+
 test-fuji:
 
 # GameMarket has GameRegistry set
