@@ -98,7 +98,7 @@ export function TournamentActionButton({
       enableHoverSound
       enableClickSound
     >
-      <span className="font-pixel-klein text-sm font-bold">{label}</span>
+      <span className="font-pixel-klein text-md font-bold">{label}</span>
     </Button>
   );
 }

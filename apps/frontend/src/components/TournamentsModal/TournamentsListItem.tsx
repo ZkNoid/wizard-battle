@@ -116,7 +116,14 @@ export function TournamentsListItem({
 
       {/* Col 3 — action button */}
       <div className="relative z-10 flex w-1/4 shrink-0 flex-col items-center justify-between self-stretch px-4 py-4">
-        <TournamentActionButton tournament={tournament} onJoin={onJoin} onClaim={onClaim} />
+        <div className="h-15 w-full">
+          <TournamentActionButton
+            tournament={tournament}
+            onJoin={onJoin}
+            onClaim={onClaim}
+          />
+        </div>
+
         <span
           className="font-pixel text-main-gray cursor-pointer text-xs underline-offset-2 hover:underline"
           onClick={() => onViewDetails?.(tournament)}
