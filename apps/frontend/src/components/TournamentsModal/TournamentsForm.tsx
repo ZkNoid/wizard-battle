@@ -7,6 +7,7 @@ import {
   type TournamentsFilters,
 } from './TournamentsFilterPanel';
 import { TournamentsList } from './TournamentsList';
+import { TournamentDetailsForm } from './TournamentDetailsForm';
 import { BuyTicketConfirmationModal } from './BuyTicketConfirmationModal';
 import { CongratulationsModal } from './CongratulationsModal';
 import { ALL_TOURNAMENTS } from '@/lib/constants/tournaments';
@@ -51,12 +52,9 @@ function sortTournaments(
 
 export function TournamentsForm({ onClose }: TournamentsFormProps) {
   const [filters, setFilters] = useState<TournamentsFilters>(DEFAULT_FILTERS);
-  const [joinTournament, setJoinTournament] = useState<ITournament | null>(
-    null
-  );
-  const [claimTournament, setClaimTournament] = useState<ITournament | null>(
-    null
-  );
+  const [selectedTournament, setSelectedTournament] = useState<ITournament | null>(null);
+  const [joinTournament, setJoinTournament] = useState<ITournament | null>(null);
+  const [claimTournament, setClaimTournament] = useState<ITournament | null>(null);
 
   const tournaments = sortTournaments(ALL_TOURNAMENTS, filters.sortBy);
 
@@ -74,13 +72,25 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
     <div className="flex h-full w-full flex-col gap-4">
       <ModalTitle title="Tournaments" onClose={onClose ?? (() => {})} />
 
-      <TournamentsFilterPanel filters={filters} onFiltersChange={setFilters} />
+      {selectedTournament ? (
+        <TournamentDetailsForm
+          tournament={selectedTournament}
+          onBack={() => setSelectedTournament(null)}
+          onJoin={setJoinTournament}
+          onClaim={setClaimTournament}
+        />
+      ) : (
+        <>
+          <TournamentsFilterPanel filters={filters} onFiltersChange={setFilters} />
 
-      <TournamentsList
-        tournaments={tournaments}
-        onJoin={setJoinTournament}
-        onClaim={setClaimTournament}
-      />
+          <TournamentsList
+            tournaments={tournaments}
+            onJoin={setJoinTournament}
+            onClaim={setClaimTournament}
+            onViewDetails={setSelectedTournament}
+          />
+        </>
+      )}
 
       {joinTournament && (
         <BuyTicketConfirmationModal

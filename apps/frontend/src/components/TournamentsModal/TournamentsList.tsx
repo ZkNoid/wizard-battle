@@ -8,12 +8,14 @@ interface TournamentsListProps {
   tournaments: ITournament[];
   onJoin?: (tournament: ITournament) => void;
   onClaim?: (tournament: ITournament) => void;
+  onViewDetails?: (tournament: ITournament) => void;
 }
 
 export function TournamentsList({
   tournaments,
   onJoin,
   onClaim,
+  onViewDetails,
 }: TournamentsListProps) {
   return (
     <div className="h-140">
@@ -30,6 +32,7 @@ export function TournamentsList({
                 tournament={tournament}
                 onJoin={onJoin}
                 onClaim={onClaim}
+                onViewDetails={onViewDetails}
               />
             ))}
           </div>
