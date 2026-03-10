@@ -21,24 +21,59 @@ function getActionConfig(tournament: ITournament): ActionConfig {
 
   if (status === 'ended') {
     if (userStatus === 'won') {
-      return { label: 'Claim rewards', variant: 'green', disabled: false, action: 'claim' };
+      return {
+        label: 'Claim rewards',
+        variant: 'green',
+        disabled: false,
+        action: 'claim',
+      };
     }
-    return { label: 'Event ended', variant: 'gray', disabled: true, action: 'none' };
+    return {
+      label: 'Event ended',
+      variant: 'gray',
+      disabled: true,
+      action: 'none',
+    };
   }
 
   switch (userStatus) {
     case 'not-joined':
-      return { label: 'Join tournament', variant: 'blue', disabled: false, action: 'join' };
+      return {
+        label: 'Join tournament',
+        variant: 'blue',
+        disabled: false,
+        action: 'join',
+      };
     case 'got-ticket':
     case 'joined':
-      return { label: 'Open tournament', variant: 'gray', disabled: false, action: 'open' };
+      return {
+        label: 'Open tournament',
+        variant: 'gray',
+        disabled: false,
+        action: 'open',
+      };
     case 'won':
-      return { label: 'Claim rewards', variant: 'green', disabled: false, action: 'claim' };
+      return {
+        label: 'Claim rewards',
+        variant: 'green',
+        disabled: false,
+        action: 'claim',
+      };
     case 'lost':
     case 'pending':
-      return { label: 'Open tournament', variant: 'gray', disabled: false, action: 'open' };
+      return {
+        label: 'Open tournament',
+        variant: 'gray',
+        disabled: false,
+        action: 'open',
+      };
     default:
-      return { label: 'Join tournament', variant: 'blue', disabled: false, action: 'join' };
+      return {
+        label: 'Join tournament',
+        variant: 'blue',
+        disabled: false,
+        action: 'join',
+      };
   }
 }
 
@@ -57,7 +92,7 @@ export function TournamentActionButton({
   return (
     <Button
       variant={variant}
-      className="h-12 w-full"
+      className="h-full w-full"
       disabled={disabled}
       onClick={handleClick}
       enableHoverSound

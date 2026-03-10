@@ -10,6 +10,7 @@ export interface ITournament {
   sponsors: ITournamentSponsor[];
 
   imageURL: string;
+  description?: string;
 
   maxParticipants: number;
   startDate: string;

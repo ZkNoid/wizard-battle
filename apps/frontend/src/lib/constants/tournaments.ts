@@ -25,6 +25,7 @@ export const ALL_TOURNAMENTS: ITournament[] = [
     userStatus: 'not-joined',
     maxParticipants: 64,
     imageURL: '/tournaments/grand-wizard.png',
+    description: 'The most prestigious wizard tournament of the year. Only the strongest mages from across the realm compete for the ultimate prize. Prove your mastery of spells and strategy to claim glory.',
     ticketCost: { type: 'currency', currency: 'gold', amount: 500 },
     prizePool: [
       { type: 'currency', currency: 'gold', amount: 10000 },
@@ -45,6 +46,7 @@ export const ALL_TOURNAMENTS: ITournament[] = [
     userStatus: 'got-ticket',
     maxParticipants: 32,
     imageURL: '/tournaments/rookie-mage.png',
+    description: 'A beginner-friendly tournament open to all apprentice mages. Free entry, no experience required. The perfect place to test your skills for the first time.',
     ticketCost: null,
     prizePool: [{ type: 'currency', currency: 'gold', amount: 2000 }],
     sponsors: [{ name: 'ZkNoid Labs' }],
@@ -59,6 +61,7 @@ export const ALL_TOURNAMENTS: ITournament[] = [
     userStatus: 'joined',
     maxParticipants: 16,
     imageURL: '/tournaments/shadow-realm.png',
+    description: 'An invitation-only tournament held in the shadow realm. Masters of dark magic gather to settle their disputes. Entry requires a USDC fee — only the most committed dare to enter.',
     ticketCost: { type: 'currency', currency: 'usdc', amount: 5 },
     prizePool: [
       { type: 'currency', currency: 'usdc', amount: 200 },
