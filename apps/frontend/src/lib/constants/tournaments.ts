@@ -1,4 +1,7 @@
-import type { ITournament } from '../types/ITournament';
+import type {
+  ITournament,
+  ITournamentLeaderboardItem,
+} from '../types/ITournament';
 
 export const TOURNAMENTS_FILTER_BY_OPTIONS = [
   { value: 'all', label: 'All' },
@@ -27,7 +30,10 @@ export const ALL_TOURNAMENTS: ITournament[] = [
       { type: 'currency', currency: 'gold', amount: 10000 },
       { type: 'inventory-item', itemId: 'staff-of-eternity', quantity: 1 },
     ],
-    sponsors: [{ name: 'Arcane Guild' }, { name: 'ZkNoid Labs', url: 'https://zknoid.io' }],
+    sponsors: [
+      { name: 'Arcane Guild' },
+      { name: 'ZkNoid Labs', url: 'https://zknoid.io' },
+    ],
   },
   {
     id: '2',
@@ -127,3 +133,159 @@ export const ALL_TOURNAMENTS: ITournament[] = [
     sponsors: [],
   },
 ];
+
+export const ALL_TOURNAMENTS_LEADERBOARD: Record<
+  string,
+  ITournamentLeaderboardItem[]
+> = {
+  '1': [
+    {
+      place: 1,
+      walletAddress: '0xA1b2C3d4E5f6A7b8C9d0E1f2A3b4C5d6E7f8A9b0',
+      wins: 12,
+      prize: [
+        { type: 'currency', currency: 'gold', amount: 5000 },
+        { type: 'inventory-item', itemId: 'staff-of-eternity', quantity: 1 },
+      ],
+    },
+    {
+      place: 2,
+      walletAddress: '0xB2c3D4e5F6a7B8c9D0e1F2a3B4c5D6e7F8a9B0c1',
+      wins: 8,
+      prize: [{ type: 'currency', currency: 'gold', amount: 3000 }],
+    },
+    {
+      place: 3,
+      walletAddress: '0xC3d4E5f6A7b8C9d0E1f2A3b4C5d6E7f8A9b0C1d2',
+      wins: 5,
+      prize: [{ type: 'currency', currency: 'gold', amount: 2000 }],
+    },
+    {
+      place: 4,
+      walletAddress: '0xD4e5F6a7B8c9D0e1F2a3B4c5D6e7F8a9B0c1D2e3',
+      wins: 3,
+      prize: [],
+    },
+    {
+      place: 5,
+      walletAddress: '0xE5f6A7b8C9d0E1f2A3b4C5d6E7f8A9b0C1d2E3f4',
+      wins: 2,
+      prize: [],
+    },
+  ],
+  '2': [
+    {
+      place: 1,
+      walletAddress: '0xF6a7B8c9D0e1F2a3B4c5D6e7F8a9B0c1D2e3F4a5',
+      wins: 4,
+      prize: [{ type: 'currency', currency: 'gold', amount: 1000 }],
+    },
+    {
+      place: 2,
+      walletAddress: '0xA7b8C9d0E1f2A3b4C5d6E7f8A9b0C1d2E3f4A5b6',
+      wins: 2,
+      prize: [{ type: 'currency', currency: 'gold', amount: 600 }],
+    },
+    {
+      place: 3,
+      walletAddress: '0xB8c9D0e1F2a3B4c5D6e7F8a9B0c1D2e3F4a5B6c7',
+      wins: 1,
+      prize: [{ type: 'currency', currency: 'gold', amount: 400 }],
+    },
+  ],
+  '3': [
+    {
+      place: 1,
+      walletAddress: '0xC9d0E1f2A3b4C5d6E7f8A9b0C1d2E3f4A5b6C7d8',
+      wins: 7,
+      prize: [
+        { type: 'currency', currency: 'usdc', amount: 100 },
+        { type: 'inventory-item', itemId: 'shadow-cloak', quantity: 1 },
+      ],
+    },
+    {
+      place: 2,
+      walletAddress: '0xD0e1F2a3B4c5D6e7F8a9B0c1D2e3F4a5B6c7D8e9',
+      wins: 5,
+      prize: [{ type: 'currency', currency: 'usdc', amount: 60 }],
+    },
+    {
+      place: 3,
+      walletAddress: '0xE1f2A3b4C5d6E7f8A9b0C1d2E3f4A5b6C7d8E9f0',
+      wins: 3,
+      prize: [{ type: 'currency', currency: 'usdc', amount: 40 }],
+    },
+    {
+      place: 4,
+      walletAddress: '0xF2a3B4c5D6e7F8a9B0c1D2e3F4a5B6c7D8e9F0a1',
+      wins: 1,
+      prize: [],
+    },
+  ],
+  '4': [
+    {
+      place: 1,
+      walletAddress: '0xA3b4C5d6E7f8A9b0C1d2E3f4A5b6C7d8E9f0A1b2',
+      wins: 15,
+      prize: [
+        { type: 'currency', currency: 'gold', amount: 12500 },
+        { type: 'currency', currency: 'usdc', amount: 50 },
+      ],
+    },
+    {
+      place: 2,
+      walletAddress: '0xB4c5D6e7F8a9B0c1D2e3F4a5B6c7D8e9F0a1B2c3',
+      wins: 10,
+      prize: [{ type: 'currency', currency: 'gold', amount: 7500 }],
+    },
+    {
+      place: 3,
+      walletAddress: '0xC5d6E7f8A9b0C1d2E3f4A5b6C7d8E9f0A1b2C3d4',
+      wins: 6,
+      prize: [{ type: 'currency', currency: 'gold', amount: 5000 }],
+    },
+    {
+      place: 4,
+      walletAddress: '0xD6e7F8a9B0c1D2e3F4a5B6c7D8e9F0a1B2c3D4e5',
+      wins: 4,
+      prize: [],
+    },
+    {
+      place: 5,
+      walletAddress: '0xE7f8A9b0C1d2E3f4A5b6C7d8E9f0A1b2C3d4E5f6',
+      wins: 2,
+      prize: [],
+    },
+    {
+      place: 6,
+      walletAddress: '0xF8a9B0c1D2e3F4a5B6c7D8e9F0a1B2c3D4e5F6a7',
+      wins: 1,
+      prize: [],
+    },
+  ],
+  '5': [],
+  '6': [
+    {
+      place: 1,
+      walletAddress: '0xA9b0C1d2E3f4A5b6C7d8E9f0A1b2C3d4E5f6A7b8',
+      wins: 9,
+      prize: [
+        { type: 'currency', currency: 'gold', amount: 4000 },
+        { type: 'inventory-item', itemId: 'ember-ring', quantity: 1 },
+      ],
+    },
+    {
+      place: 2,
+      walletAddress: '0xB0c1D2e3F4a5B6c7D8e9F0a1B2c3D4e5F6a7B8c9',
+      wins: 6,
+      prize: [{ type: 'currency', currency: 'gold', amount: 2400 }],
+    },
+    {
+      place: 3,
+      walletAddress: '0xC1d2E3f4A5b6C7d8E9f0A1b2C3d4E5f6A7b8C9d0',
+      wins: 3,
+      prize: [{ type: 'currency', currency: 'gold', amount: 1600 }],
+    },
+  ],
+  '7': [],
+};

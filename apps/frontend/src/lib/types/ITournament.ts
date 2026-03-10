@@ -44,3 +44,10 @@ export interface ITournamentSponsor {
   name: string;
   url?: string;
 }
+
+export interface ITournamentLeaderboardItem {
+  place: number;
+  walletAddress: string;
+  wins: number;
+  prize: ITournamentAsset[];
+}
