@@ -107,16 +107,20 @@ export function TournamentDetailsLeaderboard({
 
                         {/* Prize */}
                         <div className="flex flex-col items-end justify-center gap-0.5">
-                          {item.prize?.length > 0 &&
-                            item.prize?.map((asset, i) => (
+                          {tournament.status !== 'ended' ? (
+                            <span className="font-pixel-klein text-main-gray/60 text-xs">
+                              Event online
+                            </span>
+                          ) : item.prize?.length > 0 ? (
+                            item.prize.map((asset, i) => (
                               <TournamentAssetDisplay
                                 key={i}
                                 asset={asset}
                                 className="text-main-gray"
                               />
-                            ))}
-                          {item.prize?.length === 0 && (
-                            <span className="font-pixel-klein text-main-gray/60 text-sm">
+                            ))
+                          ) : (
+                            <span className="font-pixel-klein text-main-gray/60 text-xs">
                               Sorry, you lost
                             </span>
                           )}
