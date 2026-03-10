@@ -48,12 +48,12 @@ export function TournamentDetailsLeaderboard({
   // const entries = ALL_TOURNAMENTS_LEADERBOARD[tournament.id] ?? [];
   const entries = ALL_TOURNAMENTS_LEADERBOARD['1'];
   return (
-    <div className="relative flex h-full w-full flex-col">
+    <div className="relative flex h-full w-full flex-col p-4">
       <TournamentsDetailsLeaderboardBg className="pointer-events-none absolute inset-0 h-full w-full" />
 
       <div className="relative z-10 flex h-full flex-col gap-3 p-5">
         {/* Title */}
-        <span className="font-pixel text-main-gray text-base font-bold">
+        <span className="font-pixel text-main-gray mb-2 text-center text-base font-bold">
           Leaderboard
         </span>
 
