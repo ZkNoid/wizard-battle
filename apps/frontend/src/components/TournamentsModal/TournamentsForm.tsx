@@ -52,9 +52,14 @@ function sortTournaments(
 
 export function TournamentsForm({ onClose }: TournamentsFormProps) {
   const [filters, setFilters] = useState<TournamentsFilters>(DEFAULT_FILTERS);
-  const [selectedTournament, setSelectedTournament] = useState<ITournament | null>(null);
-  const [joinTournament, setJoinTournament] = useState<ITournament | null>(null);
-  const [claimTournament, setClaimTournament] = useState<ITournament | null>(null);
+  const [selectedTournament, setSelectedTournament] =
+    useState<ITournament | null>(null);
+  const [joinTournament, setJoinTournament] = useState<ITournament | null>(
+    null
+  );
+  const [claimTournament, setClaimTournament] = useState<ITournament | null>(
+    null
+  );
 
   const tournaments = sortTournaments(ALL_TOURNAMENTS, filters.sortBy);
 
@@ -68,9 +73,11 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
     setClaimTournament(null);
   };
 
+  const modalTitle = selectedTournament ? 'Tournament Details' : 'Tournaments';
+
   return (
     <div className="flex h-full w-full flex-col gap-4">
-      <ModalTitle title="Tournaments" onClose={onClose ?? (() => {})} />
+      <ModalTitle title={modalTitle} onClose={onClose ?? (() => {})} />
 
       {selectedTournament ? (
         <TournamentDetailsForm
@@ -81,7 +88,10 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
         />
       ) : (
         <>
-          <TournamentsFilterPanel filters={filters} onFiltersChange={setFilters} />
+          <TournamentsFilterPanel
+            filters={filters}
+            onFiltersChange={setFilters}
+          />
 
           <TournamentsList
             tournaments={tournaments}
