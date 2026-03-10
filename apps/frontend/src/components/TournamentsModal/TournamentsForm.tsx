@@ -73,16 +73,19 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
     setClaimTournament(null);
   };
 
-  const modalTitle = selectedTournament ? 'Tournament Details' : 'Tournaments';
-
   return (
     <div className="flex h-full w-full flex-col gap-4">
-      <ModalTitle title={modalTitle} onClose={onClose ?? (() => {})} />
+      <ModalTitle
+        title={selectedTournament ? 'Tournament Details' : 'Tournaments'}
+        onClose={onClose ?? (() => {})}
+        onBack={
+          selectedTournament ? () => setSelectedTournament(null) : undefined
+        }
+      />
 
       {selectedTournament ? (
         <TournamentDetailsForm
           tournament={selectedTournament}
-          onBack={() => setSelectedTournament(null)}
           onJoin={setJoinTournament}
           onClaim={setClaimTournament}
         />
