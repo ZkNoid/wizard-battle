@@ -5,8 +5,8 @@ export function computeDisplaySize(
   containerEl: HTMLElement,
   animData: SpriteAnimationData
 ): { w: number; h: number } {
-  const { width, height } = containerEl.getBoundingClientRect();
-  const scale = Math.min(width / animData.frameWidth, height / animData.frameHeight);
+  const { width } = containerEl.getBoundingClientRect();
+  const scale = width / animData.frameWidth;
   return {
     w: Math.round(animData.frameWidth * scale),
     h: Math.round(animData.frameHeight * scale),

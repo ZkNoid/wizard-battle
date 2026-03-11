@@ -7,6 +7,7 @@ import {
 } from '@/lib/constants/wizardAnimations';
 import { AnimatedHeroBg } from './assets/amimated-hero-bg';
 import { computeDisplaySize, useSpriteAnimation } from './utils';
+import Image from 'next/image';
 
 export function AnimatedHero({
   wizardId,
@@ -60,24 +61,35 @@ export function AnimatedHero({
       {/* Inner area matching SVG frame interior, sized via CSS percentage insets */}
       <div
         ref={innerRef}
-        className="absolute inset-x-[3.62%] inset-y-[2.94%] flex items-center justify-center"
+        className="absolute inset-x-[3.62%] inset-y-[2.94%] flex items-center justify-center overflow-hidden"
       >
         {/* Background layer */}
         {bgDisplaySize && (
-          <div
-            ref={bgSpriteRef}
-            className="absolute"
-            style={{
-              backgroundImage: `url(${HERO_BACKGROUND.sheetUrl})`,
-              backgroundSize: `${bgDisplaySize.w * HERO_BACKGROUND.frameCount}px ${bgDisplaySize.h}px`,
-              backgroundPositionX: '0px',
-              backgroundPositionY: '0px',
-              backgroundRepeat: 'no-repeat',
-              width: `${bgDisplaySize.w}px`,
-              height: `${bgDisplaySize.h}px`,
-              imageRendering: 'pixelated',
-            }}
-          />
+          <>
+            <Image
+              src="/animations/heroes/static-backbround.png"
+              alt=""
+              width={bgDisplaySize.w + 25}
+              height={bgDisplaySize.h - 20}
+              className="object-cover"
+              style={{ imageRendering: 'pixelated' }}
+              unoptimized
+            />
+            <div
+              ref={bgSpriteRef}
+              className="absolute"
+              style={{
+                backgroundImage: `url(${HERO_BACKGROUND.sheetUrl})`,
+                backgroundSize: `${bgDisplaySize.w * HERO_BACKGROUND.frameCount}px ${bgDisplaySize.h}px`,
+                backgroundPositionX: '0px',
+                backgroundPositionY: '0px',
+                backgroundRepeat: 'no-repeat',
+                width: `${bgDisplaySize.w}px`,
+                height: `${bgDisplaySize.h}px`,
+                imageRendering: 'pixelated',
+              }}
+            />
+          </>
         )}
         {/* Hero layer */}
         {heroData && heroDisplaySize && (
