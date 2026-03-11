@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Compatible with OpenZeppelin Contracts ^5.5.0
-pragma solidity ^0.8.27;
+pragma solidity ^0.8.30;
 
 import {AccessControlDefaultAdminRulesUpgradeable} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlDefaultAdminRulesUpgradeable.sol";
 import {AccessControlEnumerableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
@@ -8,10 +8,10 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {ERC721Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import {ERC721BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
 import {ERC721EnumerableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-// integraded, not implemented
 import {ERC721PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721PausableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
  * @title WBItems
@@ -33,10 +33,12 @@ contract WBItems is
     ERC721Upgradeable,
     ERC721EnumerableUpgradeable,
     ERC721PausableUpgradeable,
-    AccessControlUpgradeable,
     ERC721BurnableUpgradeable,
-    UUPSUpgradeable
+    UUPSUpgradeable,
+    AccessControlUpgradeable
 {
+    using Strings for uint256;
+
     /**
      * @dev Storage structure for WBItems contract state
      * @custom:storage-location erc7201:myProject.MyToken
@@ -44,6 +46,7 @@ contract WBItems is
     struct WBItemsStorage {
         /// @dev Counter for the next token ID to be minted
         uint256 _nextTokenId;
+        string _uri;
     }
 
     /// @dev Storage slot location for WBItemsStorage (ERC7201 pattern)
@@ -76,8 +79,8 @@ contract WBItems is
         __ERC721_init("WBItems", "WBCH");
         __ERC721Enumerable_init();
         __ERC721Pausable_init();
-        __AccessControl_init();
         __ERC721Burnable_init();
+        __AccessControl_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
         _grantRole(PAUSER_ROLE, pauser);
@@ -85,11 +88,14 @@ contract WBItems is
         _grantRole(UPGRADER_ROLE, upgrader);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                           EXTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     /**
      * @notice Pauses all token transfers
      * @dev Can only be called by addresses with PAUSER_ROLE
      */
-    function pause() public onlyRole(PAUSER_ROLE) {
+    function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
@@ -97,17 +103,17 @@ contract WBItems is
      * @notice Unpauses all token transfers
      * @dev Can only be called by addresses with PAUSER_ROLE
      */
-    function unpause() public onlyRole(PAUSER_ROLE) {
+    function unpause() external onlyRole(PAUSER_ROLE) {
         _unpause();
     }
 
     /**
-     * @notice Mints a new character NFT to a specified address
+     * @notice Mints a new item NFT to a specified address
      * @dev Can only be called by addresses with MINTER_ROLE. Token ID is auto-incremented
-     * @param to Address to receive the minted character NFT
+     * @param to Address to receive the minted item NFT
      * @return uint256 The ID of the newly minted token
      */
-    function mint(address to) public onlyRole(MINTER_ROLE) returns (uint256) {
+    function mint(address to) external onlyRole(MINTER_ROLE) returns (uint256) {
         WBItemsStorage storage $ = _getWBItemsStorage();
         uint256 tokenId = $._nextTokenId++;
         _safeMint(to, tokenId);
@@ -115,14 +121,18 @@ contract WBItems is
     }
 
     /**
-     * @dev Retrieves the storage struct using ERC7201 namespaced storage pattern
-     * @return $ Storage reference to WBItemsStorage struct
+     * @notice Sets the base URI for token metadata
+     * @dev Can only be called by addresses with DEFAULT_ADMIN_ROLE
+     * @param uri The new base URI string
      */
-    function _getWBItemsStorage() private pure returns (WBItemsStorage storage $) {
-        assembly {
-            $.slot := WB_CHARACTER_STORAGE_LOCATION
-        }
+    function setURI(string memory uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        WBItemsStorage storage $ = _getWBItemsStorage();
+        $._uri = uri;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Authorizes an upgrade to a new implementation
@@ -161,6 +171,59 @@ contract WBItems is
         super._increaseBalance(account, value);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                     INTERNAL VIEW / PURE FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Retrieves the storage struct using ERC7201 namespaced storage pattern
+     * @return $ Storage reference to WBItemsStorage struct
+     */
+    function _getWBItemsStorage() internal pure returns (WBItemsStorage storage $) {
+        assembly {
+            $.slot := WB_CHARACTER_STORAGE_LOCATION
+        }
+    }
+
+    /**
+     * @dev Returns the base URI for computing tokenURI
+     * @return string The base URI string (currently empty, should be configured for production)
+     * @dev TODO: Decide need to override or not
+     */
+    function _baseURI() internal view override returns (string memory) {
+        WBItemsStorage storage $ = _getWBItemsStorage();
+        return $._uri;
+    }
+
+    /**
+     * @dev Overrides authorization check to allow MINTER_ROLE to transfer tokens without explicit approval
+     * @param owner Current owner of the token
+     * @param spender Address attempting to transfer the token
+     * @param tokenId ID of the token being transferred
+     */
+    function _checkAuthorized(address owner, address spender, uint256 tokenId) internal view override(ERC721Upgradeable) {
+        if (!_isAuthorized(owner, spender, tokenId)) {
+            if (owner == address(0)) {
+                revert ERC721NonexistentToken(tokenId);
+            } else if (!hasRole(MINTER_ROLE, spender)) {
+                revert ERC721InsufficientApproval(spender, tokenId);
+            }
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                         EXTERNAL / PUBLIC VIEW
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Returns the next token ID that will be assigned on mint
+     * @return uint256 The next token ID
+     */
+    function getNextTokenId() external view returns (uint256) {
+        WBItemsStorage memory $ = _getWBItemsStorage();
+        return $._nextTokenId;
+    }
+
     /**
      * @notice Returns the URI for a given token ID
      * @dev Returns the metadata URI for the specified character NFT
@@ -168,7 +231,8 @@ contract WBItems is
      * @return string The URI pointing to the token's metadata
      */
     function tokenURI(uint256 tokenId) public view override(ERC721Upgradeable) returns (string memory) {
-        return super.tokenURI(tokenId);
+        string memory baseURI = _baseURI();
+        return bytes(baseURI).length > 0 ? string.concat(baseURI, tokenId.toString()) : "";
     }
 
     /**
@@ -184,23 +248,26 @@ contract WBItems is
     {
         return super.supportsInterface(interfaceId);
     }
-
-    /**
-     * @dev Returns the base URI for computing tokenURI
-     * @return string The base URI string (currently empty, should be configured for production)
-     * @dev TODO: Decide need to override or not
-     */
-    function _baseURI() internal pure override returns (string memory) {
-        return "";
-    }
-
-    function _checkAuthorized(address owner, address spender, uint256 tokenId) internal view override(ERC721Upgradeable) {
-        if (!_isAuthorized(owner, spender, tokenId)) {
-            if (owner == address(0)) {
-                revert ERC721NonexistentToken(tokenId);
-            } else if (!hasRole(MINTER_ROLE, spender)) {
-                revert ERC721InsufficientApproval(spender, tokenId);
-            }
-        }
-    }
 }
+
+// Layout of Contract:
+// version
+// imports
+// interfaces, libraries, contracts
+// errors
+// Type declarations
+// State variables
+// Events
+// Modifiers
+// Functions
+
+// Layout of Functions:
+// constructor
+// receive function (if exists)
+// fallback function (if exists)
+// external
+// public
+// internal
+// private
+// internal & private view & pure functions
+// external & public view & pure functions

@@ -9,6 +9,10 @@ remappings = [
     "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
 ]
 
+fs_permissions = [
+    { access = "read", path = "./broadcast" }
+]
+
 # Formatter settings
 [fmt]
 line_length = 160

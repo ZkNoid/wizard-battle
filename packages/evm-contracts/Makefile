@@ -19,6 +19,14 @@ deployAll-anvil:;forge script script/DeployAll.s.sol:DeployAll --broadcast --rpc
 
 upgradeMarket-fuji:; forge script script/UpgradeMarket.s.sol --rpc-url ${AVALANCHE_FUJI_RPC_URL} --broadcast --account devKey --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
 
+upgradeWBCharacters-fuji:; forge script script/UpgradeWBCharacters.s.sol --rpc-url ${AVALANCHE_FUJI_RPC_URL} --broadcast --account devKey --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
+
+upgradeWBItems-fuji:; forge script script/UpgradeWBItems.s.sol --rpc-url ${AVALANCHE_FUJI_RPC_URL} --broadcast --account devKey --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
+
+upgradeWBResources-fuji:; forge script script/UpgradeWBResources.s.sol --rpc-url ${AVALANCHE_FUJI_RPC_URL} --broadcast --account devKey --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
+
+
+
 test-fuji:
 
 # GameMarket has GameRegistry set
@@ -45,8 +53,8 @@ test-fuji-fillOrder:; forge script script/TestOrder.s.sol:FillOrder --rpc-url ${
 # GameRegestry implementation:  0xF6ea80fA07C4FE3A45399A4b1d81ceF6Cc81D9B8
 # GameRegestry proxy:           0x4e590B45fB999d93e981af65eB6A4eC06652A04D
 
-# WBCharacter implementation: 	0x0a9054161D69de45d2016720cE663417e7627598	0x7E31f14119c02e41386889cE1704Ff5F73BFe435
-# WBCharacter proxy:         	0x55e1cCD651A3e3e0EfC6b61e8c94878cbe87F64B	0x0e3Da2602e33ACB76F925f379DC7B2E1C5d4fefb
+# WBCharacter implementation: 	0x0a9054161D69de45d2016720cE663417e7627598
+# WBCharacter proxy:         	0x55e1cCD651A3e3e0EfC6b61e8c94878cbe87F64B	
 
 # WBResources implementation: 	0xfBA871cFfc473fbcAC883663a38d5FdAa4586D5E
 # WBResources proxy:         	0xee52Ce7D2c46F8B728D74a030efCB78885F90E25
@@ -57,8 +65,13 @@ test-fuji-fillOrder:; forge script script/TestOrder.s.sol:FillOrder --rpc-url ${
 # WBItems implementation:		0x4B4b53E9FB8B2928D3aE423d91F6c8fd7aa322A6
 # WBItems proxy:   				0x6fC43f3cf1B27199F52F160f05645b1541292484
 
-# GameMarket implementation:	0xD6Acb26f17F3C8c87C32cD781C97c86071562672 0x7E31f14119c02e41386889cE1704Ff5F73BFe435
-# GameMarket proxy:   			0x8865d8738E37671138D5270A7B4befeE83DeE904 0x0e3Da2602e33ACB76F925f379DC7B2E1C5d4fefb
+# GameMarket implementation:	0x7E31f14119c02e41386889cE1704Ff5F73BFe435 
+# GameMarket proxy:   			0x8865d8738E37671138D5270A7B4befeE83DeE904 
+
+postDeployAll-fuji:
+		cast send 0x55e1cCD651A3e3e0EfC6b61e8c94878cbe87F64B "setURI(string)" "https://wizard.zknoid.io/nft/characters/" --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey -vvvv
+		cast send 0xee52Ce7D2c46F8B728D74a030efCB78885F90E25 "setURI(string)" "https://wizard.zknoid.io/nft/resources/" --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey -vvvv
+		cast send 0x6fC43f3cf1B27199F52F160f05645b1541292484 "setURI(string)" "https://wizard.zknoid.io/nft/items/" --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey -vvvv
 
 postDeployGM-fuji:
 	cast send 0x8865d8738E37671138D5270A7B4befeE83DeE904 "setGameRegistry(address)" 0x4e590B45fB999d93e981af65eB6A4eC06652A04D --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey -vvvv
