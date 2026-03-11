@@ -126,21 +126,25 @@ export default function Header({ onTabChange }: HeaderProps) {
           </BoxButton>
         </div>
         <div className="ml-10 flex w-full items-center justify-between gap-2 px-0">
-          <Button
-            variant="gray"
-            className="h-15 w-45 flex items-center justify-center gap-2.5"
-          >
-            <Image
-              src={'/icons/gold-coin.png'}
-              width={32}
-              height={32}
-              unoptimized={true}
-              alt="gold-coin"
-              quality={100}
-              className="h-8 w-10"
-            />
-            <span>{formatCurrency(gold)}</span>
-          </Button>
+          <div className="w-40 shrink-0">
+            <Button
+              variant="gray"
+              className="h-15 flex w-full items-center justify-center gap-2.5"
+              size="sm"
+            >
+              <Image
+                src={'/icons/gold-coin.png'}
+                width={32}
+                height={32}
+                unoptimized={true}
+                alt="gold-coin"
+                quality={100}
+                className="h-8 w-10"
+              />
+              <span>{formatCurrency(gold)}</span>
+            </Button>
+          </div>
+
           {/* <Button
             variant="gray"
             className="h-15 flex w-32 items-center justify-center gap-2.5"
@@ -156,11 +160,11 @@ export default function Header({ onTabChange }: HeaderProps) {
             />
             <span>{formatCurrency(blackOrb)}</span>
           </Button> */}
-          <div className="w-80 shrink-0">
+          <div className="w-60 shrink-0">
             <Wallet />
           </div>
           {
-            <div className="w-40 shrink-0">
+            <div className="w-60 shrink-0">
               <WalletReown />
             </div>
           }

@@ -207,7 +207,7 @@ export default function Wallet({ className }: WalletProps = {}) {
           text={` ${displayName} `}
           onClick={disconnect}
           className="h-15 w-full text-base font-bold"
-          isLong={true}
+          size="lg"
         />
       ) : (
         <Button
@@ -215,7 +215,7 @@ export default function Wallet({ className }: WalletProps = {}) {
           text="Connect Wallet"
           onClick={triggerWalletOrRedirect}
           className="h-15 w-full text-base font-bold"
-          isLong={true}
+          size="lg"
         />
       )}
     </motion.div>
