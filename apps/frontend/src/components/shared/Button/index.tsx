@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { useHoverSound, useClickSound } from '@/lib/hooks/useAudio';
-import { bgBySize, type ButtonColorScheme, type ButtonSize } from './assets/utils';
+import { bgBySize, type ButtonColorScheme, type ButtonSize } from './utils';
 
 export type { ButtonSize };
 

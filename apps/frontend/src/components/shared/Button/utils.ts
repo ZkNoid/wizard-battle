@@ -1,11 +1,11 @@
 import type { ComponentType } from 'react';
-import { BtnXsBg } from './btn-xs-bg';
-import { BtnSmBg } from './btn-sm-bg';
-import { BtnMdBg } from './btn-md-bg';
-import { BtnLgBg } from './btn-lg-bg';
-import { BtnXlBg } from './btn-xl-bg';
-import { BtnXxlBg } from './btn-xxl-bg';
-import { BtnBoxBg } from './btn-box-bg';
+import { BtnXsBg } from './assets/btn-xs-bg';
+import { BtnSmBg } from './assets/btn-sm-bg';
+import { BtnMdBg } from './assets/btn-md-bg';
+import { BtnLgBg } from './assets/btn-lg-bg';
+import { BtnXlBg } from './assets/btn-xl-bg';
+import { BtnXxlBg } from './assets/btn-xxl-bg';
+import { BtnBoxBg } from './assets/btn-box-bg';
 
 export interface ColorScheme {
   light: string;

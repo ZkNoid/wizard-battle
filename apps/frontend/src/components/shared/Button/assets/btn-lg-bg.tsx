@@ -1,4 +1,4 @@
-import { colorSchemes, type ButtonColorScheme } from './utils';
+import { colorSchemes, type ButtonColorScheme } from '../utils';
 
 export const BtnLgBg = ({
   className,
