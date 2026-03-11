@@ -61,7 +61,7 @@ export function Button({
       disabled={disabled}
       onMouseEnter={handleMouseEnter}
       className={cn(
-        'not-disabled:group/button font-pixel not-disabled:hover:scale-105 relative z-[1] flex cursor-pointer items-center justify-center text-base transition-transform duration-300 disabled:cursor-not-allowed disabled:opacity-80',
+        'not-disabled:group/button font-pixel not-disabled:hover:scale-105 relative z-[1] flex cursor-pointer items-center justify-center text-base transition-transform duration-300 disabled:cursor-not-allowed disabled:opacity-50',
         className,
         textColor
       )}
