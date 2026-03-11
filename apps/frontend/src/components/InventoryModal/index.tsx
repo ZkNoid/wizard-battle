@@ -11,6 +11,7 @@ import type {
 } from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
 import { useState, useMemo } from 'react';
+import { AnimatedHero } from '@/components/AnimatedHero';
 import { CharacterBg } from './assets/character-bg';
 import { LvlBg } from './assets/lvl-bg';
 import { LEVELS_XP, levelFromXp } from '@/lib/constants/levels';
@@ -19,7 +20,11 @@ import type { IInventoryFilterBtnProps } from './InventoryFilterBtn';
 import InventoryFilterBtn from './InventoryFilterBtn';
 import { heroStatsConfig } from '@/lib/constants/stat';
 import type { IHeroStatConfig, IHeroStats } from '@/lib/types/IHeroStat';
-import { useInventoryStore, useUserDataStore, type EquippedSlots } from '@/lib/store';
+import {
+  useInventoryStore,
+  useUserDataStore,
+  type EquippedSlots,
+} from '@/lib/store';
 import { WizardId } from '../../../../common/wizards';
 import {
   useModalSound,
@@ -215,7 +220,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     }
 
     // Check wear requirements (class and level)
-    if (wearableItem.wearRequirements && wearableItem.wearRequirements.length > 0) {
+    if (
+      wearableItem.wearRequirements &&
+      wearableItem.wearRequirements.length > 0
+    ) {
       const currentClassName = getWizardClassName(currentWizard);
       const currentLevel = levelFromXp(xp);
 
@@ -223,16 +231,21 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
         // Check class requirement
         if (req.requirement.toLowerCase() === 'class') {
           if (req.value !== currentClassName) {
-            console.warn(`Cannot equip ${wearableItem.title}: Requires class ${req.value}, but current wizard is ${currentClassName}`);
+            console.warn(
+              `Cannot equip ${wearableItem.title}: Requires class ${req.value}, but current wizard is ${currentClassName}`
+            );
             setDraggedItem(null);
             return;
           }
         }
         // Check level requirement
         if (req.requirement.toLowerCase() === 'level') {
-          const requiredLevel = typeof req.value === 'string' ? parseInt(req.value, 10) : req.value;
+          const requiredLevel =
+            typeof req.value === 'string' ? parseInt(req.value, 10) : req.value;
           if (currentLevel < requiredLevel) {
-            console.warn(`Cannot equip ${wearableItem.title}: Requires level ${requiredLevel}, but current wizard is level ${currentLevel}`);
+            console.warn(
+              `Cannot equip ${wearableItem.title}: Requires level ${requiredLevel}, but current wizard is level ${currentLevel}`
+            );
             setDraggedItem(null);
             return;
           }
@@ -242,7 +255,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
 
     // Use store action to equip item (handles inventory swap automatically)
     await equipItem(address, currentWizardId, slotId, draggedItem);
-    
+
     setDraggedItem(null);
   };
 
@@ -252,7 +265,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
 
   const handleUnequip = async (slotId: InventoryItemWearableArmorSlot) => {
     if (!address) return;
-    
+
     const userItem = equippedItems[slotId];
     if (!userItem) return;
 
@@ -495,14 +508,9 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
               <div className="relative size-[95%]">
-                <Image
-                  src={`/inventory/wall/${currentWizard === Wizards.ARCHER ? 'archer.png' : currentWizard === Wizards.WARRIOR ? 'warrior.png' : 'mage.png'}`}
-                  width={1000}
-                  height={1000}
-                  quality={100}
-                  unoptimized={true}
-                  alt="wall"
-                  className="size-full object-contain object-center"
+                <AnimatedHero
+                  wizardId={currentWizardId}
+                  className="size-full"
                 />
 
                 {/* Level bar */}
