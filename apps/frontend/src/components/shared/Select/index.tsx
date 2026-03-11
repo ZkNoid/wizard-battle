@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { SelectTriggerBg } from './assets/select-trigger-bg';
 import { SelectDropdownBg } from './assets/select-dropdown-bg';
@@ -8,7 +9,7 @@ import { SelectArrow } from './assets/select-arrow';
 
 export interface SelectOption {
   value: string;
-  label: string;
+  label: ReactNode | string;
 }
 
 interface SelectProps {
@@ -42,8 +43,9 @@ export function Select({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const selectedLabel =
-    options.find((o) => o.value === value)?.label ?? placeholder;
+  const selectedOption = options.find((o) => o.value === value);
+  const selectedLabel: ReactNode | string =
+    selectedOption?.label ?? placeholder;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
