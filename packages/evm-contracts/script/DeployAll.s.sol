@@ -98,15 +98,18 @@ contract DeployAll is Script {
 
         WBCharacters(wbCharacters).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
         WBCharacters(wbCharacters).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
+        WBCharacters(wbCharacters).setURI("https://wizard.zknoid.io/nft/characters/");
 
         WBResources(wbResources).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
         WBResources(wbResources).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
+        WBResources(wbResources).setURI("https://wizard.zknoid.io/nft/resources/");
 
         WBCoin(wbCoin).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
         WBCoin(wbCoin).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
 
         WBItems(wbItems).grantRole(keccak256("MINTER_ROLE"), gameRegistry);
         WBItems(wbItems).grantRole(keccak256("MINTER_ROLE"), config.gameSigner);
+        WBItems(wbItems).setURI("https://wizard.zknoid.io/nft/items/");
 
         vm.stopBroadcast();
     }

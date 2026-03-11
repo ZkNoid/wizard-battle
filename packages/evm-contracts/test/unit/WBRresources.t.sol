@@ -349,4 +349,14 @@ contract WBResourcesTest is Test {
         wbResources.upgradeToAndCall(address(v2), "");
         vm.stopPrank();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                                  URI
+    //////////////////////////////////////////////////////////////*/
+    function test_uriTokenId() public {
+        wbResources.mint(user1, 2, 5, "");
+        wbResources.setURI("https://wizard.zknoid.io/nft/resources/");
+        string memory uri = wbResources.uri(2);
+        console2.log("uri: ", uri);
+    }
 }

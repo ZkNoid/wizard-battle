@@ -13,3 +13,6 @@
 [submodule "packages/evm-contracts/lib/openzeppelin-contracts-upgradeable"]
 	path = packages/evm-contracts/lib/openzeppelin-contracts-upgradeable
 	url = https://github.com/openzeppelin/openzeppelin-contracts-upgradeable
+[submodule "packages/evm-contracts/lib/foundry-devops"]
+	path = packages/evm-contracts/lib/foundry-devops
+	url = https://github.com/cyfrin/foundry-devops

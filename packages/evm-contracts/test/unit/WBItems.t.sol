@@ -428,4 +428,15 @@ contract WBItemsTest is Test {
         // This test ensures the _increaseBalance function is executed
         assertEq(helper.balanceOf(user1), initialBalance);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                                  URI
+    //////////////////////////////////////////////////////////////*/
+    function test_uriTokenId() public {
+        uint256 tokenId = wbItems.mint(user1);
+        tokenId = wbItems.mint(user1);
+        wbItems.setURI("https://wizard.zknoid.io/nft/items/");
+        string memory uri = wbItems.tokenURI(tokenId);
+        console2.log("uri: ", uri);
+    }
 }
