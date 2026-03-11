@@ -36,7 +36,7 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div
         className="w-160 h-215 relative mt-16"
         onClick={(e) => e.stopPropagation()}
