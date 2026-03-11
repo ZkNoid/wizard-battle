@@ -1,9 +1,10 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { ButtonBackground } from './assets/button-background';
-import { LongButtonBackground } from './assets/long-button-background';
 import { useHoverSound, useClickSound } from '@/lib/hooks/useAudio';
+import { bgBySize, type ButtonColorScheme, type ButtonSize } from './assets/utils';
+
+export type { ButtonSize };
 
 export function Button({
   text,
@@ -13,17 +14,20 @@ export function Button({
   className,
   type = 'button',
   disabled,
+  size = 'md',
   isLong,
   enableHoverSound = false,
   enableClickSound = false,
 }: {
-  variant: 'gray' | 'blue' | 'lightGray' | 'green' | 'red';
+  variant: ButtonColorScheme;
   text?: string;
   children?: React.ReactNode;
   onClick?: () => void;
   className?: string;
   type?: 'button' | 'submit' | 'reset';
   disabled?: boolean;
+  size?: ButtonSize;
+  /** @deprecated Use size="xxl" instead */
   isLong?: boolean;
   enableHoverSound?: boolean;
   enableClickSound?: boolean;
@@ -47,6 +51,9 @@ export function Button({
     }
   };
 
+  const resolvedSize: ButtonSize = isLong ? 'xxl' : size;
+  const Background = bgBySize[resolvedSize];
+
   return (
     <button
       type={type}
@@ -60,17 +67,10 @@ export function Button({
       )}
     >
       {children ? children : <span className={textColor}>{text}</span>}
-      {isLong ? (
-        <LongButtonBackground
-          color={variant}
-          className="absolute inset-0 -z-[1] h-full w-full"
-        />
-      ) : (
-        <ButtonBackground
-          color={variant}
-          className="absolute inset-0 -z-[1] h-full w-full"
-        />
-      )}
+      <Background
+        color={variant}
+        className="absolute inset-0 -z-[1] h-full w-full"
+      />
     </button>
   );
 }

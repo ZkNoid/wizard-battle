@@ -1,11 +1,11 @@
-import { colorSchemes } from './button-background';
+import { colorSchemes, type ButtonColorScheme } from './utils';
 
 export const LongButtonBackground = ({
   className,
   color = 'gray',
 }: {
   className?: string;
-  color?: 'gray' | 'blue' | 'lightGray' | 'green' | 'red';
+  color?: ButtonColorScheme;
 }) => {
   const scheme = colorSchemes[color];
 
