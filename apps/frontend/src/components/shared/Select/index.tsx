@@ -76,7 +76,7 @@ export function Select({
           type="button"
           disabled={disabled}
           onClick={() => setIsOpen((prev) => !prev)}
-          className="font-pixel-klein text-main-gray relative z-10 flex h-full w-full cursor-pointer items-center justify-between px-3 disabled:cursor-not-allowed disabled:opacity-50"
+          className="font-pixel-klein text-main-gray relative z-10 flex h-full w-full cursor-pointer items-center justify-between pl-5 pr-3 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="text-base">{selectedLabel}</span>
           <SelectArrow
@@ -107,7 +107,7 @@ export function Select({
                 onClick={() => handleSelect(option.value)}
                 style={{ height: optionHeight }}
                 className={cn(
-                  'font-pixel-klein text-main-gray flex w-full cursor-pointer items-center px-3 text-left text-base transition-opacity hover:opacity-100',
+                  'font-pixel-klein text-main-gray flex w-full cursor-pointer items-center pl-5 pr-3 text-left text-base transition-opacity hover:opacity-100',
                   value === option.value ? 'opacity-100' : 'opacity-40',
                   optionClassName
                 )}
