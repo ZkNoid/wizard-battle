@@ -62,7 +62,7 @@ export function TournamentDetailsLeaderboard({
           <span>Place</span>
           <span>Wallet</span>
           <span className="text-center">Wins</span>
-          <span className="text-right">Prize</span>
+          <span className="pr-6 text-right">Prize</span>
         </div>
 
         {/* Rows */}

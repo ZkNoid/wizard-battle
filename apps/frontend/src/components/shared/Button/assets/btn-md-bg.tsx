@@ -1,62 +1,23 @@
-interface ColorScheme {
-  light: string;
-  medium: string;
-  dark: string;
-  main: string;
-}
+import { colorSchemes, type ButtonColorScheme } from '../utils';
 
-export const colorSchemes: Record<
-  'gray' | 'blue' | 'lightGray' | 'green' | 'red',
-  ColorScheme
-> = {
-  gray: {
-    light: '#D5D8DD',
-    medium: '#ACB0BC',
-    dark: '#747C8F',
-    main: '#ACB0BC',
-  },
-  blue: {
-    light: '#A2B5E3',
-    medium: '#557FE8',
-    dark: '#1F3467',
-    main: '#557FE8',
-  },
-  lightGray: {
-    light: '#D5D8DD',
-    medium: '#D5D8DD',
-    dark: '#747C8F',
-    main: '#D5D8DD',
-  },
-  green: {
-    light: '#00af00',
-    medium: '#008800',
-    dark: '#005101',
-    main: '#008800',
-  },
-  red: {
-    light: '#FF0000',
-    medium: '#FF0000',
-    dark: '#FF0000',
-    main: '#FF0000',
-  },
-};
-
-export const ButtonBackground = ({
+export const BtnMdBg = ({
   className,
   color = 'gray',
 }: {
   className?: string;
-  color?: 'gray' | 'blue' | 'lightGray' | 'green' | 'red';
+  color?: ButtonColorScheme;
 }) => {
   const scheme = colorSchemes[color];
 
   return (
     <svg
+      width="210"
+      height="64"
       viewBox="0 0 210 64"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="none"
       className={className}
+      preserveAspectRatio="none"
     >
       <path d="M200 0H10V5H200V0Z" fill="#070C19" />
       <path d="M10 5H5V10H10V5Z" fill="#070C19" />

@@ -7,10 +7,12 @@ interface TournamentActionButtonProps {
   tournament: ITournament;
   onJoin?: (tournament: ITournament) => void;
   onClaim?: (tournament: ITournament) => void;
+  onOpen?: (tournament: ITournament) => void;
 }
 
 type ActionConfig = {
   label: string;
+  labelColor: 'text-main-gray' | 'text-white';
   variant: 'gray' | 'blue' | 'green';
   disabled: boolean;
   action: 'join' | 'claim' | 'open' | 'none';
@@ -23,6 +25,7 @@ function getActionConfig(tournament: ITournament): ActionConfig {
     if (userStatus === 'won') {
       return {
         label: 'Claim rewards',
+        labelColor: 'text-main-gray',
         variant: 'green',
         disabled: false,
         action: 'claim',
@@ -30,6 +33,7 @@ function getActionConfig(tournament: ITournament): ActionConfig {
     }
     return {
       label: 'Event ended',
+      labelColor: 'text-main-gray',
       variant: 'gray',
       disabled: true,
       action: 'none',
@@ -40,6 +44,7 @@ function getActionConfig(tournament: ITournament): ActionConfig {
     case 'not-joined':
       return {
         label: 'Join tournament',
+        labelColor: 'text-white',
         variant: 'blue',
         disabled: false,
         action: 'join',
@@ -48,6 +53,7 @@ function getActionConfig(tournament: ITournament): ActionConfig {
     case 'joined':
       return {
         label: 'Open tournament',
+        labelColor: 'text-main-gray',
         variant: 'gray',
         disabled: false,
         action: 'open',
@@ -55,6 +61,7 @@ function getActionConfig(tournament: ITournament): ActionConfig {
     case 'won':
       return {
         label: 'Claim rewards',
+        labelColor: 'text-main-gray',
         variant: 'green',
         disabled: false,
         action: 'claim',
@@ -63,6 +70,7 @@ function getActionConfig(tournament: ITournament): ActionConfig {
     case 'pending':
       return {
         label: 'Open tournament',
+        labelColor: 'text-main-gray',
         variant: 'gray',
         disabled: false,
         action: 'open',
@@ -70,6 +78,7 @@ function getActionConfig(tournament: ITournament): ActionConfig {
     default:
       return {
         label: 'Join tournament',
+        labelColor: 'text-white',
         variant: 'blue',
         disabled: false,
         action: 'join',
@@ -81,12 +90,14 @@ export function TournamentActionButton({
   tournament,
   onJoin,
   onClaim,
+  onOpen,
 }: TournamentActionButtonProps) {
-  const { label, variant, disabled, action } = getActionConfig(tournament);
+  const { label, labelColor, variant, disabled, action } = getActionConfig(tournament);
 
   const handleClick = () => {
     if (action === 'join') onJoin?.(tournament);
     else if (action === 'claim') onClaim?.(tournament);
+    else if (action === 'open') onOpen?.(tournament);
   };
 
   return (
@@ -98,7 +109,7 @@ export function TournamentActionButton({
       enableHoverSound
       enableClickSound
     >
-      <span className="font-pixel-klein text-md font-bold">{label}</span>
+      <span className={`font-pixel text-sm font-bold ${labelColor}`}>{label}</span>
     </Button>
   );
 }

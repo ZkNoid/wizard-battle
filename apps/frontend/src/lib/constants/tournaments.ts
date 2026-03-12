@@ -5,13 +5,13 @@ import type {
 
 export const TOURNAMENTS_FILTER_BY_OPTIONS = [
   { value: 'all', label: 'All' },
-  { value: 'new_to_old', label: 'Will end within 24 hours' },
-  { value: 'old_to_new', label: 'Will end within a week' },
-  { value: 'prize_high', label: 'Will start within 24 hours' },
-  { value: 'prize_low', label: 'Will start within a week' },
+  { value: 'end_24h', label: 'Will end within 24 hours' },
+  { value: 'end_week', label: 'Will end within a week' },
+  { value: 'start_24h', label: 'Will start within 24 hours' },
+  { value: 'start_week', label: 'Will start within a week' },
   { value: 'prize_low', label: 'Rewards: From small to big' },
-  { value: 'prize_low', label: 'Rewards: From big to small' },
-  { value: 'prize_low', label: 'Only for USDC' },
+  { value: 'prize_high', label: 'Rewards: From big to small' },
+  { value: 'only_usdc', label: 'Only for USDC' },
 ];
 
 export const ALL_TOURNAMENTS: ITournament[] = [

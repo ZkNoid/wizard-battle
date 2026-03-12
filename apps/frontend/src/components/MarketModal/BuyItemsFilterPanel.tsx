@@ -54,6 +54,7 @@ export function BuyItemsFilterPanel({
           variant="blue"
           className="h-14 w-full"
           onClick={() => setIsSellItemsModalOpen(true)}
+          size="lg"
           enableHoverSound
           enableClickSound
         >

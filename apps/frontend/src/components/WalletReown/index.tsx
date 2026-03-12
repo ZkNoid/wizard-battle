@@ -20,6 +20,7 @@ import type {
 } from '@/lib/analytics/types';
 import { useMinaAppkit } from 'mina-appkit';
 import { api } from '@/trpc/react';
+import type { ButtonSize } from '../shared/Button/utils';
 
 // Helper function to format address (similar to Mina's formatAddress)
 const formatAddress = (address: string): string => {
@@ -29,19 +30,20 @@ const formatAddress = (address: string): string => {
 
 interface WalletReownProps {
   className?: string;
+  buttonSize?: ButtonSize;
 }
 
 const targetNetwork = env.NEXT_PUBLIC_NETWORK_ID
-  ? (Object.values(allNetworks).find(
+  ? ((Object.values(allNetworks).find(
       (n) =>
         typeof n === 'object' &&
         n !== null &&
         'id' in n &&
         String((n as { id: number }).id) === env.NEXT_PUBLIC_NETWORK_ID
-    ) as (typeof avalanche) | undefined) ?? avalanche
+    ) as typeof avalanche | undefined) ?? avalanche)
   : avalanche;
 
-export default function WalletReown({ className }: WalletReownProps = {}) {
+export default function WalletReown({ className, buttonSize = 'lg' }: WalletReownProps = {}) {
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const { disconnect } = useDisconnect();
@@ -153,6 +155,7 @@ export default function WalletReown({ className }: WalletReownProps = {}) {
         text={displayText}
         onClick={handleButtonClick}
         className="w-50 h-15 text-base font-bold"
+        size={buttonSize}
       />
     </motion.div>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { SelectTriggerBg } from './assets/select-trigger-bg';
 import { SelectDropdownBg } from './assets/select-dropdown-bg';
@@ -8,7 +9,7 @@ import { SelectArrow } from './assets/select-arrow';
 
 export interface SelectOption {
   value: string;
-  label: string;
+  label: ReactNode | string;
 }
 
 interface SelectProps {
@@ -42,8 +43,9 @@ export function Select({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const selectedLabel =
-    options.find((o) => o.value === value)?.label ?? placeholder;
+  const selectedOption = options.find((o) => o.value === value);
+  const selectedLabel: ReactNode | string =
+    selectedOption?.label ?? placeholder;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -74,7 +76,7 @@ export function Select({
           type="button"
           disabled={disabled}
           onClick={() => setIsOpen((prev) => !prev)}
-          className="font-pixel-klein text-main-gray relative z-10 flex h-full w-full cursor-pointer items-center justify-between px-3 disabled:cursor-not-allowed disabled:opacity-50"
+          className="font-pixel-klein text-main-gray relative z-10 flex h-full w-full cursor-pointer items-center justify-between pl-5 pr-3 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="text-base">{selectedLabel}</span>
           <SelectArrow
@@ -90,7 +92,7 @@ export function Select({
       {/* Dropdown — shown below trigger when open */}
       {isOpen && (
         <div
-          className="absolute left-0 top-full z-50 w-full"
+          className="absolute left-0 top-full z-50 mt-2 w-full"
           style={{ height: DROPDOWN_HEIGHT }}
         >
           <SelectDropdownBg className="pointer-events-none absolute inset-0 h-full w-full" />
@@ -105,7 +107,7 @@ export function Select({
                 onClick={() => handleSelect(option.value)}
                 style={{ height: optionHeight }}
                 className={cn(
-                  'font-pixel-klein text-main-gray flex w-full cursor-pointer items-center px-3 text-base transition-opacity hover:opacity-100',
+                  'font-pixel-klein text-main-gray flex w-full cursor-pointer items-center pl-5 pr-3 text-left text-base transition-opacity hover:opacity-100',
                   value === option.value ? 'opacity-100' : 'opacity-40',
                   optionClassName
                 )}
