@@ -68,6 +68,7 @@ export function CongratulationsModal({
               className="h-12 flex-1"
               enableHoverSound
               enableClickSound
+              size="xl"
             >
               <span className="font-pixel text-main-gray text-base font-bold">
                 Claim rewards
