@@ -64,7 +64,9 @@ export function BuyTicketConfirmationModal({
                 className="text-main-gray"
               />
             ) : (
-              <span className="font-pixel-klein text-sm font-bold">Free</span>
+              <span className="font-pixel-klein text-main-gray text-sm font-bold">
+                Free
+              </span>
             )}
           </div>
 

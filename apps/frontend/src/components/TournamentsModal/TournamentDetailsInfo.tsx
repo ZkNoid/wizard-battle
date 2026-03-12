@@ -166,7 +166,9 @@ export function TournamentDetailsInfo({
                   className="text-main-gray"
                 />
               ) : (
-                <span className="font-pixel-klein text-xs font-bold">Free</span>
+                <span className="font-pixel-klein text-main-gray text-xs font-bold">
+                  Free
+                </span>
               )}
             </div>
           </div>
