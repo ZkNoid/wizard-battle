@@ -7,6 +7,7 @@ interface TournamentActionButtonProps {
   tournament: ITournament;
   onJoin?: (tournament: ITournament) => void;
   onClaim?: (tournament: ITournament) => void;
+  onOpen?: (tournament: ITournament) => void;
 }
 
 type ActionConfig = {
@@ -81,12 +82,14 @@ export function TournamentActionButton({
   tournament,
   onJoin,
   onClaim,
+  onOpen,
 }: TournamentActionButtonProps) {
   const { label, variant, disabled, action } = getActionConfig(tournament);
 
   const handleClick = () => {
     if (action === 'join') onJoin?.(tournament);
     else if (action === 'claim') onClaim?.(tournament);
+    else if (action === 'open') onOpen?.(tournament);
   };
 
   return (

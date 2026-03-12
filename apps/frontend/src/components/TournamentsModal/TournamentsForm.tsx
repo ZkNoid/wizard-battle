@@ -88,6 +88,7 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
           tournament={selectedTournament}
           onJoin={setJoinTournament}
           onClaim={setClaimTournament}
+          onOpen={setSelectedTournament}
         />
       ) : (
         <>
@@ -100,6 +101,7 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
             tournaments={tournaments}
             onJoin={setJoinTournament}
             onClaim={setClaimTournament}
+            onOpen={setSelectedTournament}
             onViewDetails={setSelectedTournament}
           />
         </>
