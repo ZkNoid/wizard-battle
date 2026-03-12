@@ -29,7 +29,9 @@ export function MarketModalForm({ onClose }: MarketModalFormProps) {
       case 'selling':
         return <ItemsSellingForm onClose={onClose} />;
       case 'history':
-        return <TradingHistoryForm onClose={onClose} onTabChange={setActiveTab} />;
+        return (
+          <TradingHistoryForm onClose={onClose} onTabChange={setActiveTab} />
+        );
       default:
         return null;
     }
@@ -42,6 +44,7 @@ export function MarketModalForm({ onClose }: MarketModalFormProps) {
           variant={getButtonVariant('buy')}
           className={buttonClassName}
           onClick={() => setActiveTab('buy')}
+          size="xl"
           enableHoverSound
           enableClickSound
         >
@@ -51,6 +54,7 @@ export function MarketModalForm({ onClose }: MarketModalFormProps) {
           variant={getButtonVariant('selling')}
           className={buttonClassName}
           onClick={() => setActiveTab('selling')}
+          size="xl"
           enableHoverSound
           enableClickSound
         >
@@ -60,6 +64,7 @@ export function MarketModalForm({ onClose }: MarketModalFormProps) {
           variant={getButtonVariant('history')}
           className={buttonClassName}
           onClick={() => setActiveTab('history')}
+          size="xl"
           enableHoverSound
           enableClickSound
         >
