@@ -92,7 +92,7 @@ export function Select({
       {/* Dropdown — shown below trigger when open */}
       {isOpen && (
         <div
-          className="absolute left-0 top-full z-50 w-full"
+          className="absolute left-0 top-full z-50 mt-2 w-full"
           style={{ height: DROPDOWN_HEIGHT }}
         >
           <SelectDropdownBg className="pointer-events-none absolute inset-0 h-full w-full" />
@@ -107,7 +107,7 @@ export function Select({
                 onClick={() => handleSelect(option.value)}
                 style={{ height: optionHeight }}
                 className={cn(
-                  'font-pixel-klein text-main-gray flex w-full cursor-pointer items-center px-3 text-base transition-opacity hover:opacity-100',
+                  'font-pixel-klein text-main-gray flex w-full cursor-pointer items-center px-3 text-left text-base transition-opacity hover:opacity-100',
                   value === option.value ? 'opacity-100' : 'opacity-40',
                   optionClassName
                 )}
