@@ -27,7 +27,12 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
   const getForm = (tabName: string): React.ReactNode => {
     switch (tabName) {
       case 'new-expedition':
-        return <NewExpeditionForm onClose={onClose} onSuccess={() => setActiveTab('current-expedition')} />;
+        return (
+          <NewExpeditionForm
+            onClose={onClose}
+            onSuccess={() => setActiveTab('current-expedition')}
+          />
+        );
       case 'current-expedition':
         return <CurrentExpeditionsForm onClose={onClose} />;
       default:
@@ -38,15 +43,15 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div
-        className="w-160 h-215 relative mt-16"
+        className="w-165 h-215 relative mt-16"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex w-full flex-row justify-between gap-1 px-5">
+        <div className="flex w-full flex-row justify-between gap-1 px-3">
           <Button
             variant={getButtonVariant('new-expedition')}
             className={buttonClassName}
             onClick={() => setActiveTab('new-expedition')}
-            isLong={true}
+            size="xl"
             enableClickSound
           >
             <span className={textClassName}>Start New Expedition</span>
@@ -56,12 +61,12 @@ export default function ExpeditionModal({ onClose }: { onClose: () => void }) {
             className={buttonClassName}
             onClick={() => setActiveTab('current-expedition')}
             enableClickSound
-            isLong={true}
+            size="xl"
           >
             <span className={textClassName}>Current Expeditions</span>
           </Button>
         </div>
-        <div className="h-200 relative z-10 -mt-6 w-full">
+        <div className="h-200 relative z-10 -mt-4 w-full">
           <div className="h-full w-full px-4 py-4">{getForm(activeTab)}</div>
           <ExpeditionsBg className="absolute inset-0 -z-10 size-full h-full w-full" />
         </div>
