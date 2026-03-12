@@ -18,7 +18,7 @@ interface TournamentsFormProps {
 }
 
 const DEFAULT_FILTERS: TournamentsFilters = {
-  sortBy: 'new_to_old',
+  sortBy: 'all',
 };
 
 function getPrizeScore(prizePool: ITournamentAsset[]): number {
@@ -28,25 +28,48 @@ function getPrizeScore(prizePool: ITournamentAsset[]): number {
   }, 0);
 }
 
-function sortTournaments(
+function isWithinHours(dateStr: string, hours: number): boolean {
+  const target = new Date(dateStr).getTime();
+  const now = Date.now();
+  return target >= now && target <= now + hours * 60 * 60 * 1000;
+}
+
+function filterAndSortTournaments(
   tournaments: ITournament[],
   sortBy: string
 ): ITournament[] {
-  const sorted = [...tournaments];
   switch (sortBy) {
-    case 'old_to_new':
-      return sorted.sort((a, b) => a.startDate.localeCompare(b.startDate));
+    case 'end_24h':
+      return tournaments.filter(
+        (t) => t.status === 'active' && isWithinHours(t.dateTo, 24)
+      );
+    case 'end_week':
+      return tournaments.filter(
+        (t) => t.status === 'active' && isWithinHours(t.dateTo, 24 * 7)
+      );
+    case 'start_24h':
+      return tournaments.filter(
+        (t) => t.status === 'upcoming' && isWithinHours(t.dateFrom, 24)
+      );
+    case 'start_week':
+      return tournaments.filter(
+        (t) => t.status === 'upcoming' && isWithinHours(t.dateFrom, 24 * 7)
+      );
     case 'prize_high':
-      return sorted.sort(
+      return [...tournaments].sort(
         (a, b) => getPrizeScore(b.prizePool) - getPrizeScore(a.prizePool)
       );
     case 'prize_low':
-      return sorted.sort(
+      return [...tournaments].sort(
         (a, b) => getPrizeScore(a.prizePool) - getPrizeScore(b.prizePool)
       );
-    case 'new_to_old':
+    case 'only_usdc':
+      return tournaments.filter((t) =>
+        t.prizePool.some((a) => a.type === 'currency' && a.currency === 'usdc')
+      );
+    case 'all':
     default:
-      return sorted.sort((a, b) => b.startDate.localeCompare(a.startDate));
+      return tournaments;
   }
 }
 
@@ -61,7 +84,7 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
     null
   );
 
-  const tournaments = sortTournaments(ALL_TOURNAMENTS, filters.sortBy);
+  const tournaments = filterAndSortTournaments(ALL_TOURNAMENTS, filters.sortBy);
 
   const handleConfirmJoin = (tournament: ITournament) => {
     // TODO: trigger buy ticket transaction and show result modal
