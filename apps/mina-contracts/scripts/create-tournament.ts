@@ -1,0 +1,500 @@
+/**
+ * Create Tournament Script
+ *
+ * Fetches events from deployed TournamentManager contract, rebuilds merkle map state,
+ * and creates the next available tournament.
+ *
+ * Usage:
+ *   pnpm --filter mina-contracts run create-tournament
+ *
+ * Environment variables:
+ *   MINA_NETWORK_URL - Mina GraphQL endpoint (default: devnet)
+ *   MINA_ARCHIVE_URL - Mina Archive GraphQL endpoint
+ *   DEPLOYER_PRIVATE_KEY - Private key for admin account
+ *   TOURNAMENT_CONTRACT_ADDRESS - Deployed contract address
+ *   TICKET_PRICE - Tournament ticket price in nanoMINA (default: 1000000000 = 1 MINA)
+ *   REGISTRATION_SLOTS - Number of slots for registration phase (default: 200 = ~10 hours)
+ *   BATTLE_SLOTS - Number of slots for battle phase (default: 400 = ~20 hours)
+ *   REGISTRATION_START_DELAY - Slots before registration starts (default: 10 = ~30 min)
+ */
+
+import {
+  Mina,
+  PrivateKey,
+  PublicKey,
+  Field,
+  UInt32,
+  UInt64,
+  MerkleMap,
+  fetchAccount,
+  Poseidon,
+} from 'o1js';
+import {
+  TournamentManager,
+  TournamentConfig,
+  TournamentLeaf,
+  TournamentStatus,
+  TournamentCreatedEvent,
+  TicketPurchasedEvent,
+  TournamentFinalizedEvent,
+  PrizeClaimedEvent,
+} from '../src/TournamentManager.js';
+
+const MINA_NETWORK_URL =
+  process.env.MINA_NETWORK_URL ||
+  'https://api.minascan.io/node/devnet/v1/graphql';
+
+const MINA_ARCHIVE_URL =
+  process.env.MINA_ARCHIVE_URL ||
+  'https://api.minascan.io/archive/devnet/v1/graphql';
+
+// Tournament timing configuration
+const REGISTRATION_START_DELAY = Number(
+  process.env.REGISTRATION_START_DELAY || '10'
+);
+const REGISTRATION_SLOTS = Number(process.env.REGISTRATION_SLOTS || '200');
+const BATTLE_SLOTS = Number(process.env.BATTLE_SLOTS || '400');
+
+interface TournamentState {
+  leaf: TournamentLeaf;
+  participantsMap: MerkleMap;
+  winnersMap: MerkleMap;
+}
+
+function hashTournamentKey(tournamentId: Field): Field {
+  return Poseidon.hash([tournamentId]);
+}
+
+async function fetchContractEvents(contractAddress: PublicKey): Promise<{
+  tournamentCreated: TournamentCreatedEvent[];
+  ticketPurchased: TicketPurchasedEvent[];
+  tournamentFinalized: TournamentFinalizedEvent[];
+  prizeClaimed: PrizeClaimedEvent[];
+}> {
+  console.log('Fetching contract events from archive...');
+
+  const query = `
+    query GetEvents($address: String!) {
+      events(input: { address: $address }) {
+        blockInfo {
+          height
+          globalSlotSinceGenesis
+        }
+        eventData {
+          data
+        }
+      }
+    }
+  `;
+
+  const response = await fetch(MINA_ARCHIVE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query,
+      variables: { address: contractAddress.toBase58() },
+    }),
+  });
+
+  const result = await response.json();
+
+  if (result.errors) {
+    throw new Error(`Archive query failed: ${JSON.stringify(result.errors)}`);
+  }
+
+  const events = result.data?.events || [];
+  console.log(`Found ${events.length} event batches`);
+
+  const tournamentCreated: TournamentCreatedEvent[] = [];
+  const ticketPurchased: TicketPurchasedEvent[] = [];
+  const tournamentFinalized: TournamentFinalizedEvent[] = [];
+  const prizeClaimed: PrizeClaimedEvent[] = [];
+
+  for (const eventBatch of events) {
+    for (const event of eventBatch.eventData || []) {
+      const data = event.data as string[];
+      if (!data || data.length === 0) continue;
+
+      try {
+        // Parse event based on field count and structure
+        // TournamentCreated: tournamentId, registrationStartSlot, battleStartSlot, battleEndSlot, ticketPrice, prize1%, prize2%, prize3%
+        // TicketPurchased: tournamentId, player (2 fields), newParticipantsRoot, newPrizePool, newParticipantCount
+        // TournamentFinalized: tournamentId, winner1 (2), winner2 (2), winner3 (2), prize1, prize2, prize3, newWinnersRoot
+        // PrizeClaimed: tournamentId, player (2), prizeAmount, newWinnersRoot
+
+        if (data.length === 8) {
+          // TournamentCreated
+          tournamentCreated.push(
+            new TournamentCreatedEvent({
+              tournamentId: Field(data[0]),
+              registrationStartSlot: UInt32.from(data[1]),
+              battleStartSlot: UInt32.from(data[2]),
+              battleEndSlot: UInt32.from(data[3]),
+              ticketPrice: UInt64.from(data[4]),
+              prize1Percent: UInt32.from(data[5]),
+              prize2Percent: UInt32.from(data[6]),
+              prize3Percent: UInt32.from(data[7]),
+            })
+          );
+        } else if (data.length === 6) {
+          // TicketPurchased
+          ticketPurchased.push(
+            new TicketPurchasedEvent({
+              tournamentId: Field(data[0]),
+              player: PublicKey.fromFields([Field(data[1]), Field(data[2])]),
+              newParticipantsRoot: Field(data[3]),
+              newPrizePool: UInt64.from(data[4]),
+              newParticipantCount: UInt32.from(data[5]),
+            })
+          );
+        } else if (data.length === 11) {
+          // TournamentFinalized
+          tournamentFinalized.push(
+            new TournamentFinalizedEvent({
+              tournamentId: Field(data[0]),
+              winner1: PublicKey.fromFields([Field(data[1]), Field(data[2])]),
+              winner2: PublicKey.fromFields([Field(data[3]), Field(data[4])]),
+              winner3: PublicKey.fromFields([Field(data[5]), Field(data[6])]),
+              prize1: UInt64.from(data[7]),
+              prize2: UInt64.from(data[8]),
+              prize3: UInt64.from(data[9]),
+              newWinnersRoot: Field(data[10]),
+            })
+          );
+        } else if (data.length === 5) {
+          // PrizeClaimed
+          prizeClaimed.push(
+            new PrizeClaimedEvent({
+              tournamentId: Field(data[0]),
+              player: PublicKey.fromFields([Field(data[1]), Field(data[2])]),
+              prizeAmount: UInt64.from(data[3]),
+              newWinnersRoot: Field(data[4]),
+            })
+          );
+        }
+      } catch (e) {
+        console.warn('Failed to parse event:', e);
+      }
+    }
+  }
+
+  console.log(`Parsed events:`);
+  console.log(`  - TournamentCreated: ${tournamentCreated.length}`);
+  console.log(`  - TicketPurchased: ${ticketPurchased.length}`);
+  console.log(`  - TournamentFinalized: ${tournamentFinalized.length}`);
+  console.log(`  - PrizeClaimed: ${prizeClaimed.length}`);
+
+  return {
+    tournamentCreated,
+    ticketPurchased,
+    tournamentFinalized,
+    prizeClaimed,
+  };
+}
+
+function rebuildTournamentsMap(events: {
+  tournamentCreated: TournamentCreatedEvent[];
+  ticketPurchased: TicketPurchasedEvent[];
+  tournamentFinalized: TournamentFinalizedEvent[];
+  prizeClaimed: PrizeClaimedEvent[];
+}): {
+  tournamentsMap: MerkleMap;
+  tournaments: Map<string, TournamentState>;
+  maxTournamentId: number;
+} {
+  console.log('\nRebuilding tournaments merkle map from events...');
+
+  const tournamentsMap = new MerkleMap();
+  const tournaments = new Map<string, TournamentState>();
+  let maxTournamentId = 0;
+
+  // Process TournamentCreated events
+  for (const event of events.tournamentCreated) {
+    const tournamentIdNum = Number(event.tournamentId.toBigInt());
+    maxTournamentId = Math.max(maxTournamentId, tournamentIdNum);
+
+    const leaf = new TournamentLeaf({
+      status: TournamentStatus.Registration,
+      registrationStartSlot: event.registrationStartSlot,
+      battleStartSlot: event.battleStartSlot,
+      battleEndSlot: event.battleEndSlot,
+      ticketPrice: event.ticketPrice,
+      prize1Percent: event.prize1Percent,
+      prize2Percent: event.prize2Percent,
+      prize3Percent: event.prize3Percent,
+      participantsRoot: new MerkleMap().getRoot(),
+      winnersRoot: new MerkleMap().getRoot(),
+      prizePool: UInt64.from(0),
+      participantCount: UInt32.from(0),
+    });
+
+    const key = hashTournamentKey(event.tournamentId);
+    tournamentsMap.set(key, leaf.hash());
+
+    tournaments.set(event.tournamentId.toString(), {
+      leaf,
+      participantsMap: new MerkleMap(),
+      winnersMap: new MerkleMap(),
+    });
+
+    console.log(`  Created tournament ${tournamentIdNum}`);
+  }
+
+  // Process TicketPurchased events
+  for (const event of events.ticketPurchased) {
+    const tournamentId = event.tournamentId.toString();
+    const state = tournaments.get(tournamentId);
+
+    if (state) {
+      // Update tournament leaf with new values from event
+      state.leaf = new TournamentLeaf({
+        status: state.leaf.status,
+        registrationStartSlot: state.leaf.registrationStartSlot,
+        battleStartSlot: state.leaf.battleStartSlot,
+        battleEndSlot: state.leaf.battleEndSlot,
+        ticketPrice: state.leaf.ticketPrice,
+        prize1Percent: state.leaf.prize1Percent,
+        prize2Percent: state.leaf.prize2Percent,
+        prize3Percent: state.leaf.prize3Percent,
+        participantsRoot: event.newParticipantsRoot,
+        winnersRoot: state.leaf.winnersRoot,
+        prizePool: event.newPrizePool,
+        participantCount: event.newParticipantCount,
+      });
+
+      // Update participants map
+      const playerKey = Poseidon.hash(event.player.toFields());
+      state.participantsMap.set(playerKey, Field(1));
+
+      const key = hashTournamentKey(event.tournamentId);
+      tournamentsMap.set(key, state.leaf.hash());
+    }
+  }
+
+  // Process TournamentFinalized events
+  for (const event of events.tournamentFinalized) {
+    const tournamentId = event.tournamentId.toString();
+    const state = tournaments.get(tournamentId);
+
+    if (state) {
+      state.leaf = new TournamentLeaf({
+        status: TournamentStatus.Claiming,
+        registrationStartSlot: state.leaf.registrationStartSlot,
+        battleStartSlot: state.leaf.battleStartSlot,
+        battleEndSlot: state.leaf.battleEndSlot,
+        ticketPrice: state.leaf.ticketPrice,
+        prize1Percent: state.leaf.prize1Percent,
+        prize2Percent: state.leaf.prize2Percent,
+        prize3Percent: state.leaf.prize3Percent,
+        participantsRoot: state.leaf.participantsRoot,
+        winnersRoot: event.newWinnersRoot,
+        prizePool: state.leaf.prizePool,
+        participantCount: state.leaf.participantCount,
+      });
+
+      const key = hashTournamentKey(event.tournamentId);
+      tournamentsMap.set(key, state.leaf.hash());
+    }
+  }
+
+  // Process PrizeClaimed events
+  for (const event of events.prizeClaimed) {
+    const tournamentId = event.tournamentId.toString();
+    const state = tournaments.get(tournamentId);
+
+    if (state) {
+      state.leaf = new TournamentLeaf({
+        status: state.leaf.status,
+        registrationStartSlot: state.leaf.registrationStartSlot,
+        battleStartSlot: state.leaf.battleStartSlot,
+        battleEndSlot: state.leaf.battleEndSlot,
+        ticketPrice: state.leaf.ticketPrice,
+        prize1Percent: state.leaf.prize1Percent,
+        prize2Percent: state.leaf.prize2Percent,
+        prize3Percent: state.leaf.prize3Percent,
+        participantsRoot: state.leaf.participantsRoot,
+        winnersRoot: event.newWinnersRoot,
+        prizePool: state.leaf.prizePool,
+        participantCount: state.leaf.participantCount,
+      });
+
+      const key = hashTournamentKey(event.tournamentId);
+      tournamentsMap.set(key, state.leaf.hash());
+    }
+  }
+
+  console.log(`Rebuilt map with ${tournaments.size} tournaments`);
+  console.log(`Max tournament ID: ${maxTournamentId}`);
+
+  return { tournamentsMap, tournaments, maxTournamentId };
+}
+
+async function main() {
+  console.log('='.repeat(60));
+  console.log('Create Tournament Script');
+  console.log('='.repeat(60));
+
+  // Check required environment variables
+  const deployerKeyBase58 = process.env.DEPLOYER_PRIVATE_KEY;
+  if (!deployerKeyBase58) {
+    console.error('ERROR: DEPLOYER_PRIVATE_KEY environment variable not set');
+    process.exit(1);
+  }
+
+  const contractAddressBase58 = process.env.TOURNAMENT_CONTRACT_ADDRESS;
+  if (!contractAddressBase58) {
+    console.error(
+      'ERROR: TOURNAMENT_CONTRACT_ADDRESS environment variable not set'
+    );
+    process.exit(1);
+  }
+
+  // Connect to network
+  console.log(`\nConnecting to: ${MINA_NETWORK_URL}`);
+  const network = Mina.Network({
+    mina: MINA_NETWORK_URL,
+    archive: MINA_ARCHIVE_URL,
+  });
+  Mina.setActiveInstance(network);
+
+  // Setup accounts
+  const deployerKey = PrivateKey.fromBase58(deployerKeyBase58);
+  const deployer = deployerKey.toPublicKey();
+  const contractAddress = PublicKey.fromBase58(contractAddressBase58);
+
+  console.log(`Admin address: ${deployer.toBase58()}`);
+  console.log(`Contract address: ${contractAddress.toBase58()}`);
+
+  // Fetch accounts
+  console.log('\nFetching accounts...');
+  const [deployerAccount, contractAccount] = await Promise.all([
+    fetchAccount({ publicKey: deployer }),
+    fetchAccount({ publicKey: contractAddress }),
+  ]);
+
+  if (!deployerAccount.account) {
+    console.error('ERROR: Deployer account not found');
+    process.exit(1);
+  }
+  console.log(
+    `Admin balance: ${
+      Number(deployerAccount.account.balance.toBigInt()) / 1e9
+    } MINA`
+  );
+
+  if (!contractAccount.account) {
+    console.error('ERROR: Contract account not found. Has it been deployed?');
+    process.exit(1);
+  }
+
+  // Fetch and process events
+  const events = await fetchContractEvents(contractAddress);
+
+  // Rebuild merkle map state
+  const { tournamentsMap, maxTournamentId } = rebuildTournamentsMap(events);
+
+  // Verify rebuilt root matches on-chain root
+  const contract = new TournamentManager(contractAddress);
+  const onChainRoot = contract.tournamentsRoot.get();
+  const rebuiltRoot = tournamentsMap.getRoot();
+
+  console.log(`\nOn-chain tournaments root: ${onChainRoot.toString()}`);
+  console.log(`Rebuilt tournaments root:  ${rebuiltRoot.toString()}`);
+
+  if (!onChainRoot.equals(rebuiltRoot).toBoolean()) {
+    console.error('ERROR: Rebuilt root does not match on-chain root!');
+    console.error('This may indicate missing events or state corruption.');
+    process.exit(1);
+  }
+  console.log('✓ Root verification passed');
+
+  // Compile contract
+  console.log('\nCompiling TournamentManager...');
+  const startCompile = Date.now();
+  await TournamentManager.compile();
+  console.log(`Compilation completed in ${Date.now() - startCompile}ms`);
+
+  // Determine next tournament ID
+  const nextTournamentId = Field(maxTournamentId + 1);
+  console.log(`\nNext tournament ID: ${nextTournamentId.toString()}`);
+
+  // Get tournament configuration from env
+  const ticketPrice = BigInt(process.env.TICKET_PRICE || '1000000000'); // 1 MINA default
+
+  // Calculate slot timings
+  const networkState = await Mina.getNetworkState();
+  const currentSlot = Number(networkState.globalSlotSinceGenesis.toBigint());
+
+  const registrationStartSlot = currentSlot + REGISTRATION_START_DELAY;
+  const battleStartSlot = registrationStartSlot + REGISTRATION_SLOTS;
+  const battleEndSlot = battleStartSlot + BATTLE_SLOTS;
+
+  console.log(`\nTournament timing:`);
+  console.log(`  Current slot: ${currentSlot}`);
+  console.log(
+    `  Registration starts: slot ${registrationStartSlot} (~${
+      REGISTRATION_START_DELAY * 3
+    } minutes from now)`
+  );
+  console.log(
+    `  Battle starts: slot ${battleStartSlot} (~${
+      REGISTRATION_SLOTS * 3
+    } minutes registration)`
+  );
+  console.log(
+    `  Battle ends: slot ${battleEndSlot} (~${BATTLE_SLOTS * 3} minutes battle)`
+  );
+
+  const config = new TournamentConfig({
+    ticketPrice: UInt64.from(ticketPrice),
+    prize1Percent: UInt32.from(5000), // 50%
+    prize2Percent: UInt32.from(3000), // 30%
+    prize3Percent: UInt32.from(2000), // 20%
+  });
+
+  // Get witness for new tournament (should be empty slot)
+  const tournamentKey = hashTournamentKey(nextTournamentId);
+  const tournamentWitness = tournamentsMap.getWitness(tournamentKey);
+
+  console.log('\nCreating tournament transaction...');
+  const createTx = await Mina.transaction(
+    { sender: deployer, fee: 0.1e9 },
+    async () => {
+      await contract.createTournament(
+        nextTournamentId,
+        config,
+        UInt32.from(registrationStartSlot),
+        UInt32.from(battleStartSlot),
+        UInt32.from(battleEndSlot),
+        tournamentWitness
+      );
+    }
+  );
+
+  console.log('Proving transaction...');
+  await createTx.prove();
+
+  console.log('Sending transaction...');
+  const createResult = await createTx.sign([deployerKey]).send();
+  console.log(`Transaction hash: ${createResult.hash}`);
+
+  // Wait for confirmation
+  console.log('Waiting for confirmation...');
+  await createResult.wait();
+
+  // Output summary
+  console.log('\n' + '='.repeat(60));
+  console.log('TOURNAMENT CREATED');
+  console.log('='.repeat(60));
+  console.log(`Tournament ID: ${nextTournamentId.toString()}`);
+  console.log(`Ticket Price: ${Number(ticketPrice) / 1e9} MINA`);
+  console.log(`Registration Start Slot: ${registrationStartSlot}`);
+  console.log(`Battle Start Slot: ${battleStartSlot}`);
+  console.log(`Battle End Slot: ${battleEndSlot}`);
+  console.log('='.repeat(60));
+}
+
+main().catch((err) => {
+  console.error('Failed to create tournament:', err);
+  process.exit(1);
+});

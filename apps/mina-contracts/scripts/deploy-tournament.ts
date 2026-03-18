@@ -1,7 +1,7 @@
 /**
  * Tournament Manager Deployment Script
  *
- * Deploy TournamentManager contract to Mina testnet and create initial tournament.
+ * Deploy TournamentManager contract to Mina testnet.
  *
  * Usage:
  *   pnpm --filter mina-contracts run deploy:testnet
@@ -9,25 +9,24 @@
  * Environment variables:
  *   MINA_NETWORK_URL - Mina GraphQL endpoint (default: devnet)
  *   DEPLOYER_PRIVATE_KEY - Private key for deployment account (must have MINA)
- *   TICKET_PRICE - Tournament ticket price in nanoMINA (default: 1000000000 = 1 MINA)
  */
 
 import {
   Mina,
   PrivateKey,
-  PublicKey,
   AccountUpdate,
-  Field,
-  UInt32,
-  UInt64,
-  MerkleMap,
   fetchAccount,
-  Poseidon,
 } from 'o1js';
-import {
-  TournamentManager,
-  TournamentConfig,
-} from '../src/TournamentManager.js';
+import { TournamentManager } from '../src/TournamentManager.js';
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const KEYS_DIR = path.join(__dirname, '..', 'keys', 'tournament');
+const KEYS_ALL_DIR = path.join(KEYS_DIR, 'all');
 
 const MINA_NETWORK_URL =
   process.env.MINA_NETWORK_URL ||
@@ -82,10 +81,6 @@ async function main() {
   const contractKey = PrivateKey.random();
   const contractAddress = contractKey.toPublicKey();
   console.log(`\nContract address: ${contractAddress.toBase58()}`);
-  console.log(`Contract private key: ${contractKey.toBase58()}`);
-  console.log(
-    '\n⚠️  SAVE THE PRIVATE KEY ABOVE - you will need it for admin operations\n'
-  );
 
   // Compile contract
   console.log('Compiling TournamentManager...');
@@ -111,127 +106,65 @@ async function main() {
 
   // Wait for deployment
   console.log('Waiting for deployment confirmation...');
-  await waitForTransaction(deployResult.hash);
+  await deployResult.wait();
   console.log('Contract deployed successfully!');
 
-  // Fetch contract state
-  await fetchAccount({ publicKey: contractAddress });
+  // Save keys to files
+  const keyData = {
+    contractPrivateKey: contractKey.toBase58(),
+    contractAddress: contractAddress.toBase58(),
+    deployedAt: new Date().toISOString(),
+    deployTxHash: deployResult.hash,
+    network: MINA_NETWORK_URL,
+  };
 
-  // Create initial tournament
-  console.log('\nCreating initial tournament...');
-
-  const tournamentId = Field(1);
-  const ticketPrice = BigInt(process.env.TICKET_PRICE || '1000000000'); // 1 MINA default
-
-  // Calculate slot timings (roughly)
-  // Mina slots are ~3 minutes each
-  const networkState = await Mina.getNetworkState();
-  const currentSlot = Number(networkState.globalSlotSinceGenesis.toBigint());
-
-  const registrationStartSlot = currentSlot + 10; // Start in ~30 minutes
-  const battleStartSlot = registrationStartSlot + 200; // Registration for ~10 hours
-  const battleEndSlot = battleStartSlot + 400; // Battle for ~20 hours
-
-  console.log(`Current slot: ${currentSlot}`);
-  console.log(`Registration starts: slot ${registrationStartSlot}`);
-  console.log(`Battle starts: slot ${battleStartSlot}`);
-  console.log(`Battle ends: slot ${battleEndSlot}`);
-
-  const config = new TournamentConfig({
-    ticketPrice: UInt64.from(ticketPrice),
-    prize1Percent: UInt32.from(5000), // 50%
-    prize2Percent: UInt32.from(3000), // 30%
-    prize3Percent: UInt32.from(2000), // 20%
-  });
-
-  const emptyMap = new MerkleMap();
-  const tournamentWitness = emptyMap.getWitness(
-    (TournamentManager.prototype['constructor'] as any).keyFor
-      ? Field(0) // Fallback
-      : hashTournamentKey(tournamentId)
-  );
-
-  const createTx = await Mina.transaction(
-    { sender: deployer, fee: 0.1e9 },
-    async () => {
-      await contract.createTournament(
-        tournamentId,
-        config,
-        UInt32.from(registrationStartSlot),
-        UInt32.from(battleStartSlot),
-        UInt32.from(battleEndSlot),
-        tournamentWitness
-      );
-    }
-  );
-  await createTx.prove();
-  const createResult = await createTx.sign([deployerKey]).send();
-  console.log(`Create tournament transaction hash: ${createResult.hash}`);
-
-  // Wait for confirmation
-  console.log('Waiting for tournament creation confirmation...');
-  await waitForTransaction(createResult.hash);
+  saveKeys(keyData);
 
   // Output summary
   console.log('\n' + '='.repeat(60));
   console.log('DEPLOYMENT SUMMARY');
   console.log('='.repeat(60));
   console.log(`Contract Address: ${contractAddress.toBase58()}`);
-  console.log(`Tournament ID: ${tournamentId.toString()}`);
-  console.log(`Ticket Price: ${Number(ticketPrice) / 1e9} MINA`);
-  console.log(`Registration Start Slot: ${registrationStartSlot}`);
-  console.log(`Battle Start Slot: ${battleStartSlot}`);
-  console.log(`Battle End Slot: ${battleEndSlot}`);
+  console.log(`Keys saved to: ${KEYS_DIR}/current.json`);
   console.log('\nAdd to .env:');
   console.log(`TOURNAMENT_CONTRACT_ADDRESS=${contractAddress.toBase58()}`);
+  console.log(`TOURNAMENT_CONTRACT_PRIVATE_KEY=${contractKey.toBase58()}`);
   console.log('='.repeat(60));
 }
 
-function hashTournamentKey(tournamentId: Field): Field {
-  return Poseidon.hash([tournamentId]);
+interface KeyData {
+  contractPrivateKey: string;
+  contractAddress: string;
+  deployedAt: string;
+  deployTxHash: string;
+  network: string;
 }
 
-async function waitForTransaction(
-  hash: string,
-  timeoutMs = 120000
-): Promise<void> {
-  const startTime = Date.now();
-
-  while (Date.now() - startTime < timeoutMs) {
-    try {
-      const response = await fetch(MINA_NETWORK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query GetTransactionStatus($hash: String!) {
-              transactionStatus(zkappTransaction: $hash)
-            }
-          `,
-          variables: { hash },
-        }),
-      });
-
-      const data = await response.json();
-      const status = data?.data?.transactionStatus;
-
-      if (status === 'INCLUDED') {
-        return;
-      }
-      if (status === 'FAILED') {
-        throw new Error(`Transaction ${hash} failed`);
-      }
-    } catch (e) {
-      // Continue waiting
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 10000));
-    process.stdout.write('.');
+function saveKeys(keyData: KeyData): void {
+  // Ensure directories exist
+  if (!fs.existsSync(KEYS_DIR)) {
+    fs.mkdirSync(KEYS_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(KEYS_ALL_DIR)) {
+    fs.mkdirSync(KEYS_ALL_DIR, { recursive: true });
   }
 
-  console.log(
-    '\nWarning: Transaction confirmation timed out, may still be pending'
-  );
+  // Save current.json
+  const currentPath = path.join(KEYS_DIR, 'current.json');
+  fs.writeFileSync(currentPath, JSON.stringify(keyData, null, 2));
+  console.log(`\nKeys saved to: ${currentPath}`);
+
+  // Find next incremental number for all directory
+  const existingFiles = fs.readdirSync(KEYS_ALL_DIR).filter((f) => f.endsWith('.json'));
+  const numbers = existingFiles
+    .map((f) => parseInt(f.replace('.json', ''), 10))
+    .filter((n) => !isNaN(n));
+  const nextNumber = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
+
+  // Save to all directory with incremental name
+  const allPath = path.join(KEYS_ALL_DIR, `${nextNumber}.json`);
+  fs.writeFileSync(allPath, JSON.stringify(keyData, null, 2));
+  console.log(`Keys duplicated to: ${allPath}`);
 }
 
 main().catch((err) => {
