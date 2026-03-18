@@ -120,6 +120,45 @@ export class WinnerLeaf extends Struct({
   }
 }
 
+/* --------------------------------- Events --------------------------------- */
+
+export class TournamentCreatedEvent extends Struct({
+  tournamentId: Field,
+  registrationStartSlot: UInt32,
+  battleStartSlot: UInt32,
+  battleEndSlot: UInt32,
+  ticketPrice: UInt64,
+  prize1Percent: UInt32,
+  prize2Percent: UInt32,
+  prize3Percent: UInt32,
+}) {}
+
+export class TicketPurchasedEvent extends Struct({
+  tournamentId: Field,
+  player: PublicKey,
+  newParticipantsRoot: Field,
+  newPrizePool: UInt64,
+  newParticipantCount: UInt32,
+}) {}
+
+export class TournamentFinalizedEvent extends Struct({
+  tournamentId: Field,
+  winner1: PublicKey,
+  winner2: PublicKey,
+  winner3: PublicKey,
+  prize1: UInt64,
+  prize2: UInt64,
+  prize3: UInt64,
+  newWinnersRoot: Field,
+}) {}
+
+export class PrizeClaimedEvent extends Struct({
+  tournamentId: Field,
+  player: PublicKey,
+  prizeAmount: UInt64,
+  newWinnersRoot: Field,
+}) {}
+
 /* --------------------------------- Contract --------------------------------- */
 
 export class TournamentManager extends SmartContract {
@@ -129,10 +168,10 @@ export class TournamentManager extends SmartContract {
   @state(PublicKey) gameManagerAddress = State<PublicKey>();
 
   events = {
-    TournamentCreated: Field,
-    TicketPurchased: Field,
-    TournamentFinalized: Field,
-    PrizeClaimed: Field,
+    TournamentCreated: TournamentCreatedEvent,
+    TicketPurchased: TicketPurchasedEvent,
+    TournamentFinalized: TournamentFinalizedEvent,
+    PrizeClaimed: PrizeClaimedEvent,
   };
 
   init() {
@@ -241,7 +280,19 @@ export class TournamentManager extends SmartContract {
 
     const [newRoot] = tournamentWitness.computeRootAndKey(newTournament.hash());
     this.tournamentsRoot.set(newRoot);
-    this.emitEvent('TournamentCreated', tournamentId);
+    this.emitEvent(
+      'TournamentCreated',
+      new TournamentCreatedEvent({
+        tournamentId,
+        registrationStartSlot,
+        battleStartSlot,
+        battleEndSlot,
+        ticketPrice: config.ticketPrice,
+        prize1Percent: config.prize1Percent,
+        prize2Percent: config.prize2Percent,
+        prize3Percent: config.prize3Percent,
+      })
+    );
   }
 
   @method async finalizeTournament(
@@ -308,7 +359,19 @@ export class TournamentManager extends SmartContract {
       finalizedTournament.hash()
     );
     this.tournamentsRoot.set(newRoot);
-    this.emitEvent('TournamentFinalized', tournamentId);
+    this.emitEvent(
+      'TournamentFinalized',
+      new TournamentFinalizedEvent({
+        tournamentId,
+        winner1,
+        winner2,
+        winner3,
+        prize1,
+        prize2,
+        prize3,
+        newWinnersRoot,
+      })
+    );
   }
 
   /* ------------------------------- Player Methods ------------------------------ */
@@ -402,7 +465,16 @@ export class TournamentManager extends SmartContract {
     );
     this.tournamentsRoot.set(newTournamentRoot);
 
-    this.emitEvent('TicketPurchased', tournamentId);
+    this.emitEvent(
+      'TicketPurchased',
+      new TicketPurchasedEvent({
+        tournamentId,
+        player,
+        newParticipantsRoot,
+        newPrizePool: updatedTournament.prizePool,
+        newParticipantCount: updatedTournament.participantCount,
+      })
+    );
   }
 
   @method async advanceToBattle(
@@ -531,6 +603,14 @@ export class TournamentManager extends SmartContract {
     );
     this.tournamentsRoot.set(newTournamentRoot);
 
-    this.emitEvent('PrizeClaimed', tournamentId);
+    this.emitEvent(
+      'PrizeClaimed',
+      new PrizeClaimedEvent({
+        tournamentId,
+        player,
+        prizeAmount: currentWinnerLeaf.prizeAmount,
+        newWinnersRoot,
+      })
+    );
   }
 }
