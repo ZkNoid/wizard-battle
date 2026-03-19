@@ -250,10 +250,15 @@ export class ProofGeneratorService implements OnModuleInit {
     const contract = new TournamentManager(contractAddress);
 
     const playerPubKey = PublicKey.fromBase58(op.playerPubKey);
+    const ticketPrice = UInt64.from(BigInt(tournament.verified.ticketPrice));
 
     this.logger.log(`Generating proof for buyTicket operation ${op._id}`);
 
     const tx = await Mina.transaction(playerPubKey, async () => {
+      // Transfer ticket price from player to contract (required for addInPlace)
+      const playerUpdate = AccountUpdate.createSigned(playerPubKey);
+      playerUpdate.send({ to: contractAddress, amount: ticketPrice });
+
       await contract.buyTicket(
         Field(op.tournamentId),
         currentTournamentLeaf,
@@ -266,9 +271,12 @@ export class ProofGeneratorService implements OnModuleInit {
 
     this.logger.log(`Proof generated for operation ${op._id}`);
 
+    const unsignedTxJson = tx.toJSON();
+
     await this.tournamentStateService.updateOperationStatus(
       op._id,
-      OperationStatus.Submitted
+      OperationStatus.Submitted,
+      { unsignedTxJson: JSON.stringify(unsignedTxJson) }
     );
 
     this.logger.log(
@@ -311,9 +319,12 @@ export class ProofGeneratorService implements OnModuleInit {
 
     await tx.prove();
 
+    const unsignedTxJson = tx.toJSON();
+
     await this.tournamentStateService.updateOperationStatus(
       op._id,
-      OperationStatus.Submitted
+      OperationStatus.Submitted,
+      { unsignedTxJson: JSON.stringify(unsignedTxJson) }
     );
 
     this.logger.log(

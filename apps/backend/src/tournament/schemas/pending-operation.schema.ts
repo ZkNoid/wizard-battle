@@ -50,6 +50,9 @@ export class PendingOperation {
 
   @Prop()
   confirmedAt?: Date;
+
+  @Prop()
+  unsignedTxJson?: string;
 }
 
 export const PendingOperationSchema =

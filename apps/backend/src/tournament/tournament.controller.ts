@@ -5,14 +5,19 @@ import {
   Body,
   Param,
   Query,
+  Sse,
   HttpException,
   HttpStatus,
   Logger,
+  MessageEvent,
 } from '@nestjs/common';
+import { Observable, from, merge } from 'rxjs';
+import { map, takeWhile } from 'rxjs/operators';
 import { TournamentStateService } from './services/tournament-state.service.js';
 import { ProofGeneratorService } from './services/proof-generator.service.js';
 import { ChainMonitorService } from './services/chain-monitor.service.js';
-import { OperationType } from './schemas/pending-operation.schema.js';
+import { OperationEventsService, OperationStreamData } from './services/operation-events.service.js';
+import { OperationType, OperationStatus } from './schemas/pending-operation.schema.js';
 import {
   BuyTicketDto,
   BuyTicketResponseDto,
@@ -20,6 +25,7 @@ import {
   ParticipantsResponseDto,
   PendingOperationResponseDto,
   ChainStatusResponseDto,
+  OperationStreamEventDto,
 } from './dto/index.js';
 
 @Controller('tournament')
@@ -29,7 +35,8 @@ export class TournamentController {
   constructor(
     private readonly tournamentStateService: TournamentStateService,
     private readonly proofGeneratorService: ProofGeneratorService,
-    private readonly chainMonitorService: ChainMonitorService
+    private readonly chainMonitorService: ChainMonitorService,
+    private readonly operationEventsService: OperationEventsService
   ) {}
 
   @Get('status')
@@ -131,6 +138,7 @@ export class TournamentController {
       playerPubKey: op.playerPubKey,
       status: op.status,
       txHash: op.txHash,
+      unsignedTxJson: op.unsignedTxJson,
       error: op.error,
       createdAt: op.createdAt ?? new Date(),
       updatedAt: op.updatedAt ?? new Date(),
@@ -283,9 +291,55 @@ export class TournamentController {
       playerPubKey: operation.playerPubKey,
       status: operation.status,
       txHash: operation.txHash,
+      unsignedTxJson: operation.unsignedTxJson,
       error: operation.error,
       createdAt: operation.createdAt ?? new Date(),
       updatedAt: operation.updatedAt ?? new Date(),
     };
+  }
+
+  @Sse(':id/operation/:opId/stream')
+  streamOperation(
+    @Param('id') tournamentId: string,
+    @Param('opId') operationId: string
+  ): Observable<MessageEvent> {
+    this.logger.log(
+      `SSE stream opened for operation ${operationId} in tournament ${tournamentId}`
+    );
+
+    const initialState$ = from(
+      this.tournamentStateService.getPendingOperationById(operationId)
+    ).pipe(
+      map((operation): MessageEvent => {
+        if (!operation || operation.tournamentId !== tournamentId) {
+          throw new HttpException(
+            `Operation ${operationId} not found`,
+            HttpStatus.NOT_FOUND
+          );
+        }
+
+        const data: OperationStreamEventDto = {
+          status: operation.status,
+          unsignedTxJson: operation.unsignedTxJson,
+          txHash: operation.txHash,
+          error: operation.error,
+          updatedAt: (operation.updatedAt ?? new Date()).toISOString(),
+        };
+
+        return { data };
+      })
+    );
+
+    const liveUpdates$ = this.operationEventsService
+      .getOperationStream(operationId)
+      .pipe(
+        map((data): MessageEvent => ({ data })),
+        takeWhile((event) => {
+          const status = (event.data as OperationStreamData).status as OperationStatus;
+          return !this.operationEventsService.isTerminalStatus(status);
+        }, true)
+      );
+
+    return merge(initialState$, liveUpdates$);
   }
 }

@@ -15,6 +15,7 @@ import {
 } from '../schemas/pending-operation.schema.js';
 import { MerkleService } from './merkle.service.js';
 import { RedisService } from '../../redis/redis.service.js';
+import { OperationEventsService } from './operation-events.service.js';
 
 export interface OptimisticView {
   tournamentId: string;
@@ -48,7 +49,8 @@ export class TournamentStateService {
     @InjectModel(PendingOperation.name)
     private readonly pendingOpModel: Model<PendingOperationDocument>,
     private readonly merkleService: MerkleService,
-    private readonly redisService: RedisService
+    private readonly redisService: RedisService,
+    private readonly operationEventsService: OperationEventsService
   ) {}
 
   async getVerifiedState(
@@ -194,16 +196,30 @@ export class TournamentStateService {
   async updateOperationStatus(
     opId: string | Types.ObjectId,
     status: OperationStatus,
-    updates?: Partial<{ txHash: string; error: string; retryCount: number }>
+    updates?: Partial<{ txHash: string; error: string; retryCount: number; unsignedTxJson: string }>
   ): Promise<PendingOperationDocument | null> {
     const updateData: Record<string, unknown> = { status, ...updates };
     if (status === OperationStatus.Confirmed) {
       updateData.confirmedAt = new Date();
     }
 
-    return this.pendingOpModel
+    const updated = await this.pendingOpModel
       .findByIdAndUpdate(opId, updateData, { new: true })
       .exec();
+
+    if (updated) {
+      this.operationEventsService.emit({
+        operationId: updated._id.toString(),
+        tournamentId: updated.tournamentId,
+        status: updated.status,
+        unsignedTxJson: updated.unsignedTxJson,
+        txHash: updated.txHash,
+        error: updated.error,
+        updatedAt: updated.updatedAt,
+      });
+    }
+
+    return updated;
   }
 
   async confirmOperation(

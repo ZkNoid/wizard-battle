@@ -28,9 +28,18 @@ export class PendingOperationResponseDto {
   playerPubKey!: string;
   status!: string;
   txHash?: string;
+  unsignedTxJson?: string;
   error?: string;
   createdAt!: Date;
   updatedAt!: Date;
+}
+
+export class OperationStreamEventDto {
+  status!: string;
+  unsignedTxJson?: string;
+  txHash?: string;
+  error?: string;
+  updatedAt!: string;
 }
 
 export class ChainStatusResponseDto {
