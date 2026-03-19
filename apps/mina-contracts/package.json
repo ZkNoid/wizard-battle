@@ -21,7 +21,7 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "testw": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "lint": "npx eslint src/* --fix",
-    "deploy:testnet": "tsc && node --experimental-vm-modules build/scripts/deploy-tournament.js",
+    "deploy-tournament:testnet": "tsc && node --experimental-vm-modules build/scripts/deploy-tournament.js",
     "create-tournament": "tsc && node --experimental-vm-modules build/scripts/create-tournament.js"
   },
   "devDependencies": {
@@ -42,7 +42,8 @@
     "o1js": "^2.*"
   },
   "dependencies": {
-    "@wizard-battle/common": "workspace:*"
+    "@wizard-battle/common": "workspace:*",
+    "dotenv": "^17.2.1"
   },
   "engines": {
     "node": ">=18.14.0"

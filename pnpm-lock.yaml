@@ -387,6 +387,9 @@ importers:
       '@wizard-battle/common':
         specifier: workspace:*
         version: link:../common
+      dotenv:
+        specifier: ^17.2.1
+        version: 17.2.1
       o1js:
         specifier: ^2.*
         version: 2.8.0
