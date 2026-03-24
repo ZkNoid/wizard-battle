@@ -1,6 +1,12 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
+import { InjectModel, InjectConnection } from '@nestjs/mongoose';
+import { Model, Types, Connection } from 'mongoose';
 import {
   Tournament,
   TournamentDocument,
@@ -43,15 +49,28 @@ export interface AddPendingOperationDto {
 export class TournamentStateService {
   private readonly logger = new Logger(TournamentStateService.name);
 
+  private static readonly PLATFORM_FEE_BASIS_POINTS = 500n; // 5%
+  private static readonly BASIS_POINTS_DIVISOR = 10000n;
+
   constructor(
     @InjectModel(Tournament.name)
     private readonly tournamentModel: Model<TournamentDocument>,
     @InjectModel(PendingOperation.name)
     private readonly pendingOpModel: Model<PendingOperationDocument>,
+    @InjectConnection()
+    private readonly connection: Connection,
     private readonly merkleService: MerkleService,
     private readonly redisService: RedisService,
     private readonly operationEventsService: OperationEventsService
   ) {}
+
+  private calculatePrizeContribution(ticketPrice: bigint): bigint {
+    return (
+      ticketPrice -
+      (ticketPrice * TournamentStateService.PLATFORM_FEE_BASIS_POINTS) /
+        TournamentStateService.BASIS_POINTS_DIVISOR
+    );
+  }
 
   async getVerifiedState(
     tournamentId: string
@@ -66,7 +85,9 @@ export class TournamentStateService {
   async getActiveTournaments(): Promise<TournamentDocument[]> {
     return this.tournamentModel
       .find({
-        'verified.status': { $in: [TournamentStatus.Registration, TournamentStatus.Battle] },
+        'verified.status': {
+          $in: [TournamentStatus.Registration, TournamentStatus.Battle],
+        },
       })
       .exec();
   }
@@ -79,10 +100,11 @@ export class TournamentStateService {
       return null;
     }
 
-    const pendingOps = await this.getPendingOperations(
-      tournamentId,
-      [OperationStatus.Queued, OperationStatus.Proving, OperationStatus.Submitted]
-    );
+    const pendingOps = await this.getPendingOperations(tournamentId, [
+      OperationStatus.Queued,
+      OperationStatus.Proving,
+      OperationStatus.Submitted,
+    ]);
 
     const pendingBuyTickets = pendingOps.filter(
       (op) => op.type === OperationType.BuyTicket
@@ -95,9 +117,8 @@ export class TournamentStateService {
     const pendingPlayers = pendingBuyTickets.map((op) => op.playerPubKey);
 
     const ticketPrice = BigInt(tournament.verified.ticketPrice);
-    const platformFeePercent = 500;
     const prizeContributionPerTicket =
-      ticketPrice - (ticketPrice * BigInt(platformFeePercent)) / BigInt(10000);
+      this.calculatePrizeContribution(ticketPrice);
 
     const optimisticPrizePool =
       BigInt(tournament.verified.prizePool) +
@@ -151,19 +172,6 @@ export class TournamentStateService {
   async addPendingOperation(
     dto: AddPendingOperationDto
   ): Promise<PendingOperationDocument> {
-    const existingPending = await this.pendingOpModel.findOne({
-      tournamentId: dto.tournamentId,
-      playerPubKey: dto.playerPubKey,
-      type: dto.type,
-      status: { $in: [OperationStatus.Queued, OperationStatus.Proving, OperationStatus.Submitted] },
-    });
-
-    if (existingPending) {
-      throw new Error(
-        `Player ${dto.playerPubKey} already has a pending ${dto.type} operation`
-      );
-    }
-
     const tournament = await this.getVerifiedState(dto.tournamentId);
     if (!tournament) {
       throw new NotFoundException(`Tournament ${dto.tournamentId} not found`);
@@ -171,32 +179,72 @@ export class TournamentStateService {
 
     if (dto.type === OperationType.BuyTicket) {
       if (tournament.participants.get(dto.playerPubKey)) {
-        throw new Error(`Player ${dto.playerPubKey} is already registered`);
+        throw new ConflictException(
+          `Player ${dto.playerPubKey} is already registered`
+        );
       }
     }
 
-    const pendingOp = new this.pendingOpModel({
-      tournamentId: dto.tournamentId,
-      type: dto.type,
-      playerPubKey: dto.playerPubKey,
-      status: OperationStatus.Queued,
-      retryCount: 0,
-    });
+    const session = await this.connection.startSession();
+    try {
+      const saved = await session.withTransaction(async () => {
+        const existingPending = await this.pendingOpModel
+          .findOne({
+            tournamentId: dto.tournamentId,
+            playerPubKey: dto.playerPubKey,
+            type: dto.type,
+            status: {
+              $in: [
+                OperationStatus.Queued,
+                OperationStatus.Proving,
+                OperationStatus.Submitted,
+              ],
+            },
+          })
+          .session(session);
 
-    const saved = await pendingOp.save();
-    this.logger.log(
-      `Created pending operation ${saved._id} for ${dto.type} on tournament ${dto.tournamentId}`
-    );
+        if (existingPending) {
+          throw new ConflictException(
+            `Player ${dto.playerPubKey} already has a pending ${dto.type} operation`
+          );
+        }
 
-    await this.notifyProofQueue(dto.tournamentId);
+        const pendingOp = new this.pendingOpModel({
+          tournamentId: dto.tournamentId,
+          type: dto.type,
+          playerPubKey: dto.playerPubKey,
+          status: OperationStatus.Queued,
+          retryCount: 0,
+        });
 
-    return saved;
+        return pendingOp.save({ session });
+      });
+
+      if (!saved) {
+        throw new Error('Failed to create pending operation');
+      }
+
+      this.logger.log(
+        `Created pending operation ${saved._id} for ${dto.type} on tournament ${dto.tournamentId}`
+      );
+
+      await this.notifyProofQueue(dto.tournamentId);
+
+      return saved;
+    } finally {
+      await session.endSession();
+    }
   }
 
   async updateOperationStatus(
     opId: string | Types.ObjectId,
     status: OperationStatus,
-    updates?: Partial<{ txHash: string; error: string; retryCount: number; unsignedTxJson: string }>
+    updates?: Partial<{
+      txHash: string;
+      error: string;
+      retryCount: number;
+      unsignedTxJson: string;
+    }>
   ): Promise<PendingOperationDocument | null> {
     const updateData: Record<string, unknown> = { status, ...updates };
     if (status === OperationStatus.Confirmed) {
@@ -222,30 +270,73 @@ export class TournamentStateService {
     return updated;
   }
 
-  async confirmOperation(
-    opId: string,
-    txHash: string
-  ): Promise<void> {
+  async confirmOperation(opId: string, txHash: string): Promise<void> {
     const op = await this.getPendingOperationById(opId);
     if (!op) {
       throw new NotFoundException(`Operation ${opId} not found`);
     }
 
-    await this.updateOperationStatus(opId, OperationStatus.Confirmed, { txHash });
+    const session = await this.connection.startSession();
+    try {
+      await session.withTransaction(async () => {
+        await this.updateOperationStatusWithSession(
+          opId,
+          OperationStatus.Confirmed,
+          { txHash },
+          session
+        );
 
-    if (op.type === OperationType.BuyTicket) {
-      await this.applyBuyTicketToVerified(op.tournamentId, op.playerPubKey);
+        if (op.type === OperationType.BuyTicket) {
+          await this.applyBuyTicketToVerified(
+            op.tournamentId,
+            op.playerPubKey,
+            session
+          );
+        }
+      });
+
+      this.logger.log(`Confirmed operation ${opId} with tx ${txHash}`);
+    } finally {
+      await session.endSession();
     }
-
-    this.logger.log(
-      `Confirmed operation ${opId} with tx ${txHash}`
-    );
   }
 
-  async failOperation(
-    opId: string,
-    error: string
-  ): Promise<void> {
+  private async updateOperationStatusWithSession(
+    opId: string | Types.ObjectId,
+    status: OperationStatus,
+    updates: Partial<{
+      txHash: string;
+      error: string;
+      retryCount: number;
+      unsignedTxJson: string;
+    }> | undefined,
+    session: import('mongoose').ClientSession
+  ): Promise<PendingOperationDocument | null> {
+    const updateData: Record<string, unknown> = { status, ...updates };
+    if (status === OperationStatus.Confirmed) {
+      updateData.confirmedAt = new Date();
+    }
+
+    const updated = await this.pendingOpModel
+      .findByIdAndUpdate(opId, updateData, { new: true, session })
+      .exec();
+
+    if (updated) {
+      this.operationEventsService.emit({
+        operationId: updated._id.toString(),
+        tournamentId: updated.tournamentId,
+        status: updated.status,
+        unsignedTxJson: updated.unsignedTxJson,
+        txHash: updated.txHash,
+        error: updated.error,
+        updatedAt: updated.updatedAt,
+      });
+    }
+
+    return updated;
+  }
+
+  async failOperation(opId: string, error: string): Promise<void> {
     const op = await this.getPendingOperationById(opId);
     if (!op) {
       throw new NotFoundException(`Operation ${opId} not found`);
@@ -272,22 +363,24 @@ export class TournamentStateService {
 
   private async applyBuyTicketToVerified(
     tournamentId: string,
-    playerPubKey: string
+    playerPubKey: string,
+    session?: import('mongoose').ClientSession
   ): Promise<void> {
-    const tournament = await this.getVerifiedState(tournamentId);
+    const tournament = await this.tournamentModel
+      .findOne({ tournamentId })
+      .session(session ?? null)
+      .exec();
+
     if (!tournament) {
-      this.logger.error(
+      throw new NotFoundException(
         `Cannot apply buyTicket: Tournament ${tournamentId} not found`
       );
-      return;
     }
 
     tournament.participants.set(playerPubKey, true);
 
     const ticketPrice = BigInt(tournament.verified.ticketPrice);
-    const platformFeePercent = 500;
-    const prizeContribution =
-      ticketPrice - (ticketPrice * BigInt(platformFeePercent)) / BigInt(10000);
+    const prizeContribution = this.calculatePrizeContribution(ticketPrice);
 
     tournament.verified.prizePool = (
       BigInt(tournament.verified.prizePool) + prizeContribution
@@ -299,7 +392,7 @@ export class TournamentStateService {
     );
     tournament.verified.participantsRoot = participantsMap.getRoot().toString();
 
-    await tournament.save();
+    await tournament.save({ session });
     this.logger.log(
       `Applied buyTicket for ${playerPubKey} to tournament ${tournamentId}`
     );
@@ -318,7 +411,18 @@ export class TournamentStateService {
     },
     tournamentsRoot: string
   ): Promise<TournamentDocument> {
-    const emptyRoot = '544619463418997333856881110951498501703454628897449993518845662251180546746';
+    this.validateTournamentConfig(config);
+
+    const existingTournament = await this.tournamentModel
+      .findOne({ tournamentId })
+      .exec();
+    if (existingTournament) {
+      throw new ConflictException(
+        `Tournament with ID ${tournamentId} already exists`
+      );
+    }
+
+    const emptyRoot = this.merkleService.getEmptyRoot();
 
     const tournament = new this.tournamentModel({
       tournamentId,
@@ -342,6 +446,55 @@ export class TournamentStateService {
     });
 
     return tournament.save();
+  }
+
+  private validateTournamentConfig(config: {
+    ticketPrice: string;
+    prize1Percent: number;
+    prize2Percent: number;
+    prize3Percent: number;
+    registrationStartSlot: number;
+    battleStartSlot: number;
+    battleEndSlot: number;
+  }): void {
+    try {
+      const ticketPrice = BigInt(config.ticketPrice);
+      if (ticketPrice <= 0n) {
+        throw new BadRequestException('Ticket price must be positive');
+      }
+    } catch (e) {
+      if (e instanceof BadRequestException) throw e;
+      throw new BadRequestException('Invalid ticket price format');
+    }
+
+    const totalPrizePercent =
+      config.prize1Percent + config.prize2Percent + config.prize3Percent;
+    if (totalPrizePercent > 100) {
+      throw new BadRequestException(
+        `Prize percentages sum to ${totalPrizePercent}%, must not exceed 100%`
+      );
+    }
+    if (
+      config.prize1Percent < 0 ||
+      config.prize2Percent < 0 ||
+      config.prize3Percent < 0
+    ) {
+      throw new BadRequestException('Prize percentages cannot be negative');
+    }
+
+    if (config.registrationStartSlot < 0) {
+      throw new BadRequestException('Registration start slot cannot be negative');
+    }
+    if (config.battleStartSlot <= config.registrationStartSlot) {
+      throw new BadRequestException(
+        'Battle start slot must be after registration start slot'
+      );
+    }
+    if (config.battleEndSlot <= config.battleStartSlot) {
+      throw new BadRequestException(
+        'Battle end slot must be after battle start slot'
+      );
+    }
   }
 
   async updateTournamentStatus(

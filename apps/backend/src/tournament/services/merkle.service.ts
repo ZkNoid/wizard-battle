@@ -15,6 +15,15 @@ export interface ParticipantWitnessData {
 @Injectable()
 export class MerkleService {
   private readonly logger = new Logger(MerkleService.name);
+  private readonly emptyRoot: string;
+
+  constructor() {
+    this.emptyRoot = new MerkleMap().getRoot().toString();
+  }
+
+  getEmptyRoot(): string {
+    return this.emptyRoot;
+  }
 
   static keyFor(tournamentId: Field): Field {
     return Poseidon.hash([tournamentId]);
