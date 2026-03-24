@@ -12,6 +12,10 @@ import { BuyTicketConfirmationModal } from './BuyTicketConfirmationModal';
 import { CongratulationsModal } from './CongratulationsModal';
 import { ALL_TOURNAMENTS } from '@/lib/constants/tournaments';
 import type { ITournament, ITournamentAsset } from '@/lib/types/ITournament';
+import {
+  useBuyTicket,
+  BUY_TICKET_STATUS_LABEL,
+} from '@/lib/hooks/useBuyTicket';
 
 interface TournamentsFormProps {
   onClose?: () => void;
@@ -61,17 +65,25 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
     null
   );
 
+  const { status, txHash, error, isLoading, buyTicket, reset } = useBuyTicket();
+
   const tournaments = sortTournaments(ALL_TOURNAMENTS, filters.sortBy);
 
-  const handleConfirmJoin = (tournament: ITournament) => {
-    // TODO: trigger buy ticket transaction and show result modal
+  const handleConfirmJoin = async (tournament: ITournament) => {
     setJoinTournament(null);
+    await buyTicket(tournament);
   };
 
   const handleConfirmClaim = () => {
     // TODO: trigger claim rewards transaction
     setClaimTournament(null);
   };
+
+  const handleDismissTxStatus = () => {
+    reset();
+  };
+
+  const showTxStatus = status !== 'idle';
 
   return (
     <div className="flex h-full w-full flex-col gap-4">
@@ -105,10 +117,20 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
         </>
       )}
 
+      {showTxStatus && (
+        <TxStatusBar
+          status={status}
+          txHash={txHash}
+          error={error}
+          isLoading={isLoading}
+          onDismiss={handleDismissTxStatus}
+        />
+      )}
+
       {joinTournament && (
         <BuyTicketConfirmationModal
           tournament={joinTournament}
-          onConfirm={handleConfirmJoin}
+          onConfirm={(t) => void handleConfirmJoin(t)}
           onBack={() => setJoinTournament(null)}
         />
       )}
@@ -119,6 +141,63 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
           onClaim={handleConfirmClaim}
           onClose={() => setClaimTournament(null)}
         />
+      )}
+    </div>
+  );
+}
+
+// ─── Inline transaction status bar ──────────────────────────────────────────
+
+interface TxStatusBarProps {
+  status: ReturnType<typeof useBuyTicket>['status'];
+  txHash: string | null;
+  error: string | null;
+  isLoading: boolean;
+  onDismiss: () => void;
+}
+
+function TxStatusBar({
+  status,
+  txHash,
+  error,
+  isLoading,
+  onDismiss,
+}: TxStatusBarProps) {
+  const isConfirmed = status === 'confirmed';
+  const isFailed = status === 'failed';
+  const isDismissible = isConfirmed || isFailed;
+
+  return (
+    <div
+      className={[
+        'fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3',
+        'rounded-md border px-4 py-3 shadow-lg backdrop-blur-sm',
+        'font-pixel-klein text-sm',
+        isConfirmed
+          ? 'border-green-500/40 bg-green-900/80 text-green-300'
+          : isFailed
+            ? 'border-red-500/40 bg-red-900/80 text-red-300'
+            : 'border-yellow-500/40 bg-yellow-900/80 text-yellow-200',
+      ].join(' ')}
+    >
+      {isLoading && (
+        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+      )}
+
+      <span>
+        {BUY_TICKET_STATUS_LABEL[status]}
+        {isFailed && error ? `: ${error}` : ''}
+        {isConfirmed && txHash ? ` · tx ${txHash.slice(0, 8)}…` : ''}
+      </span>
+
+      {isDismissible && (
+        <button
+          onClick={onDismiss}
+          className="ml-2 opacity-60 hover:opacity-100"
+          aria-label="Dismiss"
+        >
+          ✕
+        </button>
       )}
     </div>
   );
