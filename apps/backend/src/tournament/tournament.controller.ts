@@ -16,6 +16,7 @@ import { map, takeWhile } from 'rxjs/operators';
 import { TournamentStateService } from './services/tournament-state.service.js';
 import { ProofGeneratorService } from './services/proof-generator.service.js';
 import { ChainMonitorService } from './services/chain-monitor.service.js';
+import { MinaClientService } from './services/mina-client.service.js';
 import { OperationEventsService, OperationStreamData } from './services/operation-events.service.js';
 import { OperationType, OperationStatus } from './schemas/pending-operation.schema.js';
 import {
@@ -36,6 +37,7 @@ export class TournamentController {
     private readonly tournamentStateService: TournamentStateService,
     private readonly proofGeneratorService: ProofGeneratorService,
     private readonly chainMonitorService: ChainMonitorService,
+    private readonly minaClientService: MinaClientService,
     private readonly operationEventsService: OperationEventsService
   ) {}
 
@@ -224,7 +226,7 @@ export class TournamentController {
   @Post(':id/submit-tx')
   async submitTransaction(
     @Param('id') tournamentId: string,
-    @Body() body: { operationId: string; signedTxJson: string }
+    @Body() body: { operationId: string; signedTxJson: string | Record<string, unknown> }
   ): Promise<{ txHash: string }> {
     const tournament =
       await this.tournamentStateService.getVerifiedState(tournamentId);
@@ -247,26 +249,74 @@ export class TournamentController {
       );
     }
 
-    if (operation.status !== 'submitted') {
+    if (operation.tournamentId !== tournamentId) {
+      throw new HttpException(
+        `Operation ${body.operationId} does not belong to tournament ${tournamentId}`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    if (operation.status !== OperationStatus.Submitted) {
       throw new HttpException(
         `Operation ${body.operationId} is not ready for submission (status: ${operation.status})`,
         HttpStatus.BAD_REQUEST
       );
     }
 
-    this.logger.log(
-      `Transaction submission placeholder for operation ${body.operationId}`
-    );
+    if (
+      operation.txHash &&
+      !operation.txHash.startsWith('pending_')
+    ) {
+      this.logger.log(
+        `Operation ${body.operationId} already broadcast with tx ${operation.txHash}`
+      );
+      return { txHash: operation.txHash };
+    }
 
-    const placeholderTxHash = `pending_${body.operationId}`;
+    if (body.signedTxJson === undefined || body.signedTxJson === null) {
+      throw new HttpException(
+        'signedTxJson is required',
+        HttpStatus.BAD_REQUEST
+      );
+    }
 
-    await this.tournamentStateService.updateOperationStatus(
-      body.operationId,
-      'submitted' as any,
-      { txHash: placeholderTxHash }
-    );
+    const signedTxJsonStr =
+      typeof body.signedTxJson === 'string'
+        ? body.signedTxJson
+        : JSON.stringify(body.signedTxJson);
 
-    return { txHash: placeholderTxHash };
+    if (signedTxJsonStr.trim() === '' || signedTxJsonStr === '{}') {
+      throw new HttpException(
+        'signedTxJson must be a non-empty serialized transaction',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    try {
+      const result = await this.minaClientService.submitTransaction(
+        signedTxJsonStr
+      );
+
+      this.logger.log(
+        `Broadcast operation ${body.operationId} → tx ${result.hash}`
+      );
+
+      await this.tournamentStateService.updateOperationStatus(
+        body.operationId,
+        OperationStatus.Submitted,
+        { txHash: result.hash }
+      );
+
+      return { txHash: result.hash };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to broadcast transaction';
+      this.logger.error(
+        `Broadcast failed for operation ${body.operationId}: ${message}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw new HttpException(message, HttpStatus.BAD_GATEWAY);
+    }
   }
 
   @Get(':id/operation/:opId')
