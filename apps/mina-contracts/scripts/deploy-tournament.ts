@@ -22,7 +22,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const KEYS_DIR = path.join(__dirname, '..', 'keys', 'tournament');
+const KEYS_DIR = path.join(__dirname, '..', '..', 'keys', 'tournament');
 const KEYS_ALL_DIR = path.join(KEYS_DIR, 'all');
 
 const MINA_NETWORK_URL =

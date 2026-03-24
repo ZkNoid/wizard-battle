@@ -17,7 +17,8 @@
  *   BATTLE_SLOTS - Number of slots for battle phase (default: 400 = ~20 hours)
  *   REGISTRATION_START_DELAY - Slots before registration starts (default: 10 = ~30 min)
  */
-
+import dotenv from 'dotenv';
+dotenv.config();
 import {
   Mina,
   PrivateKey,
@@ -48,6 +49,43 @@ const MINA_ARCHIVE_URL =
   process.env.MINA_ARCHIVE_URL ||
   'https://api.minascan.io/archive/devnet/v1/graphql';
 
+async function fetchCurrentSlot(): Promise<number> {
+  const query = `
+    query {
+      bestChain(maxLength: 1) {
+        protocolState {
+          consensusState {
+            slotSinceGenesis
+          }
+        }
+      }
+    }
+  `;
+
+  const response = await fetch(MINA_NETWORK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query }),
+  });
+
+  const result = await response.json();
+
+  if (result.errors) {
+    throw new Error(
+      `Failed to fetch current slot: ${JSON.stringify(result.errors)}`
+    );
+  }
+
+  const slot =
+    result.data?.bestChain?.[0]?.protocolState?.consensusState
+      ?.slotSinceGenesis;
+  if (slot === undefined) {
+    throw new Error('Could not parse slot from GraphQL response');
+  }
+
+  return Number(slot);
+}
+
 // Tournament timing configuration
 const REGISTRATION_START_DELAY = Number(
   process.env.REGISTRATION_START_DELAY || '10'
@@ -72,109 +110,36 @@ async function fetchContractEvents(contractAddress: PublicKey): Promise<{
   prizeClaimed: PrizeClaimedEvent[];
 }> {
   console.log('Fetching contract events from archive...');
+  const tournament = new TournamentManager(contractAddress);
 
-  const query = `
-    query GetEvents($address: String!) {
-      events(input: { address: $address }) {
-        blockInfo {
-          height
-          globalSlotSinceGenesis
-        }
-        eventData {
-          data
-        }
-      }
-    }
-  `;
-
-  const response = await fetch(MINA_ARCHIVE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      query,
-      variables: { address: contractAddress.toBase58() },
-    }),
-  });
-
-  const result = await response.json();
-
-  if (result.errors) {
-    throw new Error(`Archive query failed: ${JSON.stringify(result.errors)}`);
-  }
-
-  const events = result.data?.events || [];
-  console.log(`Found ${events.length} event batches`);
+  const events = await tournament.fetchEvents();
+  console.log(`Found ${events.length} events`);
 
   const tournamentCreated: TournamentCreatedEvent[] = [];
   const ticketPurchased: TicketPurchasedEvent[] = [];
   const tournamentFinalized: TournamentFinalizedEvent[] = [];
   const prizeClaimed: PrizeClaimedEvent[] = [];
 
-  for (const eventBatch of events) {
-    for (const event of eventBatch.eventData || []) {
-      const data = event.data as string[];
-      if (!data || data.length === 0) continue;
+  for (const eventRecord of events) {
+    const eventData = eventRecord.event.data;
 
-      try {
-        // Parse event based on field count and structure
-        // TournamentCreated: tournamentId, registrationStartSlot, battleStartSlot, battleEndSlot, ticketPrice, prize1%, prize2%, prize3%
-        // TicketPurchased: tournamentId, player (2 fields), newParticipantsRoot, newPrizePool, newParticipantCount
-        // TournamentFinalized: tournamentId, winner1 (2), winner2 (2), winner3 (2), prize1, prize2, prize3, newWinnersRoot
-        // PrizeClaimed: tournamentId, player (2), prizeAmount, newWinnersRoot
-
-        if (data.length === 8) {
-          // TournamentCreated
-          tournamentCreated.push(
-            new TournamentCreatedEvent({
-              tournamentId: Field(data[0]),
-              registrationStartSlot: UInt32.from(data[1]),
-              battleStartSlot: UInt32.from(data[2]),
-              battleEndSlot: UInt32.from(data[3]),
-              ticketPrice: UInt64.from(data[4]),
-              prize1Percent: UInt32.from(data[5]),
-              prize2Percent: UInt32.from(data[6]),
-              prize3Percent: UInt32.from(data[7]),
-            })
-          );
-        } else if (data.length === 6) {
-          // TicketPurchased
-          ticketPurchased.push(
-            new TicketPurchasedEvent({
-              tournamentId: Field(data[0]),
-              player: PublicKey.fromFields([Field(data[1]), Field(data[2])]),
-              newParticipantsRoot: Field(data[3]),
-              newPrizePool: UInt64.from(data[4]),
-              newParticipantCount: UInt32.from(data[5]),
-            })
-          );
-        } else if (data.length === 11) {
-          // TournamentFinalized
-          tournamentFinalized.push(
-            new TournamentFinalizedEvent({
-              tournamentId: Field(data[0]),
-              winner1: PublicKey.fromFields([Field(data[1]), Field(data[2])]),
-              winner2: PublicKey.fromFields([Field(data[3]), Field(data[4])]),
-              winner3: PublicKey.fromFields([Field(data[5]), Field(data[6])]),
-              prize1: UInt64.from(data[7]),
-              prize2: UInt64.from(data[8]),
-              prize3: UInt64.from(data[9]),
-              newWinnersRoot: Field(data[10]),
-            })
-          );
-        } else if (data.length === 5) {
-          // PrizeClaimed
-          prizeClaimed.push(
-            new PrizeClaimedEvent({
-              tournamentId: Field(data[0]),
-              player: PublicKey.fromFields([Field(data[1]), Field(data[2])]),
-              prizeAmount: UInt64.from(data[3]),
-              newWinnersRoot: Field(data[4]),
-            })
-          );
-        }
-      } catch (e) {
-        console.warn('Failed to parse event:', e);
-      }
+    switch (eventRecord.type) {
+      case 'TournamentCreated':
+        tournamentCreated.push(eventData as unknown as TournamentCreatedEvent);
+        break;
+      case 'TicketPurchased':
+        ticketPurchased.push(eventData as unknown as TicketPurchasedEvent);
+        break;
+      case 'TournamentFinalized':
+        tournamentFinalized.push(
+          eventData as unknown as TournamentFinalizedEvent
+        );
+        break;
+      case 'PrizeClaimed':
+        prizeClaimed.push(eventData as unknown as PrizeClaimedEvent);
+        break;
+      default:
+        console.warn(`Unknown event type: ${eventRecord.type}`);
     }
   }
 
@@ -390,6 +355,8 @@ async function main() {
   // Fetch and process events
   const events = await fetchContractEvents(contractAddress);
 
+  console.log('Events:', events);
+
   // Rebuild merkle map state
   const { tournamentsMap, maxTournamentId } = rebuildTournamentsMap(events);
 
@@ -422,8 +389,8 @@ async function main() {
   const ticketPrice = BigInt(process.env.TICKET_PRICE || '1000000000'); // 1 MINA default
 
   // Calculate slot timings
-  const networkState = await Mina.getNetworkState();
-  const currentSlot = Number(networkState.globalSlotSinceGenesis.toBigint());
+  console.log('\nFetching current slot from GraphQL...');
+  const currentSlot = await fetchCurrentSlot();
 
   const registrationStartSlot = currentSlot + REGISTRATION_START_DELAY;
   const battleStartSlot = registrationStartSlot + REGISTRATION_SLOTS;
