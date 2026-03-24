@@ -5,6 +5,22 @@ const BACKEND_URL =
 
 const TOURNAMENT_BASE = `${BACKEND_URL}/tournament`;
 
+export interface TournamentResponse {
+  tournamentId: string;
+  status: string;
+  registrationStartSlot: number;
+  battleStartSlot: number;
+  battleEndSlot: number;
+  ticketPrice: string;
+  prize1Percent: number;
+  prize2Percent: number;
+  prize3Percent: number;
+  prizePool: string;
+  participantCount: number;
+  registeredPlayers: string[];
+  pendingPlayers: string[];
+}
+
 export interface BuyTicketResponse {
   operationId: string;
   status: string;
@@ -17,6 +33,34 @@ export interface OperationStreamEvent {
   txHash?: string;
   error?: string;
   updatedAt: string;
+}
+
+export async function fetchAllTournaments(): Promise<TournamentResponse[]> {
+  const res = await fetch(TOURNAMENT_BASE);
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(
+      (body as { message?: string } | null)?.message ?? `HTTP ${res.status}`
+    );
+  }
+
+  return res.json() as Promise<TournamentResponse[]>;
+}
+
+export async function fetchTournament(
+  tournamentId: string
+): Promise<TournamentResponse> {
+  const res = await fetch(`${TOURNAMENT_BASE}/${tournamentId}`);
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(
+      (body as { message?: string } | null)?.message ?? `HTTP ${res.status}`
+    );
+  }
+
+  return res.json() as Promise<TournamentResponse>;
 }
 
 export async function buyTicket(

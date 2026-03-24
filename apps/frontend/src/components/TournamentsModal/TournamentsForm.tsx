@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ModalTitle from '../shared/ModalTitle';
 import {
   TournamentsFilterPanel,
@@ -10,7 +10,7 @@ import { TournamentsList } from './TournamentsList';
 import { TournamentDetailsForm } from './TournamentDetailsForm';
 import { BuyTicketConfirmationModal } from './BuyTicketConfirmationModal';
 import { CongratulationsModal } from './CongratulationsModal';
-import { ALL_TOURNAMENTS } from '@/lib/constants/tournaments';
+import { useTournamentStore } from '@/lib/store/tournamentStore';
 import type { ITournament, ITournamentAsset } from '@/lib/types/ITournament';
 import {
   useBuyTicket,
@@ -67,7 +67,18 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
 
   const { status, txHash, error, isLoading, buyTicket, reset } = useBuyTicket();
 
-  const tournaments = sortTournaments(ALL_TOURNAMENTS, filters.sortBy);
+  const {
+    tournaments: allTournaments,
+    isLoading: isTournamentsLoading,
+    error: tournamentsError,
+    loadTournaments,
+  } = useTournamentStore();
+
+  useEffect(() => {
+    void loadTournaments();
+  }, [loadTournaments]);
+
+  const tournaments = sortTournaments(allTournaments, filters.sortBy);
 
   const handleConfirmJoin = async (tournament: ITournament) => {
     setJoinTournament(null);
@@ -108,12 +119,28 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
             onFiltersChange={setFilters}
           />
 
-          <TournamentsList
-            tournaments={tournaments}
-            onJoin={setJoinTournament}
-            onClaim={setClaimTournament}
-            onViewDetails={setSelectedTournament}
-          />
+          {isTournamentsLoading ? (
+            <div className="font-pixel text-main-gray/60 flex h-40 items-center justify-center text-base">
+              Loading tournaments…
+            </div>
+          ) : tournamentsError ? (
+            <div className="font-pixel flex h-40 flex-col items-center justify-center gap-2 text-base text-red-400">
+              <span>Failed to load tournaments</span>
+              <button
+                onClick={() => void loadTournaments()}
+                className="text-sm underline opacity-70 hover:opacity-100"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <TournamentsList
+              tournaments={tournaments}
+              onJoin={setJoinTournament}
+              onClaim={setClaimTournament}
+              onViewDetails={setSelectedTournament}
+            />
+          )}
         </>
       )}
 
