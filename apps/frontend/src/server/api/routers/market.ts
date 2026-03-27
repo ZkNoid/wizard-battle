@@ -2,8 +2,19 @@ import { createTRPCRouter, publicProcedure } from '@/server/api/trpc';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { env } from '@/env';
+import clientPromise from '@/server/db';
 
-const OrderStatusEnum = z.enum(['NONE', 'OPEN', 'PAUSED', 'FILLED', 'CANCELED']);
+const client = await clientPromise;
+const db = client?.db(env.MONGODB_DB);
+const marketOrdersCollection = 'marketorders';
+
+const OrderStatusEnum = z.enum([
+  'NONE',
+  'OPEN',
+  'PAUSED',
+  'FILLED',
+  'CANCELED',
+]);
 
 const MarketOrderSchema = z.object({
   orderId: z.number(),
@@ -55,6 +66,56 @@ async function fetchFromBackend<T>(
 }
 
 export const marketRouter = createTRPCRouter({
+  createOrder: publicProcedure
+    .input(
+      z.object({
+        orderId: z.number(),
+        maker: z.string(),
+        token: z.string(),
+        tokenId: z.string(),
+        paymentToken: z.string(),
+        paymentTokenId: z.string().default('0'),
+        amount: z.string(),
+        price: z.string(),
+        nameHash: z.string(),
+        blockNumber: z.number(),
+        transactionHash: z.string(),
+        image: z.string().optional(),
+        title: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      if (!db) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database not available',
+        });
+      }
+
+      const collection = db.collection(marketOrdersCollection);
+
+      const doc = {
+        ...input,
+        maker: input.maker.toLowerCase(),
+        token: input.token.toLowerCase(),
+        paymentToken: input.paymentToken.toLowerCase(),
+        status: 'OPEN' as const,
+        createdAt: new Date(),
+      };
+
+      const existing = await collection.findOne({ orderId: input.orderId });
+      if (existing) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: `Order #${input.orderId} already exists`,
+        });
+      }
+
+      await collection.insertOne(doc);
+
+      return doc;
+    }),
+
   getOpenOrders: publicProcedure
     .input(
       z

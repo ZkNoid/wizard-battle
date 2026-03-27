@@ -35,7 +35,8 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
   const iteminventory = useInventoryStore((state) => state.iteminventory);
   const { setIsRequestSuccessModalOpen, setIsRequestFailureModalOpen } =
     useMiscellaneousSessionStore();
-  const { createOrder, approveNFT, isPending, getGameElement } = useGameMarket();
+  const { createOrder, approveNFT, isPending, getGameElement } =
+    useGameMarket();
 
   const [itemName, setItemName] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
@@ -89,15 +90,15 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
       const paymentToken = isGoldPayment
         ? (GAME_REGISTRY_ADDRESS ?? ZERO_ADDRESS)
         : (USDC_TOKEN_ADDRESS ?? ZERO_ADDRESS);
-      const paymentTokenId = isGoldPayment && goldElement
-        ? goldElement.tokenId
-        : 0n;
+      const paymentTokenId =
+        isGoldPayment && goldElement ? goldElement.tokenId : 0n;
 
       if (gameElement.tokenAddress) {
         await approveNFT(gameElement.tokenAddress, true);
       }
 
       await createOrder({
+        itemId: selectedUserItem.item.id,
         token: gameElement.tokenAddress,
         tokenId: gameElement.tokenId,
         price: priceWei,
