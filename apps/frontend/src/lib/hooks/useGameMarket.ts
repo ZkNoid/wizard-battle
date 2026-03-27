@@ -1,7 +1,13 @@
 import { useCallback, useMemo } from 'react';
 import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
 import { useWriteContract, usePublicClient, useReadContract } from 'wagmi';
-import { parseEther, formatEther, keccak256, toBytes, decodeEventLog } from 'viem';
+import {
+  parseEther,
+  formatEther,
+  keccak256,
+  toBytes,
+  decodeEventLog,
+} from 'viem';
 import { useMarketStore } from '@/lib/store/marketStore';
 import { api } from '@/trpc/react';
 
@@ -169,7 +175,8 @@ export function useGameMarket() {
   const { writeContractAsync, isPending } = useWriteContract();
   const publicClient = usePublicClient();
   const { removeOrder, updateOrderStatus, loadAll } = useMarketStore();
-  const { mutateAsync: createOrderRecord } = api.market.createOrder.useMutation();
+  const { mutateAsync: createOrderRecord } =
+    api.market.createOrder.useMutation();
 
   const { data: protocolFee } = useReadContract({
     address: GAME_MARKET_ADDRESS,
@@ -276,11 +283,11 @@ export function useGameMarket() {
       amount: bigint;
       paymentToken: `0x${string}`;
       paymentTokenId?: bigint;
-      itemName: string;
+      title: string;
     }) => {
       if (!requireWallet()) return;
 
-      const nameHash = generateNameHash(params.itemName);
+      const nameHash = generateNameHash(params.title);
 
       const txHash = await writeContractAsync({
         address: GAME_MARKET_ADDRESS,
@@ -320,6 +327,8 @@ export function useGameMarket() {
       if (orderId != null && receipt) {
         await createOrderRecord({
           orderId: Number(orderId),
+          itemId: params.itemId,
+          title: params.title,
           maker: address!,
           token: params.token,
           tokenId: params.tokenId.toString(),
