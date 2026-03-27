@@ -152,18 +152,18 @@ export const ShadowVeilModifier = (
   spellCast: SpellCast<ShadowVeilData>,
   opponentState: State
 ) => {
-  // Apply invisibility effect for 2 turns
+  // Apply invisibility effect for 3 turns
   stater.state.pushEffect(
     new Effect({
       effectId: CircuitString.fromString('ShadowVeilInvisible').hash(),
-      duration: Field.from(1),
+      duration: Field.from(2),
       param: Field(0),
     }),
     'public',
     Bool(true)
   );
 
-  // Apply damage boost: +50 attack immediately, restore after 1 turn
+  // Apply damage boost: +50 attack immediately, restore after 3 turns
   const damageBoost = UInt64.from(50);
   stater.state.playerStats.attack = stater.state.playerStats.attack.add(damageBoost);
 
@@ -171,7 +171,7 @@ export const ShadowVeilModifier = (
   stater.state.pushEffect(
     new Effect({
       effectId: CircuitString.fromString('DamageBoostRestoration').hash(),
-      duration: Field.from(1),
+      duration: Field.from(2),
       param: Field(0),
     }),
     'onEnd',
@@ -433,12 +433,20 @@ export const PhantomEchoModifier = (
   const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
 
-  // Diamond 3x3 means manhattan distance <= 1 from center
   const distance = selfPosition.manhattanDistance(targetPosition);
-  const isInDiamond = distance.lessThanOrEqual(UInt64.from(1));
 
-  const damage = UInt64.from(30);
-  const damageToApply = Provable.if(isInDiamond, damage, UInt64.from(0));
+  const directHit = distance.equals(UInt64.from(0));
+  const nearbyHit = distance.equals(UInt64.from(1));
+  const farHit = distance.equals(UInt64.from(2));
+  const distantHit = directHit.not().and(nearbyHit.not()).and(farHit.not());
+
+  const damageToApply = Provable.switch(
+    [directHit, nearbyHit, farHit, distantHit],
+    UInt64,
+    [UInt64.from(50), UInt64.from(25), UInt64.from(15), UInt64.from(0)]
+  );
+
+  const isHit = distance.lessThanOrEqual(UInt64.from(2));
 
   stater.applyDamage(damageToApply, opponentState);
 
@@ -451,14 +459,14 @@ export const PhantomEchoModifier = (
       param: Field(0),
     }),
     'public',
-    isInDiamond
+    isHit
   );
 
   // Apply Vulnerable: -50 defense immediately, restore after 1 turn
   const vulnerableReduction = UInt64.from(50);
   const currentDefense = stater.state.playerStats.defense;
   stater.state.playerStats.defense = Provable.if(
-    isInDiamond,
+    isHit,
     currentDefense.sub(vulnerableReduction),
     currentDefense
   );
@@ -471,18 +479,25 @@ export const PhantomEchoModifier = (
       param: Field(0),
     }),
     'onEnd',
-    isInDiamond
+    isHit
   );
 };
 
 const PhantomEchoAffectedArea = (x: number, y: number) => {
-  // Diamond 3x3 pattern (manhattan distance <= 1)
   return [
     { x: x, y: y },
     { x: x + 1, y: y },
     { x: x - 1, y: y },
     { x: x, y: y + 1 },
     { x: x, y: y - 1 },
+    { x: x + 1, y: y + 1 },
+    { x: x - 1, y: y + 1 },
+    { x: x + 1, y: y - 1 },
+    { x: x - 1, y: y - 1 },
+    { x: x + 2, y: y },
+    { x: x - 2, y: y },
+    { x: x, y: y + 2 },
+    { x: x, y: y - 2 },
   ];
 };
 
@@ -838,15 +853,19 @@ export const WhirlingBladesModifier = (
   const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
 
-  // 3x3 area = Chebyshev distance <= 1 (or manhattan distance <= 2 with diagonal consideration)
-  // Using max of absolute x and y difference
   const xDiff = selfPosition.x.sub(targetPosition.x).magnitude;
   const yDiff = selfPosition.y.sub(targetPosition.y).magnitude;
 
-  // Check if within 3x3 (Chebyshev distance of 1)
+  // 3x3 core (Chebyshev distance <= 1)
   const inXRange = xDiff.lessThanOrEqual(UInt64.from(1));
   const inYRange = yDiff.lessThanOrEqual(UInt64.from(1));
-  const isInArea = inXRange.and(inYRange);
+  const isInCore = inXRange.and(inYRange);
+
+  // 4 cardinal tiles at distance 2: (±2, 0) and (0, ±2)
+  const isCardinalDist2 = xDiff.equals(UInt64.from(2)).and(yDiff.equals(UInt64.from(0)))
+    .or(xDiff.equals(UInt64.from(0)).and(yDiff.equals(UInt64.from(2))));
+
+  const isInArea = isInCore.or(isCardinalDist2);
 
   const damage = UInt64.from(50);
   const damageToApply = Provable.if(isInArea, damage, UInt64.from(0));
@@ -855,7 +874,7 @@ export const WhirlingBladesModifier = (
 };
 
 const WhirlingBladesAffectedArea = (x: number, y: number) => {
-  // 3x3 area centered on target
+  // 3x3 core + 4 cardinal tiles at distance 2 (13 tiles total)
   return [
     { x: x - 1, y: y - 1 },
     { x: x, y: y - 1 },
@@ -866,6 +885,10 @@ const WhirlingBladesAffectedArea = (x: number, y: number) => {
     { x: x - 1, y: y + 1 },
     { x: x, y: y + 1 },
     { x: x + 1, y: y + 1 },
+    { x: x + 2, y: y },
+    { x: x - 2, y: y },
+    { x: x, y: y + 2 },
+    { x: x, y: y - 2 },
   ];
 };
 
@@ -926,7 +949,7 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     cooldown: Field(5),
     name: 'ShadowVeil',
     description:
-      'Become invisible for 2 turns. Next attack deals +50% damage and reveals you.',
+      'Become invisible for 3 turns. Next attack deals +50% damage and reveals you.',
     image: '/wizards/skills/shadowVeil.png',
     modifierData: ShadowVeilData,
     modifier: ShadowVeilModifier,
@@ -990,7 +1013,7 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     cooldown: Field(3),
     name: 'PhantomEcho',
     description:
-      'Deal 30 damage to a diamond 3x3 area. If hit, opponent becomes visible and takes +50% damage for 1 turn.',
+      'Deal 50/25/15 damage in a 13-tile area. If hit, opponent becomes visible and takes +50% damage for 1 turn.',
     image: '/wizards/skills/phantomEcho.png',
     modifierData: PhantomEchoData,
     modifier: PhantomEchoModifier,
@@ -1078,7 +1101,7 @@ export const phantomDuelistSpells: ISpell<any>[] = [
     wizardId: WizardId.PHANTOM_DUELIST,
     cooldown: Field(3),
     name: 'WhirlingBlades',
-    description: 'Deal 50 damage to a 3x3 area. (Spectral Form)',
+    description: 'Deal 50 damage to a 13-tile area (3x3 + 4 cardinal). (Spectral Form)',
     image: '/wizards/skills/whirlingBlades.png',
     modifierData: WhirlingBladesData,
     modifier: WhirlingBladesModifier,

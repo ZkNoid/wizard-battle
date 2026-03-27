@@ -158,21 +158,21 @@ export const FireBallModifier = (
   const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
 
+  const xDiff = selfPosition.x.sub(targetPosition.x).magnitude;
+  const yDiff = selfPosition.y.sub(targetPosition.y).magnitude;
   const distance = selfPosition.manhattanDistance(targetPosition);
-
-  const damage = UInt64.from(50);
-  const damage2 = UInt64.from(25);
-  const damage3 = UInt64.from(15);
 
   const directHit = distance.equals(UInt64.from(0));
   const nearbyHit = distance.equals(UInt64.from(1));
-  const farHit = distance.equals(UInt64.from(2));
+  // Diagonal tiles only: |dx|==1 AND |dy|==1 (Chebyshev dist 1, Manhattan dist 2)
+  // Cardinal dist-2 tiles (|dx|==2 OR |dy|==2) are outside the 9-tile AoE and deal no damage
+  const farHit = xDiff.equals(UInt64.from(1)).and(yDiff.equals(UInt64.from(1)));
   const distantHit = directHit.not().and(nearbyHit.not()).and(farHit.not());
 
   const damageToApply = Provable.switch(
     [directHit, nearbyHit, farHit, distantHit],
     UInt64,
-    [damage, damage2, damage3, UInt64.from(0)]
+    [UInt64.from(50), UInt64.from(25), UInt64.from(15), UInt64.from(0)]
   );
 
   stater.applyDamage(damageToApply, opponentState);
@@ -189,10 +189,6 @@ const FireBallAffectedArea = (x: number, y: number) => {
     { x: x - 1, y: y + 1 },
     { x: x + 1, y: y - 1 },
     { x: x - 1, y: y - 1 },
-    { x: x + 2, y: y },
-    { x: x - 2, y: y },
-    { x: x, y: y + 2 },
-    { x: x, y: y - 2 },
   ];
 };
 
@@ -416,7 +412,7 @@ export const HealModifier = (
   spellCast: SpellCast<HealData>,
   opponentState: State
 ) => {
-  stater.state.playerStats.hp = stater.state.playerStats.hp.add(Int64.from(30));
+  stater.state.playerStats.hp = stater.state.playerStats.hp.add(Int64.from(25));
   // If the player has more health than the max health, set the health to the max health
   stater.state.playerStats.hp = Provable.if(
     stater.state.playerStats.hp
@@ -453,7 +449,7 @@ export const mageSpells: ISpell<any>[] = [
     wizardId: WizardId.MAGE,
     cooldown: Field(1),
     name: 'FireBall',
-    description: 'A ball of fire. Deals 50 damage on direct hit, 25 nearby, 15 at distance 2',
+    description: 'A ball of fire. Deals 50 damage on direct hit, 25 nearby, 15 at distance 2 (diagonal)',
     image: '/wizards/skills/fireball.png',
     modifierData: FireBallData,
     modifier: FireBallModifier,
@@ -484,7 +480,7 @@ export const mageSpells: ISpell<any>[] = [
     priority: 1,
     defaultValue: {
       spellId: CircuitString.fromString('Teleport').hash(),
-      cooldown: Int64.from(4),
+      cooldown: Int64.from(5),
       currentCooldown: Int64.from(0),
     },
   },
@@ -493,7 +489,7 @@ export const mageSpells: ISpell<any>[] = [
     wizardId: WizardId.MAGE,
     cooldown: Field(1),
     name: 'Heal',
-    description: 'Heal yourself for 30 health',
+    description: 'Heal yourself for 25 health',
     image: '/wizards/skills/heal.png',
     modifierData: HealData,
     modifier: HealModifier,
@@ -503,7 +499,7 @@ export const mageSpells: ISpell<any>[] = [
     priority: 1,
     defaultValue: {
       spellId: CircuitString.fromString('Heal').hash(),
-      cooldown: Int64.from(5),
+      cooldown: Int64.from(6),
       currentCooldown: Int64.from(0),
     },
   },
