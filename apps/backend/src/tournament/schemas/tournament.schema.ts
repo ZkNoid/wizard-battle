@@ -57,6 +57,17 @@ export class VerifiedState {
 
 export const VerifiedStateSchema = SchemaFactory.createForClass(VerifiedState);
 
+@Schema({ _id: false })
+export class WinnerInfo {
+  @Prop({ required: true })
+  prizeAmount!: string;
+
+  @Prop({ required: true, default: false })
+  claimed!: boolean;
+}
+
+export const WinnerInfoSchema = SchemaFactory.createForClass(WinnerInfo);
+
 @Schema({ timestamps: true, collection: 'tournaments' })
 export class Tournament {
   @Prop({ required: true, unique: true, index: true })
@@ -67,6 +78,9 @@ export class Tournament {
 
   @Prop({ type: Map, of: Boolean, default: {} })
   participants!: Map<string, boolean>;
+
+  @Prop({ type: Map, of: WinnerInfoSchema, default: {} })
+  winners!: Map<string, WinnerInfo>;
 
   @Prop({ required: true })
   tournamentsRoot!: string;

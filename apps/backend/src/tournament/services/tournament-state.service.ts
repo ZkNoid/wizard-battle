@@ -86,7 +86,11 @@ export class TournamentStateService {
     return this.tournamentModel
       .find({
         'verified.status': {
-          $in: [TournamentStatus.Registration, TournamentStatus.Battle],
+          $in: [
+            TournamentStatus.Registration,
+            TournamentStatus.Battle,
+            TournamentStatus.Claiming,
+          ],
         },
       })
       .exec();
@@ -181,6 +185,20 @@ export class TournamentStateService {
       if (tournament.participants.get(dto.playerPubKey)) {
         throw new ConflictException(
           `Player ${dto.playerPubKey} is already registered`
+        );
+      }
+    }
+
+    if (dto.type === OperationType.ClaimPrize) {
+      const winnerInfo = tournament.winners?.get(dto.playerPubKey);
+      if (!winnerInfo) {
+        throw new NotFoundException(
+          `Player ${dto.playerPubKey} is not a winner in tournament ${dto.tournamentId}`
+        );
+      }
+      if (winnerInfo.claimed) {
+        throw new ConflictException(
+          `Player ${dto.playerPubKey} has already claimed their prize`
         );
       }
     }
@@ -293,6 +311,14 @@ export class TournamentStateService {
             session
           );
         }
+
+        if (op.type === OperationType.ClaimPrize) {
+          await this.applyClaimPrizeToVerified(
+            op.tournamentId,
+            op.playerPubKey,
+            session
+          );
+        }
       });
 
       this.logger.log(`Confirmed operation ${opId} with tx ${txHash}`);
@@ -398,6 +424,41 @@ export class TournamentStateService {
     );
   }
 
+  private async applyClaimPrizeToVerified(
+    tournamentId: string,
+    playerPubKey: string,
+    session?: import('mongoose').ClientSession
+  ): Promise<void> {
+    const tournament = await this.tournamentModel
+      .findOne({ tournamentId })
+      .session(session ?? null)
+      .exec();
+
+    if (!tournament) {
+      throw new NotFoundException(
+        `Cannot apply claimPrize: Tournament ${tournamentId} not found`
+      );
+    }
+
+    const winnerInfo = tournament.winners?.get(playerPubKey);
+    if (!winnerInfo) {
+      throw new NotFoundException(
+        `Cannot apply claimPrize: Player ${playerPubKey} is not a winner`
+      );
+    }
+
+    winnerInfo.claimed = true;
+    tournament.winners.set(playerPubKey, winnerInfo);
+
+    const winnersMap = this.merkleService.buildWinnersMap(tournament.winners);
+    tournament.verified.winnersRoot = winnersMap.getRoot().toString();
+
+    await tournament.save({ session });
+    this.logger.log(
+      `Applied claimPrize for ${playerPubKey} in tournament ${tournamentId}`
+    );
+  }
+
   async createTournament(
     tournamentId: string,
     config: {
@@ -442,6 +503,7 @@ export class TournamentStateService {
         lastVerifiedBlock: 0,
       },
       participants: new Map(),
+      winners: new Map(),
       tournamentsRoot,
     });
 

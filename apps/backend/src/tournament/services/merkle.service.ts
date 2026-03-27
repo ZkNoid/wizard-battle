@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { MerkleMap, Field, Poseidon, PublicKey, MerkleMapWitness } from 'o1js';
-import { TournamentDocument } from '../schemas/tournament.schema.js';
+import { MerkleMap, Field, Poseidon, PublicKey, MerkleMapWitness, Bool, UInt64 } from 'o1js';
+import { WinnerLeaf } from '../../../../mina-contracts/src/TournamentManager.js';
+import { TournamentDocument, WinnerInfo } from '../schemas/tournament.schema.js';
 
 export interface TournamentWitnessData {
   tournamentWitness: MerkleMapWitness;
@@ -10,6 +11,12 @@ export interface TournamentWitnessData {
 export interface ParticipantWitnessData {
   participantWitness: MerkleMapWitness;
   participantKey: Field;
+}
+
+export interface WinnerWitnessData {
+  winnerWitness: MerkleMapWitness;
+  winnerKey: Field;
+  winnerLeaf: WinnerLeaf;
 }
 
 @Injectable()
@@ -167,5 +174,44 @@ export class MerkleService {
     const newRoot = tournamentsMap.getRoot();
 
     return { newRoot, witness };
+  }
+
+  buildWinnersMap(
+    winners: Map<string, WinnerInfo> | Record<string, WinnerInfo>
+  ): MerkleMap {
+    const map = new MerkleMap();
+
+    const entries =
+      winners instanceof Map
+        ? Array.from(winners.entries())
+        : Object.entries(winners);
+
+    for (const [pubKeyStr, info] of entries) {
+      const pubKey = PublicKey.fromBase58(pubKeyStr);
+      const key = MerkleService.keyForPublicKey(pubKey);
+      const leaf = new WinnerLeaf({
+        prizeAmount: UInt64.from(BigInt(info.prizeAmount)),
+        claimed: Bool(info.claimed),
+      });
+      map.set(key, leaf.hash());
+    }
+
+    return map;
+  }
+
+  getWinnerWitness(
+    winnersMap: MerkleMap,
+    playerPubKey: string,
+    winnerInfo: WinnerInfo
+  ): WinnerWitnessData {
+    const pubKey = PublicKey.fromBase58(playerPubKey);
+    const key = MerkleService.keyForPublicKey(pubKey);
+    const witness = winnersMap.getWitness(key);
+    const winnerLeaf = new WinnerLeaf({
+      prizeAmount: UInt64.from(BigInt(winnerInfo.prizeAmount)),
+      claimed: Bool(winnerInfo.claimed),
+    });
+
+    return { winnerWitness: witness, winnerKey: key, winnerLeaf };
   }
 }

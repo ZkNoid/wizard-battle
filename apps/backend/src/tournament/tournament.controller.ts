@@ -22,12 +22,15 @@ import { OperationType, OperationStatus } from './schemas/pending-operation.sche
 import {
   BuyTicketDto,
   BuyTicketResponseDto,
+  ClaimPrizeDto,
+  ClaimPrizeResponseDto,
   TournamentResponseDto,
   ParticipantsResponseDto,
   PendingOperationResponseDto,
   ChainStatusResponseDto,
   OperationStreamEventDto,
 } from './dto/index.js';
+import { TournamentDocument } from './schemas/tournament.schema.js';
 
 @Controller('tournament')
 export class TournamentController {
@@ -156,6 +159,61 @@ export class TournamentController {
       `Buy ticket request for tournament ${tournamentId} from ${dto.playerPubKey}`
     );
 
+    return this.queuePlayerOperation(
+      tournamentId,
+      dto.playerPubKey,
+      OperationType.BuyTicket,
+      'Registration',
+      (tournament) => {
+        if (tournament.participants.get(dto.playerPubKey)) {
+          throw new HttpException(
+            `Player ${dto.playerPubKey} is already registered`,
+            HttpStatus.CONFLICT
+          );
+        }
+      }
+    );
+  }
+
+  @Post(':id/claim-prize')
+  async claimPrize(
+    @Param('id') tournamentId: string,
+    @Body() dto: ClaimPrizeDto
+  ): Promise<ClaimPrizeResponseDto> {
+    this.logger.log(
+      `Claim prize request for tournament ${tournamentId} from ${dto.playerPubKey}`
+    );
+
+    return this.queuePlayerOperation(
+      tournamentId,
+      dto.playerPubKey,
+      OperationType.ClaimPrize,
+      'Claiming',
+      (tournament) => {
+        const winnerInfo = tournament.winners?.get(dto.playerPubKey);
+        if (!winnerInfo) {
+          throw new HttpException(
+            `Player ${dto.playerPubKey} is not a winner in tournament ${tournamentId}`,
+            HttpStatus.NOT_FOUND
+          );
+        }
+        if (winnerInfo.claimed) {
+          throw new HttpException(
+            `Player ${dto.playerPubKey} has already claimed their prize`,
+            HttpStatus.CONFLICT
+          );
+        }
+      }
+    );
+  }
+
+  private async queuePlayerOperation(
+    tournamentId: string,
+    playerPubKey: string,
+    operationType: OperationType,
+    expectedStatus: string,
+    validateEligibility: (tournament: TournamentDocument) => void
+  ): Promise<{ operationId: string; status: string; message: string }> {
     const tournament =
       await this.tournamentStateService.getVerifiedState(tournamentId);
 
@@ -166,35 +224,30 @@ export class TournamentController {
       );
     }
 
-    if (tournament.verified.status !== 'Registration') {
+    if (tournament.verified.status !== expectedStatus) {
       throw new HttpException(
-        `Tournament ${tournamentId} is not in registration phase`,
+        `Tournament ${tournamentId} is not in ${expectedStatus.toLowerCase()} phase`,
         HttpStatus.BAD_REQUEST
       );
     }
 
-    if (tournament.participants.get(dto.playerPubKey)) {
-      throw new HttpException(
-        `Player ${dto.playerPubKey} is already registered`,
-        HttpStatus.CONFLICT
-      );
-    }
+    validateEligibility(tournament);
 
     const existingPending =
       await this.tournamentStateService.getPendingOperationsForPlayer(
         tournamentId,
-        dto.playerPubKey
+        playerPubKey
       );
 
-    const hasPendingBuyTicket = existingPending.some(
+    const hasPending = existingPending.some(
       (op) =>
-        op.type === OperationType.BuyTicket &&
+        op.type === operationType &&
         ['queued', 'proving', 'submitted'].includes(op.status)
     );
 
-    if (hasPendingBuyTicket) {
+    if (hasPending) {
       throw new HttpException(
-        `Player ${dto.playerPubKey} already has a pending ticket purchase`,
+        `Player ${playerPubKey} already has a pending ${operationType} operation`,
         HttpStatus.CONFLICT
       );
     }
@@ -202,18 +255,18 @@ export class TournamentController {
     try {
       const pendingOp = await this.tournamentStateService.addPendingOperation({
         tournamentId,
-        type: OperationType.BuyTicket,
-        playerPubKey: dto.playerPubKey,
+        type: operationType,
+        playerPubKey,
       });
 
       return {
         operationId: pendingOp._id.toString(),
         status: pendingOp.status,
-        message: 'Ticket purchase queued for processing',
+        message: `${operationType} queued for processing`,
       };
     } catch (error) {
       this.logger.error(
-        `Failed to queue buy ticket for ${dto.playerPubKey}`,
+        `Failed to queue ${operationType} for ${playerPubKey}`,
         error
       );
       throw new HttpException(

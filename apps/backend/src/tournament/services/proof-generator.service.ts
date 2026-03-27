@@ -13,6 +13,7 @@ import {
 import {
   TournamentManager,
   TournamentLeaf,
+  WinnerLeaf,
   TournamentStatus as ContractTournamentStatus,
 } from '../../../../mina-contracts/src/TournamentManager.js';
 import { RedisService } from '../../redis/redis.service.js';
@@ -196,6 +197,9 @@ export class ProofGeneratorService implements OnModuleInit {
         case OperationType.FinalizeTournament:
           await this.processFinalizeTournament(op);
           break;
+        case OperationType.ClaimPrize:
+          await this.processClaimPrize(op);
+          break;
         default:
           throw new Error(`Unknown operation type: ${op.type}`);
       }
@@ -213,9 +217,7 @@ export class ProofGeneratorService implements OnModuleInit {
     }
   }
 
-  private async processBuyTicket(
-    op: PendingOperationDocument
-  ): Promise<void> {
+  private async prepareProofContext(op: PendingOperationDocument) {
     const tournament = await this.tournamentStateService.getVerifiedState(
       op.tournamentId
     );
@@ -225,6 +227,58 @@ export class ProofGeneratorService implements OnModuleInit {
 
     const allTournaments = await this.tournamentStateService.getAllTournaments();
     const tournamentsMap = this.merkleService.buildTournamentsMap(allTournaments);
+
+    const { tournamentWitness } = this.merkleService.getTournamentWitness(
+      tournamentsMap,
+      op.tournamentId
+    );
+
+    const currentTournamentLeaf = this.buildTournamentLeaf(tournament);
+    const contractAddress = this.minaClientService.getContractAddress();
+    const contract = new TournamentManager(contractAddress);
+    const playerPubKey = PublicKey.fromBase58(op.playerPubKey);
+
+    return {
+      tournament,
+      tournamentWitness,
+      currentTournamentLeaf,
+      contractAddress,
+      contract,
+      playerPubKey,
+    };
+  }
+
+  private async submitProvedTransaction(
+    op: PendingOperationDocument,
+    tx: { prove(): Promise<unknown>; toJSON(): unknown }
+  ): Promise<void> {
+    await tx.prove();
+
+    const unsignedTxJson = tx.toJSON();
+
+    await this.tournamentStateService.updateOperationStatus(
+      op._id,
+      OperationStatus.Submitted,
+      { unsignedTxJson: JSON.stringify(unsignedTxJson) }
+    );
+
+    this.logger.log(
+      `${op.type} proof generated for operation ${op._id}, awaiting frontend signature`
+    );
+  }
+
+  private async processBuyTicket(
+    op: PendingOperationDocument
+  ): Promise<void> {
+    const {
+      tournament,
+      tournamentWitness,
+      currentTournamentLeaf,
+      contractAddress,
+      contract,
+      playerPubKey,
+    } = await this.prepareProofContext(op);
+
     const participantsMap = this.merkleService.buildParticipantsMap(
       tournament.participants
     );
@@ -233,29 +287,15 @@ export class ProofGeneratorService implements OnModuleInit {
       throw new Error(`Player ${op.playerPubKey} is already registered`);
     }
 
-    const { tournamentWitness } = this.merkleService.getTournamentWitness(
-      tournamentsMap,
-      op.tournamentId
-    );
-
     const { witness: participantWitness } =
       this.merkleService.computeNewParticipantsRoot(
         this.merkleService.buildParticipantsMap(tournament.participants),
         op.playerPubKey
       );
 
-    const currentTournamentLeaf = this.buildTournamentLeaf(tournament);
-
-    const contractAddress = this.minaClientService.getContractAddress();
-    const contract = new TournamentManager(contractAddress);
-
-    const playerPubKey = PublicKey.fromBase58(op.playerPubKey);
     const ticketPrice = UInt64.from(BigInt(tournament.verified.ticketPrice));
 
-    this.logger.log(`Generating proof for buyTicket operation ${op._id}`);
-
     const tx = await Mina.transaction(playerPubKey, async () => {
-      // Transfer ticket price from player to contract (required for addInPlace)
       const playerUpdate = AccountUpdate.createSigned(playerPubKey);
       playerUpdate.send({ to: contractAddress, amount: ticketPrice });
 
@@ -267,49 +307,16 @@ export class ProofGeneratorService implements OnModuleInit {
       );
     });
 
-    await tx.prove();
-
-    this.logger.log(`Proof generated for operation ${op._id}`);
-
-    const unsignedTxJson = tx.toJSON();
-
-    await this.tournamentStateService.updateOperationStatus(
-      op._id,
-      OperationStatus.Submitted,
-      { unsignedTxJson: JSON.stringify(unsignedTxJson) }
-    );
-
-    this.logger.log(
-      `Operation ${op._id} proof generated, awaiting frontend signature and submission`
-    );
+    await this.submitProvedTransaction(op, tx);
   }
 
   private async processAdvanceToBattle(
     op: PendingOperationDocument
   ): Promise<void> {
-    const tournament = await this.tournamentStateService.getVerifiedState(
-      op.tournamentId
-    );
-    if (!tournament) {
-      throw new Error(`Tournament ${op.tournamentId} not found`);
-    }
+    const { tournamentWitness, currentTournamentLeaf, contract, playerPubKey } =
+      await this.prepareProofContext(op);
 
-    const allTournaments = await this.tournamentStateService.getAllTournaments();
-    const tournamentsMap = this.merkleService.buildTournamentsMap(allTournaments);
-
-    const { tournamentWitness } = this.merkleService.getTournamentWitness(
-      tournamentsMap,
-      op.tournamentId
-    );
-
-    const currentTournamentLeaf = this.buildTournamentLeaf(tournament);
-
-    const contractAddress = this.minaClientService.getContractAddress();
-    const contract = new TournamentManager(contractAddress);
-
-    const senderPubKey = PublicKey.fromBase58(op.playerPubKey);
-
-    const tx = await Mina.transaction(senderPubKey, async () => {
+    const tx = await Mina.transaction(playerPubKey, async () => {
       await contract.advanceToBattle(
         Field(op.tournamentId),
         currentTournamentLeaf,
@@ -317,19 +324,7 @@ export class ProofGeneratorService implements OnModuleInit {
       );
     });
 
-    await tx.prove();
-
-    const unsignedTxJson = tx.toJSON();
-
-    await this.tournamentStateService.updateOperationStatus(
-      op._id,
-      OperationStatus.Submitted,
-      { unsignedTxJson: JSON.stringify(unsignedTxJson) }
-    );
-
-    this.logger.log(
-      `AdvanceToBattle proof generated for operation ${op._id}`
-    );
+    await this.submitProvedTransaction(op, tx);
   }
 
   private async processFinalizeTournament(
@@ -342,6 +337,55 @@ export class ProofGeneratorService implements OnModuleInit {
       op._id,
       OperationStatus.Submitted
     );
+  }
+
+  private async processClaimPrize(
+    op: PendingOperationDocument
+  ): Promise<void> {
+    const {
+      tournament,
+      tournamentWitness,
+      currentTournamentLeaf,
+      contract,
+      playerPubKey,
+    } = await this.prepareProofContext(op);
+
+    if (tournament.verified.status !== 'Claiming') {
+      throw new Error(
+        `Tournament ${op.tournamentId} is not in claiming phase (status: ${tournament.verified.status})`
+      );
+    }
+
+    const winnerInfo = tournament.winners?.get(op.playerPubKey);
+    if (!winnerInfo) {
+      throw new Error(
+        `Player ${op.playerPubKey} is not a winner in tournament ${op.tournamentId}`
+      );
+    }
+    if (winnerInfo.claimed) {
+      throw new Error(
+        `Player ${op.playerPubKey} has already claimed their prize`
+      );
+    }
+
+    const winnersMap = this.merkleService.buildWinnersMap(tournament.winners);
+    const { winnerWitness, winnerLeaf } = this.merkleService.getWinnerWitness(
+      winnersMap,
+      op.playerPubKey,
+      winnerInfo
+    );
+
+    const tx = await Mina.transaction(playerPubKey, async () => {
+      await contract.claimPrize(
+        Field(op.tournamentId),
+        currentTournamentLeaf,
+        tournamentWitness,
+        winnerLeaf,
+        winnerWitness
+      );
+    });
+
+    await this.submitProvedTransaction(op, tx);
   }
 
   private buildTournamentLeaf(tournament: TournamentDocument): TournamentLeaf {

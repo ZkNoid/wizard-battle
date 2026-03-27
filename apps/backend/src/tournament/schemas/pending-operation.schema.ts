@@ -10,6 +10,7 @@ export enum OperationType {
   BuyTicket = 'buyTicket',
   AdvanceToBattle = 'advanceToBattle',
   FinalizeTournament = 'finalizeTournament',
+  ClaimPrize = 'claimPrize',
 }
 
 export enum OperationStatus {
