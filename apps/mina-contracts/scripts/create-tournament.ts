@@ -16,6 +16,7 @@
  *   REGISTRATION_SLOTS - Number of slots for registration phase (default: 200 = ~10 hours)
  *   BATTLE_SLOTS - Number of slots for battle phase (default: 400 = ~20 hours)
  *   REGISTRATION_START_DELAY - Slots before registration starts (default: 10 = ~30 min)
+ *   BACKEND_URL - Backend API base URL (default: http://localhost:3001)
  */
 import dotenv from 'dotenv';
 dotenv.config();
@@ -48,6 +49,8 @@ const MINA_NETWORK_URL =
 const MINA_ARCHIVE_URL =
   process.env.MINA_ARCHIVE_URL ||
   'https://api.minascan.io/archive/devnet/v1/graphql';
+
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
 
 async function fetchCurrentSlot(): Promise<number> {
   const query = `
@@ -449,6 +452,61 @@ async function main() {
   console.log('Waiting for confirmation...');
   await createResult.wait();
 
+  // Compute the new tournamentsRoot after this entry was added on-chain
+  const newLeaf = new TournamentLeaf({
+    status: TournamentStatus.Registration,
+    registrationStartSlot: UInt32.from(registrationStartSlot),
+    battleStartSlot: UInt32.from(battleStartSlot),
+    battleEndSlot: UInt32.from(battleEndSlot),
+    ticketPrice: UInt64.from(ticketPrice),
+    prize1Percent: UInt32.from(5000),
+    prize2Percent: UInt32.from(3000),
+    prize3Percent: UInt32.from(2000),
+    participantsRoot: new MerkleMap().getRoot(),
+    winnersRoot: new MerkleMap().getRoot(),
+    prizePool: UInt64.from(0),
+    participantCount: UInt32.from(0),
+  });
+  tournamentsMap.set(tournamentKey, newLeaf.hash());
+  const newTournamentsRoot = tournamentsMap.getRoot().toString();
+
+  // Register tournament in the backend
+  console.log('\nRegistering tournament in backend...');
+  try {
+    const backendResponse = await fetch(`${BACKEND_URL}/tournament`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tournamentId: nextTournamentId.toString(),
+        ticketPrice: ticketPrice.toString(),
+        prize1Percent: 5000,
+        prize2Percent: 3000,
+        prize3Percent: 2000,
+        registrationStartSlot,
+        battleStartSlot,
+        battleEndSlot,
+        tournamentsRoot: newTournamentsRoot,
+        txHash: createResult.hash,
+      }),
+    });
+
+    if (!backendResponse.ok) {
+      const errorBody = await backendResponse.text();
+      console.error(
+        `Backend registration failed (${backendResponse.status}): ${errorBody}`
+      );
+    } else {
+      const result = await backendResponse.json();
+      console.log(`Backend registration successful: ${result.message}`);
+    }
+  } catch (err) {
+    console.error('Failed to register tournament in backend:', err);
+    console.error('Tournament was created on-chain but not in the backend DB.');
+    console.error(
+      'You may need to register it manually or wait for chain sync.'
+    );
+  }
+
   // Output summary
   console.log('\n' + '='.repeat(60));
   console.log('TOURNAMENT CREATED');
@@ -458,6 +516,7 @@ async function main() {
   console.log(`Registration Start Slot: ${registrationStartSlot}`);
   console.log(`Battle Start Slot: ${battleStartSlot}`);
   console.log(`Battle End Slot: ${battleEndSlot}`);
+  console.log(`Tournaments Root: ${newTournamentsRoot}`);
   console.log('='.repeat(60));
 }
 

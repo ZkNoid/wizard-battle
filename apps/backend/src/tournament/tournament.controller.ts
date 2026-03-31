@@ -24,6 +24,8 @@ import {
   BuyTicketResponseDto,
   ClaimPrizeDto,
   ClaimPrizeResponseDto,
+  CreateTournamentDto,
+  CreateTournamentResponseDto,
   TournamentResponseDto,
   ParticipantsResponseDto,
   PendingOperationResponseDto,
@@ -51,6 +53,100 @@ export class TournamentController {
       ...chainStatus,
       proofGeneratorReady: this.proofGeneratorService.isReady(),
     };
+  }
+
+  @Post()
+  async createTournament(
+    @Body() dto: CreateTournamentDto
+  ): Promise<CreateTournamentResponseDto> {
+    this.logger.log(`Create tournament request: id=${dto.tournamentId}, txHash=${dto.txHash ?? 'none'}`);
+
+    await this.checkTournamentHash(dto.txHash, dto.tournamentsRoot);
+
+    try {
+      const tournament = await this.tournamentStateService.createTournament(
+        dto.tournamentId,
+        {
+          ticketPrice: dto.ticketPrice,
+          prize1Percent: dto.prize1Percent,
+          prize2Percent: dto.prize2Percent,
+          prize3Percent: dto.prize3Percent,
+          registrationStartSlot: dto.registrationStartSlot,
+          battleStartSlot: dto.battleStartSlot,
+          battleEndSlot: dto.battleEndSlot,
+        },
+        dto.tournamentsRoot
+      );
+
+      return {
+        tournamentId: tournament.tournamentId,
+        status: tournament.verified.status,
+        message: `Tournament ${tournament.tournamentId} created successfully`,
+      };
+    } catch (error) {
+      if (
+        error instanceof HttpException
+      ) {
+        throw error;
+      }
+      this.logger.error(
+        `Failed to create tournament ${dto.tournamentId}`,
+        error
+      );
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Failed to create tournament',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  private async checkTournamentHash(
+    txHash: string | undefined,
+    tournamentsRoot: string
+  ): Promise<void> {
+    if (txHash) {
+      this.logger.log(`Verifying transaction ${txHash} on-chain`);
+
+      const status = await this.minaClientService.getTransactionStatus(txHash);
+
+      if (status === 'failed') {
+        throw new HttpException(
+          `Transaction ${txHash} failed on-chain`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      if (status === 'pending') {
+        throw new HttpException(
+          `Transaction ${txHash} is still pending — wait for confirmation and retry`,
+          HttpStatus.CONFLICT
+        );
+      }
+
+      return;
+    }
+
+    this.logger.log(
+      'No txHash provided — verifying tournamentsRoot against on-chain state'
+    );
+
+    const contractState = await this.minaClientService.fetchContractState();
+
+    if (!contractState) {
+      throw new HttpException(
+        'Cannot verify tournament: failed to fetch on-chain contract state',
+        HttpStatus.SERVICE_UNAVAILABLE
+      );
+    }
+
+    const onChainRoot = contractState.tournamentsRoot.toString();
+
+    if (onChainRoot !== tournamentsRoot) {
+      throw new HttpException(
+        `tournamentsRoot mismatch: provided ${tournamentsRoot}, on-chain ${onChainRoot}`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
   }
 
   @Get()
