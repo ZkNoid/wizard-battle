@@ -8,6 +8,53 @@ const client = await clientPromise;
 const db = client?.db(env.MONGODB_DB);
 const marketOrdersCollection = 'marketorders';
 
+interface EvmTransactionReceipt {
+  status: string; // "0x1" success, "0x0" revert
+  to: string | null;
+  from: string;
+  blockNumber: string;
+}
+
+async function getEvmTransactionReceipt(
+  txHash: string
+): Promise<EvmTransactionReceipt | null> {
+  const response = await fetch(env.EVM_RPC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'eth_getTransactionReceipt',
+      params: [txHash],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Failed to reach EVM node for transaction verification',
+    });
+  }
+
+  const data = (await response.json()) as {
+    result?: EvmTransactionReceipt | null;
+    error?: { message: string };
+  };
+
+  if (data.error) {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: `EVM RPC error: ${data.error.message}`,
+    });
+  }
+
+  return data.result ?? null;
+}
+
+const GAME_MARKET_ADDRESS = (
+  process.env.NEXT_PUBLIC_GAME_MARKET_ADDRESS ?? ''
+).toLowerCase();
+
 const OrderStatusEnum = z.enum([
   'NONE',
   'OPEN',
@@ -78,6 +125,51 @@ export const marketRouter = createTRPCRouter({
 
       const collection = db.collection(marketOrdersCollection);
 
+      const receipt = await getEvmTransactionReceipt(input.transactionHash);
+
+      if (!receipt) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message:
+            'Transaction not found on-chain. Please wait for confirmation and retry.',
+        });
+      }
+
+      if (receipt.status !== '0x1') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Transaction reverted on-chain',
+        });
+      }
+
+      if (
+        GAME_MARKET_ADDRESS &&
+        receipt.to?.toLowerCase() !== GAME_MARKET_ADDRESS
+      ) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Transaction was not sent to the GameMarket contract',
+        });
+      }
+
+      const existingTx = await collection.findOne({
+        transactionHash: input.transactionHash,
+      });
+      if (existingTx) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'An order with this transaction hash already exists',
+        });
+      }
+
+      const existing = await collection.findOne({ orderId: input.orderId });
+      if (existing) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: `Order #${input.orderId} already exists`,
+        });
+      }
+
       const doc = {
         ...input,
         maker: input.maker.toLowerCase(),
@@ -87,14 +179,6 @@ export const marketRouter = createTRPCRouter({
         image: `./items/${input.itemId}.png`,
         createdAt: new Date().toISOString(),
       };
-
-      const existing = await collection.findOne({ orderId: input.orderId });
-      if (existing) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: `Order #${input.orderId} already exists`,
-        });
-      }
 
       await collection.insertOne(doc);
 
