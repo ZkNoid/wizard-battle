@@ -9,7 +9,8 @@ import {
 } from 'o1js';
 import { Effect, type SpellCast } from './structs';
 import { allSpells } from './spells';
-import { allEffectsInfo } from './effects/effects';
+import { allEffectsInfo, EffectsId } from './effects/effects';
+import { WizardId } from '../wizards';
 import { State } from './state';
 import { type IUserActions, type ITrustedState } from '../types/gameplay.types';
 import { type IUserAction } from '../types/gameplay.types';
@@ -117,6 +118,17 @@ export class Stater extends Struct({
     console.log('defense', this.state.playerStats.defense.toString());
     console.log('fullDamage', fullDamage.toString());
     console.log('finalDamage', finalDamage.toString());
+
+    const isMage = this.state.wizardId.equals(WizardId.MAGE);
+    this.state.pushEffect(
+      new Effect({
+        effectId: EffectsId.Revealed!,
+        duration: Field(2),
+        param: Field(0),
+      }),
+      'public',
+      isHit.and(isMage)
+    );
 
     this.state.playerStats.hp = this.state.playerStats.hp.sub(finalDamage);
   }
