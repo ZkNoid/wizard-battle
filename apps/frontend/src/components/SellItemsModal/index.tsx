@@ -35,9 +35,10 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
   const iteminventory = useInventoryStore((state) => state.iteminventory);
   const { setIsRequestSuccessModalOpen, setIsRequestFailureModalOpen } =
     useMiscellaneousSessionStore();
-  const { createOrder, approveNFT, isPending, getGameElement } = useGameMarket();
+  const { createOrder, approveNFT, isPending, getGameElement } =
+    useGameMarket();
 
-  const [itemName, setItemName] = useState('');
+  const [title, setTitle] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [itemType, setItemType] = useState('');
@@ -89,22 +90,22 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
       const paymentToken = isGoldPayment
         ? (GAME_REGISTRY_ADDRESS ?? ZERO_ADDRESS)
         : (USDC_TOKEN_ADDRESS ?? ZERO_ADDRESS);
-      const paymentTokenId = isGoldPayment && goldElement
-        ? goldElement.tokenId
-        : 0n;
+      const paymentTokenId =
+        isGoldPayment && goldElement ? goldElement.tokenId : 0n;
 
       if (gameElement.tokenAddress) {
         await approveNFT(gameElement.tokenAddress, true);
       }
 
       await createOrder({
+        itemId: selectedUserItem.item.id,
         token: gameElement.tokenAddress,
         tokenId: gameElement.tokenId,
         price: priceWei,
         amount: BigInt(quantity),
         paymentToken,
         paymentTokenId,
-        itemName: itemName || selectedUserItem.item.title,
+        title: title || selectedUserItem.item.title,
       });
 
       setIsRequestSuccessModalOpen(true);
@@ -121,7 +122,7 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
     price && Number(price) > 0 ? Number(price) * quantity : null;
 
   const isFormValid =
-    itemName.trim() !== '' &&
+    title.trim() !== '' &&
     selectedItemId !== '' &&
     itemType !== '' &&
     price !== '' &&
@@ -143,8 +144,8 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
             {/* Item name */}
             <InputWithLabel
               label="Item name"
-              value={itemName}
-              onChange={setItemName}
+              value={title}
+              onChange={setTitle}
               placeholder="Give name for Item you want to sell"
               size="xl"
             />
