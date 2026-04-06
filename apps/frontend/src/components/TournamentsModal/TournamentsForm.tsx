@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useMinaAppkit } from 'mina-appkit';
 import ModalTitle from '../shared/ModalTitle';
 import {
   TournamentsFilterPanel,
@@ -39,7 +40,9 @@ function sortTournaments(
   const sorted = [...tournaments];
   switch (sortBy) {
     case 'old_to_new':
-      return sorted.sort((a, b) => a.startDate.localeCompare(b.startDate));
+      return sorted.sort(
+        (a, b) => Number(a.startDate) - Number(b.startDate)
+      );
     case 'prize_high':
       return sorted.sort(
         (a, b) => getPrizeScore(b.prizePool) - getPrizeScore(a.prizePool)
@@ -50,11 +53,14 @@ function sortTournaments(
       );
     case 'new_to_old':
     default:
-      return sorted.sort((a, b) => b.startDate.localeCompare(a.startDate));
+      return sorted.sort(
+        (a, b) => Number(b.startDate) - Number(a.startDate)
+      );
   }
 }
 
 export function TournamentsForm({ onClose }: TournamentsFormProps) {
+  const { address } = useMinaAppkit();
   const [filters, setFilters] = useState<TournamentsFilters>(DEFAULT_FILTERS);
   const [selectedTournament, setSelectedTournament] =
     useState<ITournament | null>(null);
@@ -74,11 +80,31 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
     loadTournaments,
   } = useTournamentStore();
 
+  const refreshTournaments = useCallback(() => {
+    void loadTournaments(address ?? undefined);
+  }, [loadTournaments, address]);
+
   useEffect(() => {
-    void loadTournaments();
-  }, [loadTournaments]);
+    refreshTournaments();
+  }, [refreshTournaments]);
+
+  useEffect(() => {
+    if (status === 'confirmed') refreshTournaments();
+  }, [status, refreshTournaments]);
 
   const tournaments = sortTournaments(allTournaments, filters.sortBy);
+
+  const handleJoinRequest = useCallback(
+    (tournament: ITournament) => {
+      if (!address) {
+        reset();
+        return;
+      }
+      if (isLoading) return;
+      setJoinTournament(tournament);
+    },
+    [address, isLoading, reset]
+  );
 
   const handleConfirmJoin = async (tournament: ITournament) => {
     setJoinTournament(null);
@@ -109,7 +135,7 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
       {selectedTournament ? (
         <TournamentDetailsForm
           tournament={selectedTournament}
-          onJoin={setJoinTournament}
+          onJoin={handleJoinRequest}
           onClaim={setClaimTournament}
         />
       ) : (
@@ -127,7 +153,7 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
             <div className="font-pixel flex h-40 flex-col items-center justify-center gap-2 text-base text-red-400">
               <span>Failed to load tournaments</span>
               <button
-                onClick={() => void loadTournaments()}
+                onClick={refreshTournaments}
                 className="text-sm underline opacity-70 hover:opacity-100"
               >
                 Retry
@@ -136,7 +162,7 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
           ) : (
             <TournamentsList
               tournaments={tournaments}
-              onJoin={setJoinTournament}
+              onJoin={handleJoinRequest}
               onClaim={setClaimTournament}
               onViewDetails={setSelectedTournament}
             />

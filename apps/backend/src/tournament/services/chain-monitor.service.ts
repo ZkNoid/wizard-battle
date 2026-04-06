@@ -1,8 +1,9 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { TournamentStateService } from './tournament-state.service.js';
 import { MinaClientService } from './mina-client.service.js';
 import { MerkleService } from './merkle.service.js';
+import { TournamentLeaderboardService } from './tournament-leaderboard.service.js';
 import {
   OperationStatus,
   OperationType,
@@ -24,7 +25,9 @@ export class ChainMonitorService implements OnModuleInit {
   constructor(
     private readonly tournamentStateService: TournamentStateService,
     private readonly minaClientService: MinaClientService,
-    private readonly merkleService: MerkleService
+    private readonly merkleService: MerkleService,
+    @Optional()
+    private readonly leaderboardService?: TournamentLeaderboardService
   ) {}
 
   async onModuleInit() {
@@ -188,9 +191,36 @@ export class ChainMonitorService implements OnModuleInit {
       return;
     }
 
+    if (!this.leaderboardService) {
+      this.logger.log(
+        `Tournament ${tournamentId} is ready for finalization. Leaderboard service not available — waiting for winners data...`
+      );
+      return;
+    }
+
+    const matchCount =
+      await this.leaderboardService.getMatchCount(tournamentId);
+    if (matchCount === 0) {
+      this.logger.log(
+        `Tournament ${tournamentId}: no matches recorded yet, skipping finalization`
+      );
+      return;
+    }
+
+    const winners =
+      await this.leaderboardService.getTopWinners(tournamentId, 3);
+    if (winners.length === 0) {
+      this.logger.log(
+        `Tournament ${tournamentId}: no winners determined from leaderboard`
+      );
+      return;
+    }
+
     this.logger.log(
-      `Tournament ${tournamentId} is ready for finalization. Waiting for winners data...`
+      `Tournament ${tournamentId}: finalizing with ${winners.length} winners from leaderboard`
     );
+
+    await this.triggerFinalization(tournamentId, winners);
   }
 
   async triggerFinalization(

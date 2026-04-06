@@ -1,6 +1,6 @@
 const BACKEND_URL =
   typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL
-    ? `http://${process.env.NEXT_PUBLIC_API_URL}`
+    ? process.env.NEXT_PUBLIC_API_URL
     : 'http://localhost:3030';
 
 const TOURNAMENT_BASE = `${BACKEND_URL}/tournament`;
@@ -83,31 +83,45 @@ export async function buyTicket(
   return res.json() as Promise<BuyTicketResponse>;
 }
 
+const SSE_MAX_RETRIES = 3;
+
 /**
  * Opens an SSE stream for the given operation.
+ * Tolerates transient connection drops up to SSE_MAX_RETRIES consecutive
+ * errors before surfacing the failure.  Async onEvent callbacks are
+ * serialized so wallet-signing can't overlap with the next SSE frame.
  * Returns a cleanup function that closes the connection.
  */
 export function streamOperation(
   tournamentId: string,
   operationId: string,
-  onEvent: (event: OperationStreamEvent) => void,
+  onEvent: (event: OperationStreamEvent) => void | Promise<void>,
   onError?: () => void
 ): () => void {
   const url = `${TOURNAMENT_BASE}/${tournamentId}/operation/${operationId}/stream`;
   const es = new EventSource(url);
+  let consecutiveErrors = 0;
+  let processing: Promise<void> = Promise.resolve();
 
   es.onmessage = (ev) => {
-    try {
-      const data = JSON.parse(ev.data as string) as OperationStreamEvent;
-      onEvent(data);
-    } catch {
-      // ignore malformed frames
-    }
+    consecutiveErrors = 0;
+    processing = processing.then(async () => {
+      try {
+        const data = JSON.parse(ev.data as string) as OperationStreamEvent;
+        await onEvent(data);
+      } catch {
+        // ignore malformed frames / handler errors
+      }
+    });
   };
 
   es.onerror = () => {
-    onError?.();
-    es.close();
+    consecutiveErrors++;
+    if (consecutiveErrors >= SSE_MAX_RETRIES) {
+      es.close();
+      onError?.();
+    }
+    // otherwise let EventSource auto-reconnect
   };
 
   return () => es.close();

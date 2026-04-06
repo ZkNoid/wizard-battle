@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMinaAppkit } from 'mina-appkit';
 import * as tournamentApi from '@/lib/services/tournament-api';
 import type { ITournament } from '@/lib/types/ITournament';
@@ -26,6 +26,8 @@ export type BuyTicketStatus =
   | 'broadcasting' // POST submit-tx in flight
   | 'confirmed'
   | 'failed';
+
+const TERMINAL_STATUSES: BuyTicketStatus[] = ['idle', 'confirmed', 'failed'];
 
 export const BUY_TICKET_STATUS_LABEL: Record<BuyTicketStatus, string> = {
   idle: '',
@@ -54,10 +56,20 @@ export function useBuyTicket(): UseBuyTicketReturn {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const sseCleanupRef = useRef<(() => void) | null>(null);
+  const mountedRef = useRef(true);
 
   const closeStream = useCallback(() => {
     sseCleanupRef.current?.();
     sseCleanupRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      sseCleanupRef.current?.();
+      sseCleanupRef.current = null;
+    };
   }, []);
 
   const reset = useCallback(() => {
@@ -75,6 +87,8 @@ export function useBuyTicket(): UseBuyTicketReturn {
         return;
       }
 
+      if (!TERMINAL_STATUSES.includes(status)) return;
+
       closeStream();
       setError(null);
       setTxHash(null);
@@ -87,6 +101,7 @@ export function useBuyTicket(): UseBuyTicketReturn {
           address
         );
 
+        if (!mountedRef.current) return;
         setStatus('queued');
 
         // ── Step 2: subscribe to SSE updates ────────────────────────────────
@@ -94,6 +109,8 @@ export function useBuyTicket(): UseBuyTicketReturn {
           tournament.id,
           operationId,
           async (event) => {
+            if (!mountedRef.current) return;
+
             switch (event.status) {
               case 'queued':
                 setStatus('queued');
@@ -109,7 +126,6 @@ export function useBuyTicket(): UseBuyTicketReturn {
                 setStatus('awaiting-signature');
 
                 try {
-                  // ── Step 3: prompt wallet to sign ──────────────────────
                   setStatus('signing');
 
                   const mina = window.mina as (AuroWithSign & typeof window.mina) | undefined;
@@ -131,7 +147,7 @@ export function useBuyTicket(): UseBuyTicketReturn {
                     feePayer: { fee: '0.1', memo: 'Buy tournament ticket' },
                   });
 
-                  // ── Step 4: broadcast signed transaction ───────────────
+                  if (!mountedRef.current) return;
                   setStatus('broadcasting');
 
                   const { txHash: hash } =
@@ -141,9 +157,10 @@ export function useBuyTicket(): UseBuyTicketReturn {
                       JSON.stringify(signResult)
                     );
 
+                  if (!mountedRef.current) return;
                   setTxHash(hash);
-                  // confirmed status arrives via the SSE stream
                 } catch (err) {
+                  if (!mountedRef.current) return;
                   const msg =
                     err instanceof Error
                       ? err.message
@@ -169,7 +186,7 @@ export function useBuyTicket(): UseBuyTicketReturn {
             }
           },
           () => {
-            // SSE connection error — only surface if not already terminal
+            if (!mountedRef.current) return;
             setStatus((prev) => {
               if (prev === 'confirmed' || prev === 'failed') return prev;
               setError('Lost connection to server. Please try again.');
@@ -180,6 +197,7 @@ export function useBuyTicket(): UseBuyTicketReturn {
 
         sseCleanupRef.current = cleanup;
       } catch (err) {
+        if (!mountedRef.current) return;
         const msg =
           err instanceof Error
             ? err.message
@@ -188,12 +206,10 @@ export function useBuyTicket(): UseBuyTicketReturn {
         setStatus('failed');
       }
     },
-    [address, closeStream]
+    [address, status, closeStream]
   );
 
-  const isLoading = !(['idle', 'confirmed', 'failed'] as BuyTicketStatus[]).includes(
-    status
-  );
+  const isLoading = !TERMINAL_STATUSES.includes(status);
 
   return { status, txHash, error, isLoading, buyTicket, reset };
 }

@@ -18,6 +18,7 @@ import { ProofGeneratorService } from './services/proof-generator.service.js';
 import { ChainMonitorService } from './services/chain-monitor.service.js';
 import { MinaClientService } from './services/mina-client.service.js';
 import { OperationEventsService, OperationStreamData } from './services/operation-events.service.js';
+import { TournamentLeaderboardService } from './services/tournament-leaderboard.service.js';
 import { OperationType, OperationStatus } from './schemas/pending-operation.schema.js';
 import {
   BuyTicketDto,
@@ -33,6 +34,7 @@ import {
   OperationStreamEventDto,
 } from './dto/index.js';
 import { TournamentDocument } from './schemas/tournament.schema.js';
+import { ITournamentLeaderboardEntry } from '../../../common/types/tournament-matchmaking.types.js';
 
 @Controller('tournament')
 export class TournamentController {
@@ -43,7 +45,8 @@ export class TournamentController {
     private readonly proofGeneratorService: ProofGeneratorService,
     private readonly chainMonitorService: ChainMonitorService,
     private readonly minaClientService: MinaClientService,
-    private readonly operationEventsService: OperationEventsService
+    private readonly operationEventsService: OperationEventsService,
+    private readonly leaderboardService: TournamentLeaderboardService
   ) {}
 
   @Get('status')
@@ -540,5 +543,28 @@ export class TournamentController {
       );
 
     return merge(initialState$, liveUpdates$);
+  }
+
+  @Get(':id/leaderboard')
+  async getLeaderboard(
+    @Param('id') tournamentId: string
+  ): Promise<ITournamentLeaderboardEntry[]> {
+    this.logger.log(`Getting leaderboard for tournament ${tournamentId}`);
+
+    const tournament =
+      await this.tournamentStateService.getVerifiedState(tournamentId);
+    if (!tournament) {
+      throw new HttpException('Tournament not found', HttpStatus.NOT_FOUND);
+    }
+
+    return this.leaderboardService.getLeaderboard(tournamentId);
+  }
+
+  @Get(':id/leaderboard/match-count')
+  async getMatchCount(
+    @Param('id') tournamentId: string
+  ): Promise<{ tournamentId: string; matchCount: number }> {
+    const count = await this.leaderboardService.getMatchCount(tournamentId);
+    return { tournamentId, matchCount: count };
   }
 }

@@ -6,6 +6,8 @@ import {
   TournamentSchema,
   PendingOperation,
   PendingOperationSchema,
+  TournamentMatch,
+  TournamentMatchSchema,
 } from './schemas/index.js';
 import {
   MinaClientService,
@@ -14,6 +16,8 @@ import {
   ProofGeneratorService,
   ChainMonitorService,
   OperationEventsService,
+  TournamentLeaderboardService,
+  TournamentResultRecorderService,
 } from './services/index.js';
 import { TournamentController } from './tournament.controller.js';
 
@@ -22,6 +26,7 @@ import { TournamentController } from './tournament.controller.js';
     MongooseModule.forFeature([
       { name: Tournament.name, schema: TournamentSchema },
       { name: PendingOperation.name, schema: PendingOperationSchema },
+      { name: TournamentMatch.name, schema: TournamentMatchSchema },
     ]),
     RedisModule,
   ],
@@ -33,6 +38,8 @@ import { TournamentController } from './tournament.controller.js';
     TournamentStateService,
     ProofGeneratorService,
     ChainMonitorService,
+    TournamentLeaderboardService,
+    TournamentResultRecorderService,
   ],
   exports: [
     MinaClientService,
@@ -41,6 +48,8 @@ import { TournamentController } from './tournament.controller.js';
     TournamentStateService,
     ProofGeneratorService,
     ChainMonitorService,
+    TournamentLeaderboardService,
+    TournamentResultRecorderService,
   ],
 })
 export class TournamentModule {}

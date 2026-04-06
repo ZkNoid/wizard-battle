@@ -18,14 +18,14 @@
  * - Accurate player counting and status reporting
  */
 
-import { Injectable, Scope } from '@nestjs/common';
+import { Injectable, Scope, Optional } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { RedisClientType } from 'redis';
 import { GameStateService } from '../game-session/game-state.service';
 import { BotClientService } from '../bot/bot-client.service';
 import { RedisService } from '../redis/redis.service';
-import { State } from '../../../common/stater/state';
+import { TournamentResultRecorderService } from '../tournament/services/tournament-result-recorder.service';
 import {
   IAddToQueue,
   IAddToQueueResponse,
@@ -39,14 +39,16 @@ import {
   TransformedRemoveFromQueue,
   TransformedUpdateQueue,
 } from '../../../common/types/matchmaking.types';
+import { ITournamentAddToQueue } from '../../../common/types/tournament-matchmaking.types';
 
 /**
  * Player interface with timestamp for wait time tracking
  */
 interface QueuedPlayer {
   player: IPublicState;
-  timestamp: number; // When they joined the queue
-  level: number; // not is use for now, but we keep it for future reference
+  timestamp: number;
+  level: number;
+  tournamentId?: string;
 }
 
 /**
@@ -57,7 +59,10 @@ interface Match {
   player2: IPublicState;
   roomId: string;
   createdAt: number;
+  tournamentId?: string;
 }
+
+const MAX_TOURNAMENT_GAMES_PER_PAIR = 2;
 
 /**
  * MatchmakingService
@@ -95,7 +100,9 @@ export class MatchmakingService {
   constructor(
     private readonly gameStateService: GameStateService,
     private readonly redisService: RedisService,
-    private readonly botClientService?: BotClientService
+    @Optional() private readonly botClientService?: BotClientService,
+    @Optional()
+    private readonly tournamentResultRecorder?: TournamentResultRecorderService
   ) {
     console.log('MatchmakingService constructor called');
   }
@@ -105,6 +112,54 @@ export class MatchmakingService {
    */
   get redisClient(): RedisClientType {
     return this.redisService.getClient();
+  }
+
+  private queueKeyFor(tournamentId?: string): string {
+    return tournamentId
+      ? `waiting:tournament:${tournamentId}`
+      : 'waiting:queue';
+  }
+
+  private matchesKeyFor(tournamentId?: string): string {
+    return tournamentId ? 'tournament_matches_active' : 'matches';
+  }
+
+  private roomPrefix(tournamentId?: string): string {
+    return tournamentId ? `t-${tournamentId}-` : '';
+  }
+
+  /**
+   * Get the list of all tournament queue keys currently in Redis.
+   */
+  private async getTournamentQueueKeys(): Promise<string[]> {
+    const keys: string[] = [];
+    let cursor = '0';
+    do {
+      const result = await this.redisClient.scan(cursor as any, {
+        MATCH: 'waiting:tournament:*',
+        COUNT: 100,
+      });
+      cursor = String(result.cursor);
+      keys.push(...result.keys);
+    } while (cursor !== '0');
+    return keys;
+  }
+
+  /**
+   * Count games played between two wallets in a tournament.
+   * Returns 0 if tournament recorder is unavailable.
+   */
+  private async getTournamentPairGameCount(
+    tournamentId: string,
+    walletA: string,
+    walletB: string
+  ): Promise<number> {
+    if (!this.tournamentResultRecorder) return 0;
+    return this.tournamentResultRecorder.getPairGameCount(
+      tournamentId,
+      walletA,
+      walletB
+    );
   }
 
   /**
@@ -324,6 +379,132 @@ export class MatchmakingService {
     }
   }
 
+  @Cron(CronExpression.EVERY_30_SECONDS)
+  private async processTournamentMatchmaking(): Promise<void> {
+    const lockKey = 'tournament_matchmaking_lock';
+    const lockAcquired = await this.redisClient.set(lockKey, 'locked', {
+      EX: 60,
+      NX: true,
+    });
+    if (!lockAcquired) return;
+
+    try {
+      const tournamentQueueKeys = await this.getTournamentQueueKeys();
+      if (tournamentQueueKeys.length === 0) return;
+
+      for (const queueKey of tournamentQueueKeys) {
+        const tournamentId = queueKey.replace('waiting:tournament:', '');
+        try {
+          await this.processOneTournamentQueue(tournamentId, queueKey);
+        } catch (error) {
+          console.error(
+            `Error processing tournament queue ${tournamentId}:`,
+            error
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error in tournament matchmaking loop:', error);
+    } finally {
+      await this.redisClient.del(lockKey);
+    }
+  }
+
+  private async processOneTournamentQueue(
+    tournamentId: string,
+    queueKey: string
+  ): Promise<void> {
+    const raw = await this.redisClient.lRange(queueKey, 0, -1);
+    if (raw.length < 2) return;
+
+    const entries: QueuedPlayer[] = raw
+      .map((r) => {
+        try {
+          return JSON.parse(r) as QueuedPlayer;
+        } catch {
+          return null;
+        }
+      })
+      .filter((e): e is QueuedPlayer => e !== null)
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    // Filter out players already in active tournament matches
+    const activeMatches = await this.redisClient.hGetAll(
+      this.matchesKeyFor(tournamentId)
+    );
+    const activePlayerIds = new Set<string>();
+    for (const matchData of Object.values(activeMatches)) {
+      try {
+        const m: Match = JSON.parse(matchData);
+        if (m.tournamentId !== tournamentId) continue;
+        if (m.player1?.playerId) activePlayerIds.add(m.player1.playerId);
+        if (m.player2?.playerId) activePlayerIds.add(m.player2.playerId);
+      } catch {}
+    }
+
+    // Stale cleanup
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+    for (const entry of entries) {
+      if (entry.timestamp < fiveMinutesAgo) {
+        await this.redisClient
+          .lRem(queueKey, 1, JSON.stringify(entry))
+          .catch(() => {});
+      }
+    }
+
+    // Dedupe + filter
+    const seen = new Set<string>();
+    const available: QueuedPlayer[] = [];
+    for (const entry of entries) {
+      const pid = entry.player.playerId;
+      if (!pid || activePlayerIds.has(pid) || seen.has(pid)) continue;
+      if (entry.timestamp < fiveMinutesAgo) continue;
+      if (
+        this.server &&
+        entry.player.socketId &&
+        !this.server.sockets.sockets.get(entry.player.socketId)
+      )
+        continue;
+      seen.add(pid);
+      available.push(entry);
+    }
+
+    if (available.length < 2) return;
+
+    console.log(
+      `Tournament ${tournamentId}: ${available.length} players available for matching`
+    );
+
+    // Pair players respecting the per-pair game limit
+    const matched = new Set<number>();
+    for (let i = 0; i < available.length; i++) {
+      if (matched.has(i)) continue;
+      for (let j = i + 1; j < available.length; j++) {
+        if (matched.has(j)) continue;
+
+        const p1Wallet = available[i]!.player.userId;
+        const p2Wallet = available[j]!.player.userId;
+        if (!p1Wallet || !p2Wallet) continue;
+
+        const pairCount = await this.getTournamentPairGameCount(
+          tournamentId,
+          p1Wallet,
+          p2Wallet
+        );
+        if (pairCount >= MAX_TOURNAMENT_GAMES_PER_PAIR) continue;
+
+        matched.add(i);
+        matched.add(j);
+        await this.createMatch(
+          available[i]!.player,
+          available[j]!.player,
+          tournamentId
+        );
+        break;
+      }
+    }
+  }
+
   /**
    * Cleanup stale matches
    *
@@ -357,25 +538,30 @@ export class MatchmakingService {
    */
   @Cron(CronExpression.EVERY_HOUR)
   private async cleanupStaleMatches() {
-    try {
-      const activeMatches = await this.redisClient.hGetAll('matches');
-      const now = Date.now();
-      const staleThreshold = 60 * 60 * 1000; // 1 hour
+    const now = Date.now();
+    const staleThreshold = 60 * 60 * 1000;
 
-      for (const [roomId, matchData] of Object.entries(activeMatches)) {
-        try {
-          const match: Match = JSON.parse(matchData);
-          if (now - match.createdAt > staleThreshold) {
-            await this.gameStateService.removeGameState(roomId);
-            await this.redisClient.hDel('matches', roomId);
-            console.log(`Cleaned up stale match in room ${roomId}`);
+    for (const hashKey of ['matches', 'tournament_matches_active']) {
+      try {
+        const activeMatches = await this.redisClient.hGetAll(hashKey);
+        for (const [roomId, matchData] of Object.entries(activeMatches)) {
+          try {
+            const match: Match = JSON.parse(matchData);
+            if (now - match.createdAt > staleThreshold) {
+              await this.gameStateService.removeGameState(roomId);
+              await this.redisClient.hDel(hashKey, roomId);
+              console.log(`Cleaned up stale match in room ${roomId}`);
+            }
+          } catch (error) {
+            console.error(
+              `Error processing match ${roomId} for cleanup:`,
+              error
+            );
           }
-        } catch (error) {
-          console.error(`Error processing match ${roomId} for cleanup:`, error);
         }
+      } catch (error) {
+        console.error(`Error in stale matches cleanup (${hashKey}):`, error);
       }
-    } catch (error) {
-      console.error('Error in stale matches cleanup:', error);
     }
   }
 
@@ -450,7 +636,8 @@ export class MatchmakingService {
    */
   private async createMatch(
     player1: IPublicState,
-    player2: IPublicState
+    player2: IPublicState,
+    tournamentId?: string
   ): Promise<void> {
     if (!player1.playerId || !player2.playerId) {
       console.error('Cannot create match: missing player IDs');
@@ -481,7 +668,9 @@ export class MatchmakingService {
       player1.playerId < player2.playerId
         ? [player1, player2]
         : [player2, player1];
-    const roomId = `${firstPlayer.playerId}-${secondPlayer.playerId}`;
+    const roomId = `${this.roomPrefix(tournamentId)}${firstPlayer.playerId}-${secondPlayer.playerId}`;
+    const matchesKey = this.matchesKeyFor(tournamentId);
+    const queueKey = this.queueKeyFor(tournamentId);
 
     // Acquire lock to prevent race conditions in match creation
     const lockKey = `match_lock_${roomId}`;
@@ -499,7 +688,7 @@ export class MatchmakingService {
 
     try {
       // Check if match already exists to prevent duplicates
-      const existingMatch = await this.redisClient.hGet('matches', roomId);
+      const existingMatch = await this.redisClient.hGet(matchesKey, roomId);
       if (existingMatch) {
         console.warn(
           `Match already exists for room ${roomId}, skipping creation`
@@ -541,16 +730,17 @@ export class MatchmakingService {
         player2: secondPlayer,
         roomId,
         createdAt: Date.now(),
+        tournamentId,
       };
 
       // Store match in Redis FIRST
-      await this.redisClient.hSet('matches', roomId, JSON.stringify(match));
+      await this.redisClient.hSet(matchesKey, roomId, JSON.stringify(match));
 
       // Create game state
       if (!firstPlayer.socketId || !secondPlayer.socketId) {
         console.error('Cannot create game state: missing socket IDs');
         // Clean up the match we just created
-        await this.redisClient.hDel('matches', roomId);
+        await this.redisClient.hDel(matchesKey, roomId);
         return;
       }
 
@@ -621,11 +811,7 @@ export class MatchmakingService {
 
       // ONLY AFTER everything is successful, remove players from queue
       // This ensures we don't lose players if match creation fails
-      const waitingPlayers = await this.redisClient.lRange(
-        'waiting:queue',
-        0,
-        -1
-      );
+      const waitingPlayers = await this.redisClient.lRange(queueKey, 0, -1);
 
       // Remove entries for both players
       let removedCount = 0;
@@ -636,9 +822,9 @@ export class MatchmakingService {
             queuedPlayer.player.playerId === firstPlayer.playerId ||
             queuedPlayer.player.playerId === secondPlayer.playerId
           ) {
-            await this.redisClient.lRem('waiting:queue', 1, entry);
+            await this.redisClient.lRem(queueKey, 1, entry);
             removedCount++;
-            if (removedCount === 2) break; // We've removed both players
+            if (removedCount === 2) break;
           }
         } catch (error) {
           console.error('Error parsing queue entry:', error);
@@ -1232,6 +1418,92 @@ export class MatchmakingService {
   }
 
   /**
+   * Join tournament-specific matchmaking queue.
+   * Validates tournament status and participant registration,
+   * then enqueues to a per-tournament Redis queue.
+   */
+  async joinTournamentMatchmaking(
+    socket: Socket,
+    data: ITournamentAddToQueue,
+    validateParticipant: (
+      tournamentId: string,
+      walletAddress: string
+    ) => Promise<{ valid: boolean; reason?: string }>
+  ): Promise<string | null> {
+    const { tournamentId, playerSetup: player } = data;
+
+    if (!player?.playerId) {
+      console.error('Player data is missing for tournament matchmaking');
+      return null;
+    }
+
+    player.socketId = socket.id;
+
+    const userId = player.userId;
+    if (!userId) {
+      socket.emit(
+        'addtoqueue',
+        new TransformedAddToQueueResponse(
+          false,
+          'Wallet address required for tournament matchmaking'
+        )
+      );
+      return null;
+    }
+
+    const validation = await validateParticipant(tournamentId, userId);
+    if (!validation.valid) {
+      socket.emit(
+        'addtoqueue',
+        new TransformedAddToQueueResponse(
+          false,
+          validation.reason ?? 'Cannot join tournament matchmaking'
+        )
+      );
+      return null;
+    }
+
+    await this.gameStateService.registerSocket(socket);
+
+    const queueKey = this.queueKeyFor(tournamentId);
+
+    // Dedupe: remove existing entries for this player
+    const existing = await this.redisClient.lRange(queueKey, 0, -1);
+    for (const raw of existing) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed?.player?.playerId === player.playerId) {
+          await this.redisClient.lRem(queueKey, 1, raw);
+        }
+      } catch {}
+    }
+
+    const queuedPlayer: QueuedPlayer = {
+      player,
+      timestamp: Date.now(),
+      level: 0,
+      tournamentId,
+    };
+    await this.redisClient.lPush(queueKey, JSON.stringify(queuedPlayer));
+
+    socket.join(`queue:tournament:${tournamentId}`);
+
+    const queueLength = await this.redisClient.lLen(queueKey);
+    socket.emit(
+      'addtoqueue',
+      new TransformedAddToQueueResponse(
+        true,
+        `Added to tournament ${tournamentId} queue. ${queueLength} player(s) waiting.`
+      )
+    );
+
+    console.log(
+      `Player ${player.playerId} (wallet: ${userId}) joined tournament ${tournamentId} queue`
+    );
+    return null;
+  }
+
+  /**
    * @notice Join bot matchmaking - creates a bot opponent for the requesting player
    * @param socket The requesting player's socket connection
    * @param addToQueue The player's matchmaking request data
@@ -1496,7 +1768,7 @@ export class MatchmakingService {
     // Remove socket mapping
     await this.gameStateService.unregisterSocket(socket.id);
 
-    // Remove from Redis waiting list
+    // Remove from casual Redis waiting list
     const waiting = await this.redisClient.lRange('waiting:queue', 0, -1);
     const playerEntry = waiting.find((p) => {
       try {
@@ -1509,8 +1781,25 @@ export class MatchmakingService {
 
     if (playerEntry) {
       await this.redisClient.lRem('waiting:queue', 1, playerEntry);
-      // Update queue status
       await this.updateQueueStatus();
+    }
+
+    // Also remove from any tournament queues
+    try {
+      const tournamentKeys = await this.getTournamentQueueKeys();
+      for (const tKey of tournamentKeys) {
+        const tEntries = await this.redisClient.lRange(tKey, 0, -1);
+        for (const raw of tEntries) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed.player.socketId === socket.id) {
+              await this.redisClient.lRem(tKey, 1, raw);
+            }
+          } catch {}
+        }
+      }
+    } catch (err) {
+      console.error('Error cleaning tournament queues on leave:', err);
     }
 
     const removeFromQueue: IRemoveFromQueue = new TransformedRemoveFromQueue(
@@ -1523,15 +1812,29 @@ export class MatchmakingService {
     // Leave the queue room
     socket.leave('queue:general');
 
-    // Check for match in Redis
-    const matches = await this.redisClient.hGetAll('matches');
-    const matchEntry = Object.entries(matches).find(([_, m]) => {
-      const match = JSON.parse(m);
-      return (
-        match.player1?.socketId === socket.id ||
-        match.player2?.socketId === socket.id
-      );
-    });
+    // Check for match in both casual and tournament hashes
+    let matchEntry: [string, string] | undefined;
+    let matchHashKey = 'matches';
+
+    for (const hashKey of ['matches', 'tournament_matches_active']) {
+      const allMatches = await this.redisClient.hGetAll(hashKey);
+      const found = Object.entries(allMatches).find(([_, m]) => {
+        try {
+          const match = JSON.parse(m);
+          return (
+            match.player1?.socketId === socket.id ||
+            match.player2?.socketId === socket.id
+          );
+        } catch {
+          return false;
+        }
+      });
+      if (found) {
+        matchEntry = found;
+        matchHashKey = hashKey;
+        break;
+      }
+    }
 
     if (matchEntry) {
       const [roomId, m] = matchEntry;
@@ -1540,9 +1843,8 @@ export class MatchmakingService {
       const selfPlayer = isP1 ? match.player1 : match.player2;
       const otherPlayer = isP1 ? match.player2 : match.player1;
 
-      // Mark disconnected player's socket as empty to indicate offline state
       if (selfPlayer) selfPlayer.socketId = '';
-      await this.redisClient.hSet('matches', roomId, JSON.stringify(match));
+      await this.redisClient.hSet(matchHashKey, roomId, JSON.stringify(match));
 
       // Notify other player through Redis pub/sub and locally if connected
       await this.gameStateService.publishToRoom(
@@ -1594,7 +1896,7 @@ export class MatchmakingService {
           } catch (e) {
             console.error('Error removing game state during bot cleanup:', e);
           }
-          await this.redisClient.hDel('matches', roomId);
+          await this.redisClient.hDel(matchHashKey, roomId);
           console.log(
             `🗑️ Cleaned up bot match ${roomId} (botId=${botId}) after player left`
           );
