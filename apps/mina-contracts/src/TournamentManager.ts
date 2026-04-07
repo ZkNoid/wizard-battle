@@ -255,7 +255,7 @@ export class TournamentManager extends SmartContract {
     const currentRoot = this.tournamentsRoot.getAndRequireEquals();
 
     // Verify tournament doesn't exist (empty leaf)
-    const [rootBefore, key] = tournamentWitness.computeRootAndKey(Field(0));
+    const [rootBefore, key] = tournamentWitness.computeRootAndKey(Field(0)) as [Field, Field];
     rootBefore.assertEquals(currentRoot, 'Tournament already exists');
     key.assertEquals(
       TournamentManager.keyFor(tournamentId),
@@ -278,7 +278,7 @@ export class TournamentManager extends SmartContract {
       participantCount: UInt32.from(0),
     });
 
-    const [newRoot] = tournamentWitness.computeRootAndKey(newTournament.hash());
+    const [newRoot] = tournamentWitness.computeRootAndKey(newTournament.hash()) as [Field, Field];
     this.tournamentsRoot.set(newRoot);
     this.emitEvent(
       'TournamentCreated',
@@ -318,7 +318,7 @@ export class TournamentManager extends SmartContract {
     // Verify current tournament state
     const [rootBefore, key] = tournamentWitness.computeRootAndKey(
       currentTournament.hash()
-    );
+    ) as [Field, Field];
     rootBefore.assertEquals(currentRoot, 'Invalid tournament state');
     key.assertEquals(
       TournamentManager.keyFor(tournamentId),
@@ -357,7 +357,7 @@ export class TournamentManager extends SmartContract {
 
     const [newRoot] = tournamentWitness.computeRootAndKey(
       finalizedTournament.hash()
-    );
+    ) as [Field, Field];
     this.tournamentsRoot.set(newRoot);
     this.emitEvent(
       'TournamentFinalized',
@@ -391,7 +391,7 @@ export class TournamentManager extends SmartContract {
     // Verify current tournament state
     const [rootBefore, tKey] = tournamentWitness.computeRootAndKey(
       currentTournament.hash()
-    );
+    ) as [Field, Field];
     rootBefore.assertEquals(currentRoot, 'Invalid tournament state');
     tKey.assertEquals(
       TournamentManager.keyFor(tournamentId),
@@ -413,7 +413,7 @@ export class TournamentManager extends SmartContract {
     const playerKey = TournamentManager.keyForPublicKey(player);
     const [participantsRootBefore, pKey] = participantWitness.computeRootAndKey(
       Field(0)
-    );
+    ) as [Field, Field];
     participantsRootBefore.assertEquals(
       currentTournament.participantsRoot,
       'Invalid participants state'
@@ -440,7 +440,7 @@ export class TournamentManager extends SmartContract {
     // Update participants root (mark player as registered with Field(1))
     const [newParticipantsRoot] = participantWitness.computeRootAndKey(
       Field(1)
-    );
+    ) as [Field, Field];
 
     // Update tournament state
     const updatedTournament = new TournamentLeaf({
@@ -462,7 +462,7 @@ export class TournamentManager extends SmartContract {
     // Note: We need the witness to be for the OLD tournament state
     const [newTournamentRoot] = tournamentWitness.computeRootAndKey(
       updatedTournament.hash()
-    );
+    ) as [Field, Field];
     this.tournamentsRoot.set(newTournamentRoot);
 
     this.emitEvent(
@@ -489,7 +489,7 @@ export class TournamentManager extends SmartContract {
     // Verify current tournament state
     const [rootBefore, key] = tournamentWitness.computeRootAndKey(
       currentTournament.hash()
-    );
+    ) as [Field, Field];
     rootBefore.assertEquals(currentRoot, 'Invalid tournament state');
     key.assertEquals(
       TournamentManager.keyFor(tournamentId),
@@ -521,7 +521,7 @@ export class TournamentManager extends SmartContract {
 
     const [newRoot] = tournamentWitness.computeRootAndKey(
       updatedTournament.hash()
-    );
+    ) as [Field, Field];
     this.tournamentsRoot.set(newRoot);
   }
 
@@ -540,7 +540,7 @@ export class TournamentManager extends SmartContract {
     // Verify current tournament state
     const [rootBefore, tKey] = tournamentWitness.computeRootAndKey(
       currentTournament.hash()
-    );
+    ) as [Field, Field];
     rootBefore.assertEquals(currentRoot, 'Invalid tournament state');
     tKey.assertEquals(
       TournamentManager.keyFor(tournamentId),
@@ -554,7 +554,7 @@ export class TournamentManager extends SmartContract {
     const playerKey = TournamentManager.keyForPublicKey(player);
     const [winnersRootBefore, wKey] = winnerWitness.computeRootAndKey(
       currentWinnerLeaf.hash()
-    );
+    ) as [Field, Field];
     winnersRootBefore.assertEquals(
       currentTournament.winnersRoot,
       'Invalid winners state'
@@ -580,7 +580,7 @@ export class TournamentManager extends SmartContract {
     });
     const [newWinnersRoot] = winnerWitness.computeRootAndKey(
       updatedWinnerLeaf.hash()
-    );
+    ) as [Field, Field];
 
     // Update tournament with new winners root
     const updatedTournament = new TournamentLeaf({
@@ -600,7 +600,7 @@ export class TournamentManager extends SmartContract {
 
     const [newTournamentRoot] = tournamentWitness.computeRootAndKey(
       updatedTournament.hash()
-    );
+    ) as [Field, Field];
     this.tournamentsRoot.set(newTournamentRoot);
 
     this.emitEvent(
