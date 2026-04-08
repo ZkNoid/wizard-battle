@@ -18,7 +18,7 @@ export class BlockchainService {
   constructor() {
     // Initialize blockchain connection
     // Make sure to set these environment variables:
-    const rpcUrl = process.env.RPC_URL || 'http://localhost:8545';
+    const rpcUrl = process.env.EVM_RPC_URL || 'http://localhost:8545';
     const privateKey = process.env.GAME_SIGNER_PRIVATE_KEY;
     this.gameRegistryAddress = process.env.GAME_REGISTRY_ADDRESS || '';
     this.wbResourcesAddress = process.env.WB_RESOURCES_ADDRESS || '';

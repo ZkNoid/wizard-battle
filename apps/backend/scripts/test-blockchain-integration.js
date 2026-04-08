@@ -6,7 +6,7 @@
  *
  * Usage:
  * 1. Make sure your .env file has the required variables:
- *    - RPC_URL
+ *    - EVM_RPC_URL
  *    - GAME_SIGNER_PRIVATE_KEY
  *    - GAME_REGISTRY_ADDRESS
  *    - WB_RESOURCES_ADDRESS
@@ -71,7 +71,7 @@ async function testMintWood() {
 
       // Setup provider and signer
       const provider = new ethers.JsonRpcProvider(
-        process.env.RPC_URL || 'http://127.0.0.1:8545'
+        process.env.EVM_RPC_URL || 'http://127.0.0.1:8545'
       );
       const signer = new ethers.Wallet(process.env.USER_PRIVATE_KEY, provider);
       const gameRegistryAddress = process.env.GAME_REGISTRY_ADDRESS;
@@ -177,7 +177,7 @@ async function testBurnWood() {
 
       // Setup provider and signer
       const provider = new ethers.JsonRpcProvider(
-        process.env.RPC_URL || 'http://127.0.0.1:8545'
+        process.env.EVM_RPC_URL || 'http://127.0.0.1:8545'
       );
       const signer = new ethers.Wallet(process.env.USER_PRIVATE_KEY, provider);
       const gameRegistryAddress = process.env.GAME_REGISTRY_ADDRESS;
@@ -283,7 +283,7 @@ async function testMintLegendarySword() {
 
       // Setup provider and signer
       const provider = new ethers.JsonRpcProvider(
-        process.env.RPC_URL || 'http://127.0.0.1:8545'
+        process.env.EVM_RPC_URL || 'http://127.0.0.1:8545'
       );
       const signer = new ethers.Wallet(process.env.USER_PRIVATE_KEY, provider);
       const gameRegistryAddress = process.env.GAME_REGISTRY_ADDRESS;
@@ -389,7 +389,7 @@ async function testBurnLegendarySword() {
 
       // Setup provider and signer
       const provider = new ethers.JsonRpcProvider(
-        process.env.RPC_URL || 'http://127.0.0.1:8545'
+        process.env.EVM_RPC_URL || 'http://127.0.0.1:8545'
       );
       const signer = new ethers.Wallet(process.env.USER_PRIVATE_KEY, provider);
       const gameRegistryAddress = process.env.GAME_REGISTRY_ADDRESS;
@@ -493,7 +493,7 @@ async function testMintWizard() {
 
       // Setup provider and signer
       const provider = new ethers.JsonRpcProvider(
-        process.env.RPC_URL || 'http://127.0.0.1:8545'
+        process.env.EVM_RPC_URL || 'http://127.0.0.1:8545'
       );
       const signer = new ethers.Wallet(process.env.USER_PRIVATE_KEY, provider);
       const gameRegistryAddress = process.env.GAME_REGISTRY_ADDRESS;
@@ -599,7 +599,7 @@ async function testBurnWizard() {
 
       // Setup provider and signer
       const provider = new ethers.JsonRpcProvider(
-        process.env.RPC_URL || 'http://127.0.0.1:8545'
+        process.env.EVM_RPC_URL || 'http://127.0.0.1:8545'
       );
       const signer = new ethers.Wallet(process.env.USER_PRIVATE_KEY, provider);
       const gameRegistryAddress = process.env.GAME_REGISTRY_ADDRESS;

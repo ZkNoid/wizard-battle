@@ -29,7 +29,7 @@ async function main() {
   const privateKey = process.env.GAME_SIGNER_PRIVATE_KEY;
   const gameRegistryAddress = process.env.GAME_REGISTRY_ADDRESS;
   const wbResourcesAddress = process.env.WB_RESOURCES_ADDRESS;
-  const rpcUrl = process.env.RPC_URL ?? 'http://localhost:8545';
+  const rpcUrl = process.env.EVM_RPC_URL ?? 'http://localhost:8545';
 
   if (!mongoUri) throw new Error('MONGODB_URI is not set');
   if (!privateKey) throw new Error('GAME_SIGNER_PRIVATE_KEY is not set');
