@@ -83,14 +83,40 @@ export class MinaClientService implements OnModuleInit {
     blockchainLength: bigint;
     globalSlotSinceGenesis: bigint;
     minWindowDensity: bigint;
-    totalCurrency: bigint;
   }> {
-    const network = Mina.getNetworkState();
+    const graphqlUrl =
+      process.env.MINA_GRAPHQL_URL ||
+      'https://api.minascan.io/node/devnet/v1/graphql';
+
+    const response = await fetch(graphqlUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `{
+          bestChain(maxLength: 1) {
+            protocolState {
+              consensusState {
+                blockHeight
+                slotSinceGenesis
+                minWindowDensity
+              }
+            }
+          }
+        }`,
+      }),
+    });
+
+    const data = await response.json();
+    const block = data?.data?.bestChain?.[0];
+    if (!block) {
+      throw new Error('Failed to fetch network state from GraphQL endpoint');
+    }
+
+    const { consensusState, blockchainState } = block.protocolState;
     return {
-      blockchainLength: network.blockchainLength.toBigint(),
-      globalSlotSinceGenesis: network.globalSlotSinceGenesis.toBigint(),
-      minWindowDensity: network.minWindowDensity.toBigint(),
-      totalCurrency: network.totalCurrency.toBigInt(),
+      blockchainLength: BigInt(consensusState.blockHeight),
+      globalSlotSinceGenesis: BigInt(consensusState.slotSinceGenesis),
+      minWindowDensity: BigInt(consensusState.minWindowDensity),
     };
   }
 
