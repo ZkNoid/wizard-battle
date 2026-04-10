@@ -6,7 +6,7 @@ async function bootstrap() {
   const app = await NestFactory.create(TournamentAppModule);
   app.enableCors({ origin: '*' });
 
-  const port = process.env.TOURNAMENT_APP_PORT ?? 3031;
+  const port = process.env.TOURNAMENT_APP_PORT ?? 3032;
   await app.listen(port);
   console.log(`Tournament service running on port ${port}`);
 }
