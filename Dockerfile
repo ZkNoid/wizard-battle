@@ -90,7 +90,7 @@ echo "GAME_MARKET_DEPLOYMENT_BLOCK=${GAME_MARKET_DEPLOYMENT_BLOCK}" >> /usr/shar
 echo "TOURNAMENT_APP_PORT=${TOURNAMENT_APP_PORT}" >> /usr/share/nestjs/main/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/backend/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/frontend/.env
-source .env
+. .env
 pnpm turbo run build
 
 # Enable PM2 monitoring
