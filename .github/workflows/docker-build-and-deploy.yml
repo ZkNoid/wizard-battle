@@ -35,6 +35,7 @@ jobs:
           NEXT_PUBLIC_REOWN_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_REOWN_PROJECT_ID }}
           NEXT_PUBLIC_PROJECT_URL: ${{ secrets.NEXT_PUBLIC_PROJECT_URL }}
           NEXT_PUBLIC_GAME_REGISTRY_ADDRESS: ${{ secrets.NEXT_PUBLIC_GAME_REGISTRY_ADDRESS }}
+          EVM_RPC_URL: ${{ secrets.EVM_RPC_URL }}
         run: pnpm turbo run build
   deploy:
     needs: test-build
@@ -189,7 +190,7 @@ jobs:
             --build-arg MINA_CONTRACT_ADDRESS=${{ secrets.MINA_CONTRACT_ADDRESS }} \
             --build-arg BULLMQ_REDIS_HOST=${{ secrets.BULLMQ_REDIS_HOST }} \
             --build-arg BULLMQ_REDIS_PORT=${{ secrets.BULLMQ_REDIS_PORT }} \
-            --build-arg RPC_URL=${{ secrets.RPC_URL }} \
+            --build-arg EVM_RPC_URL=${{ secrets.EVM_RPC_URL }} \
             --build-arg GAME_SIGNER_PUBLIC_KEY=${{ secrets.GAME_SIGNER_PUBLIC_KEY }} \
             --build-arg GAME_SIGNER_PRIVATE_KEY=${{ secrets.GAME_SIGNER_PRIVATE_KEY }} \
             --build-arg GAME_REGISTRY_ADDRESS=${{ secrets.GAME_REGISTRY_ADDRESS }} \
@@ -200,6 +201,7 @@ jobs:
             --build-arg GAME_MARKET_ADDRESS=${{ secrets.GAME_MARKET_ADDRESS }} \
             --build-arg RPC_WS_URL=${{ secrets.RPC_WS_URL }} \
             --build-arg GAME_MARKET_DEPLOYMENT_BLOCK=${{ secrets.GAME_MARKET_DEPLOYMENT_BLOCK }} \
+            --build-arg TOURNAMENT_APP_PORT=${{ secrets.TOURNAMENT_APP_PORT }} \
             -t ${{ steps.calc-container.outputs.container_name }} .
 
       - name: Save Docker image to tar

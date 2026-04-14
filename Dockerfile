@@ -13,7 +13,7 @@ ARG MINA_ADMIN_PRIVATE_KEY
 ARG MINA_CONTRACT_ADDRESS
 ARG BULLMQ_REDIS_HOST
 ARG BULLMQ_REDIS_PORT
-ARG RPC_URL
+ARG EVM_RPC_URL
 ARG GAME_SIGNER_PUBLIC_KEY
 ARG GAME_SIGNER_PRIVATE_KEY
 ARG GAME_REGISTRY_ADDRESS
@@ -77,7 +77,7 @@ echo "MINA_ADMIN_PRIVATE_KEY=${MINA_ADMIN_PRIVATE_KEY}" >> /usr/share/nestjs/mai
 echo "MINA_CONTRACT_ADDRESS=${MINA_CONTRACT_ADDRESS}" >> /usr/share/nestjs/main/.env
 echo "BULLMQ_REDIS_HOST=${BULLMQ_REDIS_HOST}" >> /usr/share/nestjs/main/.env
 echo "BULLMQ_REDIS_PORT=${BULLMQ_REDIS_PORT}" >> /usr/share/nestjs/main/.env
-echo "RPC_URL=${RPC_URL}" >> /usr/share/nestjs/main/.env
+echo "EVM_RPC_URL=${EVM_RPC_URL}" >> /usr/share/nestjs/main/.env
 echo "GAME_SIGNER_PUBLIC_KEY=${GAME_SIGNER_PUBLIC_KEY}" >> /usr/share/nestjs/main/.env
 echo "GAME_SIGNER_PRIVATE_KEY=${GAME_SIGNER_PRIVATE_KEY}" >> /usr/share/nestjs/main/.env
 echo "GAME_REGISTRY_ADDRESS=${GAME_REGISTRY_ADDRESS}" >> /usr/share/nestjs/main/.env
@@ -92,6 +92,7 @@ echo "TOURNAMENT_APP_PORT=${TOURNAMENT_APP_PORT:-3032}" >> /usr/share/nestjs/mai
 echo "TOURNAMENT_CONTRACT_ADDRESS=${TOURNAMENT_CONTRACT_ADDRESS}" >> /usr/share/nestjs/main/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/backend/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/frontend/.env
+#. .env
 pnpm turbo run build
 
 # Enable PM2 monitoring
