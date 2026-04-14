@@ -13,7 +13,9 @@ import { TournamentModule } from './tournament/tournament.module.js';
         dbName: process.env.MONGODB_DB || 'wizardbattle',
       }
     ),
-    RedisModule,
+    RedisModule.forRoot({
+      url: process.env.TOURNAMENT_REDIS_URL || 'redis://localhost:6380',
+    }),
     TournamentModule,
   ],
 })
