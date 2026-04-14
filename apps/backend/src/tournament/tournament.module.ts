@@ -28,7 +28,7 @@ import { TournamentController } from './tournament.controller.js';
       { name: PendingOperation.name, schema: PendingOperationSchema },
       { name: TournamentMatch.name, schema: TournamentMatchSchema },
     ]),
-    RedisModule,
+    RedisModule.forFeature(),
   ],
   controllers: [TournamentController],
   providers: [

@@ -13,7 +13,7 @@ import { TournamentResultsModule } from '../tournament/tournament-results.module
 @Module({
   imports: [
     BotModule,
-    RedisModule,
+    RedisModule.forFeature(),
     ScheduleModule.forRoot(),
     RewardModule,
     QuestsModule,

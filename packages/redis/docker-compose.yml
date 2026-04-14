@@ -10,6 +10,19 @@ services:
     restart: unless-stopped
     networks:
       - bridge
+
+  redis-tournament:
+    image: redis:latest
+    container_name: redis-tournament-server
+    ports:
+      - '6380:6379'
+    volumes:
+      - ./redis-tournament-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - bridge
+
 networks:
   bridge:
     driver: bridge

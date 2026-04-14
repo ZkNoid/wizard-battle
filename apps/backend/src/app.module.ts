@@ -23,7 +23,9 @@ import { MarketModule } from './market/market.module';
   imports: [
     GameSessionModule,
     ScheduleModule.forRoot(),
-    RedisModule,
+    RedisModule.forRoot({
+      url: process.env.REDIS_URL || 'redis://localhost:6379',
+    }),
     GameItemModule,
     GameCommitModule,
     UserInventoryModule,
