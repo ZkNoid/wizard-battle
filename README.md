@@ -1,4 +1,4 @@
-# Wizard Battle - Multi-Instance Game Server 1.1
+# Wizard Battle - Multi-Instance Game Server 1.2
 
 A real-time multiplayer wizard battle game with Redis-backed multi-instance architecture supporting horizontal scaling and cross-instance matchmaking.
 
