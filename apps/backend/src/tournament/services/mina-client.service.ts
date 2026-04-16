@@ -223,31 +223,77 @@ export class MinaClientService implements OnModuleInit {
   }
 
   async getTransactionStatus(
-    txHash: string
-  ): Promise<'pending' | 'included' | 'failed'> {
+    txHash: string,
+    blockLength: number = 20
+  ): Promise<'pending' | 'included' | 'failed' | 'unknown'> {
+    const graphqlUrl =
+      process.env.MINA_GRAPHQL_URL ||
+      'https://api.minascan.io/node/devnet/v1/graphql';
+
+    // Mirrors o1js checkZkappTransaction() — scans bestChain blocks for the
+    // hash instead of using transactionStatus(), which expects the full encoded
+    // zkapp command rather than just a hash and returns "address is invalid".
     try {
-      const response = await fetch(
-        process.env.MINA_GRAPHQL_URL ||
-          'https://api.minascan.io/node/devnet/v1/graphql',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-              query GetTransactionStatus($hash: String!) {
-                transactionStatus(zkappTransaction: $hash)
+      const response = await fetch(graphqlUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `{
+            bestChain(maxLength: ${blockLength}) {
+              transactions {
+                zkappCommands {
+                  hash
+                  failureReason {
+                    failures
+                    index
+                  }
+                }
               }
-            `,
-            variables: { hash: txHash },
-          }),
-        }
-      );
+            }
+          }`,
+        }),
+      });
+
+      if (!response.ok) {
+        this.logger.warn(
+          `GraphQL endpoint returned HTTP ${response.status} for tx ${txHash}`
+        );
+        return 'pending';
+      }
 
       const data = await response.json();
-      const status = data?.data?.transactionStatus;
 
-      if (status === 'INCLUDED') return 'included';
-      if (status === 'FAILED') return 'failed';
+      if (data?.errors?.length) {
+        this.logger.warn(
+          `GraphQL errors while scanning bestChain for tx ${txHash}: ${JSON.stringify(data.errors)}`
+        );
+        return 'pending';
+      }
+
+      const bestChain: Array<{
+        transactions: {
+          zkappCommands: Array<{
+            hash: string;
+            failureReason: Array<{ failures: string[]; index: number }> | null;
+          }>;
+        };
+      }> = data?.data?.bestChain ?? [];
+
+      for (const block of bestChain) {
+        for (const cmd of block.transactions.zkappCommands) {
+          if (cmd.hash === txHash) {
+            if (cmd.failureReason !== null && cmd.failureReason.length > 0) {
+              this.logger.warn(
+                `Transaction ${txHash} failed: ${JSON.stringify(cmd.failureReason)}`
+              );
+              return 'failed';
+            }
+            return 'included';
+          }
+        }
+      }
+
+      // Not found in the last blockLength blocks — still pending (or unknown)
       return 'pending';
     } catch (error) {
       this.logger.error(

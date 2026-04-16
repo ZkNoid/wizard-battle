@@ -119,6 +119,13 @@ export class TournamentController {
         );
       }
 
+      if (status === 'unknown') {
+        throw new HttpException(
+          `Transaction ${txHash} is not found on the network — it may have been dropped from the mempool`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
       if (status === 'pending') {
         throw new HttpException(
           `Transaction ${txHash} is still pending — wait for confirmation and retry`,

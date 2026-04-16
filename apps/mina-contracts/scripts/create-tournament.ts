@@ -470,40 +470,94 @@ async function main() {
   tournamentsMap.set(tournamentKey, newLeaf.hash());
   const newTournamentsRoot = tournamentsMap.getRoot().toString();
 
-  // Register tournament in the backend
+  // Register tournament in the backend (with retries for pending tx)
   console.log('\nRegistering tournament in backend...');
-  try {
-    const backendResponse = await fetch(`${BACKEND_URL}/tournament`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tournamentId: nextTournamentId.toString(),
-        ticketPrice: ticketPrice.toString(),
-        prize1Percent: 5000,
-        prize2Percent: 3000,
-        prize3Percent: 2000,
-        registrationStartSlot,
-        battleStartSlot,
-        battleEndSlot,
-        tournamentsRoot: newTournamentsRoot,
-        txHash: createResult.hash,
-      }),
-    });
+  const backendPayload = JSON.stringify({
+    tournamentId: nextTournamentId.toString(),
+    ticketPrice: ticketPrice.toString(),
+    prize1Percent: 5000,
+    prize2Percent: 3000,
+    prize3Percent: 2000,
+    registrationStartSlot,
+    battleStartSlot,
+    battleEndSlot,
+    tournamentsRoot: newTournamentsRoot,
+    txHash: createResult.hash,
+  });
 
-    if (!backendResponse.ok) {
+  const MAX_RETRIES = 12;
+  const INITIAL_DELAY_MS = 30_000; // 30 s — Mina blocks take ~3 min
+  const BACKOFF_MULTIPLIER = 1.5;
+  const MAX_DELAY_MS = 5 * 60_000; // 5 min cap
+
+  let attempt = 0;
+  let delayMs = INITIAL_DELAY_MS;
+  let backendRegistered = false;
+
+  while (attempt <= MAX_RETRIES) {
+    try {
+      const backendResponse = await fetch(`${BACKEND_URL}/tournament`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: backendPayload,
+      });
+
+      if (backendResponse.ok) {
+        const result = await backendResponse.json();
+        console.log(`Backend registration successful: ${result.message}`);
+        backendRegistered = true;
+        break;
+      }
+
       const errorBody = await backendResponse.text();
+
+      // 409 = transaction still pending — wait and retry
+      if (backendResponse.status === 409) {
+        if (attempt >= MAX_RETRIES) {
+          console.error(
+            `Backend registration failed after ${MAX_RETRIES} retries: transaction never confirmed. Last error: ${errorBody}`
+          );
+          break;
+        }
+        console.log(
+          `Attempt ${attempt + 1}/${MAX_RETRIES}: tx still pending. ` +
+            `Waiting ${Math.round(delayMs / 1000)}s before next retry...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        delayMs = Math.min(delayMs * BACKOFF_MULTIPLIER, MAX_DELAY_MS);
+        attempt++;
+        continue;
+      }
+
+      // Any other non-OK status is a hard failure — don't retry
       console.error(
         `Backend registration failed (${backendResponse.status}): ${errorBody}`
       );
-    } else {
-      const result = await backendResponse.json();
-      console.log(`Backend registration successful: ${result.message}`);
+      break;
+    } catch (err) {
+      console.error('Failed to reach backend:', err);
+      if (attempt >= MAX_RETRIES) {
+        console.error('Tournament was created on-chain but not in the backend DB.');
+        console.error(
+          'You may need to register it manually or wait for chain sync.'
+        );
+        break;
+      }
+      console.log(
+        `Network error on attempt ${attempt + 1}/${MAX_RETRIES}. ` +
+          `Waiting ${Math.round(delayMs / 1000)}s before next retry...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      delayMs = Math.min(delayMs * BACKOFF_MULTIPLIER, MAX_DELAY_MS);
+      attempt++;
     }
-  } catch (err) {
-    console.error('Failed to register tournament in backend:', err);
-    console.error('Tournament was created on-chain but not in the backend DB.');
-    console.error(
-      'You may need to register it manually or wait for chain sync.'
+  }
+
+  if (!backendRegistered) {
+    console.warn(
+      'Tournament was created on-chain but backend registration did not complete. ' +
+        'You may retry by calling the backend /tournament endpoint manually with txHash: ' +
+        createResult.hash
     );
   }
 
