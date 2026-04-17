@@ -203,6 +203,7 @@ jobs:
             --build-arg GAME_MARKET_DEPLOYMENT_BLOCK=${{ secrets.GAME_MARKET_DEPLOYMENT_BLOCK }} \
             --build-arg TOURNAMENT_APP_PORT=${{ secrets.TOURNAMENT_APP_PORT }} \
             --build-arg TOURNAMENT_CONTRACT_ADDRESS=${{ secrets.TOURNAMENT_CONTRACT_ADDRESS }} \
+            --build-arg TOURNAMENT_REDIS_URL=${{ secrets.TOURNAMENT_REDIS_URL }} \
             -t ${{ steps.calc-container.outputs.container_name }} .
 
       - name: Save Docker image to tar

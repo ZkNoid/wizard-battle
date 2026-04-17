@@ -119,6 +119,16 @@ services:
     networks:
       - bridge
 
+  redis-tournament:
+    image: redis:latest
+    container_name: redis-tournament-server
+    restart: unless-stopped
+    volumes:
+      - ./redis/redis-tournament-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - bridge
+
   # redis-orbirium:
   #   image: redis:latest
   #   container_name: redis-orbirium
