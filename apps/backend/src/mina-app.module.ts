@@ -14,7 +14,7 @@ import { TournamentModule } from './tournament/tournament.module';
       }
     ),
     RedisModule.forRoot({
-      url: process.env.TOURNAMENT_REDIS_URL || 'redis://localhost:6380',
+      url: process.env.TOURNAMENT_REDIS_URL || 'redis://redis-tournament:6379',
     }),
     TournamentModule,
   ],
