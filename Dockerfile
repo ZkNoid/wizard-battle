@@ -26,6 +26,7 @@ ARG RPC_WS_URL
 ARG GAME_MARKET_DEPLOYMENT_BLOCK
 ARG TOURNAMENT_APP_PORT
 ARG TOURNAMENT_CONTRACT_ADDRESS
+ARG TOURNAMENT_REDIS_URL
 
 WORKDIR /usr/share/nestjs/main
 COPY . .
@@ -90,6 +91,7 @@ echo "RPC_WS_URL=${RPC_WS_URL}" >> /usr/share/nestjs/main/.env
 echo "GAME_MARKET_DEPLOYMENT_BLOCK=${GAME_MARKET_DEPLOYMENT_BLOCK}" >> /usr/share/nestjs/main/.env
 echo "TOURNAMENT_APP_PORT=${TOURNAMENT_APP_PORT:-3032}" >> /usr/share/nestjs/main/.env
 echo "TOURNAMENT_CONTRACT_ADDRESS=${TOURNAMENT_CONTRACT_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "TOURNAMENT_REDIS_URL=${TOURNAMENT_REDIS_URL:-redis://redis-tournament:6379}" >> /usr/share/nestjs/main/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/backend/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/frontend/.env
 #. .env
