@@ -405,6 +405,13 @@ export class TournamentStateService {
       );
     }
 
+    if (tournament.participants.get(playerPubKey) === true) {
+      this.logger.warn(
+        `buyTicket for ${playerPubKey} already applied to tournament ${tournamentId}, skipping`
+      );
+      return;
+    }
+
     tournament.participants.set(playerPubKey, true);
 
     const ticketPrice = BigInt(tournament.verified.ticketPrice);
@@ -447,6 +454,13 @@ export class TournamentStateService {
       throw new NotFoundException(
         `Cannot apply claimPrize: Player ${playerPubKey} is not a winner`
       );
+    }
+
+    if (winnerInfo.claimed) {
+      this.logger.warn(
+        `claimPrize for ${playerPubKey} already applied to tournament ${tournamentId}, skipping`
+      );
+      return;
     }
 
     winnerInfo.claimed = true;

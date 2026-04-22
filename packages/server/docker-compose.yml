@@ -9,6 +9,32 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    command: mongod --replSet rs0 --bind_ip_all
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - bridge
+
+  mongo-rs-init:
+    image: mongo:latest
+    container_name: mongo-rs-init
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      - MONGO_USERNAME=${MONGO_USERNAME}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
+    command: >
+      mongosh --host mongodb:27017
+        -u ${MONGO_USERNAME}
+        -p ${MONGO_PASSWORD}
+        --authenticationDatabase admin
+        --eval "try { rs.status(); print('rs0 already initialized') } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}); print('rs0 initialized') }"
+    restart: on-failure
     networks:
       - bridge
 

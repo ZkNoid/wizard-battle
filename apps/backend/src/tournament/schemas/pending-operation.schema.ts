@@ -62,3 +62,16 @@ export const PendingOperationSchema =
 PendingOperationSchema.index({ tournamentId: 1, status: 1 });
 PendingOperationSchema.index({ tournamentId: 1, playerPubKey: 1, type: 1 });
 PendingOperationSchema.index({ status: 1, createdAt: 1 });
+
+// Prevents duplicate active operations at the DB level.
+// Only one queued/proving/submitted operation per (tournament, player, type) is allowed.
+PendingOperationSchema.index(
+  { tournamentId: 1, playerPubKey: 1, type: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: { $in: ['queued', 'proving', 'submitted'] },
+    },
+    name: 'unique_active_operation',
+  }
+);
