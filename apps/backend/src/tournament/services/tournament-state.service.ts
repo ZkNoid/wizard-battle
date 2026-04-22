@@ -5,8 +5,8 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { InjectModel, InjectConnection } from '@nestjs/mongoose';
-import { Model, Types, Connection } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
 import {
   Tournament,
   TournamentDocument,
@@ -52,17 +52,58 @@ export class TournamentStateService {
   private static readonly PLATFORM_FEE_BASIS_POINTS = 500n; // 5%
   private static readonly BASIS_POINTS_DIVISOR = 10000n;
 
+  private static readonly OPTIMISTIC_RETRY_LIMIT = 5;
+
   constructor(
     @InjectModel(Tournament.name)
     private readonly tournamentModel: Model<TournamentDocument>,
     @InjectModel(PendingOperation.name)
     private readonly pendingOpModel: Model<PendingOperationDocument>,
-    @InjectConnection()
-    private readonly connection: Connection,
     private readonly merkleService: MerkleService,
     private readonly redisService: RedisService,
     private readonly operationEventsService: OperationEventsService
   ) {}
+
+  private isDuplicateKeyError(err: unknown): boolean {
+    return (
+      typeof err === 'object' &&
+      err !== null &&
+      (err as { code?: number }).code === 11000
+    );
+  }
+
+  private isVersionError(err: unknown): boolean {
+    return (
+      typeof err === 'object' &&
+      err !== null &&
+      (err as { name?: string }).name === 'VersionError'
+    );
+  }
+
+  private async retryOnVersionConflict<T>(
+    fn: () => Promise<T>,
+    label: string
+  ): Promise<T> {
+    let lastErr: unknown;
+    for (
+      let attempt = 1;
+      attempt <= TournamentStateService.OPTIMISTIC_RETRY_LIMIT;
+      attempt++
+    ) {
+      try {
+        return await fn();
+      } catch (err) {
+        if (!this.isVersionError(err)) {
+          throw err;
+        }
+        lastErr = err;
+        this.logger.warn(
+          `Optimistic concurrency conflict on ${label} (attempt ${attempt}/${TournamentStateService.OPTIMISTIC_RETRY_LIMIT}), retrying`
+        );
+      }
+    }
+    throw lastErr;
+  }
 
   private calculatePrizeContribution(ticketPrice: bigint): bigint {
     return (
@@ -203,55 +244,35 @@ export class TournamentStateService {
       }
     }
 
-    const session = await this.connection.startSession();
+    let saved: PendingOperationDocument;
     try {
-      const saved = await session.withTransaction(async () => {
-        const existingPending = await this.pendingOpModel
-          .findOne({
-            tournamentId: dto.tournamentId,
-            playerPubKey: dto.playerPubKey,
-            type: dto.type,
-            status: {
-              $in: [
-                OperationStatus.Queued,
-                OperationStatus.Proving,
-                OperationStatus.Submitted,
-              ],
-            },
-          })
-          .session(session);
-
-        if (existingPending) {
-          throw new ConflictException(
-            `Player ${dto.playerPubKey} already has a pending ${dto.type} operation`
-          );
-        }
-
-        const pendingOp = new this.pendingOpModel({
-          tournamentId: dto.tournamentId,
-          type: dto.type,
-          playerPubKey: dto.playerPubKey,
-          status: OperationStatus.Queued,
-          retryCount: 0,
-        });
-
-        return pendingOp.save({ session });
+      saved = await this.pendingOpModel.create({
+        tournamentId: dto.tournamentId,
+        type: dto.type,
+        playerPubKey: dto.playerPubKey,
+        status: OperationStatus.Queued,
+        retryCount: 0,
       });
-
-      if (!saved) {
-        throw new Error('Failed to create pending operation');
+    } catch (err) {
+      // The `unique_active_operation` partial index guarantees that only one
+      // queued/proving/submitted op per (tournamentId, playerPubKey, type)
+      // can exist. A concurrent insert that loses the race surfaces here as
+      // a duplicate key error, which we translate to a 409.
+      if (this.isDuplicateKeyError(err)) {
+        throw new ConflictException(
+          `Player ${dto.playerPubKey} already has a pending ${dto.type} operation`
+        );
       }
-
-      this.logger.log(
-        `Created pending operation ${saved._id} for ${dto.type} on tournament ${dto.tournamentId}`
-      );
-
-      await this.notifyProofQueue(dto.tournamentId);
-
-      return saved;
-    } finally {
-      await session.endSession();
+      throw err;
     }
+
+    this.logger.log(
+      `Created pending operation ${saved._id} for ${dto.type} on tournament ${dto.tournamentId}`
+    );
+
+    await this.notifyProofQueue(dto.tournamentId);
+
+    return saved;
   }
 
   async updateOperationStatus(
@@ -294,74 +315,31 @@ export class TournamentStateService {
       throw new NotFoundException(`Operation ${opId} not found`);
     }
 
-    const session = await this.connection.startSession();
-    try {
-      await session.withTransaction(async () => {
-        await this.updateOperationStatusWithSession(
-          opId,
-          OperationStatus.Confirmed,
-          { txHash },
-          session
-        );
-
-        if (op.type === OperationType.BuyTicket) {
-          await this.applyBuyTicketToVerified(
-            op.tournamentId,
-            op.playerPubKey,
-            session
-          );
-        }
-
-        if (op.type === OperationType.ClaimPrize) {
-          await this.applyClaimPrizeToVerified(
-            op.tournamentId,
-            op.playerPubKey,
-            session
-          );
-        }
-      });
-
-      this.logger.log(`Confirmed operation ${opId} with tx ${txHash}`);
-    } finally {
-      await session.endSession();
-    }
-  }
-
-  private async updateOperationStatusWithSession(
-    opId: string | Types.ObjectId,
-    status: OperationStatus,
-    updates:
-      | Partial<{
-          txHash: string;
-          error: string;
-          retryCount: number;
-          unsignedTxJson: string;
-        }>
-      | undefined,
-    session: import('mongoose').ClientSession
-  ): Promise<PendingOperationDocument | null> {
-    const updateData: Record<string, unknown> = { status, ...updates };
-    if (status === OperationStatus.Confirmed) {
-      updateData.confirmedAt = new Date();
+    // Order matters: apply the verified-state mutation FIRST, then mark the
+    // pending op as Confirmed. Both apply functions are idempotent (they
+    // short-circuit if the change is already present), so if this process
+    // crashes between the two steps the op stays in `Submitted` and the
+    // recovery path will re-run the apply (no-op) before flipping the status.
+    // The reverse order would risk losing the verified-state update entirely.
+    if (op.type === OperationType.BuyTicket) {
+      await this.retryOnVersionConflict(
+        () => this.applyBuyTicketToVerified(op.tournamentId, op.playerPubKey),
+        `applyBuyTicket(${op.tournamentId}, ${op.playerPubKey})`
+      );
     }
 
-    const updated = await this.pendingOpModel
-      .findByIdAndUpdate(opId, updateData, { new: true, session })
-      .exec();
-
-    if (updated) {
-      this.operationEventsService.emit({
-        operationId: updated._id.toString(),
-        tournamentId: updated.tournamentId,
-        status: updated.status,
-        unsignedTxJson: updated.unsignedTxJson,
-        txHash: updated.txHash,
-        error: updated.error,
-        updatedAt: updated.updatedAt,
-      });
+    if (op.type === OperationType.ClaimPrize) {
+      await this.retryOnVersionConflict(
+        () => this.applyClaimPrizeToVerified(op.tournamentId, op.playerPubKey),
+        `applyClaimPrize(${op.tournamentId}, ${op.playerPubKey})`
+      );
     }
 
-    return updated;
+    await this.updateOperationStatus(opId, OperationStatus.Confirmed, {
+      txHash,
+    });
+
+    this.logger.log(`Confirmed operation ${opId} with tx ${txHash}`);
   }
 
   async failOperation(opId: string, error: string): Promise<void> {
@@ -391,12 +369,10 @@ export class TournamentStateService {
 
   private async applyBuyTicketToVerified(
     tournamentId: string,
-    playerPubKey: string,
-    session?: import('mongoose').ClientSession
+    playerPubKey: string
   ): Promise<void> {
     const tournament = await this.tournamentModel
       .findOne({ tournamentId })
-      .session(session ?? null)
       .exec();
 
     if (!tournament) {
@@ -427,7 +403,10 @@ export class TournamentStateService {
     );
     tournament.verified.participantsRoot = participantsMap.getRoot().toString();
 
-    await tournament.save({ session });
+    // `optimisticConcurrency: true` on the schema makes save() include __v in
+    // the filter; a concurrent writer that already bumped __v will cause
+    // VersionError, which the caller retries.
+    await tournament.save();
     this.logger.log(
       `Applied buyTicket for ${playerPubKey} to tournament ${tournamentId}`
     );
@@ -435,12 +414,10 @@ export class TournamentStateService {
 
   private async applyClaimPrizeToVerified(
     tournamentId: string,
-    playerPubKey: string,
-    session?: import('mongoose').ClientSession
+    playerPubKey: string
   ): Promise<void> {
     const tournament = await this.tournamentModel
       .findOne({ tournamentId })
-      .session(session ?? null)
       .exec();
 
     if (!tournament) {
@@ -469,7 +446,7 @@ export class TournamentStateService {
     const winnersMap = this.merkleService.buildWinnersMap(tournament.winners);
     tournament.verified.winnersRoot = winnersMap.getRoot().toString();
 
-    await tournament.save({ session });
+    await tournament.save();
     this.logger.log(
       `Applied claimPrize for ${playerPubKey} in tournament ${tournamentId}`
     );

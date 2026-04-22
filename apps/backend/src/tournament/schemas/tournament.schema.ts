@@ -68,7 +68,11 @@ export class WinnerInfo {
 
 export const WinnerInfoSchema = SchemaFactory.createForClass(WinnerInfo);
 
-@Schema({ timestamps: true, collection: 'tournaments' })
+@Schema({
+  timestamps: true,
+  collection: 'tournaments',
+  optimisticConcurrency: true,
+})
 export class Tournament {
   @Prop({ required: true, unique: true, index: true })
   tournamentId!: string;
