@@ -79,9 +79,6 @@ services:
     container_name: nestjs-main
     #    ports:
     #      - "3030:3030"
-    depends_on:
-      redis-server:
-        condition: service_healthy
     volumes:
       - data:/usr/share/temp
     networks:
@@ -92,6 +89,9 @@ services:
     container_name: nestjs-dev
     #    ports:
     #      - "3031:3031"
+    depends_on:
+      redis-tournament:
+        condition: service_healthy
     volumes:
       - data:/usr/share/temp
     networks:
