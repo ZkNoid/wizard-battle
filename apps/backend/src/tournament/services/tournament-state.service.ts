@@ -330,12 +330,14 @@ export class TournamentStateService {
   private async updateOperationStatusWithSession(
     opId: string | Types.ObjectId,
     status: OperationStatus,
-    updates: Partial<{
-      txHash: string;
-      error: string;
-      retryCount: number;
-      unsignedTxJson: string;
-    }> | undefined,
+    updates:
+      | Partial<{
+          txHash: string;
+          error: string;
+          retryCount: number;
+          unsignedTxJson: string;
+        }>
+      | undefined,
     session: import('mongoose').ClientSession
   ): Promise<PendingOperationDocument | null> {
     const updateData: Record<string, unknown> = { status, ...updates };
@@ -531,7 +533,8 @@ export class TournamentStateService {
 
     const totalPrizePercent =
       config.prize1Percent + config.prize2Percent + config.prize3Percent;
-    if (totalPrizePercent > 100) {
+    // 10000 base points = 100%
+    if (totalPrizePercent > 10000) {
       throw new BadRequestException(
         `Prize percentages sum to ${totalPrizePercent}%, must not exceed 100%`
       );
@@ -545,7 +548,9 @@ export class TournamentStateService {
     }
 
     if (config.registrationStartSlot < 0) {
-      throw new BadRequestException('Registration start slot cannot be negative');
+      throw new BadRequestException(
+        'Registration start slot cannot be negative'
+      );
     }
     if (config.battleStartSlot <= config.registrationStartSlot) {
       throw new BadRequestException(
