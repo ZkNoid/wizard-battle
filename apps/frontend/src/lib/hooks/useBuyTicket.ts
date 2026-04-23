@@ -11,9 +11,10 @@ import type { ITournament } from '@/lib/types/ITournament';
 // the call-site rather than re-declaring the global (which would conflict).
 interface AuroWithSign {
   sendTransaction: (params: {
+    onlySign?: boolean;
     transaction: unknown;
     feePayer?: { fee?: string; memo?: string };
-  }) => Promise<unknown>;
+  }) => Promise<{ signedData: unknown }>;
 }
 
 export type BuyTicketStatus =
@@ -147,6 +148,7 @@ export function useBuyTicket(): UseBuyTicketReturn {
                   }
 
                   const signResult = await mina.sendTransaction({
+                    onlySign: true,
                     transaction: parsedTx,
                     feePayer: { fee: '0.1', memo: 'Buy tournament ticket' },
                   });
@@ -158,7 +160,7 @@ export function useBuyTicket(): UseBuyTicketReturn {
                     await tournamentApi.submitTransaction(
                       tournament.id,
                       operationId,
-                      JSON.stringify(signResult)
+                      JSON.stringify(signResult.signedData)
                     );
 
                   if (!mountedRef.current) return;
