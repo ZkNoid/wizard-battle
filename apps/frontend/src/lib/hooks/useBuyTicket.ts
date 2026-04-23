@@ -6,11 +6,11 @@ import * as tournamentApi from '@/lib/services/tournament-api';
 import type { ITournament } from '@/lib/types/ITournament';
 
 // mina-appkit already declares Window.mina as MinaProvider, which only exposes
-// account/network helpers.  signTransaction is an Auro-specific extension that
+// account/network helpers.  sendTransaction is an Auro-specific extension that
 // is not part of that interface, so we define a narrow local type and cast at
 // the call-site rather than re-declaring the global (which would conflict).
 interface AuroWithSign {
-  signTransaction: (params: {
+  sendTransaction: (params: {
     transaction: unknown;
     feePayer?: { fee?: string; memo?: string };
   }) => Promise<unknown>;
@@ -128,7 +128,9 @@ export function useBuyTicket(): UseBuyTicketReturn {
                 try {
                   setStatus('signing');
 
-                  const mina = window.mina as (AuroWithSign & typeof window.mina) | undefined;
+                  const mina = window.mina as
+                    | (AuroWithSign & typeof window.mina)
+                    | undefined;
                   if (!mina) {
                     throw new Error(
                       'Auro wallet not found. Please install the Auro extension.'
@@ -139,10 +141,12 @@ export function useBuyTicket(): UseBuyTicketReturn {
                   try {
                     parsedTx = JSON.parse(event.unsignedTxJson) as unknown;
                   } catch {
-                    throw new Error('Received malformed transaction from server');
+                    throw new Error(
+                      'Received malformed transaction from server'
+                    );
                   }
 
-                  const signResult = await mina.signTransaction({
+                  const signResult = await mina.sendTransaction({
                     transaction: parsedTx,
                     feePayer: { fee: '0.1', memo: 'Buy tournament ticket' },
                   });
