@@ -131,9 +131,7 @@ export class ProofGeneratorService implements OnModuleInit {
 
   async processQueue(tournamentId: string): Promise<void> {
     if (!this.isCompiled) {
-      this.logger.warn(
-        'Contract not compiled, cannot process queue'
-      );
+      this.logger.warn('Contract not compiled, cannot process queue');
       return;
     }
 
@@ -174,9 +172,7 @@ export class ProofGeneratorService implements OnModuleInit {
     }
   }
 
-  private async processOperation(
-    op: PendingOperationDocument
-  ): Promise<void> {
+  private async processOperation(op: PendingOperationDocument): Promise<void> {
     this.logger.log(
       `Processing operation ${op._id} (${op.type}) for tournament ${op.tournamentId}`
     );
@@ -225,8 +221,10 @@ export class ProofGeneratorService implements OnModuleInit {
       throw new Error(`Tournament ${op.tournamentId} not found`);
     }
 
-    const allTournaments = await this.tournamentStateService.getAllTournaments();
-    const tournamentsMap = this.merkleService.buildTournamentsMap(allTournaments);
+    const allTournaments =
+      await this.tournamentStateService.getAllTournaments();
+    const tournamentsMap =
+      this.merkleService.buildTournamentsMap(allTournaments);
 
     const { tournamentWitness } = this.merkleService.getTournamentWitness(
       tournamentsMap,
@@ -267,9 +265,7 @@ export class ProofGeneratorService implements OnModuleInit {
     );
   }
 
-  private async processBuyTicket(
-    op: PendingOperationDocument
-  ): Promise<void> {
+  private async processBuyTicket(op: PendingOperationDocument): Promise<void> {
     const {
       tournament,
       tournamentWitness,
@@ -283,7 +279,12 @@ export class ProofGeneratorService implements OnModuleInit {
       tournament.participants
     );
 
-    if (!this.merkleService.verifyParticipantNotRegistered(participantsMap, op.playerPubKey)) {
+    if (
+      !this.merkleService.verifyParticipantNotRegistered(
+        participantsMap,
+        op.playerPubKey
+      )
+    ) {
       throw new Error(`Player ${op.playerPubKey} is already registered`);
     }
 
@@ -297,7 +298,7 @@ export class ProofGeneratorService implements OnModuleInit {
 
     const tx = await Mina.transaction(playerPubKey, async () => {
       const playerUpdate = AccountUpdate.createSigned(playerPubKey);
-      playerUpdate.send({ to: contractAddress, amount: ticketPrice });
+      playerUpdate.balance.subInPlace(ticketPrice);
 
       await contract.buyTicket(
         Field(op.tournamentId),
@@ -339,9 +340,7 @@ export class ProofGeneratorService implements OnModuleInit {
     );
   }
 
-  private async processClaimPrize(
-    op: PendingOperationDocument
-  ): Promise<void> {
+  private async processClaimPrize(op: PendingOperationDocument): Promise<void> {
     const {
       tournament,
       tournamentWitness,
@@ -398,12 +397,16 @@ export class ProofGeneratorService implements OnModuleInit {
 
     const status = statusMap[tournament.verified.status];
     if (!status) {
-      throw new Error(`Unknown tournament status: ${tournament.verified.status}`);
+      throw new Error(
+        `Unknown tournament status: ${tournament.verified.status}`
+      );
     }
 
     return new TournamentLeaf({
       status,
-      registrationStartSlot: UInt32.from(tournament.verified.registrationStartSlot),
+      registrationStartSlot: UInt32.from(
+        tournament.verified.registrationStartSlot
+      ),
       battleStartSlot: UInt32.from(tournament.verified.battleStartSlot),
       battleEndSlot: UInt32.from(tournament.verified.battleEndSlot),
       ticketPrice: UInt64.from(BigInt(tournament.verified.ticketPrice)),
