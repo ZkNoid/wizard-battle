@@ -31,7 +31,7 @@ export type ITournamentAsset =
 
 export interface ITournamentCurrencyAsset {
   type: 'currency';
-  currency: 'gold' | 'usdc';
+  currency: 'gold' | 'usdc' | 'mina';
   amount: number;
 }
 

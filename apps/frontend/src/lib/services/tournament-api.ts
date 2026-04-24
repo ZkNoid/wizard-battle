@@ -28,6 +28,17 @@ export interface TournamentResponse {
   pendingPlayers: string[];
 }
 
+/** Matches backend `ITournamentLeaderboardEntry` (apps/common). */
+export interface TournamentLeaderboardEntry {
+  place: number;
+  walletAddress: string;
+  wins: number;
+  losses: number;
+  totalGames: number;
+  winRate: number;
+  prize: { type: 'currency'; currency: string; amount: number }[];
+}
+
 export interface BuyTicketResponse {
   operationId: string;
   status: string;
@@ -81,6 +92,21 @@ export async function fetchTournament(
   }
 
   return res.json() as Promise<TournamentResponse>;
+}
+
+export async function fetchTournamentLeaderboard(
+  tournamentId: string
+): Promise<TournamentLeaderboardEntry[]> {
+  const res = await fetch(`${TOURNAMENT_BASE}/${tournamentId}/leaderboard`);
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(
+      (body as { message?: string } | null)?.message ?? `HTTP ${res.status}`
+    );
+  }
+
+  return res.json() as Promise<TournamentLeaderboardEntry[]>;
 }
 
 export async function buyTicket(
