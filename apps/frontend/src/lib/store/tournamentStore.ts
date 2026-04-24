@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import { slotToCalendarDate } from '@/lib/mina/slotCalendar';
 import {
   fetchAllTournaments,
+  fetchTournamentChainStatus,
   type TournamentResponse,
 } from '@/lib/services/tournament-api';
 import type { ITournament, ITournamentAsset } from '@/lib/types/ITournament';
@@ -46,13 +48,26 @@ function buildTicketCost(
 
 export function mapTournamentResponse(
   response: TournamentResponse,
-  playerPubKey?: string
+  playerPubKey?: string,
+  anchor?: { slot: number; timeMs: number } | null
 ): ITournament {
+  const hasAnchor =
+    anchor != null &&
+    Number.isFinite(anchor.slot) &&
+    Number.isFinite(anchor.timeMs);
+
+  const dateFrom = hasAnchor
+    ? slotToCalendarDate(response.battleStartSlot, anchor)
+    : '';
+  const dateTo = hasAnchor
+    ? slotToCalendarDate(response.battleEndSlot, anchor)
+    : '';
+
   return {
     id: response.tournamentId,
     title: `Tournament #${response.tournamentId}`,
-    dateFrom: '',
-    dateTo: '',
+    dateFrom,
+    dateTo,
     startDate: String(response.registrationStartSlot),
     status: mapStatus(response.status),
     userStatus: mapUserStatus(response, playerPubKey),
@@ -84,9 +99,21 @@ export const useTournamentStore = create<TournamentStore>()((set) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const raw = await fetchAllTournaments();
+      const [raw, chainStatus] = await Promise.all([
+        fetchAllTournaments(),
+        fetchTournamentChainStatus().catch(() => null),
+      ]);
+
+      const anchorTimeMs = Date.now();
+      const anchor =
+        chainStatus?.connected &&
+        chainStatus.currentSlot != null &&
+        Number.isFinite(chainStatus.currentSlot)
+          ? { slot: chainStatus.currentSlot, timeMs: anchorTimeMs }
+          : null;
+
       const tournaments = raw.map((r) =>
-        mapTournamentResponse(r, playerPubKey)
+        mapTournamentResponse(r, playerPubKey, anchor)
       );
       set({ raw, tournaments, isLoading: false });
     } catch (error) {

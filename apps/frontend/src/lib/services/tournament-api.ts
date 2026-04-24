@@ -5,6 +5,13 @@ const BACKEND_URL =
 
 const TOURNAMENT_BASE = `${BACKEND_URL}/tournament`;
 
+export interface TournamentChainStatusResponse {
+  connected: boolean;
+  currentSlot: number | null;
+  contractAddress: string | null;
+  proofGeneratorReady: boolean;
+}
+
 export interface TournamentResponse {
   tournamentId: string;
   status: string;
@@ -33,6 +40,19 @@ export interface OperationStreamEvent {
   txHash?: string;
   error?: string;
   updatedAt: string;
+}
+
+export async function fetchTournamentChainStatus(): Promise<TournamentChainStatusResponse> {
+  const res = await fetch(`${TOURNAMENT_BASE}/status`);
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(
+      (body as { message?: string } | null)?.message ?? `HTTP ${res.status}`
+    );
+  }
+
+  return res.json() as Promise<TournamentChainStatusResponse>;
 }
 
 export async function fetchAllTournaments(): Promise<TournamentResponse[]> {
