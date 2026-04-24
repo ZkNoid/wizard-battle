@@ -50,5 +50,7 @@ export interface ITournamentLeaderboardItem {
   place: number;
   walletAddress: string;
   wins: number;
+  losses: number;
+  score: number;
   prize: ITournamentAsset[];
 }

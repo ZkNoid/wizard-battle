@@ -36,6 +36,7 @@ export interface TournamentLeaderboardEntry {
   losses: number;
   totalGames: number;
   winRate: number;
+  score: number;
   prize: { type: 'currency'; currency: string; amount: number }[];
 }
 

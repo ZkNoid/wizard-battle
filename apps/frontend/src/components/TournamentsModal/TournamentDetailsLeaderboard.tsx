@@ -83,6 +83,8 @@ export function TournamentDetailsLeaderboard({
             place: e.place,
             walletAddress: e.walletAddress,
             wins: e.wins,
+            losses: e.losses,
+            score: e.score,
             prize: mapPrizeToAssets(e.prize),
           }))
         );
@@ -117,7 +119,7 @@ export function TournamentDetailsLeaderboard({
         <div className="font-pixel text-main-gray border-main-gray/20 grid grid-cols-4 gap-2 border-b pb-2 pl-2 pr-8 text-sm">
           <span>Place</span>
           <span>Wallet</span>
-          <span className="text-center">Wins</span>
+          <span className="text-center">Score</span>
           <span className="text-right">Prize</span>
         </div>
 
@@ -164,9 +166,12 @@ export function TournamentDetailsLeaderboard({
                           {shortenAddress(item.walletAddress)}
                         </span>
 
-                        {/* Wins */}
-                        <span className="font-pixel-klein flex items-center justify-center text-sm font-bold">
-                          {item.wins}
+                        {/* Score (100 + W − L, min 0) */}
+                        <span className="font-pixel-klein flex flex-col items-center justify-center text-sm font-bold leading-tight">
+                          <span>{item.score}</span>
+                          <span className="text-main-gray/50 text-[10px] font-normal">
+                            {item.wins}W-{item.losses}L
+                          </span>
                         </span>
 
                         {/* Prize */}

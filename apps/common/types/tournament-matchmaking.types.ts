@@ -11,5 +11,7 @@ export interface ITournamentLeaderboardEntry {
   losses: number;
   totalGames: number;
   winRate: number;
+  /** max(0, 100 + wins - losses); primary ranking metric */
+  score: number;
   prize: { type: 'currency'; currency: string; amount: number }[];
 }
