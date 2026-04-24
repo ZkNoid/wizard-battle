@@ -8,6 +8,14 @@ import {
 import { TournamentStateService } from './tournament-state.service.js';
 import { ITournamentLeaderboardEntry } from '../../../../common/types/tournament-matchmaking.types.js';
 
+/** Ranking score: baseline 100 plus net wins, floored at 0. */
+export function tournamentLeaderboardScore(
+  wins: number,
+  losses: number
+): number {
+  return Math.max(0, 100 + wins - losses);
+}
+
 @Injectable()
 export class TournamentLeaderboardService {
   private readonly logger = new Logger(TournamentLeaderboardService.name);
@@ -20,11 +28,23 @@ export class TournamentLeaderboardService {
 
   /**
    * Aggregates match results for a tournament into a ranked leaderboard.
-   * Ranking is by win rate (wins / total games), descending.
+   * Includes registered participants who have no recorded matches (0/0).
+   * Ranking by {@link tournamentLeaderboardScore} (desc), then wins, fewer
+   * losses, wallet — so an idle registrant (100) can rank above a losing record.
    */
   async getLeaderboard(
     tournamentId: string
   ): Promise<ITournamentLeaderboardEntry[]> {
+    const tournament =
+      await this.tournamentStateService.getVerifiedState(tournamentId);
+
+    const registeredWallets =
+      tournament !== null
+        ? Array.from(tournament.participants.keys()).filter(
+            (key) => tournament.participants.get(key) === true
+          )
+        : [];
+
     const winAgg = await this.tournamentMatchModel.aggregate([
       { $match: { tournamentId } },
       { $group: { _id: '$winnerId', wins: { $sum: 1 } } },
@@ -45,7 +65,11 @@ export class TournamentLeaderboardService {
       lossMap.set(row._id, row.losses);
     }
 
-    const allPlayers = new Set([...winMap.keys(), ...lossMap.keys()]);
+    const allPlayers = new Set<string>([
+      ...registeredWallets,
+      ...winMap.keys(),
+      ...lossMap.keys(),
+    ]);
 
     const entries: Omit<ITournamentLeaderboardEntry, 'place' | 'prize'>[] = [];
     for (const wallet of allPlayers) {
@@ -53,18 +77,24 @@ export class TournamentLeaderboardService {
       const losses = lossMap.get(wallet) ?? 0;
       const totalGames = wins + losses;
       const winRate = totalGames > 0 ? wins / totalGames : 0;
+      const score = tournamentLeaderboardScore(wins, losses);
 
-      entries.push({ walletAddress: wallet, wins, losses, totalGames, winRate });
+      entries.push({
+        walletAddress: wallet,
+        wins,
+        losses,
+        totalGames,
+        winRate,
+        score,
+      });
     }
 
     entries.sort((a, b) => {
-      if (b.winRate !== a.winRate) return b.winRate - a.winRate;
+      if (b.score !== a.score) return b.score - a.score;
       if (b.wins !== a.wins) return b.wins - a.wins;
-      return a.totalGames - b.totalGames;
+      if (a.losses !== b.losses) return a.losses - b.losses;
+      return a.walletAddress.localeCompare(b.walletAddress);
     });
-
-    const tournament =
-      await this.tournamentStateService.getVerifiedState(tournamentId);
     const prizePool = tournament
       ? BigInt(tournament.verified.prizePool)
       : BigInt(0);

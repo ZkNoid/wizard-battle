@@ -5,6 +5,13 @@ const BACKEND_URL =
 
 const TOURNAMENT_BASE = `${BACKEND_URL}/tournament`;
 
+export interface TournamentChainStatusResponse {
+  connected: boolean;
+  currentSlot: number | null;
+  contractAddress: string | null;
+  proofGeneratorReady: boolean;
+}
+
 export interface TournamentResponse {
   tournamentId: string;
   status: string;
@@ -21,6 +28,18 @@ export interface TournamentResponse {
   pendingPlayers: string[];
 }
 
+/** Matches backend `ITournamentLeaderboardEntry` (apps/common). */
+export interface TournamentLeaderboardEntry {
+  place: number;
+  walletAddress: string;
+  wins: number;
+  losses: number;
+  totalGames: number;
+  winRate: number;
+  score: number;
+  prize: { type: 'currency'; currency: string; amount: number }[];
+}
+
 export interface BuyTicketResponse {
   operationId: string;
   status: string;
@@ -33,6 +52,19 @@ export interface OperationStreamEvent {
   txHash?: string;
   error?: string;
   updatedAt: string;
+}
+
+export async function fetchTournamentChainStatus(): Promise<TournamentChainStatusResponse> {
+  const res = await fetch(`${TOURNAMENT_BASE}/status`);
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(
+      (body as { message?: string } | null)?.message ?? `HTTP ${res.status}`
+    );
+  }
+
+  return res.json() as Promise<TournamentChainStatusResponse>;
 }
 
 export async function fetchAllTournaments(): Promise<TournamentResponse[]> {
@@ -61,6 +93,21 @@ export async function fetchTournament(
   }
 
   return res.json() as Promise<TournamentResponse>;
+}
+
+export async function fetchTournamentLeaderboard(
+  tournamentId: string
+): Promise<TournamentLeaderboardEntry[]> {
+  const res = await fetch(`${TOURNAMENT_BASE}/${tournamentId}/leaderboard`);
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(
+      (body as { message?: string } | null)?.message ?? `HTTP ${res.status}`
+    );
+  }
+
+  return res.json() as Promise<TournamentLeaderboardEntry[]>;
 }
 
 export async function buyTicket(

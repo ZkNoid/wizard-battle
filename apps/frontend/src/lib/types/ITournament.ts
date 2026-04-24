@@ -31,7 +31,7 @@ export type ITournamentAsset =
 
 export interface ITournamentCurrencyAsset {
   type: 'currency';
-  currency: 'gold' | 'usdc';
+  currency: 'gold' | 'usdc' | 'mina';
   amount: number;
 }
 
@@ -50,5 +50,7 @@ export interface ITournamentLeaderboardItem {
   place: number;
   walletAddress: string;
   wins: number;
+  losses: number;
+  score: number;
   prize: ITournamentAsset[];
 }

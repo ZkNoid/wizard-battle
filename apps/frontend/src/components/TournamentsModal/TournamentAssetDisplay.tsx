@@ -9,6 +9,19 @@ interface TournamentAssetDisplayProps {
 
 export function TournamentAssetDisplay({ asset, className }: TournamentAssetDisplayProps) {
   if (asset.type === 'currency') {
+    if (asset.currency === 'mina') {
+      return (
+        <span
+          className={cn(
+            'font-pixel-klein text-sm font-bold tabular-nums',
+            className
+          )}
+        >
+          {asset.amount.toLocaleString()} MINA
+        </span>
+      );
+    }
+
     const icon =
       asset.currency === 'gold'
         ? '/icons/gold-coin.png'
