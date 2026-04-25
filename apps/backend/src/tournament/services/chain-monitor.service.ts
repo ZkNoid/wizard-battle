@@ -253,6 +253,11 @@ export class ChainMonitorService implements OnModuleInit {
       tournamentId,
       type: OperationType.FinalizeTournament,
       playerPubKey: adminPubKey,
+      finalizeWinners: winners.map((w) => ({
+        publicKey: w.publicKey,
+        prizeAmount: w.prizeAmount,
+        place: w.place,
+      })),
     });
 
     this.logger.log(

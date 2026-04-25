@@ -5,6 +5,7 @@ import {
   IsNumber,
   Min,
   IsNumberString,
+  MaxLength,
 } from 'class-validator';
 
 export class CreateTournamentDto {
@@ -47,6 +48,16 @@ export class CreateTournamentDto {
   @IsOptional()
   @IsString()
   txHash?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(256)
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  imageUrl?: string;
 }
 
 export class CreateTournamentResponseDto {

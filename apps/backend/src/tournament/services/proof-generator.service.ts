@@ -25,7 +25,12 @@ import {
   OperationStatus,
   OperationType,
 } from '../schemas/pending-operation.schema.js';
-import { TournamentDocument } from '../schemas/tournament.schema.js';
+import {
+  TournamentDocument,
+  TournamentStatus,
+} from '../schemas/tournament.schema.js';
+
+type UnsignedZkappTx = Awaited<ReturnType<typeof Mina.transaction>>;
 
 @Injectable()
 export class ProofGeneratorService implements OnModuleInit {
@@ -246,11 +251,56 @@ export class ProofGeneratorService implements OnModuleInit {
     };
   }
 
+  /**
+   * Fee-payer key for ops where `playerPubKey` is the on-chain admin
+   * (AdvanceToBattle, FinalizeTournament). When unset or pubkey mismatch, the flow
+   * stays wallet-driven.
+   */
+  private getConfiguredFeePayerKeyIfMatchesOp(
+    op: PendingOperationDocument
+  ): PrivateKey | null {
+    const raw = process.env.TOURNAMENT_ADMIN_PRIVATE_KEY?.trim();
+    if (!raw) {
+      return null;
+    }
+    try {
+      const sk = PrivateKey.fromBase58(raw);
+      if (sk.toPublicKey().toBase58() !== op.playerPubKey) {
+        return null;
+      }
+      return sk;
+    } catch {
+      this.logger.warn(
+        'TOURNAMENT_ADMIN_PRIVATE_KEY is set but could not be parsed as a Base58 private key'
+      );
+      return null;
+    }
+  }
+
   private async submitProvedTransaction(
     op: PendingOperationDocument,
-    tx: { prove(): Promise<unknown>; toJSON(): unknown }
+    tx: UnsignedZkappTx
   ): Promise<void> {
     await tx.prove();
+
+    const feePayerKey = this.getConfiguredFeePayerKeyIfMatchesOp(op);
+    if (
+      feePayerKey &&
+      (op.type === OperationType.AdvanceToBattle ||
+        op.type === OperationType.FinalizeTournament)
+    ) {
+      await tx.sign([feePayerKey]);
+      const pending = await tx.send();
+      await this.tournamentStateService.updateOperationStatus(
+        op._id,
+        OperationStatus.Submitted,
+        { txHash: pending.hash }
+      );
+      this.logger.log(
+        `${op.type} operation ${op._id} signed and broadcast as ${pending.hash}`
+      );
+      return;
+    }
 
     const unsignedTxJson = tx.toJSON();
 
@@ -331,13 +381,76 @@ export class ProofGeneratorService implements OnModuleInit {
   private async processFinalizeTournament(
     op: PendingOperationDocument
   ): Promise<void> {
-    this.logger.log(
-      `FinalizeTournament processing for ${op._id} - requires admin signature`
-    );
-    await this.tournamentStateService.updateOperationStatus(
-      op._id,
-      OperationStatus.Submitted
-    );
+    const { tournament, tournamentWitness, currentTournamentLeaf, contract, playerPubKey } =
+      await this.prepareProofContext(op);
+
+    if (tournament.verified.status !== TournamentStatus.Battle) {
+      throw new Error(
+        `Tournament ${op.tournamentId} must be in Battle phase to finalize (status: ${tournament.verified.status})`
+      );
+    }
+
+    const rows = op.finalizeWinners;
+    if (!rows?.length) {
+      throw new Error(
+        `FinalizeTournament operation ${op._id} is missing finalizeWinners`
+      );
+    }
+
+    const sorted = [...rows].sort((a, b) => a.place - b.place);
+    const first = sorted[0];
+    if (!first) {
+      throw new Error(
+        `FinalizeTournament operation ${op._id} has empty finalizeWinners`
+      );
+    }
+
+    const winnerEntries = new Map<
+      string,
+      { prizeAmount: string; claimed: boolean }
+    >();
+    for (const w of sorted) {
+      winnerEntries.set(w.publicKey, {
+        prizeAmount: w.prizeAmount,
+        claimed: false,
+      });
+    }
+    const winnersMap = this.merkleService.buildWinnersMap(winnerEntries);
+    const newWinnersRoot = winnersMap.getRoot();
+
+    const w1 = PublicKey.fromBase58(first.publicKey);
+    const prize1 = UInt64.from(BigInt(first.prizeAmount));
+    let w2 = PublicKey.empty();
+    let prize2 = UInt64.from(0);
+    let w3 = PublicKey.empty();
+    let prize3 = UInt64.from(0);
+    const second = sorted[1];
+    if (second) {
+      w2 = PublicKey.fromBase58(second.publicKey);
+      prize2 = UInt64.from(BigInt(second.prizeAmount));
+    }
+    const third = sorted[2];
+    if (third) {
+      w3 = PublicKey.fromBase58(third.publicKey);
+      prize3 = UInt64.from(BigInt(third.prizeAmount));
+    }
+
+    const tx = await Mina.transaction(playerPubKey, async () => {
+      await contract.finalizeTournament(
+        Field(op.tournamentId),
+        currentTournamentLeaf,
+        tournamentWitness,
+        w1,
+        w2,
+        w3,
+        prize1,
+        prize2,
+        prize3,
+        newWinnersRoot
+      );
+    });
+
+    await this.submitProvedTransaction(op, tx);
   }
 
   private async processClaimPrize(op: PendingOperationDocument): Promise<void> {

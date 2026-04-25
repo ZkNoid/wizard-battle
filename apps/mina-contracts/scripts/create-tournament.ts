@@ -5,7 +5,11 @@
  * and creates the next available tournament.
  *
  * Usage:
- *   pnpm --filter mina-contracts run create-tournament
+ *   pnpm --filter mina-contracts run create-tournament -- --title "Spring Cup" --image-url /tournaments/custom.png
+ *
+ * Required CLI flags (after `--` when using pnpm):
+ *   --title, -t — Display title (backend + UI)
+ *   --image-url, -i — Image URL (absolute or site-relative)
  *
  * Environment variables:
  *   MINA_NETWORK_URL - Mina GraphQL endpoint (default: devnet)
@@ -41,6 +45,7 @@ import {
   TournamentFinalizedEvent,
   PrizeClaimedEvent,
 } from '../src/TournamentManager.js';
+import { parseRequiredTournamentDisplayArgs } from './tournament-display-cli.js';
 
 const MINA_NETWORK_URL =
   process.env.MINA_NETWORK_URL ||
@@ -302,6 +307,9 @@ async function main() {
   console.log('Create Tournament Script');
   console.log('='.repeat(60));
 
+  const { title: tournamentTitle, imageUrl: tournamentImageUrl } =
+    parseRequiredTournamentDisplayArgs(process.argv);
+
   // Check required environment variables
   const deployerKeyBase58 = process.env.DEPLOYER_PRIVATE_KEY;
   if (!deployerKeyBase58) {
@@ -483,6 +491,8 @@ async function main() {
     battleEndSlot,
     tournamentsRoot: newTournamentsRoot,
     txHash: createResult.hash,
+    title: tournamentTitle,
+    imageUrl: tournamentImageUrl,
   });
 
   const MAX_RETRIES = 12;
@@ -571,6 +581,8 @@ async function main() {
   console.log(`Battle Start Slot: ${battleStartSlot}`);
   console.log(`Battle End Slot: ${battleEndSlot}`);
   console.log(`Tournaments Root: ${newTournamentsRoot}`);
+  console.log(`Display title: ${tournamentTitle}`);
+  console.log(`Image URL: ${tournamentImageUrl}`);
   console.log('='.repeat(60));
 }
 

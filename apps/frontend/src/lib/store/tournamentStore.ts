@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { slotToCalendarDate } from '@/lib/mina/slotCalendar';
+import { slotToCalendarDate, slotToInstantMs } from '@/lib/mina/slotCalendar';
 import {
   fetchAllTournaments,
   fetchTournamentChainStatus,
@@ -63,16 +63,37 @@ export function mapTournamentResponse(
     ? slotToCalendarDate(response.battleEndSlot, anchor)
     : '';
 
+  const scheduleTimes = hasAnchor
+    ? {
+        registrationOpensAtMs: slotToInstantMs(
+          response.registrationStartSlot,
+          anchor
+        ),
+        battleStartsAtMs: slotToInstantMs(response.battleStartSlot, anchor),
+        battleEndsAtMs: slotToInstantMs(response.battleEndSlot, anchor),
+      }
+    : undefined;
+
+  const displayTitle = response.title?.trim();
+  const displayImageUrl = response.imageUrl?.trim();
+
   return {
     id: response.tournamentId,
-    title: `Tournament #${response.tournamentId}`,
+    title:
+      displayTitle && displayTitle.length > 0
+        ? displayTitle
+        : `Tournament #${response.tournamentId}`,
     dateFrom,
     dateTo,
+    scheduleTimes,
     startDate: String(response.registrationStartSlot),
     status: mapStatus(response.status),
     userStatus: mapUserStatus(response, playerPubKey),
     maxParticipants: 0,
-    imageURL: '/tournaments/grand-wizard.png',
+    imageURL:
+      displayImageUrl && displayImageUrl.length > 0
+        ? displayImageUrl
+        : '/tournaments/grand-wizard.png',
     ticketCost: buildTicketCost(response),
     prizePool: buildPrizePool(response),
     sponsors: [],

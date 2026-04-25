@@ -6,7 +6,10 @@
  * and creates any tournaments in the backend that are missing.
  *
  * Usage:
- *   pnpm --filter mina-contracts run sync-tournaments
+ *   pnpm --filter mina-contracts run sync-tournaments -- --title "Backfill" --image-url /tournaments/x.png
+ *
+ * Required CLI flags (after `--` when using pnpm): same as create-tournament
+ * (--title / -t, --image-url / -i). Applied to each tournament POSTed to the backend.
  *
  * Environment variables:
  *   MINA_NETWORK_URL - Mina GraphQL endpoint (default: devnet)
@@ -35,6 +38,7 @@ import {
   TournamentFinalizedEvent,
   PrizeClaimedEvent,
 } from '../src/TournamentManager.js';
+import { parseRequiredTournamentDisplayArgs } from './tournament-display-cli.js';
 
 const MINA_NETWORK_URL =
   process.env.MINA_NETWORK_URL ||
@@ -234,7 +238,8 @@ async function backendTournamentExists(tournamentId: string): Promise<boolean> {
 async function createTournamentInBackend(
   tournamentId: string,
   event: TournamentCreatedEvent,
-  tournamentsRoot: string
+  tournamentsRoot: string,
+  display: { title: string; imageUrl: string }
 ): Promise<boolean> {
   try {
     const response = await fetch(`${BACKEND_URL}/tournament`, {
@@ -250,6 +255,8 @@ async function createTournamentInBackend(
         battleStartSlot: Number(event.battleStartSlot.toBigint()),
         battleEndSlot: Number(event.battleEndSlot.toBigint()),
         tournamentsRoot,
+        title: display.title,
+        imageUrl: display.imageUrl,
       }),
     });
 
@@ -270,6 +277,8 @@ async function main() {
   console.log('='.repeat(60));
   console.log('Sync Tournaments Script');
   console.log('='.repeat(60));
+
+  const display = parseRequiredTournamentDisplayArgs(process.argv);
 
   const contractAddressBase58 = process.env.TOURNAMENT_CONTRACT_ADDRESS;
   if (!contractAddressBase58) {
@@ -331,7 +340,8 @@ async function main() {
     const ok = await createTournamentInBackend(
       tournamentId,
       event,
-      tournamentsRoot
+      tournamentsRoot,
+      display
     );
 
     if (ok) {

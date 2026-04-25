@@ -1,8 +1,17 @@
+/** Chain-time estimates when we have a live slot anchor (see tournament store). */
+export interface ITournamentScheduleTimes {
+  registrationOpensAtMs: number;
+  battleStartsAtMs: number;
+  battleEndsAtMs: number;
+}
+
 export interface ITournament {
   id: string;
   title: string;
   dateFrom: string;
   dateTo: string;
+  /** Present when chain status provides anchor; enables date+time UI and accurate countdown. */
+  scheduleTimes?: ITournamentScheduleTimes;
   prizePool: ITournamentAsset[];
 
   ticketCost: ITournamentAsset | null;

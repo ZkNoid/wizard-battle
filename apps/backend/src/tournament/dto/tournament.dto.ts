@@ -12,6 +12,8 @@ export class TournamentResponseDto {
   participantCount!: number;
   registeredPlayers!: string[];
   pendingPlayers!: string[];
+  title?: string;
+  imageUrl?: string;
 }
 
 export class ParticipantsResponseDto {
