@@ -21,6 +21,13 @@ export enum OperationStatus {
   Failed = 'failed',
 }
 
+/** Snapshot for {@link OperationType.FinalizeTournament} (proof + DB apply). */
+export type FinalizeWinnerPayload = {
+  publicKey: string;
+  prizeAmount: string;
+  place: 1 | 2 | 3;
+};
+
 @Schema({ timestamps: true, collection: 'pending_operations' })
 export class PendingOperation {
   @Prop({ required: true, index: true })
@@ -54,6 +61,18 @@ export class PendingOperation {
 
   @Prop()
   unsignedTxJson?: string;
+
+  @Prop({
+    type: [
+      {
+        publicKey: { type: String, required: true },
+        prizeAmount: { type: String, required: true },
+        place: { type: Number, required: true },
+      },
+    ],
+    required: false,
+  })
+  finalizeWinners?: FinalizeWinnerPayload[];
 }
 
 export const PendingOperationSchema =

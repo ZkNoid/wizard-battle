@@ -18,6 +18,7 @@ import {
   PendingOperationDocument,
   OperationType,
   OperationStatus,
+  FinalizeWinnerPayload,
 } from '../schemas/pending-operation.schema.js';
 import { MerkleService } from './merkle.service.js';
 import { RedisService } from '../../redis/redis.service.js';
@@ -45,6 +46,8 @@ export interface AddPendingOperationDto {
   tournamentId: string;
   type: OperationType;
   playerPubKey: string;
+  /** Required for {@link OperationType.FinalizeTournament}. */
+  finalizeWinners?: FinalizeWinnerPayload[];
 }
 
 @Injectable()
@@ -252,6 +255,19 @@ export class TournamentStateService {
       }
     }
 
+    if (dto.type === OperationType.FinalizeTournament) {
+      if (tournament.verified.status !== TournamentStatus.Battle) {
+        throw new BadRequestException(
+          `Tournament ${dto.tournamentId} must be in Battle phase to finalize (status: ${tournament.verified.status})`
+        );
+      }
+      if (!dto.finalizeWinners?.length) {
+        throw new BadRequestException(
+          'finalizeWinners is required for FinalizeTournament operations'
+        );
+      }
+    }
+
     let saved: PendingOperationDocument;
     try {
       saved = await this.pendingOpModel.create({
@@ -260,6 +276,9 @@ export class TournamentStateService {
         playerPubKey: dto.playerPubKey,
         status: OperationStatus.Queued,
         retryCount: 0,
+        ...(dto.type === OperationType.FinalizeTournament && dto.finalizeWinners
+          ? { finalizeWinners: dto.finalizeWinners }
+          : {}),
       });
     } catch (err) {
       // The `unique_active_operation` partial index guarantees that only one
@@ -340,6 +359,20 @@ export class TournamentStateService {
       await this.retryOnVersionConflict(
         () => this.applyClaimPrizeToVerified(op.tournamentId, op.playerPubKey),
         `applyClaimPrize(${op.tournamentId}, ${op.playerPubKey})`
+      );
+    }
+
+    if (op.type === OperationType.AdvanceToBattle) {
+      await this.retryOnVersionConflict(
+        () => this.applyAdvanceToBattleToVerified(op.tournamentId),
+        `applyAdvanceToBattle(${op.tournamentId})`
+      );
+    }
+
+    if (op.type === OperationType.FinalizeTournament) {
+      await this.retryOnVersionConflict(
+        () => this.applyFinalizeTournamentToVerified(op),
+        `applyFinalizeTournament(${op.tournamentId})`
       );
     }
 
@@ -458,6 +491,89 @@ export class TournamentStateService {
     this.logger.log(
       `Applied claimPrize for ${playerPubKey} in tournament ${tournamentId}`
     );
+  }
+
+  private async applyAdvanceToBattleToVerified(
+    tournamentId: string
+  ): Promise<void> {
+    const tournament = await this.tournamentModel
+      .findOne({ tournamentId })
+      .exec();
+
+    if (!tournament) {
+      throw new NotFoundException(
+        `Cannot apply advanceToBattle: Tournament ${tournamentId} not found`
+      );
+    }
+
+    if (tournament.verified.status === TournamentStatus.Battle) {
+      this.logger.warn(
+        `advanceToBattle for ${tournamentId} already applied, skipping`
+      );
+      return;
+    }
+
+    if (tournament.verified.status !== TournamentStatus.Registration) {
+      throw new BadRequestException(
+        `Cannot advance to battle from status ${tournament.verified.status}`
+      );
+    }
+
+    tournament.verified.status = TournamentStatus.Battle;
+    await tournament.save();
+    this.logger.log(`Applied advanceToBattle for tournament ${tournamentId}`);
+  }
+
+  private async applyFinalizeTournamentToVerified(
+    op: PendingOperationDocument
+  ): Promise<void> {
+    const { tournamentId } = op;
+    const rows = op.finalizeWinners;
+    if (!rows?.length) {
+      throw new BadRequestException(
+        `Operation ${op._id} is missing finalizeWinners snapshot`
+      );
+    }
+
+    const tournament = await this.tournamentModel
+      .findOne({ tournamentId })
+      .exec();
+
+    if (!tournament) {
+      throw new NotFoundException(
+        `Cannot apply finalizeTournament: Tournament ${tournamentId} not found`
+      );
+    }
+
+    if (tournament.verified.status === TournamentStatus.Claiming) {
+      this.logger.warn(
+        `finalizeTournament for ${tournamentId} already applied, skipping`
+      );
+      return;
+    }
+
+    if (tournament.verified.status !== TournamentStatus.Battle) {
+      throw new BadRequestException(
+        `Cannot finalize from status ${tournament.verified.status}`
+      );
+    }
+
+    const sorted = [...rows].sort((a, b) => a.place - b.place);
+    const winners = new Map<string, { prizeAmount: string; claimed: boolean }>();
+    for (const w of sorted) {
+      winners.set(w.publicKey, {
+        prizeAmount: w.prizeAmount,
+        claimed: false,
+      });
+    }
+    tournament.winners = winners;
+
+    const winnersMap = this.merkleService.buildWinnersMap(tournament.winners);
+    tournament.verified.winnersRoot = winnersMap.getRoot().toString();
+    tournament.verified.status = TournamentStatus.Claiming;
+
+    await tournament.save();
+    this.logger.log(`Applied finalizeTournament for tournament ${tournamentId}`);
   }
 
   async createTournament(
