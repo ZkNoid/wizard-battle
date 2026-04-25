@@ -10,7 +10,6 @@ import { TournamentActionButton } from './TournamentActionButton';
 import {
   formatBattleWindowWithTime,
   formatDateRange,
-  formatTournamentDateTime,
 } from './tournamentUtils';
 import type { ITournament } from '@/lib/types/ITournament';
 
@@ -148,8 +147,9 @@ export function TournamentDetailsInfo({
                     Registration:
                   </span>
                   <span className="font-pixel-klein text-main-gray text-right text-xs">
-                    {formatTournamentDateTime(
-                      tournament.scheduleTimes.registrationOpensAtMs
+                    {formatBattleWindowWithTime(
+                      tournament.scheduleTimes.registrationOpensAtMs,
+                      tournament.scheduleTimes.battleStartsAtMs
                     )}
                   </span>
                 </div>

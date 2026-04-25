@@ -58,8 +58,9 @@ export function TournamentsListItem({
               </span>
               &nbsp;
               <span className="font-pixel text-main-gray text-xs">
-                {formatTournamentDateTime(
-                  tournament.scheduleTimes.registrationOpensAtMs
+                {formatBattleWindowWithTime(
+                  tournament.scheduleTimes.registrationOpensAtMs,
+                  tournament.scheduleTimes.battleStartsAtMs
                 )}
               </span>
             </span>
