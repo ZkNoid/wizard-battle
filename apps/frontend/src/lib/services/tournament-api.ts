@@ -26,6 +26,10 @@ export interface TournamentResponse {
   participantCount: number;
   registeredPlayers: string[];
   pendingPlayers: string[];
+  /** Backend display title; UI falls back to a generated label when omitted. */
+  title?: string;
+  /** Backend image URL; UI falls back to a default asset when omitted. */
+  imageUrl?: string;
 }
 
 /** Matches backend `ITournamentLeaderboardEntry` (apps/common). */

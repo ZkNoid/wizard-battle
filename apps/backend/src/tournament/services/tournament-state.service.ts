@@ -37,6 +37,8 @@ export interface OptimisticView {
   participantCount: number;
   registeredPlayers: string[];
   pendingPlayers: string[];
+  title?: string;
+  imageUrl?: string;
 }
 
 export interface AddPendingOperationDto {
@@ -184,6 +186,12 @@ export class TournamentStateService {
         tournament.verified.participantCount + pendingBuyTickets.length,
       registeredPlayers,
       pendingPlayers,
+      ...(tournament.title !== undefined && tournament.title !== ''
+        ? { title: tournament.title }
+        : {}),
+      ...(tournament.imageUrl !== undefined && tournament.imageUrl !== ''
+        ? { imageUrl: tournament.imageUrl }
+        : {}),
     };
   }
 
@@ -463,7 +471,8 @@ export class TournamentStateService {
       battleStartSlot: number;
       battleEndSlot: number;
     },
-    tournamentsRoot: string
+    tournamentsRoot: string,
+    display?: { title?: string; imageUrl?: string }
   ): Promise<TournamentDocument> {
     this.validateTournamentConfig(config);
 
@@ -498,6 +507,12 @@ export class TournamentStateService {
       participants: new Map(),
       winners: new Map(),
       tournamentsRoot,
+      ...(display?.title !== undefined && display.title !== ''
+        ? { title: display.title }
+        : {}),
+      ...(display?.imageUrl !== undefined && display.imageUrl !== ''
+        ? { imageUrl: display.imageUrl }
+        : {}),
     });
 
     return tournament.save();

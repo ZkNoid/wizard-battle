@@ -88,6 +88,14 @@ export class Tournament {
 
   @Prop({ required: true })
   tournamentsRoot!: string;
+
+  /** Display name for clients; falls back to a generated label when absent. */
+  @Prop({ required: false })
+  title?: string;
+
+  /** Image URL for listings (absolute or site-relative path). */
+  @Prop({ required: false })
+  imageUrl?: string;
 }
 
 export const TournamentSchema = SchemaFactory.createForClass(Tournament);

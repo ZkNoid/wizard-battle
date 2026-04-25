@@ -67,6 +67,9 @@ export class TournamentController {
     await this.checkTournamentHash(dto.txHash, dto.tournamentsRoot);
 
     try {
+      const displayTitle = dto.title?.trim();
+      const displayImageUrl = dto.imageUrl?.trim();
+
       const tournament = await this.tournamentStateService.createTournament(
         dto.tournamentId,
         {
@@ -78,7 +81,11 @@ export class TournamentController {
           battleStartSlot: dto.battleStartSlot,
           battleEndSlot: dto.battleEndSlot,
         },
-        dto.tournamentsRoot
+        dto.tournamentsRoot,
+        {
+          ...(displayTitle ? { title: displayTitle } : {}),
+          ...(displayImageUrl ? { imageUrl: displayImageUrl } : {}),
+        }
       );
 
       return {
