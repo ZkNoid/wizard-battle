@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Button } from '../shared/Button';
 import type { ITournament } from '@/lib/types/ITournament';
 
@@ -13,8 +14,17 @@ type ActionConfig = {
   label: string;
   variant: 'gray' | 'blue' | 'green';
   disabled: boolean;
-  action: 'join' | 'claim' | 'open' | 'none';
+  action: 'join' | 'claim' | 'findMatch' | 'none';
 };
+
+function isTournamentParticipant(userStatus: ITournament['userStatus']) {
+  return (
+    userStatus === 'got-ticket' ||
+    userStatus === 'joined' ||
+    userStatus === 'pending' ||
+    userStatus === 'lost'
+  );
+}
 
 function getActionConfig(tournament: ITournament): ActionConfig {
   const { status, userStatus } = tournament;
@@ -36,6 +46,33 @@ function getActionConfig(tournament: ITournament): ActionConfig {
     };
   }
 
+  if (status === 'active' && userStatus === 'won') {
+    return {
+      label: 'Claim rewards',
+      variant: 'green',
+      disabled: false,
+      action: 'claim',
+    };
+  }
+
+  if (status === 'upcoming' && isTournamentParticipant(userStatus)) {
+    return {
+      label: 'Battle starts soon',
+      variant: 'gray',
+      disabled: true,
+      action: 'none',
+    };
+  }
+
+  if (status === 'active' && isTournamentParticipant(userStatus)) {
+    return {
+      label: 'Find Match',
+      variant: 'blue',
+      disabled: false,
+      action: 'findMatch',
+    };
+  }
+
   switch (userStatus) {
     case 'not-joined':
       return {
@@ -44,28 +81,12 @@ function getActionConfig(tournament: ITournament): ActionConfig {
         disabled: false,
         action: 'join',
       };
-    case 'got-ticket':
-    case 'joined':
-      return {
-        label: 'Open tournament',
-        variant: 'gray',
-        disabled: false,
-        action: 'open',
-      };
     case 'won':
       return {
         label: 'Claim rewards',
         variant: 'green',
         disabled: false,
         action: 'claim',
-      };
-    case 'lost':
-    case 'pending':
-      return {
-        label: 'Open tournament',
-        variant: 'gray',
-        disabled: false,
-        action: 'open',
       };
     default:
       return {
@@ -82,11 +103,17 @@ export function TournamentActionButton({
   onJoin,
   onClaim,
 }: TournamentActionButtonProps) {
+  const router = useRouter();
   const { label, variant, disabled, action } = getActionConfig(tournament);
 
   const handleClick = () => {
     if (action === 'join') onJoin?.(tournament);
     else if (action === 'claim') onClaim?.(tournament);
+    else if (action === 'findMatch') {
+      router.push(
+        `/play?tournamentId=${encodeURIComponent(tournament.id)}`
+      );
+    }
   };
 
   return (

@@ -1,4 +1,4 @@
-import { IAddToQueue } from './matchmaking.types';
+import type { IAddToQueue } from './matchmaking.types';
 
 export interface ITournamentAddToQueue extends IAddToQueue {
   tournamentId: string;
