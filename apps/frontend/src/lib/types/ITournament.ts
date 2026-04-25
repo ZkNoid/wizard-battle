@@ -21,7 +21,8 @@ export interface ITournament {
   imageURL: string;
   description?: string;
 
-  maxParticipants: number;
+  /** Server-reported participant count. */
+  participantCount: number;
   startDate: string;
 
   status: 'upcoming' | 'active' | 'ended';

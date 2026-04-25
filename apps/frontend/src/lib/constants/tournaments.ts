@@ -1,135 +1,24 @@
-import type { ITournament } from '../types/ITournament';
+/** Dropdown values for tournament list view (filter + sort). */
+export type TournamentListView =
+  | 'all'
+  | 'end_within_24h'
+  | 'end_within_week'
+  | 'start_within_24h'
+  | 'start_within_week'
+  | 'rewards_small_to_big'
+  | 'rewards_big_to_small'
+  | 'only_usdc';
 
-export const TOURNAMENTS_FILTER_BY_OPTIONS = [
+export const TOURNAMENTS_FILTER_BY_OPTIONS: {
+  value: TournamentListView;
+  label: string;
+}[] = [
   { value: 'all', label: 'All' },
-  { value: 'new_to_old', label: 'Will end within 24 hours' },
-  { value: 'old_to_new', label: 'Will end within a week' },
-  { value: 'prize_high', label: 'Will start within 24 hours' },
-  { value: 'prize_low', label: 'Will start within a week' },
-  { value: 'prize_low', label: 'Rewards: From small to big' },
-  { value: 'prize_low', label: 'Rewards: From big to small' },
-  { value: 'prize_low', label: 'Only for USDC' },
-];
-
-export const ALL_TOURNAMENTS: ITournament[] = [
-  {
-    id: '1',
-    title: 'Grand Wizard Championship',
-    dateFrom: '2026-03-15',
-    dateTo: '2026-03-17',
-    startDate: '2026-03-15',
-    status: 'upcoming',
-    userStatus: 'not-joined',
-    maxParticipants: 64,
-    imageURL: '/tournaments/grand-wizard.png',
-    description: 'The most prestigious wizard tournament of the year. Only the strongest mages from across the realm compete for the ultimate prize. Prove your mastery of spells and strategy to claim glory.',
-    ticketCost: { type: 'currency', currency: 'gold', amount: 500 },
-    prizePool: [
-      { type: 'currency', currency: 'gold', amount: 10000 },
-      { type: 'inventory-item', itemId: 'staff-of-eternity', quantity: 1 },
-    ],
-    sponsors: [
-      { name: 'Arcane Guild' },
-      { name: 'ZkNoid Labs', url: 'https://zknoid.io' },
-    ],
-  },
-  {
-    id: '2',
-    title: 'Rookie Mage Cup',
-    dateFrom: '2026-03-20',
-    dateTo: '2026-03-20',
-    startDate: '2026-03-20',
-    status: 'upcoming',
-    userStatus: 'got-ticket',
-    maxParticipants: 32,
-    imageURL: '/tournaments/rookie-mage.png',
-    description: 'A beginner-friendly tournament open to all apprentice mages. Free entry, no experience required. The perfect place to test your skills for the first time.',
-    ticketCost: null,
-    prizePool: [{ type: 'currency', currency: 'gold', amount: 2000 }],
-    sponsors: [{ name: 'ZkNoid Labs' }],
-  },
-  {
-    id: '3',
-    title: 'Shadow Realm Invitational',
-    dateFrom: '2026-03-10',
-    dateTo: '2026-03-12',
-    startDate: '2026-03-10',
-    status: 'active',
-    userStatus: 'joined',
-    maxParticipants: 16,
-    imageURL: '/tournaments/shadow-realm.png',
-    description: 'An invitation-only tournament held in the shadow realm. Masters of dark magic gather to settle their disputes. Entry requires a USDC fee — only the most committed dare to enter.',
-    ticketCost: { type: 'currency', currency: 'usdc', amount: 5 },
-    prizePool: [
-      { type: 'currency', currency: 'usdc', amount: 200 },
-      { type: 'inventory-item', itemId: 'shadow-cloak', quantity: 1 },
-      { type: 'inventory-item', itemId: 'void-potion', quantity: 3 },
-    ],
-    sponsors: [{ name: 'Shadow Council', url: 'https://zknoid.io' }],
-  },
-  {
-    id: '4',
-    title: 'Crystal Tower Open',
-    dateFrom: '2026-02-28',
-    dateTo: '2026-03-01',
-    startDate: '2026-02-28',
-    status: 'ended',
-    userStatus: 'won',
-    maxParticipants: 128,
-    imageURL: '/tournaments/crystal-tower.png',
-    ticketCost: { type: 'currency', currency: 'gold', amount: 250 },
-    prizePool: [
-      { type: 'currency', currency: 'gold', amount: 25000 },
-      { type: 'currency', currency: 'usdc', amount: 100 },
-    ],
-    sponsors: [{ name: 'Crystal Syndicate' }, { name: 'Arcane Guild' }],
-  },
-  {
-    id: '5',
-    title: 'Frostpeak Duel Series',
-    dateFrom: '2026-03-25',
-    dateTo: '2026-03-26',
-    startDate: '2026-03-25',
-    status: 'upcoming',
-    userStatus: 'not-joined',
-    maxParticipants: 32,
-    imageURL: '/tournaments/frostpeak.png',
-    ticketCost: { type: 'inventory-item', itemId: 'frost-shard', quantity: 1 },
-    prizePool: [
-      { type: 'currency', currency: 'gold', amount: 5000 },
-      { type: 'inventory-item', itemId: 'blizzard-staff', quantity: 1 },
-    ],
-    sponsors: [{ name: 'Frostpeak Academy' }],
-  },
-  {
-    id: '6',
-    title: 'Ember Court Tournament',
-    dateFrom: '2026-03-08',
-    dateTo: '2026-03-09',
-    startDate: '2026-03-08',
-    status: 'ended',
-    userStatus: 'lost',
-    maxParticipants: 64,
-    imageURL: '/tournaments/ember-court.png',
-    ticketCost: { type: 'currency', currency: 'gold', amount: 300 },
-    prizePool: [
-      { type: 'currency', currency: 'gold', amount: 8000 },
-      { type: 'inventory-item', itemId: 'ember-ring', quantity: 1 },
-    ],
-    sponsors: [{ name: 'Ember Conclave' }, { name: 'ZkNoid Labs' }],
-  },
-  {
-    id: '7',
-    title: 'Open Arena: No Entry',
-    dateFrom: '2026-04-01',
-    dateTo: '2026-04-01',
-    startDate: '2026-04-01',
-    status: 'upcoming',
-    userStatus: 'not-joined',
-    maxParticipants: 256,
-    imageURL: '/tournaments/open-arena.png',
-    ticketCost: null,
-    prizePool: [{ type: 'currency', currency: 'gold', amount: 1000 }],
-    sponsors: [],
-  },
+  { value: 'end_within_24h', label: 'Will end within 24 hours' },
+  { value: 'end_within_week', label: 'Will end within a week' },
+  { value: 'start_within_24h', label: 'Will start within 24 hours' },
+  { value: 'start_within_week', label: 'Will start within a week' },
+  { value: 'rewards_small_to_big', label: 'Rewards: From small to big' },
+  { value: 'rewards_big_to_small', label: 'Rewards: From big to small' },
+  { value: 'only_usdc', label: 'Only for USDC' },
 ];

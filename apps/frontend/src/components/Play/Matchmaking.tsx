@@ -16,6 +16,8 @@ import type {
   IFoundMatch,
   IUpdateQueue,
 } from '../../../../common/types/matchmaking.types';
+import type { ITournamentAddToQueue } from '../../../../common/types/tournament-matchmaking.types';
+import { TOURNAMENT_MATCHMAKING_STORAGE_KEY } from '@/lib/constants/tournament-matchmaking';
 import type { IReward } from '../../../../common/types/gameplay.types';
 import { State } from '../../../../common/stater/state';
 import { GamePhaseManager } from '@/game/GamePhaseManager';
@@ -96,6 +98,9 @@ export default function Matchmaking({
     if (!socket || !stater) return;
 
     const handleMatchFound = (response: IFoundMatch) => {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(TOURNAMENT_MATCHMAKING_STORAGE_KEY);
+      }
       console.log(
         '🎮 Match found! Creating GamePhaseManager and confirming joined...'
       );
@@ -187,9 +192,23 @@ export default function Matchmaking({
 
       console.log(data);
 
+      const tournamentId =
+        typeof window !== 'undefined'
+          ? sessionStorage.getItem(TOURNAMENT_MATCHMAKING_STORAGE_KEY)
+          : null;
+
       if (playMode === PlayMode.PVE) {
         socket.emit('joinBotMatchmaking', {
           addToQueue: data,
+        });
+      } else if (tournamentId) {
+        const tournamentPayload: ITournamentAddToQueue = {
+          ...data,
+          playerId: String(data.playerId),
+          tournamentId,
+        };
+        socket.emit('joinTournamentMatchmaking', {
+          addToQueue: tournamentPayload,
         });
       } else {
         socket.emit('joinMatchmaking', {
@@ -249,6 +268,9 @@ export default function Matchmaking({
           variant="gray"
           className="w-106 h-15"
           onClick={() => {
+            if (typeof window !== 'undefined') {
+              sessionStorage.removeItem(TOURNAMENT_MATCHMAKING_STORAGE_KEY);
+            }
             setPlayStep(PlaySteps.SELECT_MAP);
           }}
         >

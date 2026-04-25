@@ -12,6 +12,7 @@ import { TournamentDetailsForm } from './TournamentDetailsForm';
 import { BuyTicketConfirmationModal } from './BuyTicketConfirmationModal';
 import { CongratulationsModal } from './CongratulationsModal';
 import { useTournamentStore } from '@/lib/store/tournamentStore';
+import type { TournamentListView } from '@/lib/constants/tournaments';
 import type { ITournament, ITournamentAsset } from '@/lib/types/ITournament';
 import {
   useBuyTicket,
@@ -23,8 +24,11 @@ interface TournamentsFormProps {
 }
 
 const DEFAULT_FILTERS: TournamentsFilters = {
-  sortBy: 'new_to_old',
+  view: 'all',
 };
+
+const MS_24H = 24 * 60 * 60 * 1000;
+const MS_WEEK = 7 * MS_24H;
 
 function getPrizeScore(prizePool: ITournamentAsset[]): number {
   return prizePool.reduce((sum, asset) => {
@@ -33,30 +37,90 @@ function getPrizeScore(prizePool: ITournamentAsset[]): number {
   }, 0);
 }
 
-function sortTournaments(
+function getTournamentStartMs(t: ITournament): number {
+  if (t.scheduleTimes?.battleStartsAtMs != null) {
+    return t.scheduleTimes.battleStartsAtMs;
+  }
+  const day = t.startDate || t.dateFrom;
+  return new Date(`${day}T00:00:00`).getTime();
+}
+
+function getTournamentEndMs(t: ITournament): number {
+  if (t.scheduleTimes?.battleEndsAtMs != null) {
+    return t.scheduleTimes.battleEndsAtMs;
+  }
+  return new Date(`${t.dateTo}T23:59:59.999`).getTime();
+}
+
+function hasUsdcInvolvement(t: ITournament): boolean {
+  if (
+    t.ticketCost?.type === 'currency' &&
+    t.ticketCost.currency === 'usdc'
+  ) {
+    return true;
+  }
+  return t.prizePool.some(
+    (a) => a.type === 'currency' && a.currency === 'usdc'
+  );
+}
+
+function applyTournamentListView(
   tournaments: ITournament[],
-  sortBy: string
+  view: TournamentListView
 ): ITournament[] {
-  const sorted = [...tournaments];
-  switch (sortBy) {
-    case 'old_to_new':
-      return sorted.sort(
-        (a, b) => Number(a.startDate) - Number(b.startDate)
-      );
-    case 'prize_high':
-      return sorted.sort(
-        (a, b) => getPrizeScore(b.prizePool) - getPrizeScore(a.prizePool)
-      );
-    case 'prize_low':
-      return sorted.sort(
+  const now = Date.now();
+  let list = [...tournaments];
+
+  switch (view) {
+    case 'end_within_24h':
+      list = list.filter((t) => {
+        const end = getTournamentEndMs(t);
+        return end >= now && end <= now + MS_24H;
+      });
+      list.sort((a, b) => getTournamentEndMs(a) - getTournamentEndMs(b));
+      break;
+    case 'end_within_week':
+      list = list.filter((t) => {
+        const end = getTournamentEndMs(t);
+        return end >= now && end <= now + MS_WEEK;
+      });
+      list.sort((a, b) => getTournamentEndMs(a) - getTournamentEndMs(b));
+      break;
+    case 'start_within_24h':
+      list = list.filter((t) => {
+        const start = getTournamentStartMs(t);
+        return start >= now && start <= now + MS_24H;
+      });
+      list.sort((a, b) => getTournamentStartMs(a) - getTournamentStartMs(b));
+      break;
+    case 'start_within_week':
+      list = list.filter((t) => {
+        const start = getTournamentStartMs(t);
+        return start >= now && start <= now + MS_WEEK;
+      });
+      list.sort((a, b) => getTournamentStartMs(a) - getTournamentStartMs(b));
+      break;
+    case 'rewards_small_to_big':
+      list.sort(
         (a, b) => getPrizeScore(a.prizePool) - getPrizeScore(b.prizePool)
       );
-    case 'new_to_old':
-    default:
-      return sorted.sort(
-        (a, b) => Number(b.startDate) - Number(a.startDate)
+      break;
+    case 'rewards_big_to_small':
+      list.sort(
+        (a, b) => getPrizeScore(b.prizePool) - getPrizeScore(a.prizePool)
       );
+      break;
+    case 'only_usdc':
+      list = list.filter(hasUsdcInvolvement);
+      list.sort((a, b) => getTournamentStartMs(b) - getTournamentStartMs(a));
+      break;
+    case 'all':
+    default:
+      list.sort((a, b) => getTournamentStartMs(b) - getTournamentStartMs(a));
+      break;
   }
+
+  return list;
 }
 
 export function TournamentsForm({ onClose }: TournamentsFormProps) {
@@ -92,7 +156,7 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
     if (status === 'confirmed') refreshTournaments();
   }, [status, refreshTournaments]);
 
-  const tournaments = sortTournaments(allTournaments, filters.sortBy);
+  const tournaments = applyTournamentListView(allTournaments, filters.view);
 
   const handleJoinRequest = useCallback(
     (tournament: ITournament) => {
