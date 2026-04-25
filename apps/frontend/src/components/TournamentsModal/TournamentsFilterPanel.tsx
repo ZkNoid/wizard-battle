@@ -1,10 +1,13 @@
 'use client';
 
-import { TOURNAMENTS_FILTER_BY_OPTIONS } from '@/lib/constants/tournaments';
+import {
+  TOURNAMENTS_FILTER_BY_OPTIONS,
+  type TournamentListView,
+} from '@/lib/constants/tournaments';
 import { SelectWithLabel } from '../shared/Select/SelectWithLabel';
 
 export interface TournamentsFilters {
-  sortBy: string;
+  view: TournamentListView;
 }
 
 interface TournamentsFilterPanelProps {
@@ -20,11 +23,13 @@ export function TournamentsFilterPanel({
     <div className="flex w-full items-end gap-4">
       <div className="w-100">
         <SelectWithLabel
-          label="Sort by"
+          label="Filter"
           options={TOURNAMENTS_FILTER_BY_OPTIONS}
-          value={filters.sortBy}
+          value={filters.view}
           className="w-100"
-          onChange={(sortBy) => onFiltersChange({ ...filters, sortBy })}
+          onChange={(view) =>
+            onFiltersChange({ ...filters, view: view as TournamentListView })
+          }
         />
       </div>
     </div>
