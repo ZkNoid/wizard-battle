@@ -7,7 +7,11 @@ import { TournamentDetailsDataBg } from './assets/tournament-details-data-bg';
 import { TournamentDetailsImgBg } from './assets/tournament-details-img-bg';
 import { TournamentAssetDisplay } from './TournamentAssetDisplay';
 import { TournamentActionButton } from './TournamentActionButton';
-import { formatDateRange } from './tournamentUtils';
+import {
+  formatBattleWindowWithTime,
+  formatDateRange,
+  formatTournamentDateTime,
+} from './tournamentUtils';
 import type { ITournament } from '@/lib/types/ITournament';
 
 interface TournamentDetailsInfoProps {
@@ -18,8 +22,16 @@ interface TournamentDetailsInfoProps {
 
 function getTargetDate(tournament: ITournament): Date | null {
   if (tournament.status === 'ended') return null;
+  const t = tournament.scheduleTimes;
+  if (t) {
+    if (tournament.status === 'upcoming') {
+      return new Date(t.battleStartsAtMs);
+    }
+    return new Date(t.battleEndsAtMs);
+  }
   const dateStr =
     tournament.status === 'upcoming' ? tournament.dateFrom : tournament.dateTo;
+  if (!dateStr) return null;
   const parts = dateStr.split('-').map(Number);
   return new Date(parts[0]!, parts[1]! - 1, parts[2]!);
 }
@@ -129,14 +141,40 @@ export function TournamentDetailsInfo({
           <SectionTitle>Main information</SectionTitle>
           <div className="flex flex-col gap-1.5">
             {/* Dates */}
-            <div className="flex items-start gap-2">
-              <span className="font-pixel-klein text-main-gray/60 text-xs">
-                Dates:
-              </span>
-              <span className="font-pixel-klein text-main-gray text-right text-xs">
-                {formatDateRange(tournament.dateFrom, tournament.dateTo)}
-              </span>
-            </div>
+            {tournament.scheduleTimes ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-start gap-2">
+                  <span className="font-pixel-klein text-main-gray/60 shrink-0 text-xs">
+                    Registration:
+                  </span>
+                  <span className="font-pixel-klein text-main-gray text-right text-xs">
+                    {formatTournamentDateTime(
+                      tournament.scheduleTimes.registrationOpensAtMs
+                    )}
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-pixel-klein text-main-gray/60 shrink-0 text-xs">
+                    Battle:
+                  </span>
+                  <span className="font-pixel-klein text-main-gray text-right text-xs">
+                    {formatBattleWindowWithTime(
+                      tournament.scheduleTimes.battleStartsAtMs,
+                      tournament.scheduleTimes.battleEndsAtMs
+                    )}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2">
+                <span className="font-pixel-klein text-main-gray/60 text-xs">
+                  Dates:
+                </span>
+                <span className="font-pixel-klein text-main-gray text-right text-xs">
+                  {formatDateRange(tournament.dateFrom, tournament.dateTo)}
+                </span>
+              </div>
+            )}
             {/* Prize pool */}
             <div className="flex items-start gap-2">
               <span className="font-pixel-klein text-main-gray/60 shrink-0 text-xs">

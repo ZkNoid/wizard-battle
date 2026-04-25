@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '../shared/Button';
 import { TournamentAssetDisplay } from './TournamentAssetDisplay';
-import { formatDateRange } from './tournamentUtils';
 import type { ITournament } from '@/lib/types/ITournament';
 import { BuyTicketConfirmBg } from './assets/buy-ticket-confirm-bg';
 

@@ -10,14 +10,20 @@ export interface MinaSlotAnchor {
   timeMs: number;
 }
 
+/** Wall-clock instant (ms) for a target slot from a known anchor. */
+export function slotToInstantMs(
+  targetSlot: number,
+  anchor: MinaSlotAnchor
+): number {
+  return anchor.timeMs + (targetSlot - anchor.slot) * MINA_MS_PER_SLOT;
+}
+
 /** `YYYY-MM-DD` in local time, matching {@link formatTournamentDate} consumers. */
 export function slotToCalendarDate(
   targetSlot: number,
   anchor: MinaSlotAnchor
 ): string {
-  const ms =
-    anchor.timeMs + (targetSlot - anchor.slot) * MINA_MS_PER_SLOT;
-  const d = new Date(ms);
+  const d = new Date(slotToInstantMs(targetSlot, anchor));
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');

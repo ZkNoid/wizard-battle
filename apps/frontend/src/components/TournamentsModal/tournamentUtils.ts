@@ -11,6 +11,24 @@ export function formatTournamentDate(dateStr: string): string {
   });
 }
 
+/** Local date + time (~3 min slot granularity), aligned with {@link formatTournamentDate} locale. */
+export function formatTournamentDateTime(instantMs: number): string {
+  return new Date(instantMs).toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function formatDateRange(dateFrom: string, dateTo: string): string {
   return `${formatTournamentDate(dateFrom)} — ${formatTournamentDate(dateTo)}`;
+}
+
+export function formatBattleWindowWithTime(
+  battleStartsAtMs: number,
+  battleEndsAtMs: number
+): string {
+  return `${formatTournamentDateTime(battleStartsAtMs)} — ${formatTournamentDateTime(battleEndsAtMs)}`;
 }
