@@ -89,7 +89,7 @@ export function mapTournamentResponse(
     startDate: String(response.registrationStartSlot),
     status: mapStatus(response.status),
     userStatus: mapUserStatus(response, playerPubKey),
-    maxParticipants: 0,
+    participantCount: response.participantCount,
     imageURL:
       displayImageUrl && displayImageUrl.length > 0
         ? displayImageUrl

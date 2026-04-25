@@ -221,13 +221,13 @@ export function TournamentDetailsInfo({
         <div className="flex flex-col gap-2">
           <SectionTitle>Additional information</SectionTitle>
           <div className="flex flex-col gap-1.5">
-            {/* Max participants */}
+            {/* Participants */}
             <div className="flex items-center gap-2">
               <span className="font-pixel-klein text-main-gray/60 text-xs">
                 Players joined:
               </span>
               <span className="font-pixel-klein text-main-gray text-xs font-bold">
-                {tournament.maxParticipants}
+                {tournament.participantCount}
               </span>
             </div>
             {/* Sponsors */}
