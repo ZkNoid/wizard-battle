@@ -13,12 +13,15 @@ import {
 } from '@nestjs/common';
 import { Observable, from, merge } from 'rxjs';
 import { map, takeWhile } from 'rxjs/operators';
-import { TournamentStateService } from './services/tournament-state.service.js';
-import { ProofGeneratorService } from './services/proof-generator.service.js';
-import { ChainMonitorService } from './services/chain-monitor.service.js';
-import { MinaClientService } from './services/mina-client.service.js';
-import { OperationEventsService, OperationStreamData } from './services/operation-events.service.js';
-import { TournamentLeaderboardService } from './services/tournament-leaderboard.service.js';
+import {
+  TournamentStateService,
+  ProofGeneratorService,
+  ChainMonitorService,
+  MinaClientService,
+  OperationEventsService,
+  type OperationStreamData,
+  TournamentLeaderboardService,
+} from './services/index.js';
 import { OperationType, OperationStatus } from './schemas/pending-operation.schema.js';
 import {
   BuyTicketDto,

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Subject, Observable } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
-import { OperationStatus } from '../schemas/pending-operation.schema.js';
+import { OperationStatus } from '../../schemas/pending-operation.schema.js';
 
 export interface OperationEvent {
   operationId: string;

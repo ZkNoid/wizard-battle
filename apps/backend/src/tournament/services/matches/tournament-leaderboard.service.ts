@@ -4,9 +4,9 @@ import { Model } from 'mongoose';
 import {
   TournamentMatch,
   TournamentMatchDocument,
-} from '../schemas/tournament-match.schema.js';
-import { TournamentStateService } from './tournament-state.service.js';
-import { ITournamentLeaderboardEntry } from '../../../../common/types/tournament-matchmaking.types.js';
+} from '../../schemas/tournament-match.schema.js';
+import { TournamentStateService } from '../state/tournament-state.service.js';
+import { ITournamentLeaderboardEntry } from '../../../../../common/types/tournament-matchmaking.types.js';
 
 /** Ranking score: baseline 100 plus net wins, floored at 0. */
 export function tournamentLeaderboardScore(

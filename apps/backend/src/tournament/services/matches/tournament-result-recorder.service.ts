@@ -4,12 +4,12 @@ import { Model } from 'mongoose';
 import {
   TournamentMatch,
   TournamentMatchDocument,
-} from '../schemas/tournament-match.schema.js';
+} from '../../schemas/tournament-match.schema.js';
 import {
   Tournament,
   TournamentDocument,
   TournamentStatus,
-} from '../schemas/tournament.schema.js';
+} from '../../schemas/tournament.schema.js';
 
 /**
  * Lightweight service for tournament match result persistence and validation.

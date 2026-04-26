@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MerkleService } from './merkle.service.js';
 import { MerkleMap, Field, PublicKey } from 'o1js';
-import { TournamentDocument, TournamentStatus } from '../schemas/tournament.schema.js';
+import { TournamentDocument, TournamentStatus } from '../../schemas/tournament.schema.js';
 
 describe('MerkleService', () => {
   let service: MerkleService;

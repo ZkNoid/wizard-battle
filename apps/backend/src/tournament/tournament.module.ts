@@ -12,6 +12,7 @@ import {
 import {
   MinaClientService,
   MerkleService,
+  TournamentVerifiedMutationsService,
   TournamentStateService,
   ProofGeneratorService,
   ChainMonitorService,
@@ -35,6 +36,7 @@ import { TournamentController } from './tournament.controller.js';
     MinaClientService,
     MerkleService,
     OperationEventsService,
+    TournamentVerifiedMutationsService,
     TournamentStateService,
     ProofGeneratorService,
     ChainMonitorService,

@@ -15,20 +15,20 @@ import {
   TournamentLeaf,
   WinnerLeaf,
   TournamentStatus as ContractTournamentStatus,
-} from '../../../../mina-contracts/src/TournamentManager.js';
-import { RedisService } from '../../redis/redis.service.js';
-import { TournamentStateService } from './tournament-state.service.js';
-import { MerkleService } from './merkle.service.js';
+} from '../../../../../mina-contracts/src/TournamentManager.js';
+import { RedisService } from '../../../redis/redis.service.js';
+import { TournamentStateService } from '../state/tournament-state.service.js';
+import { MerkleService } from '../merkle/merkle.service.js';
 import { MinaClientService } from './mina-client.service.js';
 import {
   PendingOperationDocument,
   OperationStatus,
   OperationType,
-} from '../schemas/pending-operation.schema.js';
+} from '../../schemas/pending-operation.schema.js';
 import {
   TournamentDocument,
   TournamentStatus,
-} from '../schemas/tournament.schema.js';
+} from '../../schemas/tournament.schema.js';
 
 type UnsignedZkappTx = Awaited<ReturnType<typeof Mina.transaction>>;
 

@@ -10,7 +10,7 @@ import { MatchmakingService } from '../matchmaking/matchmaking.service';
 import { GameStateService } from './game-state.service';
 import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
 import { RewardService } from '../reward/reward.service';
-import { TournamentResultRecorderService } from '../tournament/services/tournament-result-recorder.service';
+import { TournamentResultRecorderService } from '../tournament/services/index.js';
 import {
   IAddToQueue,
   IAddToQueueResponse,
