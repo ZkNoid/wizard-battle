@@ -187,7 +187,10 @@ export function useBuyTicket(): UseBuyTicketReturn {
                   }
 
                   const { signedData } = signResult as AuroSignedZkappCommand;
-                  if (typeof signedData !== 'string' || signedData.trim() === '') {
+                  if (
+                    typeof signedData !== 'string' ||
+                    signedData.trim() === ''
+                  ) {
                     throw new Error(
                       'Wallet signedData must be a non-empty string (Auro JSON text of the zkApp command)'
                     );
