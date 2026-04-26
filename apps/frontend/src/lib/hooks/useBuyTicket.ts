@@ -9,12 +9,22 @@ import type { ITournament } from '@/lib/types/ITournament';
 // account/network helpers.  sendTransaction is an Auro-specific extension that
 // is not part of that interface, so we define a narrow local type and cast at
 // the call-site rather than re-declaring the global (which would conflict).
+interface AuroSignedZkappCommand {
+  signedData: string;
+}
+
+interface AuroProviderError {
+  message: string;
+  code: number;
+  data?: unknown;
+}
+
 interface AuroWithSign {
   sendTransaction: (params: {
     onlySign?: boolean;
     transaction: unknown;
     feePayer?: { fee?: string; memo?: string };
-  }) => Promise<{ signedData: unknown }>;
+  }) => Promise<AuroSignedZkappCommand | AuroProviderError>;
 }
 
 export type BuyTicketStatus =
@@ -154,13 +164,42 @@ export function useBuyTicket(): UseBuyTicketReturn {
                   });
 
                   if (!mountedRef.current) return;
+
+                  if (
+                    signResult &&
+                    typeof signResult === 'object' &&
+                    'code' in signResult
+                  ) {
+                    const err = signResult as AuroProviderError;
+                    throw new Error(
+                      err.message ?? `Wallet error (code ${err.code})`
+                    );
+                  }
+
+                  if (
+                    !signResult ||
+                    typeof signResult !== 'object' ||
+                    !('signedData' in signResult)
+                  ) {
+                    throw new Error(
+                      'Wallet did not return signed transaction data (expected signedData)'
+                    );
+                  }
+
+                  const { signedData } = signResult as AuroSignedZkappCommand;
+                  if (typeof signedData !== 'string' || signedData.trim() === '') {
+                    throw new Error(
+                      'Wallet signedData must be a non-empty string (Auro JSON text of the zkApp command)'
+                    );
+                  }
+
                   setStatus('broadcasting');
 
                   const { txHash: hash } =
                     await tournamentApi.submitTransaction(
                       tournament.id,
                       operationId,
-                      JSON.stringify(signResult.signedData)
+                      signedData
                     );
 
                   if (!mountedRef.current) return;
