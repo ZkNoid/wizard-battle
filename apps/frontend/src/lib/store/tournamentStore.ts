@@ -7,9 +7,7 @@ import {
 } from '@/lib/services/tournament-api';
 import type { ITournament, ITournamentAsset } from '@/lib/types/ITournament';
 
-function mapStatus(
-  backendStatus: string
-): ITournament['status'] {
+function mapStatus(backendStatus: string): ITournament['status'] {
   const normalized = backendStatus.toLowerCase();
   if (normalized === 'registration' || normalized === 'upcoming')
     return 'upcoming';
@@ -35,7 +33,7 @@ function mapUserStatus(
 function buildPrizePool(response: TournamentResponse): ITournamentAsset[] {
   const total = Number(response.prizePool);
   if (!total || isNaN(total)) return [];
-  return [{ type: 'currency', currency: 'gold', amount: total }];
+  return [{ type: 'currency', currency: 'mina', amount: total }];
 }
 
 function buildTicketCost(
@@ -43,7 +41,7 @@ function buildTicketCost(
 ): ITournamentAsset | null {
   const price = Number(response.ticketPrice);
   if (!price || isNaN(price)) return null;
-  return { type: 'currency', currency: 'gold', amount: price };
+  return { type: 'currency', currency: 'mina', amount: price };
 }
 
 export function mapTournamentResponse(
@@ -140,14 +138,11 @@ export const useTournamentStore = create<TournamentStore>()((set) => ({
     } catch (error) {
       set({
         error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to load tournaments',
+          error instanceof Error ? error.message : 'Failed to load tournaments',
         isLoading: false,
       });
     }
   },
 
-  clear: () =>
-    set({ tournaments: [], raw: [], error: null }),
+  clear: () => set({ tournaments: [], raw: [], error: null }),
 }));
