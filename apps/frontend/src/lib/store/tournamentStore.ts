@@ -11,8 +11,15 @@ function mapStatus(backendStatus: string): ITournament['status'] {
   const normalized = backendStatus.toLowerCase();
   if (normalized === 'registration' || normalized === 'upcoming')
     return 'upcoming';
+  if (normalized === 'created') return 'upcoming';
   if (normalized === 'active' || normalized === 'battle') return 'active';
-  if (normalized === 'ended' || normalized === 'finished') return 'ended';
+  if (
+    normalized === 'ended' ||
+    normalized === 'finished' ||
+    normalized === 'claiming'
+  ) {
+    return 'ended';
+  }
   return 'upcoming';
 }
 
