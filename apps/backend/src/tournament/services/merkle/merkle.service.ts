@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MerkleMap, Field, Poseidon, PublicKey, MerkleMapWitness, Bool, UInt64 } from 'o1js';
-import { WinnerLeaf } from '../../../../mina-contracts/src/TournamentManager.js';
-import { TournamentDocument, WinnerInfo } from '../schemas/tournament.schema.js';
+import { WinnerLeaf } from '../../../../../mina-contracts/src/TournamentManager.js';
+import { TournamentDocument, WinnerInfo } from '../../schemas/tournament.schema.js';
 
 export interface TournamentWitnessData {
   tournamentWitness: MerkleMapWitness;

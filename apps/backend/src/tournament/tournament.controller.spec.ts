@@ -2,9 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { createMock } from '@golevelup/ts-jest';
 import { TournamentController } from './tournament.controller.js';
-import { TournamentStateService } from './services/tournament-state.service.js';
-import { ProofGeneratorService } from './services/proof-generator.service.js';
-import { ChainMonitorService } from './services/chain-monitor.service.js';
+import {
+  TournamentStateService,
+  ProofGeneratorService,
+  ChainMonitorService,
+} from './services/index.js';
 import { TournamentStatus } from './schemas/tournament.schema.js';
 import { OperationType, OperationStatus } from './schemas/pending-operation.schema.js';
 import { Types } from 'mongoose';

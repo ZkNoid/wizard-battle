@@ -25,7 +25,7 @@ import { RedisClientType } from 'redis';
 import { GameStateService } from '../game-session/game-state.service';
 import { BotClientService } from '../bot/bot-client.service';
 import { RedisService } from '../redis/redis.service';
-import { TournamentResultRecorderService } from '../tournament/services/tournament-result-recorder.service';
+import { TournamentResultRecorderService } from '../tournament/services/index.js';
 import {
   IAddToQueue,
   IAddToQueueResponse,

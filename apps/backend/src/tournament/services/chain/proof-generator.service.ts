@@ -15,20 +15,20 @@ import {
   TournamentLeaf,
   WinnerLeaf,
   TournamentStatus as ContractTournamentStatus,
-} from '../../../../mina-contracts/src/TournamentManager.js';
-import { RedisService } from '../../redis/redis.service.js';
-import { TournamentStateService } from './tournament-state.service.js';
-import { MerkleService } from './merkle.service.js';
+} from '../../../../../mina-contracts/src/TournamentManager.js';
+import { RedisService } from '../../../redis/redis.service.js';
+import { TournamentStateService } from '../state/tournament-state.service.js';
+import { MerkleService } from '../merkle/merkle.service.js';
 import { MinaClientService } from './mina-client.service.js';
 import {
   PendingOperationDocument,
   OperationStatus,
   OperationType,
-} from '../schemas/pending-operation.schema.js';
+} from '../../schemas/pending-operation.schema.js';
 import {
   TournamentDocument,
   TournamentStatus,
-} from '../schemas/tournament.schema.js';
+} from '../../schemas/tournament.schema.js';
 
 type UnsignedZkappTx = Awaited<ReturnType<typeof Mina.transaction>>;
 
@@ -285,11 +285,13 @@ export class ProofGeneratorService implements OnModuleInit {
 
     const feePayerKey = this.getConfiguredFeePayerKeyIfMatchesOp(op);
     if (
-      feePayerKey &&
-      (op.type === OperationType.AdvanceToBattle ||
-        op.type === OperationType.FinalizeTournament)
+      op.type === OperationType.AdvanceToBattle ||
+      op.type === OperationType.FinalizeTournament
     ) {
-      await tx.sign([feePayerKey]);
+      if (!feePayerKey) {
+        throw new Error('No fee payer key found');
+      }
+      tx.sign([feePayerKey]);
       const pending = await tx.send();
       await this.tournamentStateService.updateOperationStatus(
         op._id,
@@ -381,8 +383,13 @@ export class ProofGeneratorService implements OnModuleInit {
   private async processFinalizeTournament(
     op: PendingOperationDocument
   ): Promise<void> {
-    const { tournament, tournamentWitness, currentTournamentLeaf, contract, playerPubKey } =
-      await this.prepareProofContext(op);
+    const {
+      tournament,
+      tournamentWitness,
+      currentTournamentLeaf,
+      contract,
+      playerPubKey,
+    } = await this.prepareProofContext(op);
 
     if (tournament.verified.status !== TournamentStatus.Battle) {
       throw new Error(

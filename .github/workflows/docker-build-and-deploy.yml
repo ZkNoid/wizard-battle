@@ -204,6 +204,7 @@ jobs:
             --build-arg TOURNAMENT_APP_PORT=${{ secrets.TOURNAMENT_APP_PORT }} \
             --build-arg TOURNAMENT_CONTRACT_ADDRESS=${{ secrets.TOURNAMENT_CONTRACT_ADDRESS }} \
             --build-arg TOURNAMENT_REDIS_URL=${{ secrets.TOURNAMENT_REDIS_URL }} \
+            --build-arg TOURNAMENT_ADMIN_PRIVATE_KEY=${{ secrets.TOURNAMENT_ADMIN_PRIVATE_KEY }} \
             -t ${{ steps.calc-container.outputs.container_name }} .
 
       - name: Save Docker image to tar

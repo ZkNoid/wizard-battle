@@ -6,19 +6,21 @@ import {
   TournamentStateService,
   AddPendingOperationDto,
 } from './tournament-state.service.js';
-import { MerkleService } from './merkle.service.js';
-import { RedisService } from '../../redis/redis.service.js';
+import { MerkleService } from '../merkle/merkle.service.js';
+import { RedisService } from '../../../redis/redis.service.js';
+import { OperationEventsService } from '../events/operation-events.service.js';
+import { TournamentVerifiedMutationsService } from './tournament-verified-mutations.service.js';
 import {
   Tournament,
   TournamentDocument,
   TournamentStatus,
-} from '../schemas/tournament.schema.js';
+} from '../../schemas/tournament.schema.js';
 import {
   PendingOperation,
   PendingOperationDocument,
   OperationType,
   OperationStatus,
-} from '../schemas/pending-operation.schema.js';
+} from '../../schemas/pending-operation.schema.js';
 
 describe('TournamentStateService', () => {
   let service: TournamentStateService;
@@ -104,6 +106,14 @@ describe('TournamentStateService', () => {
               publish: jest.fn().mockResolvedValue(1),
             }),
           },
+        },
+        {
+          provide: OperationEventsService,
+          useValue: { emit: jest.fn() },
+        },
+        {
+          provide: TournamentVerifiedMutationsService,
+          useValue: createMock<TournamentVerifiedMutationsService>(),
         },
       ],
     }).compile();
@@ -232,9 +242,14 @@ describe('TournamentStateService', () => {
 
   describe('addPendingOperation', () => {
     it('should reject duplicate pending operation', async () => {
-      jest
-        .spyOn(pendingOpModel, 'findOne')
-        .mockResolvedValue(mockPendingOps[0] as any);
+      jest.spyOn(tournamentModel, 'findOne').mockReturnValue({
+        exec: jest.fn().mockResolvedValue(mockTournament),
+      } as any);
+
+      const dupErr = Object.assign(new Error('E11000 duplicate key'), {
+        code: 11000,
+      });
+      jest.spyOn(pendingOpModel, 'create').mockRejectedValue(dupErr);
 
       const dto: AddPendingOperationDto = {
         tournamentId: '1',

@@ -8,7 +8,7 @@ import {
   TournamentMatch,
   TournamentMatchSchema,
 } from './schemas/tournament-match.schema.js';
-import { TournamentResultRecorderService } from './services/tournament-result-recorder.service.js';
+import { TournamentResultRecorderService } from './services/index.js';
 
 /**
  * Lightweight module that provides TournamentResultRecorderService

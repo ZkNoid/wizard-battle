@@ -1,15 +1,15 @@
 import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { TournamentStateService } from './tournament-state.service.js';
+import { TournamentStateService } from '../state/tournament-state.service.js';
 import { MinaClientService } from './mina-client.service.js';
-import { MerkleService } from './merkle.service.js';
-import { TournamentLeaderboardService } from './tournament-leaderboard.service.js';
+import { MerkleService } from '../merkle/merkle.service.js';
+import { TournamentLeaderboardService } from '../matches/tournament-leaderboard.service.js';
 import {
   OperationStatus,
   OperationType,
   PendingOperationDocument,
-} from '../schemas/pending-operation.schema.js';
-import { TournamentStatus } from '../schemas/tournament.schema.js';
+} from '../../schemas/pending-operation.schema.js';
+import { TournamentStatus } from '../../schemas/tournament.schema.js';
 
 export interface WinnerInfo {
   publicKey: string;
