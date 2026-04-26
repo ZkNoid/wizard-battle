@@ -369,13 +369,16 @@ export class ProofGeneratorService implements OnModuleInit {
     const { tournamentWitness, currentTournamentLeaf, contract, playerPubKey } =
       await this.prepareProofContext(op);
 
-    const tx = await Mina.transaction(playerPubKey, async () => {
-      await contract.advanceToBattle(
-        Field(op.tournamentId),
-        currentTournamentLeaf,
-        tournamentWitness
-      );
-    });
+    const tx = await Mina.transaction(
+      { sender: playerPubKey, fee: 100_000_000 },
+      async () => {
+        await contract.advanceToBattle(
+          Field(op.tournamentId),
+          currentTournamentLeaf,
+          tournamentWitness
+        );
+      }
+    );
 
     await this.submitProvedTransaction(op, tx);
   }
@@ -442,20 +445,23 @@ export class ProofGeneratorService implements OnModuleInit {
       prize3 = UInt64.from(BigInt(third.prizeAmount));
     }
 
-    const tx = await Mina.transaction(playerPubKey, async () => {
-      await contract.finalizeTournament(
-        Field(op.tournamentId),
-        currentTournamentLeaf,
-        tournamentWitness,
-        w1,
-        w2,
-        w3,
-        prize1,
-        prize2,
-        prize3,
-        newWinnersRoot
-      );
-    });
+    const tx = await Mina.transaction(
+      { sender: playerPubKey, fee: 100_000_000 },
+      async () => {
+        await contract.finalizeTournament(
+          Field(op.tournamentId),
+          currentTournamentLeaf,
+          tournamentWitness,
+          w1,
+          w2,
+          w3,
+          prize1,
+          prize2,
+          prize3,
+          newWinnersRoot
+        );
+      }
+    );
 
     await this.submitProvedTransaction(op, tx);
   }
