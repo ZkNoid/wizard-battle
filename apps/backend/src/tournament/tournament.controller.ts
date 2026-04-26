@@ -395,7 +395,7 @@ export class TournamentController {
   @Post(':id/submit-tx')
   async submitTransaction(
     @Param('id') tournamentId: string,
-    @Body() body: { operationId: string; signedTxJson: string | Record<string, unknown> }
+    @Body() body: { operationId: string; signedTxJson: string }
   ): Promise<{ txHash: string }> {
     const tournament =
       await this.tournamentStateService.getVerifiedState(tournamentId);
@@ -449,12 +449,15 @@ export class TournamentController {
       );
     }
 
-    const signedTxJsonStr =
-      typeof body.signedTxJson === 'string'
-        ? body.signedTxJson
-        : JSON.stringify(body.signedTxJson);
+    if (typeof body.signedTxJson !== 'string') {
+      throw new HttpException(
+        'signedTxJson must be a string (Auro signedData: JSON text of the zkApp command)',
+        HttpStatus.BAD_REQUEST
+      );
+    }
 
-    if (signedTxJsonStr.trim() === '' || signedTxJsonStr === '{}') {
+    const signedTxJsonStr = body.signedTxJson.trim();
+    if (signedTxJsonStr === '' || signedTxJsonStr === '{}') {
       throw new HttpException(
         'signedTxJson must be a non-empty serialized transaction',
         HttpStatus.BAD_REQUEST

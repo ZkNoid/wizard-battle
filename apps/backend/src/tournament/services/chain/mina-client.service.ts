@@ -182,7 +182,15 @@ export class MinaClientService implements OnModuleInit {
 
   async submitTransaction(signedTxJson: string): Promise<TransactionResult> {
     try {
-      const tx = Mina.Transaction.fromJSON(JSON.parse(signedTxJson));
+      const parsed: unknown = JSON.parse(signedTxJson);
+      if (typeof parsed !== 'object' || parsed === null) {
+        throw new Error(
+          'signedTxJson must be JSON text of a zkApp command object (not a JSON string, array, or primitive)'
+        );
+      }
+      const tx = Mina.Transaction.fromJSON(
+        parsed as Parameters<typeof Mina.Transaction.fromJSON>[0]
+      );
       const pendingTx = await tx.send();
 
       this.logger.log(`Transaction submitted: ${pendingTx.hash}`);
