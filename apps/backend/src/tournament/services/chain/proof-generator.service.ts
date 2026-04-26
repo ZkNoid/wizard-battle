@@ -285,11 +285,13 @@ export class ProofGeneratorService implements OnModuleInit {
 
     const feePayerKey = this.getConfiguredFeePayerKeyIfMatchesOp(op);
     if (
-      feePayerKey &&
-      (op.type === OperationType.AdvanceToBattle ||
-        op.type === OperationType.FinalizeTournament)
+      op.type === OperationType.AdvanceToBattle ||
+      op.type === OperationType.FinalizeTournament
     ) {
-      await tx.sign([feePayerKey]);
+      if (!feePayerKey) {
+        throw new Error('No fee payer key found');
+      }
+      tx.sign([feePayerKey]);
       const pending = await tx.send();
       await this.tournamentStateService.updateOperationStatus(
         op._id,
@@ -381,8 +383,13 @@ export class ProofGeneratorService implements OnModuleInit {
   private async processFinalizeTournament(
     op: PendingOperationDocument
   ): Promise<void> {
-    const { tournament, tournamentWitness, currentTournamentLeaf, contract, playerPubKey } =
-      await this.prepareProofContext(op);
+    const {
+      tournament,
+      tournamentWitness,
+      currentTournamentLeaf,
+      contract,
+      playerPubKey,
+    } = await this.prepareProofContext(op);
 
     if (tournament.verified.status !== TournamentStatus.Battle) {
       throw new Error(
