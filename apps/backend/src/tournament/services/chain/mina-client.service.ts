@@ -188,9 +188,7 @@ export class MinaClientService implements OnModuleInit {
           'signedTxJson must be JSON text of a zkApp command object (not a JSON string, array, or primitive)'
         );
       }
-      const tx = Mina.Transaction.fromJSON(
-        parsed as Parameters<typeof Mina.Transaction.fromJSON>[0]
-      );
+      const tx = Mina.Transaction.fromJSON(parsed['zkappCommand']);
       const pendingTx = await tx.send();
 
       this.logger.log(`Transaction submitted: ${pendingTx.hash}`);
