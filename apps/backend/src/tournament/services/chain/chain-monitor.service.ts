@@ -198,29 +198,45 @@ export class ChainMonitorService implements OnModuleInit {
       return;
     }
 
-    const matchCount =
-      await this.leaderboardService.getMatchCount(tournamentId);
-    if (matchCount === 0) {
-      this.logger.log(
-        `Tournament ${tournamentId}: no matches recorded yet, skipping finalization`
-      );
-      return;
-    }
-
     const winners =
       await this.leaderboardService.getTopWinners(tournamentId, 3);
+
+    let finalizeWinners: WinnerInfo[];
     if (winners.length === 0) {
+      const tournament =
+        await this.tournamentStateService.getVerifiedState(tournamentId);
+      if (!tournament) {
+        this.logger.warn(
+          `Tournament ${tournamentId} not found, cannot finalize with admin fallback`
+        );
+        return;
+      }
+      const adminPubKey = await this.getAdminPublicKey();
+      if (!adminPubKey) {
+        this.logger.warn(
+          `Tournament ${tournamentId}: no leaderboard winners and admin public key unavailable`
+        );
+        return;
+      }
+      const prizePool = tournament.verified.prizePool;
+      finalizeWinners = [
+        {
+          publicKey: adminPubKey,
+          prizeAmount: String(prizePool),
+          place: 1,
+        },
+      ];
       this.logger.log(
-        `Tournament ${tournamentId}: no winners determined from leaderboard`
+        `Tournament ${tournamentId}: no matches / no ranked winners; finalizing with admin as sole winner for full prize pool (${prizePool})`
       );
-      return;
+    } else {
+      finalizeWinners = winners;
+      this.logger.log(
+        `Tournament ${tournamentId}: finalizing with ${winners.length} winners from leaderboard`
+      );
     }
 
-    this.logger.log(
-      `Tournament ${tournamentId}: finalizing with ${winners.length} winners from leaderboard`
-    );
-
-    await this.triggerFinalization(tournamentId, winners);
+    await this.triggerFinalization(tournamentId, finalizeWinners);
   }
 
   async triggerFinalization(
