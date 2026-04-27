@@ -21,9 +21,13 @@
  *   BATTLE_SLOTS - Number of slots for battle phase (default: 400 = ~20 hours)
  *   REGISTRATION_START_DELAY - Slots before registration starts (default: 10 = ~30 min)
  *   BACKEND_URL - Backend API base URL (default: http://localhost:3001)
+ *
+ * If backend registration fails after the tx confirms, the POST body is written under
+ * keys/tournament/pending-backend/. Retry with: pnpm --filter mina-contracts run retry-pending-backend-tournaments
  */
 import dotenv from 'dotenv';
 dotenv.config();
+import { savePendingBackendPayload } from './pending-backend-tournament-store.js';
 import {
   Mina,
   PrivateKey,
@@ -523,7 +527,7 @@ async function main() {
 
   // Register tournament in the backend (with retries for pending tx)
   console.log('\nRegistering tournament in backend...');
-  const backendPayload = JSON.stringify({
+  const backendPayloadObject = {
     tournamentId: nextTournamentId.toString(),
     ticketPrice: ticketPrice.toString(),
     prize1Percent: 5000,
@@ -536,7 +540,8 @@ async function main() {
     txHash: createResult.hash,
     title: tournamentTitle,
     imageUrl: tournamentImageUrl,
-  });
+  };
+  const backendPayload = JSON.stringify(backendPayloadObject);
 
   const MAX_RETRIES = 12;
   const INITIAL_DELAY_MS = 30_000; // 30 s — Mina blocks take ~3 min
@@ -607,9 +612,12 @@ async function main() {
   }
 
   if (!backendRegistered) {
+    const savedPath = savePendingBackendPayload(backendPayloadObject);
     console.warn(
       'Tournament was created on-chain but backend registration did not complete. ' +
-        'You may retry by calling the backend /tournament endpoint manually with txHash: ' +
+        `Payload saved for retry: ${savedPath}\n` +
+        'Run: pnpm --filter mina-contracts run retry-pending-backend-tournaments\n' +
+        'Or POST manually to /tournament with txHash: ' +
         createResult.hash
     );
   }
