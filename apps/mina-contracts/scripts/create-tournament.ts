@@ -42,6 +42,7 @@ import {
   TournamentStatus,
   TournamentCreatedEvent,
   TicketPurchasedEvent,
+  TournamentAdvancedToBattleEvent,
   TournamentFinalizedEvent,
   PrizeClaimedEvent,
 } from '../src/TournamentManager.js';
@@ -114,6 +115,7 @@ function hashTournamentKey(tournamentId: Field): Field {
 async function fetchContractEvents(contractAddress: PublicKey): Promise<{
   tournamentCreated: TournamentCreatedEvent[];
   ticketPurchased: TicketPurchasedEvent[];
+  tournamentAdvancedToBattle: TournamentAdvancedToBattleEvent[];
   tournamentFinalized: TournamentFinalizedEvent[];
   prizeClaimed: PrizeClaimedEvent[];
 }> {
@@ -125,6 +127,7 @@ async function fetchContractEvents(contractAddress: PublicKey): Promise<{
 
   const tournamentCreated: TournamentCreatedEvent[] = [];
   const ticketPurchased: TicketPurchasedEvent[] = [];
+  const tournamentAdvancedToBattle: TournamentAdvancedToBattleEvent[] = [];
   const tournamentFinalized: TournamentFinalizedEvent[] = [];
   const prizeClaimed: PrizeClaimedEvent[] = [];
 
@@ -137,6 +140,11 @@ async function fetchContractEvents(contractAddress: PublicKey): Promise<{
         break;
       case 'TicketPurchased':
         ticketPurchased.push(eventData as unknown as TicketPurchasedEvent);
+        break;
+      case 'TournamentAdvancedToBattle':
+        tournamentAdvancedToBattle.push(
+          eventData as unknown as TournamentAdvancedToBattleEvent
+        );
         break;
       case 'TournamentFinalized':
         tournamentFinalized.push(
@@ -154,12 +162,16 @@ async function fetchContractEvents(contractAddress: PublicKey): Promise<{
   console.log(`Parsed events:`);
   console.log(`  - TournamentCreated: ${tournamentCreated.length}`);
   console.log(`  - TicketPurchased: ${ticketPurchased.length}`);
+  console.log(
+    `  - TournamentAdvancedToBattle: ${tournamentAdvancedToBattle.length}`
+  );
   console.log(`  - TournamentFinalized: ${tournamentFinalized.length}`);
   console.log(`  - PrizeClaimed: ${prizeClaimed.length}`);
 
   return {
     tournamentCreated,
     ticketPurchased,
+    tournamentAdvancedToBattle,
     tournamentFinalized,
     prizeClaimed,
   };
@@ -168,6 +180,7 @@ async function fetchContractEvents(contractAddress: PublicKey): Promise<{
 function rebuildTournamentsMap(events: {
   tournamentCreated: TournamentCreatedEvent[];
   ticketPurchased: TicketPurchasedEvent[];
+  tournamentAdvancedToBattle: TournamentAdvancedToBattleEvent[];
   tournamentFinalized: TournamentFinalizedEvent[];
   prizeClaimed: PrizeClaimedEvent[];
 }): {
@@ -238,6 +251,32 @@ function rebuildTournamentsMap(events: {
       // Update participants map
       const playerKey = Poseidon.hash(event.player.toFields());
       state.participantsMap.set(playerKey, Field(1));
+
+      const key = hashTournamentKey(event.tournamentId);
+      tournamentsMap.set(key, state.leaf.hash());
+    }
+  }
+
+  // Process advance-to-battle (must replay after tickets, before finalize)
+  for (const event of events.tournamentAdvancedToBattle) {
+    const tournamentId = event.tournamentId.toString();
+    const state = tournaments.get(tournamentId);
+
+    if (state) {
+      state.leaf = new TournamentLeaf({
+        status: TournamentStatus.Battle,
+        registrationStartSlot: state.leaf.registrationStartSlot,
+        battleStartSlot: state.leaf.battleStartSlot,
+        battleEndSlot: state.leaf.battleEndSlot,
+        ticketPrice: state.leaf.ticketPrice,
+        prize1Percent: state.leaf.prize1Percent,
+        prize2Percent: state.leaf.prize2Percent,
+        prize3Percent: state.leaf.prize3Percent,
+        participantsRoot: state.leaf.participantsRoot,
+        winnersRoot: state.leaf.winnersRoot,
+        prizePool: state.leaf.prizePool,
+        participantCount: state.leaf.participantCount,
+      });
 
       const key = hashTournamentKey(event.tournamentId);
       tournamentsMap.set(key, state.leaf.hash());
@@ -382,6 +421,10 @@ async function main() {
   if (!onChainRoot.equals(rebuiltRoot).toBoolean()) {
     console.error('ERROR: Rebuilt root does not match on-chain root!');
     console.error('This may indicate missing events or state corruption.');
+    console.error(
+      'If the zkApp predates TournamentAdvancedToBattle events, tournaments that ' +
+        'reached Battle cannot be reconstructed from the archive — redeploy the contract.'
+    );
     process.exit(1);
   }
   console.log('✓ Root verification passed');

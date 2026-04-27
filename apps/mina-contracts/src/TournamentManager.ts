@@ -141,6 +141,11 @@ export class TicketPurchasedEvent extends Struct({
   newParticipantCount: UInt32,
 }) {}
 
+/** Emitted when anyone advances a tournament from Registration → Battle (no other fields change). */
+export class TournamentAdvancedToBattleEvent extends Struct({
+  tournamentId: Field,
+}) {}
+
 export class TournamentFinalizedEvent extends Struct({
   tournamentId: Field,
   winner1: PublicKey,
@@ -170,6 +175,7 @@ export class TournamentManager extends SmartContract {
   events = {
     TournamentCreated: TournamentCreatedEvent,
     TicketPurchased: TicketPurchasedEvent,
+    TournamentAdvancedToBattle: TournamentAdvancedToBattleEvent,
     TournamentFinalized: TournamentFinalizedEvent,
     PrizeClaimed: PrizeClaimedEvent,
   };
@@ -523,6 +529,10 @@ export class TournamentManager extends SmartContract {
       updatedTournament.hash()
     ) as [Field, Field];
     this.tournamentsRoot.set(newRoot);
+    this.emitEvent(
+      'TournamentAdvancedToBattle',
+      new TournamentAdvancedToBattleEvent({ tournamentId })
+    );
   }
 
   @method async claimPrize(
