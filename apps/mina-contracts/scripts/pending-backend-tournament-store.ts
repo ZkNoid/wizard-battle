@@ -1,5 +1,6 @@
 /**
- * Persist tournament POST payloads when backend registration fails after on-chain create.
+ * Persist tournament POST payloads when backend registration fails or when tx `wait()`
+ * errors after `send()` (tx may still confirm — root in payload is optimistic until verified).
  * Used by create-tournament.ts and retry-pending-backend-tournaments.ts.
  */
 import fs from 'node:fs';
@@ -26,6 +27,12 @@ export type PendingBackendEnvelope = {
   version: typeof PENDING_BACKEND_VERSION;
   savedAt: string;
   payload: TournamentBackendPayload;
+  /** Set when create-tournament's wait() threw; verify tx on-chain before trusting tournamentsRoot */
+  confirmationUncertain?: boolean;
+};
+
+export type SavePendingBackendOptions = {
+  confirmationUncertain?: boolean;
 };
 
 /** Relative to apps/mina-contracts cwd when scripts run via pnpm from that package */
@@ -41,7 +48,8 @@ export function pendingBackendFilePath(tournamentId: string): string {
 }
 
 export function savePendingBackendPayload(
-  payload: TournamentBackendPayload
+  payload: TournamentBackendPayload,
+  options?: SavePendingBackendOptions
 ): string {
   const dir = getPendingBackendDir();
   fs.mkdirSync(dir, { recursive: true });
@@ -50,6 +58,9 @@ export function savePendingBackendPayload(
     version: PENDING_BACKEND_VERSION,
     savedAt: new Date().toISOString(),
     payload,
+    ...(options?.confirmationUncertain
+      ? { confirmationUncertain: true }
+      : {}),
   };
 
   const filePath = pendingBackendFilePath(payload.tournamentId);

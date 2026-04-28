@@ -140,6 +140,12 @@ async function main() {
     const id = envelope.payload.tournamentId;
     console.log(`\n→ Tournament ${id} (${path.basename(filePath)})`);
     console.log(`  savedAt: ${envelope.savedAt}, txHash: ${envelope.payload.txHash}`);
+    if (envelope.confirmationUncertain) {
+      console.warn(
+        '  confirmationUncertain: tx wait() failed when saving — confirm tx on-chain; ' +
+          'if POST fails with root mismatch, run sync-tournaments instead.'
+      );
+    }
 
     if (dryRun) {
       console.log('  dry-run: would POST to /tournament');

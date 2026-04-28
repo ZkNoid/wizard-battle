@@ -22,8 +22,10 @@
  *   REGISTRATION_START_DELAY - Slots before registration starts (default: 10 = ~30 min)
  *   BACKEND_URL - Backend API base URL (default: http://localhost:3001)
  *
- * If backend registration fails after the tx confirms, the POST body is written under
- * keys/tournament/pending-backend/. Retry with: pnpm --filter mina-contracts run retry-pending-backend-tournaments
+ * If `createResult.wait()` throws or backend registration fails after the tx is sent, the
+ * POST body is written under keys/tournament/pending-backend/ (wait failures set
+ * confirmationUncertain on the saved file). Retry with:
+ * pnpm --filter mina-contracts run retry-pending-backend-tournaments
  */
 import dotenv from 'dotenv';
 dotenv.config();
@@ -503,11 +505,7 @@ async function main() {
   const createResult = await createTx.sign([deployerKey]).send();
   console.log(`Transaction hash: ${createResult.hash}`);
 
-  // Wait for confirmation
-  console.log('Waiting for confirmation...');
-  await createResult.wait();
-
-  // Compute the new tournamentsRoot after this entry was added on-chain
+  // Optimistic root for backend POST — matches chain iff create tx succeeds
   const newLeaf = new TournamentLeaf({
     status: TournamentStatus.Registration,
     registrationStartSlot: UInt32.from(registrationStartSlot),
@@ -525,8 +523,6 @@ async function main() {
   tournamentsMap.set(tournamentKey, newLeaf.hash());
   const newTournamentsRoot = tournamentsMap.getRoot().toString();
 
-  // Register tournament in the backend (with retries for pending tx)
-  console.log('\nRegistering tournament in backend...');
   const backendPayloadObject = {
     tournamentId: nextTournamentId.toString(),
     ticketPrice: ticketPrice.toString(),
@@ -542,6 +538,29 @@ async function main() {
     imageUrl: tournamentImageUrl,
   };
   const backendPayload = JSON.stringify(backendPayloadObject);
+
+  console.log('Waiting for confirmation...');
+  try {
+    await createResult.wait();
+  } catch (waitErr) {
+    const savedPath = savePendingBackendPayload(backendPayloadObject, {
+      confirmationUncertain: true,
+    });
+    console.error(
+      'Transaction was sent but confirmation failed (timeout or network error).',
+      waitErr
+    );
+    console.error(
+      `State may be out of sync until you verify tx ${createResult.hash} on-chain.\n` +
+        `Payload saved: ${savedPath}\n` +
+        'After the tx confirms, run: pnpm --filter mina-contracts run retry-pending-backend-tournaments\n' +
+        'If tournamentsRoot does not match chain, use sync-tournaments instead.'
+    );
+    process.exit(1);
+  }
+
+  // Register tournament in the backend (with retries for pending tx)
+  console.log('\nRegistering tournament in backend...');
 
   const MAX_RETRIES = 12;
   const INITIAL_DELAY_MS = 30_000; // 30 s — Mina blocks take ~3 min
