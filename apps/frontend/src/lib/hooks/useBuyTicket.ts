@@ -68,6 +68,8 @@ export function useBuyTicket(): UseBuyTicketReturn {
   const [error, setError] = useState<string | null>(null);
   const sseCleanupRef = useRef<(() => void) | null>(null);
   const mountedRef = useRef(true);
+  /** Prevents a second wallet prompt when SSE replays the same `submitted` payload (merge initial + live, or EventSource reconnect). */
+  const submittedSigningStartedRef = useRef(false);
 
   const closeStream = useCallback(() => {
     sseCleanupRef.current?.();
@@ -85,6 +87,7 @@ export function useBuyTicket(): UseBuyTicketReturn {
 
   const reset = useCallback(() => {
     closeStream();
+    submittedSigningStartedRef.current = false;
     setStatus('idle');
     setTxHash(null);
     setError(null);
@@ -101,6 +104,7 @@ export function useBuyTicket(): UseBuyTicketReturn {
       if (!TERMINAL_STATUSES.includes(status)) return;
 
       closeStream();
+      submittedSigningStartedRef.current = false;
       setError(null);
       setTxHash(null);
       setStatus('submitting');
@@ -133,6 +137,8 @@ export function useBuyTicket(): UseBuyTicketReturn {
 
               case 'submitted': {
                 if (!event.unsignedTxJson) break;
+                if (submittedSigningStartedRef.current) break;
+                submittedSigningStartedRef.current = true;
 
                 setStatus('awaiting-signature');
 
