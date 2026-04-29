@@ -24,9 +24,8 @@ const PERCENT_BASE = UInt32.from(10000); // 100.00%
 
 export const TournamentStatus = {
   Created: UInt32.from(0),
-  Registration: UInt32.from(1),
-  Battle: UInt32.from(2),
-  Claiming: UInt32.from(3),
+  Battle: UInt32.from(1),
+  Claiming: UInt32.from(2),
 };
 
 export class TournamentConfig extends Struct({
@@ -54,7 +53,6 @@ export class TournamentConfig extends Struct({
 
 export class TournamentLeaf extends Struct({
   status: UInt32,
-  registrationStartSlot: UInt32,
   battleStartSlot: UInt32,
   battleEndSlot: UInt32,
   ticketPrice: UInt64,
@@ -69,7 +67,6 @@ export class TournamentLeaf extends Struct({
   hash(): Field {
     return Poseidon.hash([
       ...this.status.toFields(),
-      ...this.registrationStartSlot.toFields(),
       ...this.battleStartSlot.toFields(),
       ...this.battleEndSlot.toFields(),
       ...this.ticketPrice.toFields(),
@@ -86,7 +83,6 @@ export class TournamentLeaf extends Struct({
   static empty(): TournamentLeaf {
     return new TournamentLeaf({
       status: TournamentStatus.Created,
-      registrationStartSlot: UInt32.from(0),
       battleStartSlot: UInt32.from(0),
       battleEndSlot: UInt32.from(0),
       ticketPrice: UInt64.from(0),
@@ -124,7 +120,6 @@ export class WinnerLeaf extends Struct({
 
 export class TournamentCreatedEvent extends Struct({
   tournamentId: Field,
-  registrationStartSlot: UInt32,
   battleStartSlot: UInt32,
   battleEndSlot: UInt32,
   ticketPrice: UInt64,
@@ -139,11 +134,6 @@ export class TicketPurchasedEvent extends Struct({
   newParticipantsRoot: Field,
   newPrizePool: UInt64,
   newParticipantCount: UInt32,
-}) {}
-
-/** Emitted when anyone advances a tournament from Registration → Battle (no other fields change). */
-export class TournamentAdvancedToBattleEvent extends Struct({
-  tournamentId: Field,
 }) {}
 
 export class TournamentFinalizedEvent extends Struct({
@@ -175,7 +165,6 @@ export class TournamentManager extends SmartContract {
   events = {
     TournamentCreated: TournamentCreatedEvent,
     TicketPurchased: TicketPurchasedEvent,
-    TournamentAdvancedToBattle: TournamentAdvancedToBattleEvent,
     TournamentFinalized: TournamentFinalizedEvent,
     PrizeClaimed: PrizeClaimedEvent,
   };
@@ -234,7 +223,6 @@ export class TournamentManager extends SmartContract {
   @method async createTournament(
     tournamentId: Field,
     config: TournamentConfig,
-    registrationStartSlot: UInt32,
     battleStartSlot: UInt32,
     battleEndSlot: UInt32,
     tournamentWitness: MerkleMapWitness
@@ -248,11 +236,6 @@ export class TournamentManager extends SmartContract {
       'Ticket price must be > 0'
     );
 
-    // Validate timing: registration < battle < battleEnd
-    registrationStartSlot.assertLessThan(
-      battleStartSlot,
-      'Registration must start before battle'
-    );
     battleStartSlot.assertLessThan(
       battleEndSlot,
       'Battle must start before it ends'
@@ -268,10 +251,9 @@ export class TournamentManager extends SmartContract {
       'Invalid witness key'
     );
 
-    // Create new tournament leaf
+    // New tournaments start in Battle; tickets are allowed once battleStartSlot is reached.
     const newTournament = new TournamentLeaf({
-      status: TournamentStatus.Registration,
-      registrationStartSlot,
+      status: TournamentStatus.Battle,
       battleStartSlot,
       battleEndSlot,
       ticketPrice: config.ticketPrice,
@@ -290,7 +272,6 @@ export class TournamentManager extends SmartContract {
       'TournamentCreated',
       new TournamentCreatedEvent({
         tournamentId,
-        registrationStartSlot,
         battleStartSlot,
         battleEndSlot,
         ticketPrice: config.ticketPrice,
@@ -348,7 +329,6 @@ export class TournamentManager extends SmartContract {
     // Update tournament to Claiming with winners
     const finalizedTournament = new TournamentLeaf({
       status: TournamentStatus.Claiming,
-      registrationStartSlot: currentTournament.registrationStartSlot,
       battleStartSlot: currentTournament.battleStartSlot,
       battleEndSlot: currentTournament.battleEndSlot,
       ticketPrice: currentTournament.ticketPrice,
@@ -404,15 +384,15 @@ export class TournamentManager extends SmartContract {
       'Invalid tournament ID'
     );
 
-    // Must be in Registration phase
-    currentTournament.status.assertEquals(TournamentStatus.Registration);
+    // Join during battle window: [battleStartSlot, battleEndSlot)
+    currentTournament.status.assertEquals(TournamentStatus.Battle);
     currentSlot.assertGreaterThanOrEqual(
-      currentTournament.registrationStartSlot,
-      'Registration not started'
+      currentTournament.battleStartSlot,
+      'Battle not started'
     );
     currentSlot.assertLessThan(
-      currentTournament.battleStartSlot,
-      'Registration ended'
+      currentTournament.battleEndSlot,
+      'Battle ended'
     );
 
     // Verify player not already registered (empty leaf)
@@ -451,7 +431,6 @@ export class TournamentManager extends SmartContract {
     // Update tournament state
     const updatedTournament = new TournamentLeaf({
       status: currentTournament.status,
-      registrationStartSlot: currentTournament.registrationStartSlot,
       battleStartSlot: currentTournament.battleStartSlot,
       battleEndSlot: currentTournament.battleEndSlot,
       ticketPrice: currentTournament.ticketPrice,
@@ -480,58 +459,6 @@ export class TournamentManager extends SmartContract {
         newPrizePool: updatedTournament.prizePool,
         newParticipantCount: updatedTournament.participantCount,
       })
-    );
-  }
-
-  @method async advanceToBattle(
-    tournamentId: Field,
-    currentTournament: TournamentLeaf,
-    tournamentWitness: MerkleMapWitness
-  ) {
-    // Anyone can call this to advance phase when time is right
-    const currentSlot = this.getCurrentSlot();
-    const currentRoot = this.tournamentsRoot.getAndRequireEquals();
-
-    // Verify current tournament state
-    const [rootBefore, key] = tournamentWitness.computeRootAndKey(
-      currentTournament.hash()
-    ) as [Field, Field];
-    rootBefore.assertEquals(currentRoot, 'Invalid tournament state');
-    key.assertEquals(
-      TournamentManager.keyFor(tournamentId),
-      'Invalid tournament ID'
-    );
-
-    // Must be in Registration phase and battle start slot reached
-    currentTournament.status.assertEquals(TournamentStatus.Registration);
-    currentSlot.assertGreaterThanOrEqual(
-      currentTournament.battleStartSlot,
-      'Battle phase not started yet'
-    );
-
-    // Update to Battle phase
-    const updatedTournament = new TournamentLeaf({
-      status: TournamentStatus.Battle,
-      registrationStartSlot: currentTournament.registrationStartSlot,
-      battleStartSlot: currentTournament.battleStartSlot,
-      battleEndSlot: currentTournament.battleEndSlot,
-      ticketPrice: currentTournament.ticketPrice,
-      prize1Percent: currentTournament.prize1Percent,
-      prize2Percent: currentTournament.prize2Percent,
-      prize3Percent: currentTournament.prize3Percent,
-      participantsRoot: currentTournament.participantsRoot,
-      winnersRoot: currentTournament.winnersRoot,
-      prizePool: currentTournament.prizePool,
-      participantCount: currentTournament.participantCount,
-    });
-
-    const [newRoot] = tournamentWitness.computeRootAndKey(
-      updatedTournament.hash()
-    ) as [Field, Field];
-    this.tournamentsRoot.set(newRoot);
-    this.emitEvent(
-      'TournamentAdvancedToBattle',
-      new TournamentAdvancedToBattleEvent({ tournamentId })
     );
   }
 
@@ -595,7 +522,6 @@ export class TournamentManager extends SmartContract {
     // Update tournament with new winners root
     const updatedTournament = new TournamentLeaf({
       status: currentTournament.status,
-      registrationStartSlot: currentTournament.registrationStartSlot,
       battleStartSlot: currentTournament.battleStartSlot,
       battleEndSlot: currentTournament.battleEndSlot,
       ticketPrice: currentTournament.ticketPrice,

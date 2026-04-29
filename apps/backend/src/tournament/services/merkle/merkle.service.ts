@@ -77,14 +77,12 @@ export class MerkleService {
   computeTournamentLeafHash(tournament: TournamentDocument): Field {
     const statusMap: Record<string, number> = {
       Created: 0,
-      Registration: 1,
-      Battle: 2,
-      Claiming: 3,
+      Battle: 1,
+      Claiming: 2,
     };
 
     const fields = [
       Field(statusMap[tournament.verified.status] ?? 0),
-      Field(tournament.verified.registrationStartSlot),
       Field(tournament.verified.battleStartSlot),
       Field(tournament.verified.battleEndSlot),
       Field(BigInt(tournament.verified.ticketPrice)),

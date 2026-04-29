@@ -7,12 +7,11 @@ import {
 } from '@/lib/services/tournament-api';
 import type { ITournament, ITournamentAsset } from '@/lib/types/ITournament';
 
-function mapStatus(backendStatus: string): ITournament['status'] {
-  const normalized = backendStatus.toLowerCase();
-  if (normalized === 'registration' || normalized === 'upcoming')
-    return 'upcoming';
-  if (normalized === 'created') return 'upcoming';
-  if (normalized === 'active' || normalized === 'battle') return 'active';
+function mapStatus(
+  response: TournamentResponse,
+  anchor?: { slot: number; timeMs: number } | null
+): ITournament['status'] {
+  const normalized = response.status.toLowerCase();
   if (
     normalized === 'ended' ||
     normalized === 'finished' ||
@@ -20,6 +19,28 @@ function mapStatus(backendStatus: string): ITournament['status'] {
   ) {
     return 'ended';
   }
+
+  const hasAnchor =
+    anchor != null &&
+    Number.isFinite(anchor.slot) &&
+    Number.isFinite(response.battleStartSlot) &&
+    Number.isFinite(response.battleEndSlot);
+
+  if (
+    normalized === 'battle' ||
+    normalized === 'active' ||
+    normalized === 'created' ||
+    normalized === 'registration' ||
+    normalized === 'upcoming'
+  ) {
+    if (hasAnchor) {
+      if (anchor.slot < response.battleStartSlot) return 'upcoming';
+      if (anchor.slot >= response.battleEndSlot) return 'ended';
+    }
+    if (normalized === 'battle' || normalized === 'active') return 'active';
+    return 'upcoming';
+  }
+
   return 'upcoming';
 }
 
@@ -70,10 +91,6 @@ export function mapTournamentResponse(
 
   const scheduleTimes = hasAnchor
     ? {
-        registrationOpensAtMs: slotToInstantMs(
-          response.registrationStartSlot,
-          anchor
-        ),
         battleStartsAtMs: slotToInstantMs(response.battleStartSlot, anchor),
         battleEndsAtMs: slotToInstantMs(response.battleEndSlot, anchor),
       }
@@ -91,8 +108,8 @@ export function mapTournamentResponse(
     dateFrom,
     dateTo,
     scheduleTimes,
-    startDate: String(response.registrationStartSlot),
-    status: mapStatus(response.status),
+    startDate: String(response.battleStartSlot),
+    status: mapStatus(response, anchor),
     userStatus: mapUserStatus(response, playerPubKey),
     participantCount: response.participantCount,
     imageURL:

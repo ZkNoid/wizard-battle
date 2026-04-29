@@ -1,6 +1,5 @@
 /** Chain-time estimates when we have a live slot anchor (see tournament store). */
 export interface ITournamentScheduleTimes {
-  registrationOpensAtMs: number;
   battleStartsAtMs: number;
   battleEndsAtMs: number;
 }

@@ -132,7 +132,7 @@ describe('TournamentManager', () => {
   });
 
   describe('Tournament Creation', () => {
-    test('admin can create a tournament', async () => {
+    test('admin can create a tournament in Battle status', async () => {
       const tournamentId = Field(1);
       const config = new TournamentConfig({
         ticketPrice: UInt64.from(1_000_000_000), // 1 MINA
@@ -147,7 +147,6 @@ describe('TournamentManager', () => {
         await app.createTournament(
           tournamentId,
           config,
-          UInt32.from(10_000), // registration start
           UInt32.from(11_000), // battle start
           UInt32.from(12_000), // battle end
           witness
@@ -156,10 +155,8 @@ describe('TournamentManager', () => {
       await txn.prove();
       await txn.sign([adminKey]).send();
 
-      // Update local map
       const newTournament = new TournamentLeaf({
-        status: TournamentStatus.Registration,
-        registrationStartSlot: UInt32.from(10_000),
+        status: TournamentStatus.Battle,
         battleStartSlot: UInt32.from(11_000),
         battleEndSlot: UInt32.from(12_000),
         ticketPrice: config.ticketPrice,
@@ -192,7 +189,6 @@ describe('TournamentManager', () => {
           await app.createTournament(
             tournamentId,
             invalidConfig,
-            UInt32.from(10_000),
             UInt32.from(11_000),
             UInt32.from(12_000),
             witness
@@ -221,8 +217,7 @@ describe('TournamentManager', () => {
       });
 
       currentTournament = new TournamentLeaf({
-        status: TournamentStatus.Registration,
-        registrationStartSlot: UInt32.from(10_000),
+        status: TournamentStatus.Battle,
         battleStartSlot: UInt32.from(11_000),
         battleEndSlot: UInt32.from(12_000),
         ticketPrice: config.ticketPrice,
@@ -241,7 +236,6 @@ describe('TournamentManager', () => {
         await app.createTournament(
           tournamentId,
           config,
-          UInt32.from(10_000),
           UInt32.from(11_000),
           UInt32.from(12_000),
           witness
@@ -251,9 +245,10 @@ describe('TournamentManager', () => {
       await txn.sign([adminKey]).send();
 
       tournamentsMap.set(getTournamentKey(tournamentId), currentTournament.hash());
+      setSlot(11_000n);
     });
 
-    test('player can buy ticket during registration', async () => {
+    test('player can buy ticket during battle window', async () => {
       const ticketPrice = UInt64.from(1_000_000_000);
       const adminBalanceBefore = Mina.getBalance(admin);
 
@@ -277,16 +272,13 @@ describe('TournamentManager', () => {
       await txn.prove();
       await txn.sign([player1Key]).send();
 
-      // Update local state
       participantsMap.set(getPlayerKey(player1), Field(1));
 
-      // Fee: 5% of 1 MINA = 0.05 MINA
       const feeAmount = ticketPrice.mul(UInt64.from(500)).div(UInt64.from(10000));
       const prizeContribution = ticketPrice.sub(feeAmount);
 
       const updatedTournament = new TournamentLeaf({
-        status: TournamentStatus.Registration,
-        registrationStartSlot: currentTournament.registrationStartSlot,
+        status: TournamentStatus.Battle,
         battleStartSlot: currentTournament.battleStartSlot,
         battleEndSlot: currentTournament.battleEndSlot,
         ticketPrice: currentTournament.ticketPrice,
@@ -302,15 +294,39 @@ describe('TournamentManager', () => {
 
       expect(app.tournamentsRoot.get()).toEqual(tournamentsMap.getRoot());
 
-      // Admin should have received fee
       const adminBalanceAfter = Mina.getBalance(admin);
       expect(adminBalanceAfter.sub(adminBalanceBefore)).toEqual(feeAmount);
+    });
+
+    test('player cannot buy ticket before battle starts', async () => {
+      setSlot(10_500n);
+      const ticketPrice = UInt64.from(1_000_000_000);
+      const tournamentWitness = tournamentsMap.getWitness(
+        getTournamentKey(tournamentId)
+      );
+      const participantWitness = participantsMap.getWitness(
+        getPlayerKey(player1)
+      );
+
+      await expect(async () => {
+        const txn = await Mina.transaction(player1, async () => {
+          const pay = AccountUpdate.createSigned(player1);
+          pay.balance.subInPlace(ticketPrice);
+          await app.buyTicket(
+            tournamentId,
+            currentTournament,
+            tournamentWitness,
+            participantWitness
+          );
+        });
+        await txn.prove();
+        await txn.sign([player1Key]).send();
+      }).rejects.toThrow();
     });
 
     test('player cannot buy ticket twice', async () => {
       const ticketPrice = UInt64.from(1_000_000_000);
 
-      // First purchase
       let tournamentWitness = tournamentsMap.getWitness(
         getTournamentKey(tournamentId)
       );
@@ -329,14 +345,12 @@ describe('TournamentManager', () => {
       await txn1.prove();
       await txn1.sign([player1Key]).send();
 
-      // Update local state
       participantsMap.set(getPlayerKey(player1), Field(1));
       const feeAmount = ticketPrice.mul(UInt64.from(500)).div(UInt64.from(10000));
       const prizeContribution = ticketPrice.sub(feeAmount);
 
       const updatedTournament = new TournamentLeaf({
-        status: TournamentStatus.Registration,
-        registrationStartSlot: currentTournament.registrationStartSlot,
+        status: TournamentStatus.Battle,
         battleStartSlot: currentTournament.battleStartSlot,
         battleEndSlot: currentTournament.battleEndSlot,
         ticketPrice: currentTournament.ticketPrice,
@@ -350,7 +364,6 @@ describe('TournamentManager', () => {
       });
       tournamentsMap.set(getTournamentKey(tournamentId), updatedTournament.hash());
 
-      // Second purchase attempt should fail
       tournamentWitness = tournamentsMap.getWitness(getTournamentKey(tournamentId));
       participantWitness = participantsMap.getWitness(getPlayerKey(player1));
 
@@ -367,115 +380,6 @@ describe('TournamentManager', () => {
         });
         await txn2.prove();
         await txn2.sign([player1Key]).send();
-      }).rejects.toThrow();
-    });
-  });
-
-  describe('Phase Transitions', () => {
-    let tournamentId: Field;
-    let participantsMap: MerkleMap;
-    let currentTournament: TournamentLeaf;
-
-    beforeEach(async () => {
-      tournamentId = Field(1);
-      participantsMap = new MerkleMap();
-
-      const config = new TournamentConfig({
-        ticketPrice: UInt64.from(1_000_000_000),
-        prize1Percent: UInt32.from(5000),
-        prize2Percent: UInt32.from(3000),
-        prize3Percent: UInt32.from(2000),
-      });
-
-      currentTournament = new TournamentLeaf({
-        status: TournamentStatus.Registration,
-        registrationStartSlot: UInt32.from(10_000),
-        battleStartSlot: UInt32.from(11_000),
-        battleEndSlot: UInt32.from(12_000),
-        ticketPrice: config.ticketPrice,
-        prize1Percent: config.prize1Percent,
-        prize2Percent: config.prize2Percent,
-        prize3Percent: config.prize3Percent,
-        participantsRoot: participantsMap.getRoot(),
-        winnersRoot: new MerkleMap().getRoot(),
-        prizePool: UInt64.from(0),
-        participantCount: UInt32.from(0),
-      });
-
-      const witness = tournamentsMap.getWitness(getTournamentKey(tournamentId));
-
-      const txn = await Mina.transaction(admin, async () => {
-        await app.createTournament(
-          tournamentId,
-          config,
-          UInt32.from(10_000),
-          UInt32.from(11_000),
-          UInt32.from(12_000),
-          witness
-        );
-      });
-      await txn.prove();
-      await txn.sign([adminKey]).send();
-
-      tournamentsMap.set(getTournamentKey(tournamentId), currentTournament.hash());
-    });
-
-    test('anyone can advance to battle phase when time is right', async () => {
-      // Advance slot to battle start
-      setSlot(11_000n);
-
-      const tournamentWitness = tournamentsMap.getWitness(
-        getTournamentKey(tournamentId)
-      );
-
-      const txn = await Mina.transaction(player1, async () => {
-        await app.advanceToBattle(
-          tournamentId,
-          currentTournament,
-          tournamentWitness
-        );
-      });
-      await txn.prove();
-      await txn.sign([player1Key]).send();
-
-      // Update local state
-      const updatedTournament = new TournamentLeaf({
-        status: TournamentStatus.Battle,
-        registrationStartSlot: currentTournament.registrationStartSlot,
-        battleStartSlot: currentTournament.battleStartSlot,
-        battleEndSlot: currentTournament.battleEndSlot,
-        ticketPrice: currentTournament.ticketPrice,
-        prize1Percent: currentTournament.prize1Percent,
-        prize2Percent: currentTournament.prize2Percent,
-        prize3Percent: currentTournament.prize3Percent,
-        participantsRoot: currentTournament.participantsRoot,
-        winnersRoot: currentTournament.winnersRoot,
-        prizePool: currentTournament.prizePool,
-        participantCount: currentTournament.participantCount,
-      });
-      tournamentsMap.set(getTournamentKey(tournamentId), updatedTournament.hash());
-
-      expect(app.tournamentsRoot.get()).toEqual(tournamentsMap.getRoot());
-    });
-
-    test('cannot advance to battle before time', async () => {
-      // Still in registration period
-      setSlot(10_500n);
-
-      const tournamentWitness = tournamentsMap.getWitness(
-        getTournamentKey(tournamentId)
-      );
-
-      await expect(async () => {
-        const txn = await Mina.transaction(player1, async () => {
-          await app.advanceToBattle(
-            tournamentId,
-            currentTournament,
-            tournamentWitness
-          );
-        });
-        await txn.prove();
-        await txn.sign([player1Key]).send();
       }).rejects.toThrow();
     });
   });
@@ -501,8 +405,7 @@ describe('TournamentManager', () => {
       });
 
       currentTournament = new TournamentLeaf({
-        status: TournamentStatus.Registration,
-        registrationStartSlot: UInt32.from(10_000),
+        status: TournamentStatus.Battle,
         battleStartSlot: UInt32.from(11_000),
         battleEndSlot: UInt32.from(12_000),
         ticketPrice: config.ticketPrice,
@@ -515,13 +418,11 @@ describe('TournamentManager', () => {
         participantCount: UInt32.from(0),
       });
 
-      // Create tournament
       let witness = tournamentsMap.getWitness(getTournamentKey(tournamentId));
       let txn = await Mina.transaction(admin, async () => {
         await app.createTournament(
           tournamentId,
           config,
-          UInt32.from(10_000),
           UInt32.from(11_000),
           UInt32.from(12_000),
           witness
@@ -531,7 +432,8 @@ describe('TournamentManager', () => {
       await txn.sign([adminKey]).send();
       tournamentsMap.set(getTournamentKey(tournamentId), currentTournament.hash());
 
-      // Buy tickets for 3 players
+      setSlot(11_000n);
+
       const feePercent = UInt64.from(500);
       const feeAmount = ticketPrice.mul(feePercent).div(UInt64.from(10000));
       const prizeContribution = ticketPrice.sub(feeAmount);
@@ -564,8 +466,7 @@ describe('TournamentManager', () => {
         prizePool = prizePool.add(prizeContribution);
 
         currentTournament = new TournamentLeaf({
-          status: TournamentStatus.Registration,
-          registrationStartSlot: currentTournament.registrationStartSlot,
+          status: TournamentStatus.Battle,
           battleStartSlot: currentTournament.battleStartSlot,
           battleEndSlot: currentTournament.battleEndSlot,
           ticketPrice: currentTournament.ticketPrice,
@@ -579,42 +480,15 @@ describe('TournamentManager', () => {
         });
         tournamentsMap.set(getTournamentKey(tournamentId), currentTournament.hash());
       }
-
-      // Advance to battle
-      setSlot(11_000n);
-      witness = tournamentsMap.getWitness(getTournamentKey(tournamentId));
-      txn = await Mina.transaction(admin, async () => {
-        await app.advanceToBattle(tournamentId, currentTournament, witness);
-      });
-      await txn.prove();
-      await txn.sign([adminKey]).send();
-
-      currentTournament = new TournamentLeaf({
-        status: TournamentStatus.Battle,
-        registrationStartSlot: currentTournament.registrationStartSlot,
-        battleStartSlot: currentTournament.battleStartSlot,
-        battleEndSlot: currentTournament.battleEndSlot,
-        ticketPrice: currentTournament.ticketPrice,
-        prize1Percent: currentTournament.prize1Percent,
-        prize2Percent: currentTournament.prize2Percent,
-        prize3Percent: currentTournament.prize3Percent,
-        participantsRoot: currentTournament.participantsRoot,
-        winnersRoot: currentTournament.winnersRoot,
-        prizePool: currentTournament.prizePool,
-        participantCount: currentTournament.participantCount,
-      });
-      tournamentsMap.set(getTournamentKey(tournamentId), currentTournament.hash());
     });
 
     test('admin can finalize tournament after battle ends', async () => {
       setSlot(12_000n);
 
-      // Calculate prizes: prizePool = 3 * 0.95 MINA = 2.85 MINA
-      const prize1 = prizePool.mul(UInt64.from(5000)).div(UInt64.from(10000)); // 50%
-      const prize2 = prizePool.mul(UInt64.from(3000)).div(UInt64.from(10000)); // 30%
-      const prize3 = prizePool.mul(UInt64.from(2000)).div(UInt64.from(10000)); // 20%
+      const prize1 = prizePool.mul(UInt64.from(5000)).div(UInt64.from(10000));
+      const prize2 = prizePool.mul(UInt64.from(3000)).div(UInt64.from(10000));
+      const prize3 = prizePool.mul(UInt64.from(2000)).div(UInt64.from(10000));
 
-      // Set up winners in map
       const winner1Leaf = new WinnerLeaf({
         prizeAmount: prize1,
         claimed: Bool(false),
@@ -653,10 +527,8 @@ describe('TournamentManager', () => {
       await txn.prove();
       await txn.sign([adminKey]).send();
 
-      // Update local state
       const finalizedTournament = new TournamentLeaf({
         status: TournamentStatus.Claiming,
-        registrationStartSlot: currentTournament.registrationStartSlot,
         battleStartSlot: currentTournament.battleStartSlot,
         battleEndSlot: currentTournament.battleEndSlot,
         ticketPrice: currentTournament.ticketPrice,
@@ -676,7 +548,6 @@ describe('TournamentManager', () => {
     test('winner can claim prize', async () => {
       setSlot(12_000n);
 
-      // Finalize tournament
       const prize1 = prizePool.mul(UInt64.from(5000)).div(UInt64.from(10000));
       const prize2 = prizePool.mul(UInt64.from(3000)).div(UInt64.from(10000));
       const prize3 = prizePool.mul(UInt64.from(2000)).div(UInt64.from(10000));
@@ -721,7 +592,6 @@ describe('TournamentManager', () => {
 
       currentTournament = new TournamentLeaf({
         status: TournamentStatus.Claiming,
-        registrationStartSlot: currentTournament.registrationStartSlot,
         battleStartSlot: currentTournament.battleStartSlot,
         battleEndSlot: currentTournament.battleEndSlot,
         ticketPrice: currentTournament.ticketPrice,
@@ -735,7 +605,6 @@ describe('TournamentManager', () => {
       });
       tournamentsMap.set(getTournamentKey(tournamentId), currentTournament.hash());
 
-      // Player 1 claims prize
       const player1BalanceBefore = Mina.getBalance(player1);
 
       tournamentWitness = tournamentsMap.getWitness(getTournamentKey(tournamentId));
@@ -753,7 +622,6 @@ describe('TournamentManager', () => {
       await txn.prove();
       await txn.sign([player1Key]).send();
 
-      // Verify player received prize
       const player1BalanceAfter = Mina.getBalance(player1);
       expect(player1BalanceAfter.toBigInt()).toBeGreaterThan(
         player1BalanceBefore.toBigInt()
@@ -763,7 +631,6 @@ describe('TournamentManager', () => {
     test('winner cannot claim prize twice', async () => {
       setSlot(12_000n);
 
-      // Finalize tournament
       const prize1 = prizePool.mul(UInt64.from(5000)).div(UInt64.from(10000));
       const prize2 = prizePool.mul(UInt64.from(3000)).div(UInt64.from(10000));
       const prize3 = prizePool.mul(UInt64.from(2000)).div(UInt64.from(10000));
@@ -808,7 +675,6 @@ describe('TournamentManager', () => {
 
       currentTournament = new TournamentLeaf({
         status: TournamentStatus.Claiming,
-        registrationStartSlot: currentTournament.registrationStartSlot,
         battleStartSlot: currentTournament.battleStartSlot,
         battleEndSlot: currentTournament.battleEndSlot,
         ticketPrice: currentTournament.ticketPrice,
@@ -822,7 +688,6 @@ describe('TournamentManager', () => {
       });
       tournamentsMap.set(getTournamentKey(tournamentId), currentTournament.hash());
 
-      // First claim
       tournamentWitness = tournamentsMap.getWitness(getTournamentKey(tournamentId));
       let winnerWitness = winnersMap.getWitness(getPlayerKey(player1));
 
@@ -838,7 +703,6 @@ describe('TournamentManager', () => {
       await txn.prove();
       await txn.sign([player1Key]).send();
 
-      // Update local state
       winner1Leaf = new WinnerLeaf({
         prizeAmount: prize1,
         claimed: Bool(true),
@@ -847,7 +711,6 @@ describe('TournamentManager', () => {
 
       currentTournament = new TournamentLeaf({
         status: TournamentStatus.Claiming,
-        registrationStartSlot: currentTournament.registrationStartSlot,
         battleStartSlot: currentTournament.battleStartSlot,
         battleEndSlot: currentTournament.battleEndSlot,
         ticketPrice: currentTournament.ticketPrice,
@@ -861,7 +724,6 @@ describe('TournamentManager', () => {
       });
       tournamentsMap.set(getTournamentKey(tournamentId), currentTournament.hash());
 
-      // Second claim should fail
       tournamentWitness = tournamentsMap.getWitness(getTournamentKey(tournamentId));
       winnerWitness = winnersMap.getWitness(getPlayerKey(player1));
 

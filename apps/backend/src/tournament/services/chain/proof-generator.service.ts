@@ -192,9 +192,6 @@ export class ProofGeneratorService implements OnModuleInit {
         case OperationType.BuyTicket:
           await this.processBuyTicket(op);
           break;
-        case OperationType.AdvanceToBattle:
-          await this.processAdvanceToBattle(op);
-          break;
         case OperationType.FinalizeTournament:
           await this.processFinalizeTournament(op);
           break;
@@ -253,7 +250,7 @@ export class ProofGeneratorService implements OnModuleInit {
 
   /**
    * Fee-payer key for ops where `playerPubKey` is the on-chain admin
-   * (AdvanceToBattle, FinalizeTournament). When unset or pubkey mismatch, the flow
+   * (FinalizeTournament). When unset or pubkey mismatch, the flow
    * stays wallet-driven.
    */
   private getConfiguredFeePayerKeyIfMatchesOp(
@@ -284,10 +281,7 @@ export class ProofGeneratorService implements OnModuleInit {
     await tx.prove();
 
     const feePayerKey = this.getConfiguredFeePayerKeyIfMatchesOp(op);
-    if (
-      op.type === OperationType.AdvanceToBattle ||
-      op.type === OperationType.FinalizeTournament
-    ) {
+    if (op.type === OperationType.FinalizeTournament) {
       if (!feePayerKey) {
         throw new Error('No fee payer key found');
       }
@@ -359,26 +353,6 @@ export class ProofGeneratorService implements OnModuleInit {
         participantWitness
       );
     });
-
-    await this.submitProvedTransaction(op, tx);
-  }
-
-  private async processAdvanceToBattle(
-    op: PendingOperationDocument
-  ): Promise<void> {
-    const { tournamentWitness, currentTournamentLeaf, contract, playerPubKey } =
-      await this.prepareProofContext(op);
-
-    const tx = await Mina.transaction(
-      { sender: playerPubKey, fee: 100_000_000 },
-      async () => {
-        await contract.advanceToBattle(
-          Field(op.tournamentId),
-          currentTournamentLeaf,
-          tournamentWitness
-        );
-      }
-    );
 
     await this.submitProvedTransaction(op, tx);
   }
@@ -516,7 +490,6 @@ export class ProofGeneratorService implements OnModuleInit {
   private buildTournamentLeaf(tournament: TournamentDocument): TournamentLeaf {
     const statusMap: Record<string, UInt32> = {
       Created: ContractTournamentStatus.Created,
-      Registration: ContractTournamentStatus.Registration,
       Battle: ContractTournamentStatus.Battle,
       Claiming: ContractTournamentStatus.Claiming,
     };
@@ -530,9 +503,6 @@ export class ProofGeneratorService implements OnModuleInit {
 
     return new TournamentLeaf({
       status,
-      registrationStartSlot: UInt32.from(
-        tournament.verified.registrationStartSlot
-      ),
       battleStartSlot: UInt32.from(tournament.verified.battleStartSlot),
       battleEndSlot: UInt32.from(tournament.verified.battleEndSlot),
       ticketPrice: UInt64.from(BigInt(tournament.verified.ticketPrice)),

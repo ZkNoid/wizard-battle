@@ -32,8 +32,7 @@ describe('TournamentStateService', () => {
   const mockTournament: Partial<TournamentDocument> = {
     tournamentId: '1',
     verified: {
-      status: TournamentStatus.Registration,
-      registrationStartSlot: 100,
+      status: TournamentStatus.Battle,
       battleStartSlot: 500,
       battleEndSlot: 1000,
       ticketPrice: '1000000000',

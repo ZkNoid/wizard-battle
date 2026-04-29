@@ -7,7 +7,6 @@ import type { TournamentStatus } from '../../schemas/tournament.schema.js';
 export interface OptimisticView {
   tournamentId: string;
   status: TournamentStatus;
-  registrationStartSlot: number;
   battleStartSlot: number;
   battleEndSlot: number;
   ticketPrice: string;
@@ -35,7 +34,6 @@ export interface CreateTournamentConfig {
   prize1Percent: number;
   prize2Percent: number;
   prize3Percent: number;
-  registrationStartSlot: number;
   battleStartSlot: number;
   battleEndSlot: number;
 }

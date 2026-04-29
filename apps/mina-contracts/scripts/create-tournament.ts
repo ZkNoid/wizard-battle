@@ -17,9 +17,8 @@
  *   DEPLOYER_PRIVATE_KEY - Private key for admin account
  *   TOURNAMENT_CONTRACT_ADDRESS - Deployed contract address
  *   TICKET_PRICE - Tournament ticket price in nanoMINA (default: 1000000000 = 1 MINA)
- *   REGISTRATION_SLOTS - Number of slots for registration phase (default: 200 = ~10 hours)
- *   BATTLE_SLOTS - Number of slots for battle phase (default: 400 = ~20 hours)
- *   REGISTRATION_START_DELAY - Slots before registration starts (default: 10 = ~30 min)
+ *   BATTLE_START_DELAY - Slots until battle opens for joining (default: 10 = ~30 min)
+ *   BATTLE_SLOTS - Number of slots for battle phase / join window (default: 400 = ~20 hours)
  *   BACKEND_URL - Backend API base URL (default: http://localhost:3001)
  *
  * If `createResult.wait()` throws or backend registration fails after the tx is sent, the
@@ -48,7 +47,6 @@ import {
   TournamentStatus,
   TournamentCreatedEvent,
   TicketPurchasedEvent,
-  TournamentAdvancedToBattleEvent,
   TournamentFinalizedEvent,
   PrizeClaimedEvent,
 } from '../src/TournamentManager.js';
@@ -101,11 +99,8 @@ async function fetchCurrentSlot(): Promise<number> {
   return Number(slot);
 }
 
-// Tournament timing configuration
-const REGISTRATION_START_DELAY = Number(
-  process.env.REGISTRATION_START_DELAY || '10'
-);
-const REGISTRATION_SLOTS = Number(process.env.REGISTRATION_SLOTS || '200');
+// Tournament timing configuration (~3 minutes per slot on typical networks)
+const BATTLE_START_DELAY = Number(process.env.BATTLE_START_DELAY || '10');
 const BATTLE_SLOTS = Number(process.env.BATTLE_SLOTS || '400');
 
 interface TournamentState {
@@ -121,7 +116,6 @@ function hashTournamentKey(tournamentId: Field): Field {
 async function fetchContractEvents(contractAddress: PublicKey): Promise<{
   tournamentCreated: TournamentCreatedEvent[];
   ticketPurchased: TicketPurchasedEvent[];
-  tournamentAdvancedToBattle: TournamentAdvancedToBattleEvent[];
   tournamentFinalized: TournamentFinalizedEvent[];
   prizeClaimed: PrizeClaimedEvent[];
 }> {
@@ -133,7 +127,6 @@ async function fetchContractEvents(contractAddress: PublicKey): Promise<{
 
   const tournamentCreated: TournamentCreatedEvent[] = [];
   const ticketPurchased: TicketPurchasedEvent[] = [];
-  const tournamentAdvancedToBattle: TournamentAdvancedToBattleEvent[] = [];
   const tournamentFinalized: TournamentFinalizedEvent[] = [];
   const prizeClaimed: PrizeClaimedEvent[] = [];
 
@@ -146,11 +139,6 @@ async function fetchContractEvents(contractAddress: PublicKey): Promise<{
         break;
       case 'TicketPurchased':
         ticketPurchased.push(eventData as unknown as TicketPurchasedEvent);
-        break;
-      case 'TournamentAdvancedToBattle':
-        tournamentAdvancedToBattle.push(
-          eventData as unknown as TournamentAdvancedToBattleEvent
-        );
         break;
       case 'TournamentFinalized':
         tournamentFinalized.push(
@@ -168,16 +156,12 @@ async function fetchContractEvents(contractAddress: PublicKey): Promise<{
   console.log(`Parsed events:`);
   console.log(`  - TournamentCreated: ${tournamentCreated.length}`);
   console.log(`  - TicketPurchased: ${ticketPurchased.length}`);
-  console.log(
-    `  - TournamentAdvancedToBattle: ${tournamentAdvancedToBattle.length}`
-  );
   console.log(`  - TournamentFinalized: ${tournamentFinalized.length}`);
   console.log(`  - PrizeClaimed: ${prizeClaimed.length}`);
 
   return {
     tournamentCreated,
     ticketPurchased,
-    tournamentAdvancedToBattle,
     tournamentFinalized,
     prizeClaimed,
   };
@@ -186,7 +170,6 @@ async function fetchContractEvents(contractAddress: PublicKey): Promise<{
 function rebuildTournamentsMap(events: {
   tournamentCreated: TournamentCreatedEvent[];
   ticketPurchased: TicketPurchasedEvent[];
-  tournamentAdvancedToBattle: TournamentAdvancedToBattleEvent[];
   tournamentFinalized: TournamentFinalizedEvent[];
   prizeClaimed: PrizeClaimedEvent[];
 }): {
@@ -200,14 +183,12 @@ function rebuildTournamentsMap(events: {
   const tournaments = new Map<string, TournamentState>();
   let maxTournamentId = 0;
 
-  // Process TournamentCreated events
   for (const event of events.tournamentCreated) {
     const tournamentIdNum = Number(event.tournamentId.toBigInt());
     maxTournamentId = Math.max(maxTournamentId, tournamentIdNum);
 
     const leaf = new TournamentLeaf({
-      status: TournamentStatus.Registration,
-      registrationStartSlot: event.registrationStartSlot,
+      status: TournamentStatus.Battle,
       battleStartSlot: event.battleStartSlot,
       battleEndSlot: event.battleEndSlot,
       ticketPrice: event.ticketPrice,
@@ -232,16 +213,13 @@ function rebuildTournamentsMap(events: {
     console.log(`  Created tournament ${tournamentIdNum}`);
   }
 
-  // Process TicketPurchased events
   for (const event of events.ticketPurchased) {
     const tournamentId = event.tournamentId.toString();
     const state = tournaments.get(tournamentId);
 
     if (state) {
-      // Update tournament leaf with new values from event
       state.leaf = new TournamentLeaf({
         status: state.leaf.status,
-        registrationStartSlot: state.leaf.registrationStartSlot,
         battleStartSlot: state.leaf.battleStartSlot,
         battleEndSlot: state.leaf.battleEndSlot,
         ticketPrice: state.leaf.ticketPrice,
@@ -254,7 +232,6 @@ function rebuildTournamentsMap(events: {
         participantCount: event.newParticipantCount,
       });
 
-      // Update participants map
       const playerKey = Poseidon.hash(event.player.toFields());
       state.participantsMap.set(playerKey, Field(1));
 
@@ -263,33 +240,6 @@ function rebuildTournamentsMap(events: {
     }
   }
 
-  // Process advance-to-battle (must replay after tickets, before finalize)
-  for (const event of events.tournamentAdvancedToBattle) {
-    const tournamentId = event.tournamentId.toString();
-    const state = tournaments.get(tournamentId);
-
-    if (state) {
-      state.leaf = new TournamentLeaf({
-        status: TournamentStatus.Battle,
-        registrationStartSlot: state.leaf.registrationStartSlot,
-        battleStartSlot: state.leaf.battleStartSlot,
-        battleEndSlot: state.leaf.battleEndSlot,
-        ticketPrice: state.leaf.ticketPrice,
-        prize1Percent: state.leaf.prize1Percent,
-        prize2Percent: state.leaf.prize2Percent,
-        prize3Percent: state.leaf.prize3Percent,
-        participantsRoot: state.leaf.participantsRoot,
-        winnersRoot: state.leaf.winnersRoot,
-        prizePool: state.leaf.prizePool,
-        participantCount: state.leaf.participantCount,
-      });
-
-      const key = hashTournamentKey(event.tournamentId);
-      tournamentsMap.set(key, state.leaf.hash());
-    }
-  }
-
-  // Process TournamentFinalized events
   for (const event of events.tournamentFinalized) {
     const tournamentId = event.tournamentId.toString();
     const state = tournaments.get(tournamentId);
@@ -297,7 +247,6 @@ function rebuildTournamentsMap(events: {
     if (state) {
       state.leaf = new TournamentLeaf({
         status: TournamentStatus.Claiming,
-        registrationStartSlot: state.leaf.registrationStartSlot,
         battleStartSlot: state.leaf.battleStartSlot,
         battleEndSlot: state.leaf.battleEndSlot,
         ticketPrice: state.leaf.ticketPrice,
@@ -315,7 +264,6 @@ function rebuildTournamentsMap(events: {
     }
   }
 
-  // Process PrizeClaimed events
   for (const event of events.prizeClaimed) {
     const tournamentId = event.tournamentId.toString();
     const state = tournaments.get(tournamentId);
@@ -323,7 +271,6 @@ function rebuildTournamentsMap(events: {
     if (state) {
       state.leaf = new TournamentLeaf({
         status: state.leaf.status,
-        registrationStartSlot: state.leaf.registrationStartSlot,
         battleStartSlot: state.leaf.battleStartSlot,
         battleEndSlot: state.leaf.battleEndSlot,
         ticketPrice: state.leaf.ticketPrice,
@@ -427,10 +374,6 @@ async function main() {
   if (!onChainRoot.equals(rebuiltRoot).toBoolean()) {
     console.error('ERROR: Rebuilt root does not match on-chain root!');
     console.error('This may indicate missing events or state corruption.');
-    console.error(
-      'If the zkApp predates TournamentAdvancedToBattle events, tournaments that ' +
-        'reached Battle cannot be reconstructed from the archive — redeploy the contract.'
-    );
     process.exit(1);
   }
   console.log('✓ Root verification passed');
@@ -452,24 +395,15 @@ async function main() {
   console.log('\nFetching current slot from GraphQL...');
   const currentSlot = await fetchCurrentSlot();
 
-  const registrationStartSlot = currentSlot + REGISTRATION_START_DELAY;
-  const battleStartSlot = registrationStartSlot + REGISTRATION_SLOTS;
+  const battleStartSlot = currentSlot + BATTLE_START_DELAY;
   const battleEndSlot = battleStartSlot + BATTLE_SLOTS;
 
   console.log(`\nTournament timing:`);
   console.log(`  Current slot: ${currentSlot}`);
   console.log(
-    `  Registration starts: slot ${registrationStartSlot} (~${
-      REGISTRATION_START_DELAY * 3
-    } minutes from now)`
-  );
-  console.log(
-    `  Battle starts: slot ${battleStartSlot} (~${
-      REGISTRATION_SLOTS * 3
-    } minutes registration)`
-  );
-  console.log(
-    `  Battle ends: slot ${battleEndSlot} (~${BATTLE_SLOTS * 3} minutes battle)`
+    `  Battle window (join anytime): slots ${battleStartSlot} → ${battleEndSlot} (~${
+      BATTLE_START_DELAY * 3
+    } min until open, then ~${BATTLE_SLOTS * 3} min window)`
   );
 
   const config = new TournamentConfig({
@@ -490,7 +424,6 @@ async function main() {
       await contract.createTournament(
         nextTournamentId,
         config,
-        UInt32.from(registrationStartSlot),
         UInt32.from(battleStartSlot),
         UInt32.from(battleEndSlot),
         tournamentWitness
@@ -507,8 +440,7 @@ async function main() {
 
   // Optimistic root for backend POST — matches chain iff create tx succeeds
   const newLeaf = new TournamentLeaf({
-    status: TournamentStatus.Registration,
-    registrationStartSlot: UInt32.from(registrationStartSlot),
+    status: TournamentStatus.Battle,
     battleStartSlot: UInt32.from(battleStartSlot),
     battleEndSlot: UInt32.from(battleEndSlot),
     ticketPrice: UInt64.from(ticketPrice),
@@ -529,7 +461,6 @@ async function main() {
     prize1Percent: 5000,
     prize2Percent: 3000,
     prize3Percent: 2000,
-    registrationStartSlot,
     battleStartSlot,
     battleEndSlot,
     tournamentsRoot: newTournamentsRoot,
@@ -647,7 +578,6 @@ async function main() {
   console.log('='.repeat(60));
   console.log(`Tournament ID: ${nextTournamentId.toString()}`);
   console.log(`Ticket Price: ${Number(ticketPrice) / 1e9} MINA`);
-  console.log(`Registration Start Slot: ${registrationStartSlot}`);
   console.log(`Battle Start Slot: ${battleStartSlot}`);
   console.log(`Battle End Slot: ${battleEndSlot}`);
   console.log(`Tournaments Root: ${newTournamentsRoot}`);

@@ -144,18 +144,7 @@ export function TournamentDetailsInfo({
               <div className="flex flex-col gap-1">
                 <div className="flex items-start gap-2">
                   <span className="font-pixel-klein text-main-gray/60 shrink-0 text-xs">
-                    Registration:
-                  </span>
-                  <span className="font-pixel-klein text-main-gray text-right text-xs">
-                    {formatBattleWindowWithTime(
-                      tournament.scheduleTimes.registrationOpensAtMs,
-                      tournament.scheduleTimes.battleStartsAtMs
-                    )}
-                  </span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="font-pixel-klein text-main-gray/60 shrink-0 text-xs">
-                    Battle:
+                    Join / battle window:
                   </span>
                   <span className="font-pixel-klein text-main-gray text-right text-xs">
                     {formatBattleWindowWithTime(
