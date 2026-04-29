@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import type { ITournamentAsset } from '@/lib/types/ITournament';
+import { formatTournamentAtomicAmount } from './tournamentUtils';
 
 interface TournamentAssetDisplayProps {
   asset: ITournamentAsset;
@@ -17,7 +18,7 @@ export function TournamentAssetDisplay({ asset, className }: TournamentAssetDisp
             className
           )}
         >
-          {asset.amount.toLocaleString()} MINA
+          {formatTournamentAtomicAmount(asset.amount)} MINA
         </span>
       );
     }
@@ -36,7 +37,9 @@ export function TournamentAssetDisplay({ asset, className }: TournamentAssetDisp
           unoptimized
           className="h-3.5 w-3.5 object-contain"
         />
-        {asset.amount.toLocaleString()}
+        {asset.currency === 'usdc'
+          ? formatTournamentAtomicAmount(asset.amount)
+          : asset.amount.toLocaleString('en-US')}
       </span>
     );
   }

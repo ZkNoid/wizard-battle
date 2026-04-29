@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 import { Button } from '../shared/Button';
 import type { ITournament } from '@/lib/types/ITournament';
 
@@ -120,12 +121,16 @@ export function TournamentActionButton({
   onClaim,
 }: TournamentActionButtonProps) {
   const router = useRouter();
+  const setIsTournamentsModalOpen = useMiscellaneousSessionStore(
+    (s) => s.setIsTournamentsModalOpen
+  );
   const { label, variant, disabled, action } = getActionConfig(tournament);
 
   const handleClick = () => {
     if (action === 'join') onJoin?.(tournament);
     else if (action === 'claim') onClaim?.(tournament);
     else if (action === 'findMatch') {
+      setIsTournamentsModalOpen(false);
       router.push(
         `/play?tournamentId=${encodeURIComponent(tournament.id)}`
       );
