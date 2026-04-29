@@ -112,30 +112,6 @@ export class TournamentVerifiedMutationsService {
     );
   }
 
-  async applyAdvanceToBattleToVerified(tournamentId: string): Promise<void> {
-    const tournament = await this.requireTournament(
-      tournamentId,
-      `Cannot apply advanceToBattle: Tournament ${tournamentId} not found`
-    );
-
-    if (tournament.verified.status === TournamentStatus.Battle) {
-      this.logger.warn(
-        `advanceToBattle for ${tournamentId} already applied, skipping`
-      );
-      return;
-    }
-
-    if (tournament.verified.status !== TournamentStatus.Registration) {
-      throw new BadRequestException(
-        `Cannot advance to battle from status ${tournament.verified.status}`
-      );
-    }
-
-    tournament.verified.status = TournamentStatus.Battle;
-    await tournament.save();
-    this.logger.log(`Applied advanceToBattle for tournament ${tournamentId}`);
-  }
-
   async applyFinalizeTournamentToVerified(
     op: PendingOperationDocument
   ): Promise<void> {

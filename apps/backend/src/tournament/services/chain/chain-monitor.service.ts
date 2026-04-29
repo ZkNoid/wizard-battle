@@ -81,16 +81,6 @@ export class ChainMonitorService implements OnModuleInit {
 
       for (const tournament of activeTournaments) {
         if (
-          tournament.verified.status === TournamentStatus.Registration &&
-          currentSlot >= tournament.verified.battleStartSlot
-        ) {
-          this.logger.log(
-            `Tournament ${tournament.tournamentId} should advance to Battle phase`
-          );
-          await this.triggerAdvanceToBattle(tournament.tournamentId);
-        }
-
-        if (
           tournament.verified.status === TournamentStatus.Battle &&
           currentSlot >= tournament.verified.battleEndSlot
         ) {
@@ -137,42 +127,6 @@ export class ChainMonitorService implements OnModuleInit {
     } catch (error) {
       this.logger.error(
         `Error checking transaction status for ${op.txHash}`,
-        error
-      );
-    }
-  }
-
-  private async triggerAdvanceToBattle(tournamentId: string): Promise<void> {
-    const existingOp = await this.findExistingPhaseTransitionOp(
-      tournamentId,
-      OperationType.AdvanceToBattle
-    );
-
-    if (existingOp) {
-      this.logger.debug(
-        `AdvanceToBattle operation already exists for tournament ${tournamentId}`
-      );
-      return;
-    }
-
-    const adminPubKey = await this.getAdminPublicKey();
-    if (!adminPubKey) {
-      this.logger.warn('Admin public key not available, cannot advance phase');
-      return;
-    }
-
-    try {
-      await this.tournamentStateService.addPendingOperation({
-        tournamentId,
-        type: OperationType.AdvanceToBattle,
-        playerPubKey: adminPubKey,
-      });
-      this.logger.log(
-        `Created AdvanceToBattle operation for tournament ${tournamentId}`
-      );
-    } catch (error) {
-      this.logger.error(
-        `Failed to create AdvanceToBattle operation for tournament ${tournamentId}`,
         error
       );
     }

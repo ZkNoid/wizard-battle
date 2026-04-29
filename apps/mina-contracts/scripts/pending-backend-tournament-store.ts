@@ -14,7 +14,6 @@ export type TournamentBackendPayload = {
   prize1Percent: number;
   prize2Percent: number;
   prize3Percent: number;
-  registrationStartSlot: number;
   battleStartSlot: number;
   battleEndSlot: number;
   tournamentsRoot: string;

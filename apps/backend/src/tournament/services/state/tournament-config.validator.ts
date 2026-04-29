@@ -29,15 +29,8 @@ export function validateCreateTournamentConfig(
     throw new BadRequestException('Prize percentages cannot be negative');
   }
 
-  if (config.registrationStartSlot < 0) {
-    throw new BadRequestException(
-      'Registration start slot cannot be negative'
-    );
-  }
-  if (config.battleStartSlot <= config.registrationStartSlot) {
-    throw new BadRequestException(
-      'Battle start slot must be after registration start slot'
-    );
+  if (config.battleStartSlot < 0) {
+    throw new BadRequestException('Battle start slot cannot be negative');
   }
   if (config.battleEndSlot <= config.battleStartSlot) {
     throw new BadRequestException(

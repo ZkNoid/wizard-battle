@@ -70,11 +70,7 @@ export class TournamentStateService {
     return this.tournamentModel
       .find({
         'verified.status': {
-          $in: [
-            TournamentStatus.Registration,
-            TournamentStatus.Battle,
-            TournamentStatus.Claiming,
-          ],
+          $in: [TournamentStatus.Battle, TournamentStatus.Claiming],
         },
       })
       .exec();
@@ -115,7 +111,6 @@ export class TournamentStateService {
     return {
       tournamentId: tournament.tournamentId,
       status: tournament.verified.status,
-      registrationStartSlot: tournament.verified.registrationStartSlot,
       battleStartSlot: tournament.verified.battleStartSlot,
       battleEndSlot: tournament.verified.battleEndSlot,
       ticketPrice: tournament.verified.ticketPrice,
@@ -299,14 +294,6 @@ export class TournamentStateService {
       );
     }
 
-    if (op.type === OperationType.AdvanceToBattle) {
-      await retry(
-        () =>
-          this.verifiedMutations.applyAdvanceToBattleToVerified(op.tournamentId),
-        `applyAdvanceToBattle(${op.tournamentId})`
-      );
-    }
-
     if (op.type === OperationType.FinalizeTournament) {
       await retry(
         () => this.verifiedMutations.applyFinalizeTournamentToVerified(op),
@@ -368,8 +355,7 @@ export class TournamentStateService {
     const tournament = new this.tournamentModel({
       tournamentId,
       verified: {
-        status: TournamentStatus.Registration,
-        registrationStartSlot: config.registrationStartSlot,
+        status: TournamentStatus.Battle,
         battleStartSlot: config.battleStartSlot,
         battleEndSlot: config.battleEndSlot,
         ticketPrice: config.ticketPrice,

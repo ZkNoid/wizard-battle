@@ -37,7 +37,6 @@ import {
   TournamentStatus,
   TournamentCreatedEvent,
   TicketPurchasedEvent,
-  TournamentAdvancedToBattleEvent,
   TournamentFinalizedEvent,
   PrizeClaimedEvent,
 } from '../src/TournamentManager.js';
@@ -122,7 +121,6 @@ async function post(
 async function fetchContractEvents(contractAddress: PublicKey): Promise<{
   tournamentCreated: TournamentCreatedEvent[];
   ticketPurchased: TicketPurchasedEvent[];
-  tournamentAdvancedToBattle: TournamentAdvancedToBattleEvent[];
   tournamentFinalized: TournamentFinalizedEvent[];
   prizeClaimed: PrizeClaimedEvent[];
 }> {
@@ -133,7 +131,6 @@ async function fetchContractEvents(contractAddress: PublicKey): Promise<{
 
   const tournamentCreated: TournamentCreatedEvent[] = [];
   const ticketPurchased: TicketPurchasedEvent[] = [];
-  const tournamentAdvancedToBattle: TournamentAdvancedToBattleEvent[] = [];
   const tournamentFinalized: TournamentFinalizedEvent[] = [];
   const prizeClaimed: PrizeClaimedEvent[] = [];
 
@@ -145,11 +142,6 @@ async function fetchContractEvents(contractAddress: PublicKey): Promise<{
         break;
       case 'TicketPurchased':
         ticketPurchased.push(data as unknown as TicketPurchasedEvent);
-        break;
-      case 'TournamentAdvancedToBattle':
-        tournamentAdvancedToBattle.push(
-          data as unknown as TournamentAdvancedToBattleEvent
-        );
         break;
       case 'TournamentFinalized':
         tournamentFinalized.push(data as unknown as TournamentFinalizedEvent);
@@ -165,16 +157,12 @@ async function fetchContractEvents(contractAddress: PublicKey): Promise<{
   console.log(`Parsed events:`);
   console.log(`  TournamentCreated:   ${tournamentCreated.length}`);
   console.log(`  TicketPurchased:     ${ticketPurchased.length}`);
-  console.log(
-    `  TournamentAdvancedToBattle: ${tournamentAdvancedToBattle.length}`
-  );
   console.log(`  TournamentFinalized: ${tournamentFinalized.length}`);
   console.log(`  PrizeClaimed:        ${prizeClaimed.length}`);
 
   return {
     tournamentCreated,
     ticketPurchased,
-    tournamentAdvancedToBattle,
     tournamentFinalized,
     prizeClaimed,
   };
@@ -191,7 +179,6 @@ interface TournamentState {
 function rebuildTournamentsMap(events: {
   tournamentCreated: TournamentCreatedEvent[];
   ticketPurchased: TicketPurchasedEvent[];
-  tournamentAdvancedToBattle: TournamentAdvancedToBattleEvent[];
   tournamentFinalized: TournamentFinalizedEvent[];
   prizeClaimed: PrizeClaimedEvent[];
 }): {
@@ -203,8 +190,7 @@ function rebuildTournamentsMap(events: {
 
   for (const ev of events.tournamentCreated) {
     const leaf = new TournamentLeaf({
-      status: TournamentStatus.Registration,
-      registrationStartSlot: ev.registrationStartSlot,
+      status: TournamentStatus.Battle,
       battleStartSlot: ev.battleStartSlot,
       battleEndSlot: ev.battleEndSlot,
       ticketPrice: ev.ticketPrice,
@@ -230,7 +216,6 @@ function rebuildTournamentsMap(events: {
     if (state) {
       state.leaf = new TournamentLeaf({
         status: state.leaf.status,
-        registrationStartSlot: state.leaf.registrationStartSlot,
         battleStartSlot: state.leaf.battleStartSlot,
         battleEndSlot: state.leaf.battleEndSlot,
         ticketPrice: state.leaf.ticketPrice,
@@ -248,33 +233,11 @@ function rebuildTournamentsMap(events: {
     }
   }
 
-  for (const ev of events.tournamentAdvancedToBattle) {
-    const state = tournaments.get(ev.tournamentId.toString());
-    if (state) {
-      state.leaf = new TournamentLeaf({
-        status: TournamentStatus.Battle,
-        registrationStartSlot: state.leaf.registrationStartSlot,
-        battleStartSlot: state.leaf.battleStartSlot,
-        battleEndSlot: state.leaf.battleEndSlot,
-        ticketPrice: state.leaf.ticketPrice,
-        prize1Percent: state.leaf.prize1Percent,
-        prize2Percent: state.leaf.prize2Percent,
-        prize3Percent: state.leaf.prize3Percent,
-        participantsRoot: state.leaf.participantsRoot,
-        winnersRoot: state.leaf.winnersRoot,
-        prizePool: state.leaf.prizePool,
-        participantCount: state.leaf.participantCount,
-      });
-      tournamentsMap.set(hashTournamentKey(ev.tournamentId), state.leaf.hash());
-    }
-  }
-
   for (const ev of events.tournamentFinalized) {
     const state = tournaments.get(ev.tournamentId.toString());
     if (state) {
       state.leaf = new TournamentLeaf({
         status: TournamentStatus.Claiming,
-        registrationStartSlot: state.leaf.registrationStartSlot,
         battleStartSlot: state.leaf.battleStartSlot,
         battleEndSlot: state.leaf.battleEndSlot,
         ticketPrice: state.leaf.ticketPrice,
@@ -295,7 +258,6 @@ function rebuildTournamentsMap(events: {
     if (state) {
       state.leaf = new TournamentLeaf({
         status: state.leaf.status,
-        registrationStartSlot: state.leaf.registrationStartSlot,
         battleStartSlot: state.leaf.battleStartSlot,
         battleEndSlot: state.leaf.battleEndSlot,
         ticketPrice: state.leaf.ticketPrice,
@@ -332,7 +294,6 @@ async function replayTournamentCreated(
       prize1Percent: Number(ev.prize1Percent.toBigint()),
       prize2Percent: Number(ev.prize2Percent.toBigint()),
       prize3Percent: Number(ev.prize3Percent.toBigint()),
-      registrationStartSlot: Number(ev.registrationStartSlot.toBigint()),
       battleStartSlot: Number(ev.battleStartSlot.toBigint()),
       battleEndSlot: Number(ev.battleEndSlot.toBigint()),
       tournamentsRoot,
@@ -486,10 +447,6 @@ async function main() {
   if (!onChainRoot.equals(rebuiltRoot).toBoolean()) {
     console.error('\nERROR: Rebuilt root does not match on-chain root!');
     console.error('Events may be incomplete or state is corrupted.');
-    console.error(
-      'Pre–TournamentAdvancedToBattle deployments cannot be replayed from events alone ' +
-        'for tournaments that reached Battle without that event.'
-    );
     process.exit(1);
   }
   console.log('✓ Root verification passed');
@@ -517,12 +474,6 @@ async function main() {
   const allStats: Record<string, EventStats> = {
     TournamentCreated: createdStats,
     TicketPurchased: ticketStats,
-    TournamentAdvancedToBattle: {
-      total: events.tournamentAdvancedToBattle.length,
-      replayed: 0,
-      skipped: events.tournamentAdvancedToBattle.length,
-      failed: 0,
-    },
     TournamentFinalized: finalizedStats,
     PrizeClaimed: claimedStats,
   };

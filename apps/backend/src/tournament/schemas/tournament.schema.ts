@@ -8,7 +8,6 @@ export type TournamentDocument = HydratedDocument<Tournament> & {
 
 export enum TournamentStatus {
   Created = 'Created',
-  Registration = 'Registration',
   Battle = 'Battle',
   Claiming = 'Claiming',
 }
@@ -17,9 +16,6 @@ export enum TournamentStatus {
 export class VerifiedState {
   @Prop({ required: true, enum: TournamentStatus })
   status!: TournamentStatus;
-
-  @Prop({ required: true })
-  registrationStartSlot!: number;
 
   @Prop({ required: true })
   battleStartSlot!: number;

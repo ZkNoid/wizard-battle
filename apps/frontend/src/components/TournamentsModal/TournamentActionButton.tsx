@@ -55,9 +55,25 @@ function getActionConfig(tournament: ITournament): ActionConfig {
     };
   }
 
-  if (status === 'upcoming' && isTournamentParticipant(userStatus)) {
+  if (status === 'upcoming') {
+    if (userStatus === 'pending') {
+      return {
+        label: 'Confirming…',
+        variant: 'gray',
+        disabled: true,
+        action: 'none',
+      };
+    }
+    if (isTournamentParticipant(userStatus)) {
+      return {
+        label: 'Battle starts soon',
+        variant: 'gray',
+        disabled: true,
+        action: 'none',
+      };
+    }
     return {
-      label: 'Battle starts soon',
+      label: 'Join opens at battle start',
       variant: 'gray',
       disabled: true,
       action: 'none',

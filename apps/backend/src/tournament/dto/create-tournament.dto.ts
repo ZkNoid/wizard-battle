@@ -31,10 +31,6 @@ export class CreateTournamentDto {
 
   @IsNumber()
   @Min(0)
-  registrationStartSlot!: number;
-
-  @IsNumber()
-  @Min(0)
   battleStartSlot!: number;
 
   @IsNumber()

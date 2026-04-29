@@ -6,6 +6,9 @@ import {
   TournamentStateService,
   ProofGeneratorService,
   ChainMonitorService,
+  MinaClientService,
+  OperationEventsService,
+  TournamentLeaderboardService,
 } from './services/index.js';
 import { TournamentStatus } from './schemas/tournament.schema.js';
 import { OperationType, OperationStatus } from './schemas/pending-operation.schema.js';
@@ -16,11 +19,11 @@ describe('TournamentController', () => {
   let tournamentStateService: TournamentStateService;
   let proofGeneratorService: ProofGeneratorService;
   let chainMonitorService: ChainMonitorService;
+  let minaClientService: MinaClientService;
 
   const mockOptimisticState = {
     tournamentId: '1',
-    status: TournamentStatus.Registration,
-    registrationStartSlot: 100,
+    status: TournamentStatus.Battle,
     battleStartSlot: 500,
     battleEndSlot: 1000,
     ticketPrice: '1000000000',
@@ -36,8 +39,7 @@ describe('TournamentController', () => {
   const mockVerifiedState = {
     tournamentId: '1',
     verified: {
-      status: TournamentStatus.Registration,
-      registrationStartSlot: 100,
+      status: TournamentStatus.Battle,
       battleStartSlot: 500,
       battleEndSlot: 1000,
       ticketPrice: '1000000000',
@@ -73,6 +75,20 @@ describe('TournamentController', () => {
           provide: ChainMonitorService,
           useValue: createMock<ChainMonitorService>(),
         },
+        {
+          provide: MinaClientService,
+          useValue: {
+            getCurrentSlot: jest.fn().mockResolvedValue(600),
+          },
+        },
+        {
+          provide: OperationEventsService,
+          useValue: createMock<OperationEventsService>(),
+        },
+        {
+          provide: TournamentLeaderboardService,
+          useValue: createMock<TournamentLeaderboardService>(),
+        },
       ],
     }).compile();
 
@@ -84,6 +100,7 @@ describe('TournamentController', () => {
       ProofGeneratorService
     );
     chainMonitorService = module.get<ChainMonitorService>(ChainMonitorService);
+    minaClientService = module.get<MinaClientService>(MinaClientService);
   });
 
   describe('getTournament', () => {
@@ -150,14 +167,30 @@ describe('TournamentController', () => {
       expect(result.message).toContain('queued');
     });
 
-    it('should reject if tournament not in registration', async () => {
-      const battleTournament = {
+    it('should reject if tournament is not in battle phase', async () => {
+      const claimingTournament = {
         ...mockVerifiedState,
-        verified: { ...mockVerifiedState.verified, status: 'Battle' },
+        verified: { ...mockVerifiedState.verified, status: 'Claiming' },
       };
       jest
         .spyOn(tournamentStateService, 'getVerifiedState')
-        .mockResolvedValue(battleTournament as any);
+        .mockResolvedValue(claimingTournament as any);
+
+      await expect(
+        controller.buyTicket('1', { playerPubKey: 'B62qNewPlayer' })
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should reject if current slot is outside the battle join window', async () => {
+      jest
+        .spyOn(tournamentStateService, 'getVerifiedState')
+        .mockResolvedValue(mockVerifiedState as any);
+      jest
+        .spyOn(minaClientService, 'getCurrentSlot')
+        .mockResolvedValue(100);
+      jest
+        .spyOn(tournamentStateService, 'getPendingOperationsForPlayer')
+        .mockResolvedValue([]);
 
       await expect(
         controller.buyTicket('1', { playerPubKey: 'B62qNewPlayer' })

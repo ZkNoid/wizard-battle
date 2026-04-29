@@ -8,7 +8,6 @@ import { TournamentAssetDisplay } from './TournamentAssetDisplay';
 import {
   formatBattleWindowWithTime,
   formatDateRange,
-  formatTournamentDateTime,
 } from './tournamentUtils';
 import type { ITournament } from '@/lib/types/ITournament';
 
@@ -54,19 +53,7 @@ export function TournamentsListItem({
           <div className="flex flex-col gap-0.5">
             <span>
               <span className="font-pixel-klein text-main-gray/60 text-md">
-                Registration:
-              </span>
-              &nbsp;
-              <span className="font-pixel text-main-gray text-xs">
-                {formatBattleWindowWithTime(
-                  tournament.scheduleTimes.registrationOpensAtMs,
-                  tournament.scheduleTimes.battleStartsAtMs
-                )}
-              </span>
-            </span>
-            <span>
-              <span className="font-pixel-klein text-main-gray/60 text-md">
-                Battle:
+                Join / battle:
               </span>
               &nbsp;
               <span className="font-pixel text-main-gray text-xs">

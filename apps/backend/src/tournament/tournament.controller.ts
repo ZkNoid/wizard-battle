@@ -80,7 +80,6 @@ export class TournamentController {
           prize1Percent: dto.prize1Percent,
           prize2Percent: dto.prize2Percent,
           prize3Percent: dto.prize3Percent,
-          registrationStartSlot: dto.registrationStartSlot,
           battleStartSlot: dto.battleStartSlot,
           battleEndSlot: dto.battleEndSlot,
         },
@@ -279,7 +278,7 @@ export class TournamentController {
       tournamentId,
       dto.playerPubKey,
       OperationType.BuyTicket,
-      'Registration',
+      'Battle',
       (tournament) => {
         if (tournament.participants.get(dto.playerPubKey)) {
           throw new HttpException(
@@ -345,6 +344,22 @@ export class TournamentController {
         `Tournament ${tournamentId} is not in ${expectedStatus.toLowerCase()} phase`,
         HttpStatus.BAD_REQUEST
       );
+    }
+
+    if (
+      operationType === OperationType.BuyTicket &&
+      expectedStatus === 'Battle'
+    ) {
+      const currentSlot = await this.minaClientService.getCurrentSlot();
+      if (
+        currentSlot < tournament.verified.battleStartSlot ||
+        currentSlot >= tournament.verified.battleEndSlot
+      ) {
+        throw new HttpException(
+          `Tournament ${tournamentId} only accepts ticket purchases while the battle window is open (slots ${tournament.verified.battleStartSlot}–${tournament.verified.battleEndSlot - 1})`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
     }
 
     validateEligibility(tournament);

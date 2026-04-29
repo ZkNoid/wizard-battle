@@ -1,7 +1,6 @@
 export class TournamentResponseDto {
   tournamentId!: string;
   status!: string;
-  registrationStartSlot!: number;
   battleStartSlot!: number;
   battleEndSlot!: number;
   ticketPrice!: string;

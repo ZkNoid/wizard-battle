@@ -8,7 +8,6 @@ export type PendingOperationDocument = HydratedDocument<PendingOperation> & {
 
 export enum OperationType {
   BuyTicket = 'buyTicket',
-  AdvanceToBattle = 'advanceToBattle',
   FinalizeTournament = 'finalizeTournament',
   ClaimPrize = 'claimPrize',
 }

@@ -15,7 +15,6 @@ export interface TournamentChainStatusResponse {
 export interface TournamentResponse {
   tournamentId: string;
   status: string;
-  registrationStartSlot: number;
   battleStartSlot: number;
   battleEndSlot: number;
   ticketPrice: string;
