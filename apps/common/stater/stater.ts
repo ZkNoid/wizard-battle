@@ -95,8 +95,13 @@ export class Stater extends Struct({
   applyDamage(damage: UInt64, opponentState: State) {
     // Check dodge and accuracy
     // hitChance = (accuracy + 100) * (100 - dodgeChance) / 100
-    const hitChance = opponentState.playerStats.accuracy.add(CALCULATION_PRECISION)
-      .mul(UInt64.from(CALCULATION_PRECISION).sub(this.state.playerStats.dodgeChance))
+    const hitChance = opponentState.playerStats.accuracy
+      .add(CALCULATION_PRECISION)
+      .mul(
+        UInt64.from(CALCULATION_PRECISION).sub(
+          this.state.playerStats.dodgeChance
+        )
+      )
       .div(CALCULATION_PRECISION);
     const dodgeRandomPercentage = this.getRandomPercentage();
     const isHit = dodgeRandomPercentage.lessThan(hitChance);
@@ -111,14 +116,7 @@ export class Stater extends Struct({
       .div(this.state.playerStats.defense);
     const finalDamage = Provable.if(isHit, fullDamage, UInt64.from(0));
 
-    console.log('hitChance', hitChance);
-    console.log('dodgeRandomPercentage', dodgeRandomPercentage);
-    console.log('isHit', isHit);
-    console.log('damage', damage.toString());
-    console.log('defense', this.state.playerStats.defense.toString());
-    console.log('fullDamage', fullDamage.toString());
-    console.log('finalDamage', finalDamage.toString());
-
+    const dealtDamage = finalDamage.equals(UInt64.from(0)).not();
     const isMage = this.state.wizardId.equals(WizardId.MAGE);
     this.state.pushEffect(
       new Effect({
@@ -127,7 +125,7 @@ export class Stater extends Struct({
         param: Field(0),
       }),
       'public',
-      isHit.and(isMage)
+      dealtDamage.and(isMage)
     );
 
     this.state.playerStats.hp = this.state.playerStats.hp.sub(finalDamage);

@@ -10,6 +10,7 @@ import {
   SpellStats,
 } from './structs';
 import { WizardId } from '../wizards';
+import { EffectsId } from './effects/effects';
 
 describe('Stater', () => {
   let initialState: State;
@@ -797,6 +798,54 @@ describe('Stater', () => {
         defenderStater.applyDamage(UInt64.from(0), attackerState);
 
         expect(defenderStater.state.playerStats.hp.toString()).toBe('100');
+      });
+
+      it('should not add Revealed for mage when final damage is 0 (e.g. zero base damage)', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 100,
+          accuracy: 100,
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 100,
+          defense: 100,
+          dodgeChance: 0,
+          randomSeed: Field(0),
+        });
+
+        defenderStater.applyDamage(UInt64.from(0), attackerState);
+
+        const revealedId = EffectsId.Revealed!;
+        const hasRevealed = defenderStater.state.publicStateEffects.some((e) =>
+          e.effectId.equals(revealedId).toBoolean()
+        );
+        expect(hasRevealed).toBe(false);
+      });
+
+      it('should add Revealed for mage when damage is actually applied', () => {
+        const attackerState = createState({
+          playerId: 1,
+          attack: 100,
+          accuracy: 100,
+        });
+
+        const defenderStater = createStater({
+          playerId: 42,
+          hp: 100,
+          defense: 100,
+          dodgeChance: 0,
+          randomSeed: Field(0),
+        });
+
+        defenderStater.applyDamage(UInt64.from(10), attackerState);
+
+        const revealedId = EffectsId.Revealed!;
+        const hasRevealed = defenderStater.state.publicStateEffects.some((e) =>
+          e.effectId.equals(revealedId).toBoolean()
+        );
+        expect(hasRevealed).toBe(true);
       });
 
       it('should handle very high attack multiplier', () => {
