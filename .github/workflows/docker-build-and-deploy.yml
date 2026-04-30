@@ -256,6 +256,10 @@ jobs:
           script: |
             cd ${{ secrets.TARGET_PATH }}
 
+            # === Ensure required directories exist ===
+            mkdir -p backups scripts
+            chmod 755 backups scripts
+
             # === Regenerate .env securely ===
             cat > .env << 'EOT'
             MONGO_USERNAME=${{ secrets.MONGO_USERNAME }}
