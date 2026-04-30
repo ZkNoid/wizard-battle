@@ -149,6 +149,27 @@ jobs:
           target: ${{ secrets.TARGET_PATH }}
           strip_components: 2
 
+  copy-mongodb-backup-script:
+    needs: test-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install ssh client
+        run: sudo apt-get update && sudo apt-get install -y openssh-client
+
+      - name: Copy mongodb-backup.sh to remote server via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          port: ${{ secrets.SERVER_PORT }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: 'packages/server/scripts/mongodb-backup.sh'
+          target: ${{ secrets.TARGET_PATH }}
+          strip_components: 2
+
   build-and-deploy:
     needs: test-build
     runs-on: ubuntu-latest
