@@ -197,3 +197,31 @@ export async function submitTransaction(
 
   return res.json() as Promise<{ txHash: string }>;
 }
+
+/**
+ * Marks a stuck submitted operation as failed so the player can start buy-ticket again
+ * (no on-chain tx yet: wallet rejected, broadcast error, or client disconnect).
+ */
+export async function abandonOperation(
+  tournamentId: string,
+  operationId: string,
+  playerPubKey: string
+): Promise<{ ok: true; status: string }> {
+  const res = await fetch(
+    `${TOURNAMENT_BASE}/${tournamentId}/operation/${operationId}/abandon`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerPubKey }),
+    }
+  );
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(
+      (body as { message?: string } | null)?.message ?? `HTTP ${res.status}`
+    );
+  }
+
+  return res.json() as Promise<{ ok: true; status: string }>;
+}
