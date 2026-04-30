@@ -259,6 +259,7 @@ jobs:
             # === Ensure required directories exist ===
             mkdir -p backups scripts
             chmod 755 backups scripts
+            chown -R docker:docker backups scripts
 
             # === Regenerate .env securely ===
             cat > .env << 'EOT'
