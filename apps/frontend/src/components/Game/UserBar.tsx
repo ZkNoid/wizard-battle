@@ -246,7 +246,7 @@ function EffectIcon({
       onMouseLeave={() => setShowTooltip(false)}
     >
       {style.icon}
-      {duration > 0 && (
+      {duration >= 0 && (
         <span
           className="absolute -bottom-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full text-[8px] font-bold"
           style={{ backgroundColor: style.color, color: style.bgColor }}
@@ -366,7 +366,9 @@ export function UserBar({
           if (!existing) {
             effects.push({
               name: effectInfo.name,
-              duration: Number(effect.duration.toString()),
+              duration: effect.duration.equals(Field(-1))
+                ? -1
+                : Number(effect.duration.toString()),
             });
           }
         }
