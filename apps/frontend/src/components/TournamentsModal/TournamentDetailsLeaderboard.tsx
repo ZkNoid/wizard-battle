@@ -61,6 +61,72 @@ const getPlaceDisplay = (place: number): React.ReactNode => {
   return <span>{place}</span>;
 };
 
+interface LeaderboardRowProps {
+  item: ITournamentLeaderboardItem;
+  isCurrentUser: boolean;
+  isPinned: boolean;
+  tournamentStatus: ITournament['status'];
+}
+
+function LeaderboardRow({
+  item,
+  isCurrentUser,
+  isPinned,
+  tournamentStatus,
+}: LeaderboardRowProps) {
+  return (
+    <Button
+      variant={isCurrentUser ? 'blue' : 'lightGray'}
+      className="h-16 w-full shrink-0"
+      isLong
+    >
+      <div className="grid w-full grid-cols-4 gap-2 px-6">
+        {/* Place */}
+        <span className="flex items-center gap-1 text-lg">
+          {getPlaceDisplay(item.place)}
+          {isCurrentUser && (
+            <span className="font-pixel-klein text-xs">(You)</span>
+          )}
+        </span>
+
+        {/* Wallet */}
+        <span className="font-pixel flex items-center text-sm">
+          {shortenAddress(item.walletAddress)}
+        </span>
+
+        {/* Score */}
+        <span className="font-pixel-klein flex flex-col items-center justify-center text-sm font-bold leading-tight">
+          <span>{item.score}</span>
+          <span className="text-main-gray/50 text-[10px] font-normal">
+            {item.wins}W-{item.losses}L
+          </span>
+        </span>
+
+        {/* Prize */}
+        <div className="flex flex-col items-end justify-center gap-0.5">
+          {tournamentStatus !== 'ended' ? (
+            <span className="font-pixel-klein text-main-gray/60 text-xs">
+              Event online
+            </span>
+          ) : item.prize?.length > 0 ? (
+            item.prize.map((asset, i) => (
+              <TournamentAssetDisplay
+                key={i}
+                asset={asset}
+                className="text-main-gray"
+              />
+            ))
+          ) : (
+            <span className="font-pixel-klein text-main-gray/60 text-xs">
+              Sorry, you lost
+            </span>
+          )}
+        </div>
+      </div>
+    </Button>
+  );
+}
+
 export function TournamentDetailsLeaderboard({
   tournament,
   currentUserAddress,
@@ -124,7 +190,7 @@ export function TournamentDetailsLeaderboard({
         </div>
 
         {/* Rows */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex flex-1 flex-col gap-2 overflow-hidden">
           {loading ? (
             <div className="font-pixel text-main-gray/40 flex h-full items-center justify-center text-sm">
               Loading…
@@ -138,68 +204,43 @@ export function TournamentDetailsLeaderboard({
               No participants yet
             </div>
           ) : (
-            <Scroll height="100%" alwaysShowScrollbar>
-              <div className="flex flex-col gap-2 pr-2">
-                {entries.map((item) => {
-                  const isCurrentUser =
-                    currentUserAddress === item.walletAddress;
-                  return (
-                    <Button
-                      key={`${item.place}-${item.walletAddress}`}
-                      variant={isCurrentUser ? 'blue' : 'lightGray'}
-                      className="h-16 w-full"
-                      isLong
-                    >
-                      <div className="grid w-full grid-cols-4 gap-2 px-6">
-                        {/* Place */}
-                        <span className="flex items-center gap-1 text-lg">
-                          {getPlaceDisplay(item.place)}
-                          {isCurrentUser && (
-                            <span className="font-pixel-klein text-xs">
-                              (You)
-                            </span>
-                          )}
-                        </span>
+            <>
+              {/* Pinned current-user row — only shown when user is not already first */}
+              {(() => {
+                const userEntry = entries.find(
+                  (e) => e.walletAddress === currentUserAddress
+                );
+                if (!userEntry || userEntry.place === 1) return null;
+                return (
+                  <LeaderboardRow
+                    item={userEntry}
+                    isCurrentUser
+                    isPinned
+                    tournamentStatus={tournament.status}
+                  />
+                );
+              })()}
 
-                        {/* Wallet */}
-                        <span className="font-pixel flex items-center text-sm">
-                          {shortenAddress(item.walletAddress)}
-                        </span>
-
-                        {/* Score (100 + W − L, min 0) */}
-                        <span className="font-pixel-klein flex flex-col items-center justify-center text-sm font-bold leading-tight">
-                          <span>{item.score}</span>
-                          <span className="text-main-gray/50 text-[10px] font-normal">
-                            {item.wins}W-{item.losses}L
-                          </span>
-                        </span>
-
-                        {/* Prize */}
-                        <div className="flex flex-col items-end justify-center gap-0.5">
-                          {tournament.status !== 'ended' ? (
-                            <span className="font-pixel-klein text-main-gray/60 text-xs">
-                              Event online
-                            </span>
-                          ) : item.prize?.length > 0 ? (
-                            item.prize.map((asset, i) => (
-                              <TournamentAssetDisplay
-                                key={i}
-                                asset={asset}
-                                className="text-main-gray"
-                              />
-                            ))
-                          ) : (
-                            <span className="font-pixel-klein text-main-gray/60 text-xs">
-                              Sorry, you lost
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </Button>
-                  );
-                })}
+              <div className="flex-1 overflow-hidden">
+                <Scroll height="100%" alwaysShowScrollbar>
+                  <div className="flex flex-col gap-2 pr-2">
+                    {entries.map((item) => {
+                      const isCurrentUser =
+                        currentUserAddress === item.walletAddress;
+                      return (
+                        <LeaderboardRow
+                          key={`${item.place}-${item.walletAddress}`}
+                          item={item}
+                          isCurrentUser={isCurrentUser}
+                          isPinned={false}
+                          tournamentStatus={tournament.status}
+                        />
+                      );
+                    })}
+                  </div>
+                </Scroll>
               </div>
-            </Scroll>
+            </>
           )}
         </div>
       </div>
