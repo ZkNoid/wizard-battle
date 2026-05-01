@@ -1,3 +1,8 @@
+export class TournamentSponsorDto {
+  name!: string;
+  url?: string;
+}
+
 export class TournamentResponseDto {
   tournamentId!: string;
   status!: string;
@@ -13,6 +18,8 @@ export class TournamentResponseDto {
   pendingPlayers!: string[];
   title?: string;
   imageUrl?: string;
+  description?: string;
+  sponsors?: TournamentSponsorDto[];
 }
 
 export class ParticipantsResponseDto {

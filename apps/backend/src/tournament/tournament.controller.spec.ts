@@ -60,7 +60,7 @@ describe('TournamentController', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const testModule: TestingModule = await Test.createTestingModule({
       controllers: [TournamentController],
       providers: [
         {
@@ -79,6 +79,7 @@ describe('TournamentController', () => {
           provide: MinaClientService,
           useValue: {
             getCurrentSlot: jest.fn().mockResolvedValue(600),
+            submitTransaction: jest.fn(),
           },
         },
         {
@@ -92,15 +93,15 @@ describe('TournamentController', () => {
       ],
     }).compile();
 
-    controller = module.get<TournamentController>(TournamentController);
-    tournamentStateService = module.get<TournamentStateService>(
+    controller = testModule.get<TournamentController>(TournamentController);
+    tournamentStateService = testModule.get<TournamentStateService>(
       TournamentStateService
     );
-    proofGeneratorService = module.get<ProofGeneratorService>(
+    proofGeneratorService = testModule.get<ProofGeneratorService>(
       ProofGeneratorService
     );
-    chainMonitorService = module.get<ChainMonitorService>(ChainMonitorService);
-    minaClientService = module.get<MinaClientService>(MinaClientService);
+    chainMonitorService = testModule.get<ChainMonitorService>(ChainMonitorService);
+    minaClientService = testModule.get<MinaClientService>(MinaClientService);
   });
 
   describe('getTournament', () => {
@@ -226,6 +227,75 @@ describe('TournamentController', () => {
       await expect(
         controller.buyTicket('1', { playerPubKey: 'B62qNewPlayer' })
       ).rejects.toThrow(HttpException);
+    });
+  });
+
+  describe('submitTransaction', () => {
+    it('marks operation failed when broadcast throws', async () => {
+      const opId = new Types.ObjectId();
+      jest
+        .spyOn(tournamentStateService, 'getVerifiedState')
+        .mockResolvedValue(mockVerifiedState as any);
+      jest.spyOn(tournamentStateService, 'getPendingOperationById').mockResolvedValue({
+        _id: opId,
+        tournamentId: '1',
+        status: OperationStatus.Submitted,
+        playerPubKey: 'B62qP',
+        type: OperationType.BuyTicket,
+        txHash: undefined,
+      } as any);
+      jest
+        .spyOn(minaClientService, 'submitTransaction')
+        .mockRejectedValue(new Error('mempool full'));
+      const failSpy = jest
+        .spyOn(tournamentStateService, 'failOperationIfAwaitingBroadcast')
+        .mockResolvedValue(true);
+
+      await expect(
+        controller.submitTransaction('1', {
+          operationId: opId.toString(),
+          signedTxJson: '{"foo":1}',
+        })
+      ).rejects.toThrow(HttpException);
+
+      expect(failSpy).toHaveBeenCalledWith(
+        opId.toString(),
+        'broadcast_failed: mempool full'
+      );
+    });
+  });
+
+  describe('abandonOperation', () => {
+    it('returns ok when abandon succeeds', async () => {
+      const opId = new Types.ObjectId();
+      jest.spyOn(tournamentStateService, 'abandonPlayerOperation').mockResolvedValue({
+        ok: true,
+      });
+
+      const result = await controller.abandonOperation('1', opId.toString(), {
+        playerPubKey: 'B62qP',
+      });
+
+      expect(result).toEqual({ ok: true, status: OperationStatus.Failed });
+      expect(tournamentStateService.abandonPlayerOperation).toHaveBeenCalledWith(
+        '1',
+        opId.toString(),
+        'B62qP'
+      );
+    });
+
+    it('returns 403 when player does not match', async () => {
+      const opId = new Types.ObjectId();
+      jest.spyOn(tournamentStateService, 'abandonPlayerOperation').mockResolvedValue({
+        ok: false,
+        reason: 'wrong_player',
+      });
+
+      await expect(
+        controller.abandonOperation('1', opId.toString(), {
+          playerPubKey: 'B62qOther',
+        })
+      ).rejects.toMatchObject({ status: HttpStatus.FORBIDDEN });
     });
   });
 

@@ -41,9 +41,56 @@ export type {
   CreateTournamentConfig,
 } from './tournament-state.types.js';
 
+export type AbandonOperationResult =
+  | { ok: true }
+  | {
+      ok: false;
+      reason:
+        | 'not_found'
+        | 'wrong_tournament'
+        | 'wrong_player'
+        | 'wrong_type'
+        | 'not_abandonable_state'
+        | 'already_broadcast'
+        | 'already_terminal';
+      status?: string;
+    };
+
+/**
+ * MongoDB filter fragment that matches a txHash field that has NOT yet been
+ * set to a real broadcast hash.  This mirrors hasRealBroadcastTxHash and must
+ * be kept in sync with it: null, missing, empty string, and the `pending_`
+ * prefix (used as a placeholder before a real hash is known) all count as
+ * "not yet broadcast".
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const NO_REAL_TX_HASH_FILTER: Record<string, any> = {
+  $or: [
+    { txHash: { $exists: false } },
+    { txHash: null },
+    { txHash: '' },
+    { txHash: /^pending_/ },
+  ],
+};
+
 @Injectable()
 export class TournamentStateService {
   private readonly logger = new Logger(TournamentStateService.name);
+
+  /** True after a successful mempool broadcast (excludes empty / proof-only states). */
+  private static hasRealBroadcastTxHash(txHash?: string | null): boolean {
+    if (txHash === undefined || txHash === null) {
+      return false;
+    }
+    const t = txHash.trim();
+    if (t === '') {
+      return false;
+    }
+    if (t.startsWith('pending_')) {
+      return false;
+    }
+    return true;
+  }
 
   constructor(
     @InjectModel(Tournament.name)
@@ -124,7 +171,9 @@ export class TournamentStateService {
       pendingPlayers,
       ...optionalTournamentDisplayFields(
         tournament.title,
-        tournament.imageUrl
+        tournament.imageUrl,
+        tournament.description,
+        tournament.sponsors,
       ),
     };
   }
@@ -263,6 +312,175 @@ export class TournamentStateService {
     return updated;
   }
 
+  /**
+   * Atomically marks a submitted operation as failed when it still has no
+   * broadcast tx hash (wallet step never completed or broadcast errored).
+   */
+  async failOperationIfAwaitingBroadcast(
+    opId: string,
+    error: string
+  ): Promise<boolean> {
+    if (!Types.ObjectId.isValid(opId)) {
+      return false;
+    }
+
+    const updated = await this.pendingOpModel
+      .findOneAndUpdate(
+        {
+          _id: new Types.ObjectId(opId),
+          status: OperationStatus.Submitted,
+          ...NO_REAL_TX_HASH_FILTER,
+        },
+        { $set: { status: OperationStatus.Failed, error } },
+        { new: true }
+      )
+      .exec();
+
+    if (!updated) {
+      return false;
+    }
+
+    this.operationEventsService.emit({
+      operationId: updated._id.toString(),
+      tournamentId: updated.tournamentId,
+      status: updated.status,
+      unsignedTxJson: updated.unsignedTxJson,
+      txHash: updated.txHash,
+      error: updated.error,
+      updatedAt: updated.updatedAt ?? new Date(),
+    });
+
+    return true;
+  }
+
+  /**
+   * Player-initiated abandon: submitted, no broadcast hash yet, matching wallet.
+   */
+  async abandonPlayerOperation(
+    tournamentId: string,
+    operationId: string,
+    playerPubKey: string
+  ): Promise<AbandonOperationResult> {
+    if (!Types.ObjectId.isValid(operationId)) {
+      return { ok: false, reason: 'not_found' };
+    }
+
+    const op = await this.getPendingOperationById(operationId);
+    if (!op) {
+      return { ok: false, reason: 'not_found' };
+    }
+    if (op.tournamentId !== tournamentId) {
+      return { ok: false, reason: 'wrong_tournament' };
+    }
+    if (op.playerPubKey !== playerPubKey) {
+      return { ok: false, reason: 'wrong_player' };
+    }
+    if (
+      op.type !== OperationType.BuyTicket &&
+      op.type !== OperationType.ClaimPrize
+    ) {
+      return { ok: false, reason: 'wrong_type' };
+    }
+
+    if (op.status === OperationStatus.Failed) {
+      return { ok: true };
+    }
+    if (op.status === OperationStatus.Confirmed) {
+      return { ok: false, reason: 'already_terminal', status: op.status };
+    }
+    if (op.status !== OperationStatus.Submitted) {
+      return { ok: false, reason: 'not_abandonable_state', status: op.status };
+    }
+    if (TournamentStateService.hasRealBroadcastTxHash(op.txHash)) {
+      return { ok: false, reason: 'already_broadcast' };
+    }
+
+    const updated = await this.pendingOpModel
+      .findOneAndUpdate(
+        {
+          _id: op._id,
+          status: OperationStatus.Submitted,
+          tournamentId,
+          playerPubKey,
+          type: { $in: [OperationType.BuyTicket, OperationType.ClaimPrize] },
+          ...NO_REAL_TX_HASH_FILTER,
+        },
+        {
+          $set: {
+            status: OperationStatus.Failed,
+            error: 'abandoned_by_client',
+          },
+        },
+        { new: true }
+      )
+      .exec();
+
+    if (!updated) {
+      const again = await this.getPendingOperationById(operationId);
+      if (again?.status === OperationStatus.Failed) {
+        return { ok: true };
+      }
+      if (again && TournamentStateService.hasRealBroadcastTxHash(again.txHash)) {
+        return { ok: false, reason: 'already_broadcast' };
+      }
+      if (again?.status === OperationStatus.Confirmed) {
+        return { ok: false, reason: 'already_terminal', status: again.status };
+      }
+      return {
+        ok: false,
+        reason: 'not_abandonable_state',
+        status: again?.status,
+      };
+    }
+
+    this.operationEventsService.emit({
+      operationId: updated._id.toString(),
+      tournamentId: updated.tournamentId,
+      status: updated.status,
+      unsignedTxJson: updated.unsignedTxJson,
+      txHash: updated.txHash,
+      error: updated.error,
+      updatedAt: updated.updatedAt ?? new Date(),
+    });
+
+    return { ok: true };
+  }
+
+  /**
+   * Fails submitted operations that never received a broadcast tx within maxAgeMs.
+   * Used by a cron safety net for clients that closed the tab before signing.
+   */
+  async expireStaleSubmittedAwaitingSignature(maxAgeMs: number): Promise<number> {
+    const cutoff = new Date(Date.now() - maxAgeMs);
+    const candidates = await this.pendingOpModel
+      .find({
+        status: OperationStatus.Submitted,
+        updatedAt: { $lt: cutoff },
+        ...NO_REAL_TX_HASH_FILTER,
+      })
+      .select('_id')
+      .exec();
+
+    let count = 0;
+    for (const doc of candidates) {
+      const ok = await this.failOperationIfAwaitingBroadcast(
+        doc._id.toString(),
+        'abandoned_awaiting_signature'
+      );
+      if (ok) {
+        count++;
+      }
+    }
+
+    if (count > 0) {
+      this.logger.log(
+        `Expired ${count} stale submitted operation(s) awaiting signature (older than ${maxAgeMs}ms)`
+      );
+    }
+
+    return count;
+  }
+
   async confirmOperation(opId: string, txHash: string): Promise<void> {
     const op = await this.getPendingOperationById(opId);
     if (!op) {
@@ -337,7 +555,7 @@ export class TournamentStateService {
     tournamentId: string,
     config: CreateTournamentConfig,
     tournamentsRoot: string,
-    display?: { title?: string; imageUrl?: string }
+    display?: { title?: string; imageUrl?: string; description?: string; sponsors?: { name: string; url?: string }[] }
   ): Promise<TournamentDocument> {
     validateCreateTournamentConfig(config);
 
@@ -371,7 +589,12 @@ export class TournamentStateService {
       participants: new Map(),
       winners: new Map(),
       tournamentsRoot,
-      ...optionalTournamentDisplayFields(display?.title, display?.imageUrl),
+      ...optionalTournamentDisplayFields(
+        display?.title,
+        display?.imageUrl,
+        display?.description,
+        display?.sponsors,
+      ),
     });
 
     return tournament.save();

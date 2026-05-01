@@ -1,6 +1,17 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
+@Schema({ _id: false })
+export class SponsorInfo {
+  @Prop({ required: true })
+  name!: string;
+
+  @Prop({ required: false })
+  url?: string;
+}
+
+export const SponsorInfoSchema = SchemaFactory.createForClass(SponsorInfo);
+
 export type TournamentDocument = HydratedDocument<Tournament> & {
   createdAt: Date;
   updatedAt: Date;
@@ -92,6 +103,14 @@ export class Tournament {
   /** Image URL for listings (absolute or site-relative path). */
   @Prop({ required: false })
   imageUrl?: string;
+
+  /** Human-readable description shown in the tournament details panel. */
+  @Prop({ required: false })
+  description?: string;
+
+  /** Sponsoring organizations displayed in the tournament details panel. */
+  @Prop({ type: [SponsorInfoSchema], required: false, default: undefined })
+  sponsors?: SponsorInfo[];
 }
 
 export const TournamentSchema = SchemaFactory.createForClass(Tournament);

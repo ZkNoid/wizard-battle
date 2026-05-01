@@ -72,6 +72,8 @@ export class TournamentController {
     try {
       const displayTitle = dto.title?.trim();
       const displayImageUrl = dto.imageUrl?.trim();
+      const displayDescription = dto.description?.trim();
+      const displaySponsors = dto.sponsors && dto.sponsors.length > 0 ? dto.sponsors : undefined;
 
       const tournament = await this.tournamentStateService.createTournament(
         dto.tournamentId,
@@ -87,6 +89,8 @@ export class TournamentController {
         {
           ...(displayTitle ? { title: displayTitle } : {}),
           ...(displayImageUrl ? { imageUrl: displayImageUrl } : {}),
+          ...(displayDescription ? { description: displayDescription } : {}),
+          ...(displaySponsors ? { sponsors: displaySponsors } : {}),
         }
       );
 
@@ -502,8 +506,94 @@ export class TournamentController {
         `Broadcast failed for operation ${body.operationId}: ${message}`,
         error instanceof Error ? error.stack : undefined
       );
+
+      const marked = await this.tournamentStateService.failOperationIfAwaitingBroadcast(
+        body.operationId,
+        `broadcast_failed: ${message}`
+      );
+      if (marked) {
+        this.logger.log(
+          `Marked operation ${body.operationId} as failed after broadcast error`
+        );
+      }
+
       throw new HttpException(message, HttpStatus.BAD_GATEWAY);
     }
+  }
+
+  @Post(':id/operation/:opId/abandon')
+  async abandonOperation(
+    @Param('id') tournamentId: string,
+    @Param('opId') operationId: string,
+    @Body() body: { playerPubKey: string }
+  ): Promise<{ ok: true; status: string }> {
+    if (
+      body.playerPubKey === undefined ||
+      body.playerPubKey === null ||
+      typeof body.playerPubKey !== 'string' ||
+      body.playerPubKey.trim() === ''
+    ) {
+      throw new HttpException('playerPubKey is required', HttpStatus.BAD_REQUEST);
+    }
+
+    const result = await this.tournamentStateService.abandonPlayerOperation(
+      tournamentId,
+      operationId,
+      body.playerPubKey.trim()
+    );
+
+    if (!result.ok) {
+      if (result.reason === 'not_found') {
+        throw new HttpException(
+          `Operation ${operationId} not found`,
+          HttpStatus.NOT_FOUND
+        );
+      }
+      if (result.reason === 'wrong_tournament') {
+        throw new HttpException(
+          `Operation ${operationId} does not belong to tournament ${tournamentId}`,
+          HttpStatus.BAD_REQUEST
+        );
+      }
+      if (result.reason === 'wrong_player') {
+        throw new HttpException(
+          'playerPubKey does not match this operation',
+          HttpStatus.FORBIDDEN
+        );
+      }
+      if (result.reason === 'wrong_type') {
+        throw new HttpException(
+          'Only buyTicket or claimPrize operations can be abandoned',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+      if (result.reason === 'not_abandonable_state') {
+        throw new HttpException(
+          `Operation cannot be abandoned in status ${result.status}`,
+          HttpStatus.CONFLICT
+        );
+      }
+      if (result.reason === 'already_broadcast') {
+        throw new HttpException(
+          'Operation already has a broadcast transaction',
+          HttpStatus.CONFLICT
+        );
+      }
+      if (result.reason === 'already_terminal') {
+        throw new HttpException(
+          `Operation is already ${result.status}`,
+          HttpStatus.CONFLICT
+        );
+      }
+
+      // Exhaustive guard: every reason must be handled above.
+      throw new HttpException(
+        `Unexpected abandon result: ${(result as { reason: string }).reason}`,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+
+    return { ok: true, status: OperationStatus.Failed };
   }
 
   @Get(':id/operation/:opId')

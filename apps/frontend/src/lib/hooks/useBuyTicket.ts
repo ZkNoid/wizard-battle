@@ -109,12 +109,16 @@ export function useBuyTicket(): UseBuyTicketReturn {
       setTxHash(null);
       setStatus('submitting');
 
+      let operationIdForAbandon: string | null = null;
+
       try {
         // ── Step 1: queue the operation on the backend ──────────────────────
         const { operationId } = await tournamentApi.buyTicket(
           tournament.id,
           address
         );
+
+        operationIdForAbandon = operationId;
 
         if (!mountedRef.current) return;
         setStatus('queued');
@@ -222,6 +226,15 @@ export function useBuyTicket(): UseBuyTicketReturn {
                   setError(msg);
                   setStatus('failed');
                   closeStream();
+                  try {
+                    await tournamentApi.abandonOperation(
+                      tournament.id,
+                      operationId,
+                      address
+                    );
+                  } catch {
+                    // Backend may already have failed the op (e.g. broadcast path); ignore
+                  }
                 }
                 break;
               }
@@ -241,11 +254,23 @@ export function useBuyTicket(): UseBuyTicketReturn {
           },
           () => {
             if (!mountedRef.current) return;
+            // Guard: if the op is already terminal on this client, nothing to do.
+            // NOTE: side-effects must NOT go inside a setState functional updater
+            // because React Strict Mode invokes updaters multiple times.
             setStatus((prev) => {
               if (prev === 'confirmed' || prev === 'failed') return prev;
-              setError('Lost connection to server. Please try again.');
               return 'failed';
             });
+            setError('Lost connection to server. Please try again.');
+            if (operationIdForAbandon && address) {
+              void tournamentApi
+                .abandonOperation(
+                  tournament.id,
+                  operationIdForAbandon,
+                  address
+                )
+                .catch(() => undefined);
+            }
           }
         );
 

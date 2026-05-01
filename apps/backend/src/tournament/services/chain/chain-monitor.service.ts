@@ -34,6 +34,31 @@ export class ChainMonitorService implements OnModuleInit {
     this.logger.log('ChainMonitorService initialized');
   }
 
+  @Cron('0 */2 * * * *')
+  async expireStaleSubmittedAwaitingSignature(): Promise<void> {
+    const raw = process.env.STALE_SUBMITTED_AWAITING_SIGNATURE_MS;
+    const maxAgeMs = raw
+      ? parseInt(raw, 10)
+      : 30 * 60 * 1000;
+    if (!Number.isFinite(maxAgeMs) || maxAgeMs < 60_000) {
+      this.logger.warn(
+        'STALE_SUBMITTED_AWAITING_SIGNATURE_MS invalid or too small; skipping stale cleanup'
+      );
+      return;
+    }
+
+    try {
+      await this.tournamentStateService.expireStaleSubmittedAwaitingSignature(
+        maxAgeMs
+      );
+    } catch (error) {
+      this.logger.error(
+        'Error expiring stale submitted operations awaiting signature',
+        error
+      );
+    }
+  }
+
   @Cron('*/30 * * * * *')
   async checkPendingTransactions(): Promise<void> {
     if (this.isRunning) {

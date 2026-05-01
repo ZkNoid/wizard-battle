@@ -8,6 +8,11 @@ import path from 'node:path';
 
 export const PENDING_BACKEND_VERSION = 1 as const;
 
+export interface TournamentBackendSponsor {
+  name: string;
+  url?: string;
+}
+
 export type TournamentBackendPayload = {
   tournamentId: string;
   ticketPrice: string;
@@ -20,6 +25,8 @@ export type TournamentBackendPayload = {
   txHash: string;
   title: string;
   imageUrl: string;
+  description?: string;
+  sponsors?: TournamentBackendSponsor[];
 };
 
 export type PendingBackendEnvelope = {

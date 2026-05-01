@@ -23,11 +23,13 @@ import {
 } from '../../schemas/pending-operation.schema.js';
 
 describe('TournamentStateService', () => {
+  let testingModule: TestingModule;
   let service: TournamentStateService;
   let tournamentModel: Model<TournamentDocument>;
   let pendingOpModel: Model<PendingOperationDocument>;
   let merkleService: MerkleService;
   let redisService: RedisService;
+  let operationEvents: OperationEventsService;
 
   const mockTournament: Partial<TournamentDocument> = {
     tournamentId: '1',
@@ -76,7 +78,7 @@ describe('TournamentStateService', () => {
   ];
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    testingModule = await Test.createTestingModule({
       providers: [
         TournamentStateService,
         MerkleService,
@@ -95,6 +97,7 @@ describe('TournamentStateService', () => {
             findOne: jest.fn(),
             findById: jest.fn(),
             findByIdAndUpdate: jest.fn(),
+            findOneAndUpdate: jest.fn(),
             create: jest.fn(),
           },
         },
@@ -117,15 +120,18 @@ describe('TournamentStateService', () => {
       ],
     }).compile();
 
-    service = module.get<TournamentStateService>(TournamentStateService);
-    tournamentModel = module.get<Model<TournamentDocument>>(
+    service = testingModule.get<TournamentStateService>(TournamentStateService);
+    tournamentModel = testingModule.get<Model<TournamentDocument>>(
       getModelToken(Tournament.name)
     );
-    pendingOpModel = module.get<Model<PendingOperationDocument>>(
+    pendingOpModel = testingModule.get<Model<PendingOperationDocument>>(
       getModelToken(PendingOperation.name)
     );
-    merkleService = module.get<MerkleService>(MerkleService);
-    redisService = module.get<RedisService>(RedisService);
+    merkleService = testingModule.get<MerkleService>(MerkleService);
+    redisService = testingModule.get<RedisService>(RedisService);
+    operationEvents = testingModule.get<OperationEventsService>(
+      OperationEventsService
+    );
   });
 
   describe('getVerifiedState', () => {
@@ -275,6 +281,134 @@ describe('TournamentStateService', () => {
 
       await expect(service.addPendingOperation(dto)).rejects.toThrow(
         'already registered'
+      );
+    });
+  });
+
+  describe('failOperationIfAwaitingBroadcast', () => {
+    it('returns true and emits when a submitted op without txHash is updated', async () => {
+      const opId = new Types.ObjectId();
+      const updated = {
+        _id: opId,
+        tournamentId: '1',
+        status: OperationStatus.Failed,
+        error: 'broadcast_failed: x',
+        unsignedTxJson: '{}',
+        updatedAt: new Date(),
+      };
+      jest.spyOn(pendingOpModel, 'findOneAndUpdate').mockReturnValue({
+        exec: jest.fn().mockResolvedValue(updated),
+      } as any);
+
+      const result = await service.failOperationIfAwaitingBroadcast(
+        opId.toString(),
+        'broadcast_failed: x'
+      );
+
+      expect(result).toBe(true);
+      expect(operationEvents.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          operationId: opId.toString(),
+          status: OperationStatus.Failed,
+          error: 'broadcast_failed: x',
+        })
+      );
+    });
+
+    it('returns false when no matching document', async () => {
+      jest.spyOn(pendingOpModel, 'findOneAndUpdate').mockReturnValue({
+        exec: jest.fn().mockResolvedValue(null),
+      } as any);
+
+      const result = await service.failOperationIfAwaitingBroadcast(
+        new Types.ObjectId().toString(),
+        'err'
+      );
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('abandonPlayerOperation', () => {
+    it('returns wrong_player when pubkey does not match', async () => {
+      const opId = new Types.ObjectId();
+      jest.spyOn(pendingOpModel, 'findById').mockReturnValue({
+        exec: jest.fn().mockResolvedValue({
+          _id: opId,
+          tournamentId: '1',
+          playerPubKey: 'B62qExpected',
+          type: OperationType.BuyTicket,
+          status: OperationStatus.Submitted,
+        }),
+      } as any);
+
+      const result = await service.abandonPlayerOperation(
+        '1',
+        opId.toString(),
+        'B62qOther'
+      );
+
+      expect(result).toEqual({ ok: false, reason: 'wrong_player' });
+      expect(pendingOpModel.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it('returns ok true when atomic update succeeds', async () => {
+      const opId = new Types.ObjectId();
+      jest.spyOn(pendingOpModel, 'findById').mockReturnValue({
+        exec: jest.fn().mockResolvedValue({
+          _id: opId,
+          tournamentId: '1',
+          playerPubKey: 'B62qP',
+          type: OperationType.BuyTicket,
+          status: OperationStatus.Submitted,
+        }),
+      } as any);
+      jest.spyOn(pendingOpModel, 'findOneAndUpdate').mockReturnValue({
+        exec: jest.fn().mockResolvedValue({
+          _id: opId,
+          tournamentId: '1',
+          status: OperationStatus.Failed,
+          error: 'abandoned_by_client',
+          updatedAt: new Date(),
+        }),
+      } as any);
+
+      const result = await service.abandonPlayerOperation(
+        '1',
+        opId.toString(),
+        'B62qP'
+      );
+
+      expect(result).toEqual({ ok: true });
+      expect(operationEvents.emit).toHaveBeenCalled();
+    });
+  });
+
+  describe('expireStaleSubmittedAwaitingSignature', () => {
+    it('calls failOperationIfAwaitingBroadcast for each stale candidate', async () => {
+      const id1 = new Types.ObjectId();
+      const id2 = new Types.ObjectId();
+      jest.spyOn(pendingOpModel, 'find').mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          exec: jest.fn().mockResolvedValue([{ _id: id1 }, { _id: id2 }]),
+        }),
+      } as any);
+
+      const spy = jest
+        .spyOn(service, 'failOperationIfAwaitingBroadcast')
+        .mockResolvedValue(true);
+
+      const count = await service.expireStaleSubmittedAwaitingSignature(60_000);
+
+      expect(count).toBe(2);
+      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy).toHaveBeenCalledWith(
+        id1.toString(),
+        'abandoned_awaiting_signature'
+      );
+      expect(spy).toHaveBeenCalledWith(
+        id2.toString(),
+        'abandoned_awaiting_signature'
       );
     });
   });

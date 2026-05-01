@@ -118,7 +118,8 @@ export function mapTournamentResponse(
         : '/tournaments/grand-wizard.png',
     ticketCost: buildTicketCost(response),
     prizePool: buildPrizePool(response),
-    sponsors: [],
+    description: response.description,
+    sponsors: response.sponsors ?? [],
   };
 }
 

@@ -8,8 +8,13 @@
  *   pnpm --filter mina-contracts run create-tournament -- --title "Spring Cup" --image-url /tournaments/custom.png
  *
  * Required CLI flags (after `--` when using pnpm):
- *   --title, -t — Display title (backend + UI)
- *   --image-url, -i — Image URL (absolute or site-relative)
+ *   --title, -t       — Display title (backend + UI)
+ *   --image-url, -i   — Image URL (absolute or site-relative)
+ *
+ * Optional CLI flags:
+ *   --description, -d — Tournament description text
+ *   --sponsors, -s    — JSON array of sponsor objects: '[{"name":"Foo","url":"https://foo.com"}]'
+ *   --config, -c      — Path to a JSON config file with any of the above fields
  *
  * Environment variables:
  *   MINA_NETWORK_URL - Mina GraphQL endpoint (default: devnet)
@@ -299,8 +304,12 @@ async function main() {
   console.log('Create Tournament Script');
   console.log('='.repeat(60));
 
-  const { title: tournamentTitle, imageUrl: tournamentImageUrl } =
-    parseRequiredTournamentDisplayArgs(process.argv);
+  const {
+    title: tournamentTitle,
+    imageUrl: tournamentImageUrl,
+    description: tournamentDescription,
+    sponsors: tournamentSponsors,
+  } = parseRequiredTournamentDisplayArgs(process.argv);
 
   // Check required environment variables
   const deployerKeyBase58 = process.env.DEPLOYER_PRIVATE_KEY;
@@ -467,6 +476,10 @@ async function main() {
     txHash: createResult.hash,
     title: tournamentTitle,
     imageUrl: tournamentImageUrl,
+    ...(tournamentDescription ? { description: tournamentDescription } : {}),
+    ...(tournamentSponsors && tournamentSponsors.length > 0
+      ? { sponsors: tournamentSponsors }
+      : {}),
   };
   const backendPayload = JSON.stringify(backendPayloadObject);
 
@@ -583,6 +596,12 @@ async function main() {
   console.log(`Tournaments Root: ${newTournamentsRoot}`);
   console.log(`Display title: ${tournamentTitle}`);
   console.log(`Image URL: ${tournamentImageUrl}`);
+  if (tournamentDescription) {
+    console.log(`Description: ${tournamentDescription}`);
+  }
+  if (tournamentSponsors && tournamentSponsors.length > 0) {
+    console.log(`Sponsors: ${tournamentSponsors.map((s) => s.name).join(', ')}`);
+  }
   console.log('='.repeat(60));
 }
 
