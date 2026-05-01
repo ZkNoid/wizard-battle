@@ -12,6 +12,11 @@ export interface TournamentChainStatusResponse {
   proofGeneratorReady: boolean;
 }
 
+export interface TournamentResponseSponsor {
+  name: string;
+  url?: string;
+}
+
 export interface TournamentResponse {
   tournamentId: string;
   status: string;
@@ -29,6 +34,10 @@ export interface TournamentResponse {
   title?: string;
   /** Backend image URL; UI falls back to a default asset when omitted. */
   imageUrl?: string;
+  /** Human-readable description shown in the tournament details panel. */
+  description?: string;
+  /** Sponsoring organizations shown in the tournament details panel. */
+  sponsors?: TournamentResponseSponsor[];
 }
 
 /** Matches backend `ITournamentLeaderboardEntry` (apps/common). */
