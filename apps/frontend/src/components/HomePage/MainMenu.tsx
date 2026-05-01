@@ -6,6 +6,12 @@ import { ScrollBg } from './assets/scroll-bg';
 import { Tab } from '@/lib/enums/Tab';
 import { useRouter } from 'next/navigation';
 import { useMinaAppkit } from 'mina-appkit';
+import { trackEvent } from '@/lib/analytics/posthog-utils';
+import { AnalyticsEvents } from '@/lib/analytics/events';
+import type {
+  WalletPromptShownProps,
+  WalletConnectionInitiatedProps,
+} from '@/lib/analytics/types';
 
 export function MainMenu({ setTab }: { setTab: (tab: Tab) => void }) {
   const router = useRouter();
@@ -43,6 +49,17 @@ export function MainMenu({ setTab }: { setTab: (tab: Tab) => void }) {
             text="Play"
             onClick={() => {
               if (!address) {
+                const shown: WalletPromptShownProps = {
+                  prompt_context: 'home_play_requires_mina_wallet',
+                };
+                trackEvent(AnalyticsEvents.WALLET_PROMPT_SHOWN, shown);
+                const initiated: WalletConnectionInitiatedProps = {
+                  wallet_type: 'Auro',
+                };
+                trackEvent(
+                  AnalyticsEvents.WALLET_CONNECTION_INITIATED,
+                  initiated
+                );
                 triggerWallet();
                 return;
               }

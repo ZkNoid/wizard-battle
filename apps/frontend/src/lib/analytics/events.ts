@@ -54,6 +54,21 @@ export const AnalyticsEvents = {
   // Session Events
   SESSION_START: 'session_start',
   GAME_LOADED: 'game_loaded',
+
+  // In-game session (PvP /game route — для среднего времени и активности по часам)
+  GAME_PLAY_SESSION_START: 'game_play_session_start',
+  GAME_PLAY_SESSION_END: 'game_play_session_end',
+  GAME_ACTIVITY_HEARTBEAT: 'game_activity_heartbeat',
+
+  // Player lifecycle
+  PLAYER_JOINED_GAME: 'player_joined_game',
+
+  // Skills (одно событие на скилл — удобный breakdown в PostHog)
+  SKILL_SELECTED: 'skill_selected',
+
+  // Market
+  MARKET_ITEM_LISTED: 'market_item_listed',
+  MARKET_ITEM_PURCHASED: 'market_item_purchased',
 } as const;
 
 export type AnalyticsEventName =

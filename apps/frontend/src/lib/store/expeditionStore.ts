@@ -6,6 +6,8 @@ import type {
   ExpeditionTimePeriod,
 } from '@wizard-battle/common';
 import { trpcClient } from '@/trpc/vanilla';
+import { trackEvent } from '@/lib/analytics/posthog-utils';
+import { AnalyticsEvents } from '@/lib/analytics/events';
 
 interface ExpeditionStore {
   // Loading states
@@ -146,6 +148,25 @@ export const useExpeditionStore = create<ExpeditionStore>()(
               exp.id === expeditionId ? completedExpedition : exp
             ),
           }));
+
+          const resourcesGained: Record<string, number> = {};
+          for (const r of completedExpedition.rewards) {
+            const key = r.name || r.id;
+            resourcesGained[key] = (resourcesGained[key] ?? 0) + r.amount;
+          }
+          const started = completedExpedition.startedAt
+            ? new Date(completedExpedition.startedAt).getTime()
+            : null;
+          const durationMs =
+            started != null
+              ? Math.max(0, Date.now() - started)
+              : completedExpedition.timeToComplete;
+
+          trackEvent(AnalyticsEvents.EXPEDITION_COMPLETED, {
+            location_id: completedExpedition.locationId,
+            resources_gained: resourcesGained,
+            duration_ms: durationMs,
+          });
 
           return completedExpedition;
         } catch (error) {
