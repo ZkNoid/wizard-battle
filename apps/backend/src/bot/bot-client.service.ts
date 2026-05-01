@@ -32,14 +32,9 @@ export class BotClientService {
 
   async createBotClient(
     botId: string,
-    serverUrl: string = process.env.WEBSOCKET_URL +
-      ':' +
-      process.env.APP_PORT || 'http://localhost:3030'
+    serverUrl: string = `http://localhost:${process.env.APP_PORT || 3030}`
   ): Promise<BotClient> {
-    console.log(
-      '[DEBUG] WEBSOCKET_URL',
-      process.env.WEBSOCKET_URL + ':' + process.env.APP_PORT
-    );
+    console.log('[DEBUG] Bot client connecting to:', serverUrl);
 
     // Create a dedicated BotService instance for this bot to prevent collusion
     const botServiceInstance = new BotService();
@@ -128,6 +123,8 @@ export class BotClient {
       this.socket = io(this.serverUrl, {
         transports: ['websocket'],
         timeout: 5000,
+        reconnection: false,      // prevent zombie sockets on connection failure
+        reconnectionAttempts: 0,  // belt-and-suspenders
       });
 
       this.socket.on('connect', () => {

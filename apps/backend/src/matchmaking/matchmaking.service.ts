@@ -1564,15 +1564,16 @@ export class MatchmakingService {
         .toString()
         .padStart(4, '0')}`;
 
-      console.log(
-        '[DEBUG] WEBSOCKET_URL',
-        process.env.WEBSOCKET_URL + ':' + process.env.APP_PORT
-      );
+      // Bot must connect directly to the local process, not via the external
+      // domain + nginx. Using the external URL would cause 502 errors on any
+      // instance where APP_PORT != 443 (i.e. dev on 3031, prod on 3030).
+      const botPort = process.env.APP_PORT || '3030';
+      const botServerUrl = `http://localhost:${botPort}`;
+      console.log('[DEBUG] Bot connecting to internal URL:', botServerUrl);
       // Create and connect bot client
       const botClient = await this.botClientService.createBotClient(
         botId,
-        process.env.WEBSOCKET_URL + ':' + process.env.APP_PORT ||
-          'http://localhost:3030'
+        botServerUrl
       );
 
       // Get bot setup
