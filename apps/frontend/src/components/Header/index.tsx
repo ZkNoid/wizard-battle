@@ -50,6 +50,7 @@ export default function Header({ onTabChange }: HeaderProps) {
     setIsCraftModalOpen,
     setIsExpeditionModalOpen,
     setIsTournamentsModalOpen,
+    setIsMarketModalOpen,
   } = useMiscellaneousSessionStore();
   const { gold, blackOrb, loadCurrencies } = useInventoryStore();
 
@@ -70,7 +71,13 @@ export default function Header({ onTabChange }: HeaderProps) {
       <div className="absolute left-0 top-2.5 z-50 grid w-full grid-cols-3 items-center px-20">
         <SettingsBar setTab={onTabChange} />
         <div className="flex w-full items-center justify-center gap-5">
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
+          <BoxButton
+            color="gray"
+            onClick={() => {
+              setIsMarketModalOpen(true);
+            }}
+            className="size-16"
+          >
             <Image
               src={'/icons/market.png'}
               width={32}
