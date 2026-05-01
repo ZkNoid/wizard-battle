@@ -75,7 +75,7 @@ services:
   #   restart: unless-stopped
 
   mongodb-backup:
-    image: mongo:latest
+    image: alpine:latest
     container_name: mongodb-backup
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
@@ -86,10 +86,10 @@ services:
       BACKUP_KEEP_DAYS: 7
     volumes:
       - ./backups:/backups
-      - ./scripts/mongodb-backup.sh:/scripts/mongodb-backup.sh:ro
+      - ./scripts/mongodb-backup.sh:/scripts/mongodb-backup.sh
     command: |
       sh -c '
-        apk add --no-cache bash dcron curl
+        apk add --no-cache bash dcron curl mongodb-tools
         chmod +x /scripts/mongodb-backup.sh
 
         echo "0 2 * * * /scripts/mongodb-backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
