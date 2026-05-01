@@ -171,7 +171,9 @@ export class TournamentStateService {
       pendingPlayers,
       ...optionalTournamentDisplayFields(
         tournament.title,
-        tournament.imageUrl
+        tournament.imageUrl,
+        tournament.description,
+        tournament.sponsors,
       ),
     };
   }
@@ -553,7 +555,7 @@ export class TournamentStateService {
     tournamentId: string,
     config: CreateTournamentConfig,
     tournamentsRoot: string,
-    display?: { title?: string; imageUrl?: string }
+    display?: { title?: string; imageUrl?: string; description?: string; sponsors?: { name: string; url?: string }[] }
   ): Promise<TournamentDocument> {
     validateCreateTournamentConfig(config);
 
@@ -587,7 +589,12 @@ export class TournamentStateService {
       participants: new Map(),
       winners: new Map(),
       tournamentsRoot,
-      ...optionalTournamentDisplayFields(display?.title, display?.imageUrl),
+      ...optionalTournamentDisplayFields(
+        display?.title,
+        display?.imageUrl,
+        display?.description,
+        display?.sponsors,
+      ),
     });
 
     return tournament.save();

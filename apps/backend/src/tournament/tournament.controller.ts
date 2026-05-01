@@ -72,6 +72,8 @@ export class TournamentController {
     try {
       const displayTitle = dto.title?.trim();
       const displayImageUrl = dto.imageUrl?.trim();
+      const displayDescription = dto.description?.trim();
+      const displaySponsors = dto.sponsors && dto.sponsors.length > 0 ? dto.sponsors : undefined;
 
       const tournament = await this.tournamentStateService.createTournament(
         dto.tournamentId,
@@ -87,6 +89,8 @@ export class TournamentController {
         {
           ...(displayTitle ? { title: displayTitle } : {}),
           ...(displayImageUrl ? { imageUrl: displayImageUrl } : {}),
+          ...(displayDescription ? { description: displayDescription } : {}),
+          ...(displaySponsors ? { sponsors: displaySponsors } : {}),
         }
       );
 

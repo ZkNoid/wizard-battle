@@ -4,6 +4,11 @@ import type {
 } from '../../schemas/pending-operation.schema.js';
 import type { TournamentStatus } from '../../schemas/tournament.schema.js';
 
+export interface TournamentSponsor {
+  name: string;
+  url?: string;
+}
+
 export interface OptimisticView {
   tournamentId: string;
   status: TournamentStatus;
@@ -19,6 +24,8 @@ export interface OptimisticView {
   pendingPlayers: string[];
   title?: string;
   imageUrl?: string;
+  description?: string;
+  sponsors?: TournamentSponsor[];
 }
 
 export interface AddPendingOperationDto {
