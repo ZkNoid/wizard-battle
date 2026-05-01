@@ -1,0 +1,15 @@
+{
+  "title": "Test Tournament",
+  "imageUrl": "/tournaments/grand-wizard.png",
+  "description": "A test tournament for development and QA purposes. Wizards compete in a series of battles to prove their skills and claim the prize pool.",
+  "sponsors": [
+    {
+      "name": "ZkNoid",
+      "url": "https://zknoid.io"
+    },
+    {
+      "name": "Mina Protocol",
+      "url": "https://minaprotocol.com"
+    }
+  ]
+}
