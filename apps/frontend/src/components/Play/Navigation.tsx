@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { Button } from '../shared/Button';
-import { PlayStepOrder, PlaySteps } from '@/lib/enums/PlaySteps';
+import { PlayStepOrder, PlayStepOrderPVE, PlaySteps } from '@/lib/enums/PlaySteps';
+import { PlayMode } from '@/lib/enums/PlayMode';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
@@ -10,23 +11,26 @@ import { useUserInformationStore } from '@/lib/store/userInformationStore';
 export function Navigation({
   playStep,
   setPlayStep,
+  playMode,
   haveNextButton,
   className,
 }: {
   playStep: PlaySteps;
   setPlayStep: (playStep: PlaySteps) => void;
+  playMode?: PlayMode;
   haveNextButton?: boolean;
   className?: string;
 }) {
   const router = useRouter();
+  const stepOrder = playMode === PlayMode.PVE ? PlayStepOrderPVE : PlayStepOrder;
   const [currentIndex, setCurrentIndex] = useState(
-    PlayStepOrder.indexOf(playStep)
+    stepOrder.indexOf(playStep)
   );
   const { stater } = useUserInformationStore();
 
   useEffect(() => {
-    setCurrentIndex(PlayStepOrder.indexOf(playStep));
-  }, [playStep]);
+    setCurrentIndex(stepOrder.indexOf(playStep));
+  }, [playStep, stepOrder]);
 
   // Check if map has any empty tiles (TileType.Air = 0)
   const hasEmptyTiles = useMemo(() => {
@@ -51,7 +55,7 @@ export function Navigation({
             if (currentIndex === 0) router.push('/');
 
             if (currentIndex > 0) {
-              const prevStep = PlayStepOrder[currentIndex - 1];
+              const prevStep = stepOrder[currentIndex - 1];
               if (prevStep) setPlayStep(prevStep);
             }
           }}
@@ -62,9 +66,10 @@ export function Navigation({
           Back
         </Button>
       )}
-      {currentIndex < PlayStepOrder.length - 1 &&
+      {currentIndex < stepOrder.length - 1 &&
         playStep !== PlaySteps.SELECT_MODE &&
-        playStep !== PlaySteps.SELECT_CHARACTER && (
+        playStep !== PlaySteps.SELECT_CHARACTER &&
+        playStep !== PlaySteps.SELECT_BOT && (
           <div className="relative ml-auto">
             <Button
               variant="blue"
@@ -74,8 +79,8 @@ export function Navigation({
               )}
               onClick={() => {
                 if (isNextDisabled) return;
-                if (currentIndex < PlayStepOrder.length - 1) {
-                  const nextStep = PlayStepOrder[currentIndex + 1];
+                if (currentIndex < stepOrder.length - 1) {
+                  const nextStep = stepOrder[currentIndex + 1];
                   if (nextStep) setPlayStep(nextStep);
                 }
               }}
