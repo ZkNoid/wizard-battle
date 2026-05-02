@@ -1,0 +1,3456 @@
+[{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27bb"
+  },
+  "id": "gem-sorcerer-lv1",
+  "title": "Sorcerer's Orb Lv. 1",
+  "description": "A orb crafted for Sorcerer class, level 1.",
+  "image": "VioletOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "VioletOrbLv1",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "ManaBark",
+      "requiredAmount": 10
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "698f278ed9ff5028e69b3f97"
+  },
+  "id": "gem-sorcerer-lv2",
+  "title": "Sorcerer's Orb Lv. 2",
+  "description": "A orb crafted for Sorcerer class, level 2.",
+  "image": "VioletOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "VioletOrbLv2",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "ManaBark",
+      "requiredAmount": 20
+    },
+    {
+      "itemId": "VioletOrbLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27bd"
+  },
+  "id": "gem-sorcerer-lv3",
+  "title": "Sorcerer's Orb Lv. 3",
+  "description": "A orb crafted for Sorcerer class, level 3.",
+  "image": "VioletOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "VioletOrbLv3",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "ManaBark",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "VioletOrbLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27be"
+  },
+  "id": "gem-sorcerer-lv4",
+  "title": "Sorcerer's Orb Lv. 4",
+  "description": "A orb crafted for Sorcerer class, level 4.",
+  "image": "VioletOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "VioletOrbLv4",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "ManaBark",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "VioletOrbLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27bf"
+  },
+  "id": "gem-sorcerer-lv5",
+  "title": "Sorcerer's Orb Lv. 5",
+  "description": "A orb crafted for Sorcerer class, level 5.",
+  "image": "VioletOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "VioletOrbLv5",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "ManaBark",
+      "requiredAmount": 200
+    },
+    {
+      "itemId": "VioletOrbLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27c1"
+  },
+  "id": "gem-archer-lv1",
+  "title": "Archer's Orb Lv. 1",
+  "description": "A orb crafted for Archer class, level 1.",
+  "image": "GreenOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "GreenOrbLv1",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "Glowstone",
+      "requiredAmount": 10
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27c2"
+  },
+  "id": "gem-archer-lv2",
+  "title": "Archer's Orb Lv. 2",
+  "description": "A orb crafted for Archer class, level 2.",
+  "image": "GreenOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "GreenOrbLv2",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "Glowstone",
+      "requiredAmount": 20
+    },
+    {
+      "itemId": "GreenOrbLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27c3"
+  },
+  "id": "gem-archer-lv3",
+  "title": "Archer's Orb Lv. 3",
+  "description": "A orb crafted for Archer class, level 3.",
+  "image": "GreenOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "GreenOrbLv3",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "Glowstone",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "GreenOrbLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27c4"
+  },
+  "id": "gem-archer-lv4",
+  "title": "Archer's Orb Lv. 4",
+  "description": "A orb crafted for Archer class, level 4.",
+  "image": "GreenOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "GreenOrbLv4",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "Glowstone",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "GreenOrbLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27c5"
+  },
+  "id": "gem-archer-lv5",
+  "title": "Archer's Orb Lv. 5",
+  "description": "A orb crafted for Archer class, level 5.",
+  "image": "GreenOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "GreenOrbLv5",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "Glowstone",
+      "requiredAmount": 200
+    },
+    {
+      "itemId": "GreenOrbLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27c7"
+  },
+  "id": "gem-duelist-lv1",
+  "title": "Duelist's Orb Lv. 1",
+  "description": "A orb crafted for Duelist class, level 1.",
+  "image": "CrimsonOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "CrimsonOrbLv1",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "Pearl",
+      "requiredAmount": 10
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27c8"
+  },
+  "id": "gem-duelist-lv2",
+  "title": "Duelist's Orb Lv. 2",
+  "description": "A orb crafted for Duelist class, level 2.",
+  "image": "CrimsonOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "CrimsonOrbLv2",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "Pearl",
+      "requiredAmount": 20
+    },
+    {
+      "itemId": "CrimsonOrbLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27c9"
+  },
+  "id": "gem-duelist-lv3",
+  "title": "Duelist's Orb Lv. 3",
+  "description": "A orb crafted for Duelist class, level 3.",
+  "image": "CrimsonOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "CrimsonOrbLv3",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "Pearl",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "CrimsonOrbLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27ca"
+  },
+  "id": "gem-duelist-lv4",
+  "title": "Duelist's Orb Lv. 4",
+  "description": "A orb crafted for Duelist class, level 4.",
+  "image": "CrimsonOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "CrimsonOrbLv4",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "Pearl",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "CrimsonOrbLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27cb"
+  },
+  "id": "gem-duelist-lv5",
+  "title": "Duelist's Orb Lv. 5",
+  "description": "A orb crafted for Duelist class, level 5.",
+  "image": "CrimsonOrbLv1.png",
+  "craftingType": "crafting",
+  "category": "Orb",
+  "resultItemId": "CrimsonOrbLv5",
+  "ingredients": [
+    {
+      "itemId": "BlackOrb",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "Pearl",
+      "requiredAmount": 200
+    },
+    {
+      "itemId": "CrimsonOrbLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27cd"
+  },
+  "id": "belt-sorcerer-lv1",
+  "title": "Sorcerer's Belt Lv. 1",
+  "description": "A belt crafted for Sorcerer class, level 1.",
+  "image": "SorcerersBeltLv1.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "SorcerersBeltLv1",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "Pearl",
+      "requiredAmount": 5
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27ce"
+  },
+  "id": "belt-sorcerer-lv2",
+  "title": "Sorcerer's Belt Lv. 2",
+  "description": "A belt crafted for Sorcerer class, level 2.",
+  "image": "SorcerersBeltLv2.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "SorcerersBeltLv2",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 4
+    },
+    {
+      "itemId": "Pearl",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "SorcerersBeltLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27cf"
+  },
+  "id": "belt-sorcerer-lv3",
+  "title": "Sorcerer's Belt Lv. 3",
+  "description": "A belt crafted for Sorcerer class, level 3.",
+  "image": "SorcerersBeltLv3.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "SorcerersBeltLv3",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "Pearl",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "SorcerersBeltLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27d0"
+  },
+  "id": "belt-sorcerer-lv4",
+  "title": "Sorcerer's Belt Lv. 4",
+  "description": "A belt crafted for Sorcerer class, level 4.",
+  "image": "SorcerersBeltLv4.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "SorcerersBeltLv4",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "Pearl",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "SorcerersBeltLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27d1"
+  },
+  "id": "belt-sorcerer-lv5",
+  "title": "Sorcerer's Belt Lv. 5",
+  "description": "A belt crafted for Sorcerer class, level 5.",
+  "image": "SorcerersBeltLv5.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "SorcerersBeltLv5",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "Pearl",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "SorcerersBeltLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27d3"
+  },
+  "id": "belt-archer-lv1",
+  "title": "Archer's Belt Lv. 1",
+  "description": "A belt crafted for Archer class, level 1.",
+  "image": "ArchersBeltLv1.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "ArchersBeltLv1",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "ManaBark",
+      "requiredAmount": 5
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27d4"
+  },
+  "id": "belt-archer-lv2",
+  "title": "Archer's Belt Lv. 2",
+  "description": "A belt crafted for Archer class, level 2.",
+  "image": "ArchersBeltLv2.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "ArchersBeltLv2",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 4
+    },
+    {
+      "itemId": "ManaBark",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "ArchersBeltLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27d5"
+  },
+  "id": "belt-archer-lv3",
+  "title": "Archer's Belt Lv. 3",
+  "description": "A belt crafted for Archer class, level 3.",
+  "image": "ArchersBeltLv3.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "ArchersBeltLv3",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "ManaBark",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "ArchersBeltLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27d6"
+  },
+  "id": "belt-archer-lv4",
+  "title": "Archer's Belt Lv. 4",
+  "description": "A belt crafted for Archer class, level 4.",
+  "image": "ArchersBeltLv4.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "ArchersBeltLv4",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "ManaBark",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "ArchersBeltLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27d7"
+  },
+  "id": "belt-archer-lv5",
+  "title": "Archer's Belt Lv. 5",
+  "description": "A belt crafted for Archer class, level 5.",
+  "image": "ArchersBeltLv5.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "ArchersBeltLv5",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "WaterEssence",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "ManaBark",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "ArchersBeltLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27d9"
+  },
+  "id": "belt-duelist-lv1",
+  "title": "Duelist's Belt Lv. 1",
+  "description": "A belt crafted for Duelist class, level 1.",
+  "image": "DuelistsBeltLv1.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "DuelistsBeltLv1",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "Glowstone",
+      "requiredAmount": 5
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27da"
+  },
+  "id": "belt-duelist-lv2",
+  "title": "Duelist's Belt Lv. 2",
+  "description": "A belt crafted for Duelist class, level 2.",
+  "image": "DuelistsBeltLv2.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "DuelistsBeltLv2",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 4
+    },
+    {
+      "itemId": "Glowstone",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "DuelistsBeltLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27db"
+  },
+  "id": "belt-duelist-lv3",
+  "title": "Duelist's Belt Lv. 3",
+  "description": "A belt crafted for Duelist class, level 3.",
+  "image": "DuelistsBeltLv3.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "DuelistsBeltLv3",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "Glowstone",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "DuelistsBeltLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27dc"
+  },
+  "id": "belt-duelist-lv4",
+  "title": "Duelist's Belt Lv. 4",
+  "description": "A belt crafted for Duelist class, level 4.",
+  "image": "DuelistsBeltLv4.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "DuelistsBeltLv4",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "Glowstone",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "DuelistsBeltLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27dd"
+  },
+  "id": "belt-duelist-lv5",
+  "title": "Duelist's Belt Lv. 5",
+  "description": "A belt crafted for Duelist class, level 5.",
+  "image": "DuelistsBeltLv5.png",
+  "craftingType": "crafting",
+  "category": "Belt",
+  "resultItemId": "DuelistsBeltLv5",
+  "ingredients": [
+    {
+      "itemId": "ChainLink",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "ElvenRune",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "Glowstone",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "DuelistsBeltLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27df"
+  },
+  "id": "necklace-sorcerer-lv1",
+  "title": "Sorcerer's Amulet Lv. 1",
+  "description": "A amulet crafted for Sorcerer class, level 1.",
+  "image": "SorcerersAmuletLv1.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "SorcerersAmuletLv1",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "Frostdust",
+      "requiredAmount": 10
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27e0"
+  },
+  "id": "necklace-sorcerer-lv2",
+  "title": "Sorcerer's Amulet Lv. 2",
+  "description": "A amulet crafted for Sorcerer class, level 2.",
+  "image": "SorcerersAmuletLv2.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "SorcerersAmuletLv2",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "Frostdust",
+      "requiredAmount": 20
+    },
+    {
+      "itemId": "SorcerersAmuletLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27e1"
+  },
+  "id": "necklace-sorcerer-lv3",
+  "title": "Sorcerer's Amulet Lv. 3",
+  "description": "A amulet crafted for Sorcerer class, level 3.",
+  "image": "SorcerersAmuletLv3.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "SorcerersAmuletLv3",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "Frostdust",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "SorcerersAmuletLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27e2"
+  },
+  "id": "necklace-sorcerer-lv4",
+  "title": "Sorcerer's Amulet Lv. 4",
+  "description": "A amulet crafted for Sorcerer class, level 4.",
+  "image": "SorcerersAmuletLv4.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "SorcerersAmuletLv4",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "Frostdust",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "SorcerersAmuletLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27e3"
+  },
+  "id": "necklace-sorcerer-lv5",
+  "title": "Sorcerer's Amulet Lv. 5",
+  "description": "A amulet crafted for Sorcerer class, level 5.",
+  "image": "SorcerersAmuletLv5.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "SorcerersAmuletLv5",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "Frostdust",
+      "requiredAmount": 200
+    },
+    {
+      "itemId": "SorcerersAmuletLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27e5"
+  },
+  "id": "necklace-archer-lv1",
+  "title": "Archer's Amulet Lv. 1",
+  "description": "A amulet crafted for Archer class, level 1.",
+  "image": "ArchersAmuletLv1.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "ArchersAmuletLv1",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "Amber",
+      "requiredAmount": 10
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27e6"
+  },
+  "id": "necklace-archer-lv2",
+  "title": "Archer's Amulet Lv. 2",
+  "description": "A amulet crafted for Archer class, level 2.",
+  "image": "ArchersAmuletLv2.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "ArchersAmuletLv2",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "Amber",
+      "requiredAmount": 20
+    },
+    {
+      "itemId": "ArchersAmuletLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27e7"
+  },
+  "id": "necklace-archer-lv3",
+  "title": "Archer's Amulet Lv. 3",
+  "description": "A amulet crafted for Archer class, level 3.",
+  "image": "ArchersAmuletLv3.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "ArchersAmuletLv3",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "Amber",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "ArchersAmuletLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27e8"
+  },
+  "id": "necklace-archer-lv4",
+  "title": "Archer's Amulet Lv. 4",
+  "description": "A amulet crafted for Archer class, level 4.",
+  "image": "ArchersAmuletLv4.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "ArchersAmuletLv4",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "Amber",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "ArchersAmuletLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27e9"
+  },
+  "id": "necklace-archer-lv5",
+  "title": "Archer's Amulet Lv. 5",
+  "description": "A amulet crafted for Archer class, level 5.",
+  "image": "ArchersAmuletLv5.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "ArchersAmuletLv5",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "Amber",
+      "requiredAmount": 200
+    },
+    {
+      "itemId": "ArchersAmuletLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27eb"
+  },
+  "id": "necklace-duelist-lv1",
+  "title": "Duelist's Amulet Lv. 1",
+  "description": "A amulet crafted for Duelist class, level 1.",
+  "image": "DuelistsAmuletLv1.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "DuelistsAmuletLv1",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "Shell",
+      "requiredAmount": 10
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27ec"
+  },
+  "id": "necklace-duelist-lv2",
+  "title": "Duelist's Amulet Lv. 2",
+  "description": "A amulet crafted for Duelist class, level 2.",
+  "image": "DuelistsAmuletLv2.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "DuelistsAmuletLv2",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "Shell",
+      "requiredAmount": 20
+    },
+    {
+      "itemId": "DuelistsAmuletLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27ed"
+  },
+  "id": "necklace-duelist-lv3",
+  "title": "Duelist's Amulet Lv. 3",
+  "description": "A amulet crafted for Duelist class, level 3.",
+  "image": "DuelistsAmuletLv3.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "DuelistsAmuletLv3",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "Shell",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "DuelistsAmuletLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27ee"
+  },
+  "id": "necklace-duelist-lv4",
+  "title": "Duelist's Amulet Lv. 4",
+  "description": "A amulet crafted for Duelist class, level 4.",
+  "image": "DuelistsAmuletLv4.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "DuelistsAmuletLv4",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "Shell",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "DuelistsAmuletLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27ef"
+  },
+  "id": "necklace-duelist-lv5",
+  "title": "Duelist's Amulet Lv. 5",
+  "description": "A amulet crafted for Duelist class, level 5.",
+  "image": "DuelistsAmuletLv5.png",
+  "craftingType": "crafting",
+  "category": "Amulet",
+  "resultItemId": "DuelistsAmuletLv5",
+  "ingredients": [
+    {
+      "itemId": "ShardofIllusion",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "Shell",
+      "requiredAmount": 200
+    },
+    {
+      "itemId": "DuelistsAmuletLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27f1"
+  },
+  "id": "ring-sorcerer-lv1",
+  "title": "Sorcerer's Ring Lv. 1",
+  "description": "A ring crafted for Sorcerer class, level 1.",
+  "image": "SorcerersRingLv1.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "SorcerersRingLv1",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "Shell",
+      "requiredAmount": 5
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27f2"
+  },
+  "id": "ring-sorcerer-lv2",
+  "title": "Sorcerer's Ring Lv. 2",
+  "description": "A ring crafted for Sorcerer class, level 2.",
+  "image": "SorcerersRingLv2.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "SorcerersRingLv2",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 4
+    },
+    {
+      "itemId": "Shell",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "SorcerersRingLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27f3"
+  },
+  "id": "ring-sorcerer-lv3",
+  "title": "Sorcerer's Ring Lv. 3",
+  "description": "A ring crafted for Sorcerer class, level 3.",
+  "image": "SorcerersRingLv3.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "SorcerersRingLv3",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "Shell",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "SorcerersRingLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27f4"
+  },
+  "id": "ring-sorcerer-lv4",
+  "title": "Sorcerer's Ring Lv. 4",
+  "description": "A ring crafted for Sorcerer class, level 4.",
+  "image": "SorcerersRingLv4.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "SorcerersRingLv4",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "Shell",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "SorcerersRingLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27f5"
+  },
+  "id": "ring-sorcerer-lv5",
+  "title": "Sorcerer's Ring Lv. 5",
+  "description": "A ring crafted for Sorcerer class, level 5.",
+  "image": "SorcerersRingLv5.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "SorcerersRingLv5",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "Shell",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "SorcerersRingLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27f7"
+  },
+  "id": "ring-archer-lv1",
+  "title": "Archer's Ring Lv. 1",
+  "description": "A ring crafted for Archer class, level 1.",
+  "image": "ArchersRingLv1.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "ArchersRingLv1",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "Frostdust",
+      "requiredAmount": 5
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27f8"
+  },
+  "id": "ring-archer-lv2",
+  "title": "Archer's Ring Lv. 2",
+  "description": "A ring crafted for Archer class, level 2.",
+  "image": "ArchersRingLv2.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "ArchersRingLv2",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 4
+    },
+    {
+      "itemId": "Frostdust",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "ArchersRingLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27f9"
+  },
+  "id": "ring-archer-lv3",
+  "title": "Archer's Ring Lv. 3",
+  "description": "A ring crafted for Archer class, level 3.",
+  "image": "ArchersRingLv3.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "ArchersRingLv3",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "Frostdust",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "ArchersRingLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27fa"
+  },
+  "id": "ring-archer-lv4",
+  "title": "Archer's Ring Lv. 4",
+  "description": "A ring crafted for Archer class, level 4.",
+  "image": "ArchersRingLv4.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "ArchersRingLv4",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "Frostdust",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "ArchersRingLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27fb"
+  },
+  "id": "ring-archer-lv5",
+  "title": "Archer's Ring Lv. 5",
+  "description": "A ring crafted for Archer class, level 5.",
+  "image": "ArchersRingLv5.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "ArchersRingLv5",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "InfusedCrystal",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "Frostdust",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "ArchersRingLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27fd"
+  },
+  "id": "ring-duelist-lv1",
+  "title": "Duelist's Ring Lv. 1",
+  "description": "A ring crafted for Duelist class, level 1.",
+  "image": "DuelistsRingLv1.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "DuelistsRingLv1",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "Amber",
+      "requiredAmount": 5
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27fe"
+  },
+  "id": "ring-duelist-lv2",
+  "title": "Duelist's Ring Lv. 2",
+  "description": "A ring crafted for Duelist class, level 2.",
+  "image": "DuelistsRingLv2.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "DuelistsRingLv2",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 4
+    },
+    {
+      "itemId": "Amber",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "DuelistsRingLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d27ff"
+  },
+  "id": "ring-duelist-lv3",
+  "title": "Duelist's Ring Lv. 3",
+  "description": "A ring crafted for Duelist class, level 3.",
+  "image": "DuelistsRingLv3.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "DuelistsRingLv3",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "Amber",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "DuelistsRingLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2800"
+  },
+  "id": "ring-duelist-lv4",
+  "title": "Duelist's Ring Lv. 4",
+  "description": "A ring crafted for Duelist class, level 4.",
+  "image": "DuelistsRingLv4.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "DuelistsRingLv4",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "Amber",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "DuelistsRingLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2801"
+  },
+  "id": "ring-duelist-lv5",
+  "title": "Duelist's Ring Lv. 5",
+  "description": "A ring crafted for Duelist class, level 5.",
+  "image": "DuelistsRingLv5.png",
+  "craftingType": "crafting",
+  "category": "Ring",
+  "resultItemId": "DuelistsRingLv5",
+  "ingredients": [
+    {
+      "itemId": "SilverThread",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "PhoenixEmber",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "Amber",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "DuelistsRingLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2803"
+  },
+  "id": "arms-sorcerer-lv1",
+  "title": "Sorcerer's Gloves Lv. 1",
+  "description": "A gloves crafted for Sorcerer class, level 1.",
+  "image": "SorcerersGlovesLv1.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "SorcerersGlovesLv1",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "ReedSilk",
+      "requiredAmount": 10
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2804"
+  },
+  "id": "arms-sorcerer-lv2",
+  "title": "Sorcerer's Gloves Lv. 2",
+  "description": "A gloves crafted for Sorcerer class, level 2.",
+  "image": "SorcerersGlovesLv2.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "SorcerersGlovesLv2",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "ReedSilk",
+      "requiredAmount": 20
+    },
+    {
+      "itemId": "SorcerersGlovesLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2805"
+  },
+  "id": "arms-sorcerer-lv3",
+  "title": "Sorcerer's Gloves Lv. 3",
+  "description": "A gloves crafted for Sorcerer class, level 3.",
+  "image": "SorcerersGlovesLv3.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "SorcerersGlovesLv3",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "ReedSilk",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "SorcerersGlovesLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2806"
+  },
+  "id": "arms-sorcerer-lv4",
+  "title": "Sorcerer's Gloves Lv. 4",
+  "description": "A gloves crafted for Sorcerer class, level 4.",
+  "image": "SorcerersGlovesLv4.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "SorcerersGlovesLv4",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "ReedSilk",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "SorcerersGlovesLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2807"
+  },
+  "id": "arms-sorcerer-lv5",
+  "title": "Sorcerer's Gloves Lv. 5",
+  "description": "A gloves crafted for Sorcerer class, level 5.",
+  "image": "SorcerersGlovesLv5.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "SorcerersGlovesLv5",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "ReedSilk",
+      "requiredAmount": 200
+    },
+    {
+      "itemId": "SorcerersGlovesLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2809"
+  },
+  "id": "arms-archer-lv1",
+  "title": "Archer's Gloves Lv. 1",
+  "description": "A gloves crafted for Archer class, level 1.",
+  "image": "ArchersGlovesLv1.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "ArchersGlovesLv1",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "Resin",
+      "requiredAmount": 10
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d280a"
+  },
+  "id": "arms-archer-lv2",
+  "title": "Archer's Gloves Lv. 2",
+  "description": "A gloves crafted for Archer class, level 2.",
+  "image": "ArchersGlovesLv2.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "ArchersGlovesLv2",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "Resin",
+      "requiredAmount": 20
+    },
+    {
+      "itemId": "ArchersGlovesLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d280b"
+  },
+  "id": "arms-archer-lv3",
+  "title": "Archer's Gloves Lv. 3",
+  "description": "A gloves crafted for Archer class, level 3.",
+  "image": "ArchersGlovesLv3.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "ArchersGlovesLv3",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "Resin",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "ArchersGlovesLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d280c"
+  },
+  "id": "arms-archer-lv4",
+  "title": "Archer's Gloves Lv. 4",
+  "description": "A gloves crafted for Archer class, level 4.",
+  "image": "ArchersGlovesLv4.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "ArchersGlovesLv4",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "Resin",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "ArchersGlovesLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d280d"
+  },
+  "id": "arms-archer-lv5",
+  "title": "Archer's Gloves Lv. 5",
+  "description": "A gloves crafted for Archer class, level 5.",
+  "image": "ArchersGlovesLv5.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "ArchersGlovesLv5",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "Resin",
+      "requiredAmount": 200
+    },
+    {
+      "itemId": "ArchersGlovesLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d280f"
+  },
+  "id": "arms-duelist-lv1",
+  "title": "Duelist's Gloves Lv. 1",
+  "description": "A gloves crafted for Duelist class, level 1.",
+  "image": "DuelistsGlovesLv1.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "DuelistsGlovesLv1",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "WerewolfFang",
+      "requiredAmount": 10
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2810"
+  },
+  "id": "arms-duelist-lv2",
+  "title": "Duelist's Gloves Lv. 2",
+  "description": "A gloves crafted for Duelist class, level 2.",
+  "image": "DuelistsGlovesLv2.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "DuelistsGlovesLv2",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "WerewolfFang",
+      "requiredAmount": 20
+    },
+    {
+      "itemId": "DuelistsGlovesLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2811"
+  },
+  "id": "arms-duelist-lv3",
+  "title": "Duelist's Gloves Lv. 3",
+  "description": "A gloves crafted for Duelist class, level 3.",
+  "image": "DuelistsGlovesLv3.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "DuelistsGlovesLv3",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "WerewolfFang",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "DuelistsGlovesLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2812"
+  },
+  "id": "arms-duelist-lv4",
+  "title": "Duelist's Gloves Lv. 4",
+  "description": "A gloves crafted for Duelist class, level 4.",
+  "image": "DuelistsGlovesLv4.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "DuelistsGlovesLv4",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "WerewolfFang",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "DuelistsGlovesLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2813"
+  },
+  "id": "arms-duelist-lv5",
+  "title": "Duelist's Gloves Lv. 5",
+  "description": "A gloves crafted for Duelist class, level 5.",
+  "image": "DuelistsGlovesLv5.png",
+  "craftingType": "crafting",
+  "category": "Gloves",
+  "resultItemId": "DuelistsGlovesLv5",
+  "ingredients": [
+    {
+      "itemId": "ReinforcedPadding",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "WerewolfFang",
+      "requiredAmount": 200
+    },
+    {
+      "itemId": "DuelistsGlovesLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2815"
+  },
+  "id": "legs-sorcerer-lv1",
+  "title": "Sorcerer's Boots Lv. 1",
+  "description": "A boots crafted for Sorcerer class, level 1.",
+  "image": "SorcerersBootsLv1.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "SorcerersBootsLv1",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "Resin",
+      "requiredAmount": 5
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2816"
+  },
+  "id": "legs-sorcerer-lv2",
+  "title": "Sorcerer's Boots Lv. 2",
+  "description": "A boots crafted for Sorcerer class, level 2.",
+  "image": "SorcerersBootsLv2.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "SorcerersBootsLv2",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 4
+    },
+    {
+      "itemId": "Resin",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "SorcerersBootsLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2817"
+  },
+  "id": "legs-sorcerer-lv3",
+  "title": "Sorcerer's Boots Lv. 3",
+  "description": "A boots crafted for Sorcerer class, level 3.",
+  "image": "SorcerersBootsLv3.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "SorcerersBootsLv3",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "Resin",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "SorcerersBootsLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2818"
+  },
+  "id": "legs-sorcerer-lv4",
+  "title": "Sorcerer's Boots Lv. 4",
+  "description": "A boots crafted for Sorcerer class, level 4.",
+  "image": "SorcerersBootsLv4.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "SorcerersBootsLv4",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "Resin",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "SorcerersBootsLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2819"
+  },
+  "id": "legs-sorcerer-lv5",
+  "title": "Sorcerer's Boots Lv. 5",
+  "description": "A boots crafted for Sorcerer class, level 5.",
+  "image": "SorcerersBootsLv5.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "SorcerersBootsLv5",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "SerpentScale",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "Resin",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "SorcerersBootsLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d281b"
+  },
+  "id": "legs-archer-lv1",
+  "title": "Archer's Boots Lv. 1",
+  "description": "A boots crafted for Archer class, level 1.",
+  "image": "ArchersBootsLv1.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "ArchersBootsLv1",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "WerewolfFang",
+      "requiredAmount": 5
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d281c"
+  },
+  "id": "legs-archer-lv2",
+  "title": "Archer's Boots Lv. 2",
+  "description": "A boots crafted for Archer class, level 2.",
+  "image": "ArchersBootsLv2.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "ArchersBootsLv2",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 4
+    },
+    {
+      "itemId": "WerewolfFang",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "ArchersBootsLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d281d"
+  },
+  "id": "legs-archer-lv3",
+  "title": "Archer's Boots Lv. 3",
+  "description": "A boots crafted for Archer class, level 3.",
+  "image": "ArchersBootsLv3.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "ArchersBootsLv3",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "WerewolfFang",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "ArchersBootsLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d281e"
+  },
+  "id": "legs-archer-lv4",
+  "title": "Archer's Boots Lv. 4",
+  "description": "A boots crafted for Archer class, level 4.",
+  "image": "ArchersBootsLv4.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "ArchersBootsLv4",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "WerewolfFang",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "ArchersBootsLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d281f"
+  },
+  "id": "legs-archer-lv5",
+  "title": "Archer's Boots Lv. 5",
+  "description": "A boots crafted for Archer class, level 5.",
+  "image": "ArchersBootsLv5.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "ArchersBootsLv5",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "WerewolfFang",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "ArchersBootsLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2821"
+  },
+  "id": "legs-duelist-lv1",
+  "title": "Duelist's Boots Lv. 1",
+  "description": "A boots crafted for Duelist class, level 1.",
+  "image": "DuelistsBootsLv1.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "DuelistsBootsLv1",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "ReedSilk",
+      "requiredAmount": 5
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2822"
+  },
+  "id": "legs-duelist-lv2",
+  "title": "Duelist's Boots Lv. 2",
+  "description": "A boots crafted for Duelist class, level 2.",
+  "image": "DuelistsBootsLv2.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "DuelistsBootsLv2",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 2
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 4
+    },
+    {
+      "itemId": "ReedSilk",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "DuelistsBootsLv1",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 300
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2823"
+  },
+  "id": "legs-duelist-lv3",
+  "title": "Duelist's Boots Lv. 3",
+  "description": "A boots crafted for Duelist class, level 3.",
+  "image": "DuelistsBootsLv3.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "DuelistsBootsLv3",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 3
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 5
+    },
+    {
+      "itemId": "ReedSilk",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "DuelistsBootsLv2",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 750
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2824"
+  },
+  "id": "legs-duelist-lv4",
+  "title": "Duelist's Boots Lv. 4",
+  "description": "A boots crafted for Duelist class, level 4.",
+  "image": "DuelistsBootsLv4.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "DuelistsBootsLv4",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 7
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 15
+    },
+    {
+      "itemId": "ReedSilk",
+      "requiredAmount": 50
+    },
+    {
+      "itemId": "DuelistsBootsLv3",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 1500
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "6985bf70bf479ea9c45d2825"
+  },
+  "id": "legs-duelist-lv5",
+  "title": "Duelist's Boots Lv. 5",
+  "description": "A boots crafted for Duelist class, level 5.",
+  "image": "DuelistsBootsLv5.png",
+  "craftingType": "crafting",
+  "category": "Boots",
+  "resultItemId": "DuelistsBootsLv5",
+  "ingredients": [
+    {
+      "itemId": "ShadowstepLeather",
+      "requiredAmount": 10
+    },
+    {
+      "itemId": "AstralAlloy",
+      "requiredAmount": 25
+    },
+    {
+      "itemId": "ReedSilk",
+      "requiredAmount": 100
+    },
+    {
+      "itemId": "DuelistsBootsLv4",
+      "requiredAmount": 1
+    },
+    {
+      "itemId": "Gold",
+      "requiredAmount": 3000
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-06T10:16:16.090Z"
+  }
+}]
