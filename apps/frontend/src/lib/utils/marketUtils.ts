@@ -59,7 +59,7 @@ export function mapOrderToSellingItem(
     type: itemMetadata?.type || 'unknown',
     price: formatPrice(order.price),
     priceCurrency: getPaymentCurrency(order.paymentToken) as 'gold' | 'usdc',
-    listedAt: order.createdAt || new Date().toISOString(),
+    listedAt: new Date(Number(order.createdAtTimestamp) * 1000).toISOString(),
     status: order.status === 'FILLED' ? 'sold' : 'on_sale',
     // Extended fields
     orderId: order.orderId,
@@ -83,7 +83,7 @@ export function mapOrderToHistoryItem(
     type: itemMetadata?.type || 'unknown',
     price: formatPrice(order.price),
     priceCurrency: getPaymentCurrency(order.paymentToken) as 'gold' | 'usdc',
-    date: order.filledAt || order.createdAt || new Date().toISOString(),
+    date: new Date(Number(order.updatedAtTimestamp) * 1000).toISOString(),
     status: isBuyer ? 'bought' : 'sold',
   };
 }

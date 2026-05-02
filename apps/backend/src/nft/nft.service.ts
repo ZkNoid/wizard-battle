@@ -23,7 +23,7 @@ export interface Erc1155Metadata {
 export class NftService {
   constructor(
     @InjectModel(InventoryItem.name)
-    private readonly inventoryItemModel: Model<InventoryItemDocument>,
+    private readonly inventoryItemModel: Model<InventoryItemDocument>
   ) {}
 
   async getMetadata(tokenId: string): Promise<Erc1155Metadata> {
@@ -33,9 +33,7 @@ export class NftService {
       .exec();
 
     if (!item) {
-      throw new NotFoundException(
-        `No metadata found for token ID ${tokenId}`,
-      );
+      throw new NotFoundException(`No metadata found for token ID ${tokenId}`);
     }
 
     const attributes: Erc1155Attribute[] = [

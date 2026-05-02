@@ -2,189 +2,124 @@ import { createTRPCRouter, publicProcedure } from '@/server/api/trpc';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { env } from '@/env';
-import clientPromise from '@/server/db';
+import { envioQuery } from '@/server/lib/envio';
 
-const client = await clientPromise;
-const db = client?.db(env.MONGODB_DB);
-const marketOrdersCollection = 'marketorders';
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
-interface EvmTransactionReceipt {
-  status: string; // "0x1" success, "0x0" revert
-  to: string | null;
-  from: string;
-  blockNumber: string;
+export type OrderStatus = 'OPEN' | 'PAUSED' | 'FILLED' | 'CANCELED';
+
+export interface MarketOrder {
+  id: string;
+  orderId: string;
+  maker: string;
+  taker: string | null;
+  token: string;
+  tokenId: string;
+  paymentToken: string;
+  paymentTokenId: string;
+  amount: string;
+  price: string;
+  status: OrderStatus;
+  nameHash: string;
+  createdAtBlock: string;
+  createdAtTimestamp: string;
+  updatedAtBlock: string;
+  updatedAtTimestamp: string;
+  // Enriched from backend NftService
+  image?: string;
+  title?: string;
 }
 
-async function getEvmTransactionReceipt(
-  txHash: string
-): Promise<EvmTransactionReceipt | null> {
-  const response = await fetch(env.EVM_RPC_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'eth_getTransactionReceipt',
-      params: [txHash],
-    }),
+interface EnvioOrder {
+  id: string;
+  orderId: string;
+  maker: string;
+  taker: string | null;
+  token: string;
+  tokenId: string;
+  paymentToken: string;
+  paymentTokenId: string;
+  amount: string;
+  price: string;
+  status: OrderStatus;
+  nameHash: string;
+  createdAtBlock: string;
+  createdAtTimestamp: string;
+  updatedAtBlock: string;
+  updatedAtTimestamp: string;
+}
+
+const ORDER_FIELDS = `
+  id
+  orderId
+  maker
+  taker
+  token
+  tokenId
+  paymentToken
+  paymentTokenId
+  amount
+  price
+  status
+  nameHash
+  createdAtBlock
+  createdAtTimestamp
+  updatedAtBlock
+  updatedAtTimestamp
+`;
+
+// ---------------------------------------------------------------------------
+// Metadata enrichment
+// ---------------------------------------------------------------------------
+
+interface NftMeta {
+  name: string;
+  image: string;
+}
+
+async function fetchOrderMetadata(tokenId: string): Promise<NftMeta | null> {
+  try {
+    const res = await fetch(`${env.BACKEND_URL}/nft/${tokenId}`);
+    if (!res.ok) return null;
+    return (await res.json()) as NftMeta;
+  } catch {
+    return null;
+  }
+}
+
+async function enrichOrders(orders: EnvioOrder[]): Promise<MarketOrder[]> {
+  const uniqueTokenIds = [...new Set(orders.map((o) => o.tokenId))];
+  const metaMap = new Map<string, NftMeta | null>();
+
+  await Promise.all(
+    uniqueTokenIds.map(async (tokenId) => {
+      metaMap.set(tokenId, await fetchOrderMetadata(tokenId));
+    })
+  );
+
+  return orders.map((o) => {
+    const meta = metaMap.get(o.tokenId);
+    return {
+      ...o,
+      image: meta?.image,
+      title: meta?.name,
+    };
   });
-
-  if (!response.ok) {
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Failed to reach EVM node for transaction verification',
-    });
-  }
-
-  const data = (await response.json()) as {
-    result?: EvmTransactionReceipt | null;
-    error?: { message: string };
-  };
-
-  if (data.error) {
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: `EVM RPC error: ${data.error.message}`,
-    });
-  }
-
-  return data.result ?? null;
 }
 
-const GAME_MARKET_ADDRESS = (
-  process.env.NEXT_PUBLIC_GAME_MARKET_ADDRESS ?? ''
-).toLowerCase();
+// ---------------------------------------------------------------------------
+// Zod helpers
+// ---------------------------------------------------------------------------
 
-const OrderStatusEnum = z.enum([
-  'NONE',
-  'OPEN',
-  'PAUSED',
-  'FILLED',
-  'CANCELED',
-]);
+const OrderStatusEnum = z.enum(['OPEN', 'PAUSED', 'FILLED', 'CANCELED']);
 
-const MarketOrderSchema = z.object({
-  orderId: z.number(),
-  maker: z.string(),
-  taker: z.string().optional(),
-  token: z.string(),
-  tokenId: z.string(),
-  paymentToken: z.string(),
-  paymentTokenId: z.string().optional(),
-  amount: z.string(),
-  price: z.string(),
-  status: OrderStatusEnum,
-  nameHash: z.string(),
-  blockNumber: z.number(),
-  transactionHash: z.string(),
-  createdAt: z.string().optional(),
-  filledAt: z.string().optional(),
-  canceledAt: z.string().optional(),
-  image: z.string().optional(),
-  title: z.string().optional(),
-});
-
-export type MarketOrder = z.infer<typeof MarketOrderSchema>;
-
-function requireDb() {
-  if (!db) {
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Database not available',
-    });
-  }
-  return db.collection(marketOrdersCollection);
-}
+// ---------------------------------------------------------------------------
+// Router
+// ---------------------------------------------------------------------------
 
 export const marketRouter = createTRPCRouter({
-  createOrder: publicProcedure
-    .input(
-      z.object({
-        orderId: z.number(),
-        itemId: z.string(),
-        title: z.string(),
-        maker: z.string(),
-        token: z.string(),
-        tokenId: z.string(),
-        paymentToken: z.string(),
-        paymentTokenId: z.string().default('0'),
-        amount: z.string(),
-        price: z.string(),
-        nameHash: z.string(),
-        blockNumber: z.number(),
-        transactionHash: z.string(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      if (!db) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Database not available',
-        });
-      }
-
-      const collection = db.collection(marketOrdersCollection);
-
-      const receipt = await getEvmTransactionReceipt(input.transactionHash);
-
-      if (!receipt) {
-        throw new TRPCError({
-          code: 'PRECONDITION_FAILED',
-          message:
-            'Transaction not found on-chain. Please wait for confirmation and retry.',
-        });
-      }
-
-      if (receipt.status !== '0x1') {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Transaction reverted on-chain',
-        });
-      }
-
-      if (
-        GAME_MARKET_ADDRESS &&
-        receipt.to?.toLowerCase() !== GAME_MARKET_ADDRESS
-      ) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Transaction was not sent to the GameMarket contract',
-        });
-      }
-
-      const existingTx = await collection.findOne({
-        transactionHash: input.transactionHash,
-      });
-      if (existingTx) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'An order with this transaction hash already exists',
-        });
-      }
-
-      const existing = await collection.findOne({ orderId: input.orderId });
-      if (existing) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: `Order #${input.orderId} already exists`,
-        });
-      }
-
-      const doc = {
-        ...input,
-        maker: input.maker.toLowerCase(),
-        token: input.token.toLowerCase(),
-        paymentToken: input.paymentToken.toLowerCase(),
-        status: 'OPEN' as const,
-        image: `./items/${input.itemId}.png`,
-        createdAt: new Date().toISOString(),
-      };
-
-      await collection.insertOne(doc);
-
-      return doc;
-    }),
-
   getOpenOrders: publicProcedure
     .input(
       z
@@ -193,7 +128,7 @@ export const marketRouter = createTRPCRouter({
           nameHash: z.string().optional(),
           minPrice: z.string().optional(),
           maxPrice: z.string().optional(),
-          sortBy: z.enum(['price', 'createdAt', 'orderId']).optional(),
+          sortBy: z.enum(['price', 'createdAtTimestamp', 'orderId']).optional(),
           sortOrder: z.enum(['asc', 'desc']).optional(),
           limit: z.number().min(1).max(100).optional(),
           offset: z.number().min(0).optional(),
@@ -201,55 +136,72 @@ export const marketRouter = createTRPCRouter({
         .optional()
     )
     .query(async ({ input }) => {
-      const collection = requireDb();
-      const filter: Record<string, unknown> = { status: 'OPEN' };
+      const sortField = input?.sortBy ?? 'createdAtTimestamp';
+      const sortDir = input?.sortOrder === 'asc' ? 'asc' : 'desc';
 
+      const where: string[] = ['status: { _eq: "OPEN" }'];
       if (input?.paymentToken)
-        filter.paymentToken = input.paymentToken.toLowerCase();
-      if (input?.nameHash) filter.nameHash = input.nameHash;
-      if (input?.minPrice ?? input?.maxPrice) {
-        const priceFilter: Record<string, string> = {};
-        if (input?.minPrice) priceFilter.$gte = input.minPrice;
-        if (input?.maxPrice) priceFilter.$lte = input.maxPrice;
-        filter.price = priceFilter;
-      }
+        where.push(`paymentToken: { _ilike: "${input.paymentToken}" }`);
+      if (input?.nameHash)
+        where.push(`nameHash: { _eq: "${input.nameHash}" }`);
+      if (input?.minPrice)
+        where.push(`price: { _gte: "${input.minPrice}" }`);
+      if (input?.maxPrice)
+        where.push(`price: { _lte: "${input.maxPrice}" }`);
 
-      const sortField = input?.sortBy ?? 'createdAt';
-      const sortDir = input?.sortOrder === 'asc' ? 1 : -1;
+      const data = await envioQuery<{ Order: EnvioOrder[] }>(`
+        query {
+          Order(
+            where: { ${where.join(', ')} }
+            order_by: { ${sortField}: ${sortDir} }
+            limit: ${input?.limit ?? 50}
+            offset: ${input?.offset ?? 0}
+          ) { ${ORDER_FIELDS} }
+        }
+      `);
 
-      return collection
-        .find(filter)
-        .sort({ [sortField]: sortDir })
-        .skip(input?.offset ?? 0)
-        .limit(input?.limit ?? 50)
-        .toArray() as unknown as Promise<MarketOrder[]>;
+      return enrichOrders(data.Order);
     }),
 
   getOrder: publicProcedure
-    .input(z.object({ orderId: z.number() }))
+    .input(z.object({ orderId: z.string() }))
     .query(async ({ input }) => {
-      const collection = requireDb();
-      const order = await collection.findOne({ orderId: input.orderId });
+      const data = await envioQuery<{ Order: EnvioOrder[] }>(`
+        query {
+          Order(where: { orderId: { _eq: "${input.orderId}" } }, limit: 1) {
+            ${ORDER_FIELDS}
+          }
+        }
+      `);
+
+      const order = data.Order[0];
       if (!order) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: `Order #${input.orderId} not found`,
         });
       }
-      return order as unknown as MarketOrder;
+
+      const [enriched] = await enrichOrders([order]);
+      return enriched!;
     }),
 
   getUserSellingOrders: publicProcedure
     .input(z.object({ address: z.string() }))
     .query(async ({ input }) => {
-      const collection = requireDb();
-      return collection
-        .find({
-          maker: input.address.toLowerCase(),
-          status: { $in: ['OPEN', 'PAUSED'] },
-        })
-        .sort({ createdAt: -1 })
-        .toArray() as unknown as Promise<MarketOrder[]>;
+      const data = await envioQuery<{ Order: EnvioOrder[] }>(`
+        query {
+          Order(
+            where: {
+              maker: { _ilike: "${input.address}" }
+              status: { _in: ["OPEN", "PAUSED"] }
+            }
+            order_by: { createdAtTimestamp: desc }
+          ) { ${ORDER_FIELDS} }
+        }
+      `);
+
+      return enrichOrders(data.Order);
     }),
 
   getUserOrders: publicProcedure
@@ -260,56 +212,82 @@ export const marketRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const collection = requireDb();
-      const filter: Record<string, unknown> = {
-        maker: input.address.toLowerCase(),
-      };
-      if (input.status) filter.status = input.status;
+      const statusClause = input.status
+        ? `status: { _eq: "${input.status}" }`
+        : '';
 
-      return collection
-        .find(filter)
-        .sort({ createdAt: -1 })
-        .toArray() as unknown as Promise<MarketOrder[]>;
+      const data = await envioQuery<{ Order: EnvioOrder[] }>(`
+        query {
+          Order(
+            where: {
+              maker: { _ilike: "${input.address}" }
+              ${statusClause}
+            }
+            order_by: { createdAtTimestamp: desc }
+          ) { ${ORDER_FIELDS} }
+        }
+      `);
+
+      return enrichOrders(data.Order);
     }),
 
   getUserHistory: publicProcedure
     .input(z.object({ address: z.string() }))
     .query(async ({ input }) => {
-      const collection = requireDb();
-      const address = input.address.toLowerCase();
-      return collection
-        .find({
-          $or: [{ maker: address }, { taker: address }],
-          status: 'FILLED',
-        })
-        .sort({ filledAt: -1 })
-        .toArray() as unknown as Promise<MarketOrder[]>;
+      const addr = input.address.toLowerCase();
+
+      const data = await envioQuery<{ Order: EnvioOrder[] }>(`
+        query {
+          Order(
+            where: {
+              status: { _eq: "FILLED" }
+              _or: [
+                { maker: { _ilike: "${addr}" } }
+                { taker: { _ilike: "${addr}" } }
+              ]
+            }
+            order_by: { updatedAtTimestamp: desc }
+          ) { ${ORDER_FIELDS} }
+        }
+      `);
+
+      return enrichOrders(data.Order);
     }),
 
   getUserPurchases: publicProcedure
     .input(z.object({ address: z.string() }))
     .query(async ({ input }) => {
-      const collection = requireDb();
-      return collection
-        .find({
-          taker: input.address.toLowerCase(),
-          status: 'FILLED',
-        })
-        .sort({ filledAt: -1 })
-        .toArray() as unknown as Promise<MarketOrder[]>;
+      const data = await envioQuery<{ Order: EnvioOrder[] }>(`
+        query {
+          Order(
+            where: {
+              taker: { _ilike: "${input.address}" }
+              status: { _eq: "FILLED" }
+            }
+            order_by: { updatedAtTimestamp: desc }
+          ) { ${ORDER_FIELDS} }
+        }
+      `);
+
+      return enrichOrders(data.Order);
     }),
 
   getUserSales: publicProcedure
     .input(z.object({ address: z.string() }))
     .query(async ({ input }) => {
-      const collection = requireDb();
-      return collection
-        .find({
-          maker: input.address.toLowerCase(),
-          status: 'FILLED',
-        })
-        .sort({ filledAt: -1 })
-        .toArray() as unknown as Promise<MarketOrder[]>;
+      const data = await envioQuery<{ Order: EnvioOrder[] }>(`
+        query {
+          Order(
+            where: {
+              maker: { _ilike: "${input.address}" }
+              status: { _eq: "FILLED" }
+            }
+            order_by: { updatedAtTimestamp: desc }
+          ) { ${ORDER_FIELDS} }
+        }
+      `);
+
+      return enrichOrders(data.Order);
     }),
 
   getOrdersByItem: publicProcedure
@@ -320,55 +298,101 @@ export const marketRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const collection = requireDb();
-      const filter: Record<string, unknown> = { nameHash: input.nameHash };
-      if (input.status) filter.status = input.status;
+      const statusClause = input.status
+        ? `status: { _eq: "${input.status}" }`
+        : '';
 
-      return collection
-        .find(filter)
-        .sort({ price: 1 })
-        .toArray() as unknown as Promise<MarketOrder[]>;
+      const data = await envioQuery<{ Order: EnvioOrder[] }>(`
+        query {
+          Order(
+            where: {
+              nameHash: { _eq: "${input.nameHash}" }
+              ${statusClause}
+            }
+            order_by: { price: asc }
+          ) { ${ORDER_FIELDS} }
+        }
+      `);
+
+      return enrichOrders(data.Order);
     }),
 
   getFloorPrice: publicProcedure
     .input(z.object({ nameHash: z.string() }))
     .query(async ({ input }) => {
-      const collection = requireDb();
-      const order = await collection
-        .find({ nameHash: input.nameHash, status: 'OPEN' })
-        .sort({ price: 1 })
-        .limit(1)
-        .next();
-      return { floorPrice: (order?.price as string) ?? null };
+      const data = await envioQuery<{ Order: EnvioOrder[] }>(`
+        query {
+          Order(
+            where: {
+              nameHash: { _eq: "${input.nameHash}" }
+              status: { _eq: "OPEN" }
+            }
+            order_by: { price: asc }
+            limit: 1
+          ) { price }
+        }
+      `);
+
+      return { floorPrice: data.Order[0]?.price ?? null };
     }),
 
   getStats: publicProcedure.query(async () => {
-    const collection = requireDb();
-    const [totalOrders, openOrders, filledOrders, canceledOrders] =
-      await Promise.all([
-        collection.countDocuments(),
-        collection.countDocuments({ status: 'OPEN' }),
-        collection.countDocuments({ status: 'FILLED' }),
-        collection.countDocuments({ status: 'CANCELED' }),
-      ]);
-    return { totalOrders, openOrders, filledOrders, canceledOrders };
+    const data = await envioQuery<{
+      MarketplaceStats: {
+        totalOrders: string;
+        openOrders: string;
+        pausedOrders: string;
+        filledOrders: string;
+        canceledOrders: string;
+      }[];
+    }>(`
+      query {
+        MarketplaceStats(where: { id: { _eq: "global" } }, limit: 1) {
+          totalOrders
+          openOrders
+          pausedOrders
+          filledOrders
+          canceledOrders
+        }
+      }
+    `);
+
+    const stats = data.MarketplaceStats[0];
+    if (!stats) {
+      return {
+        totalOrders: 0,
+        openOrders: 0,
+        pausedOrders: 0,
+        filledOrders: 0,
+        canceledOrders: 0,
+      };
+    }
+
+    return {
+      totalOrders: Number(stats.totalOrders),
+      openOrders: Number(stats.openOrders),
+      pausedOrders: Number(stats.pausedOrders),
+      filledOrders: Number(stats.filledOrders),
+      canceledOrders: Number(stats.canceledOrders),
+    };
   }),
 
   getIndexerStatus: publicProcedure.query(async () => {
-    const collection = requireDb();
-    const state = await db!
-      .collection('indexerstate')
-      .findOne({}, { sort: { _id: -1 } });
+    const data = await envioQuery<{ Order: { updatedAtBlock: string; updatedAtTimestamp: string }[] }>(`
+      query {
+        Order(order_by: { updatedAtBlock: desc }, limit: 1) {
+          updatedAtBlock
+          updatedAtTimestamp
+        }
+      }
+    `);
+
+    const latest = data.Order[0];
     return {
-      isRunning: false,
-      reconnectAttempts: 0,
-      contractAddress: '',
-      lastProcessedBlock: (state?.lastProcessedBlock as number) ?? undefined,
-      isFullySynced: (state?.isFullySynced as boolean) ?? undefined,
-      totalOrdersIndexed:
-        (state?.totalOrdersIndexed as number) ??
-        (await collection.countDocuments()),
-      lastUpdated: (state?.lastUpdated as string) ?? undefined,
+      lastProcessedBlock: latest ? Number(latest.updatedAtBlock) : undefined,
+      lastUpdated: latest
+        ? new Date(Number(latest.updatedAtTimestamp) * 1000).toISOString()
+        : undefined,
     };
   }),
 });

@@ -1,15 +1,15 @@
 import { create } from 'zustand';
 import { trpcClient } from '@/trpc/vanilla';
-import type { MarketOrder } from '@/server/api/routers/market';
+import type { MarketOrder, OrderStatus } from '@/server/api/routers/market';
 
-export type OrderStatus = 'NONE' | 'OPEN' | 'PAUSED' | 'FILLED' | 'CANCELED';
+export type { OrderStatus };
 
 interface MarketFilters {
   paymentToken?: string;
   nameHash?: string;
   minPrice?: string;
   maxPrice?: string;
-  sortBy?: 'price' | 'createdAt' | 'orderId';
+  sortBy?: 'price' | 'createdAtTimestamp' | 'orderId';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -40,8 +40,8 @@ interface MarketStore {
   loadAll: (address?: string) => Promise<void>;
 
   // Optimistic updates after contract calls
-  removeOrder: (orderId: number) => void;
-  updateOrderStatus: (orderId: number, status: OrderStatus) => void;
+  removeOrder: (orderId: string) => void;
+  updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   addOrder: (order: MarketOrder) => void;
 
   // Clear
@@ -67,7 +67,7 @@ export const useMarketStore = create<MarketStore>()((set, get) => ({
     set({ isLoadingOrders: true, error: null });
 
     try {
-      const appliedFilters = filters || get().filters;
+      const appliedFilters = filters ?? get().filters;
       const orders = await trpcClient.market.getOpenOrders.query(appliedFilters);
 
       set({
