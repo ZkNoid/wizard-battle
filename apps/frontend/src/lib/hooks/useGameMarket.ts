@@ -9,7 +9,6 @@ import {
   decodeEventLog,
 } from 'viem';
 import { useMarketStore } from '@/lib/store/marketStore';
-import { api } from '@/trpc/react';
 import { trackEvent } from '@/lib/analytics/posthog-utils';
 import { AnalyticsEvents } from '@/lib/analytics/events';
 import type {
@@ -182,8 +181,6 @@ export function useGameMarket() {
   const { writeContractAsync, isPending } = useWriteContract();
   const publicClient = usePublicClient();
   const { removeOrder, updateOrderStatus, loadAll } = useMarketStore();
-  const { mutateAsync: createOrderRecord } =
-    api.market.createOrder.useMutation();
 
   const { data: protocolFee } = useReadContract({
     address: GAME_MARKET_ADDRESS,
@@ -340,22 +337,6 @@ export function useGameMarket() {
       const orderId = (createOrderLog?.args as { orderId?: bigint })?.orderId;
 
       if (orderId != null && receipt) {
-        await createOrderRecord({
-          orderId: Number(orderId),
-          itemId: params.itemId,
-          title: params.title,
-          maker: address!,
-          token: params.token,
-          tokenId: params.tokenId.toString(),
-          paymentToken: params.paymentToken,
-          paymentTokenId: (params.paymentTokenId ?? 0n).toString(),
-          amount: params.amount.toString(),
-          price: params.price.toString(),
-          nameHash,
-          blockNumber: Number(receipt.blockNumber),
-          transactionHash: txHash,
-        });
-
         const listed: MarketItemListedProps = {
           item_id: params.itemId,
           title: params.title,
@@ -379,7 +360,6 @@ export function useGameMarket() {
       writeContractAsync,
       publicClient,
       generateNameHash,
-      createOrderRecord,
       address,
       loadAll,
     ]
@@ -402,7 +382,7 @@ export function useGameMarket() {
       });
 
       // Optimistic update
-      removeOrder(Number(params.orderId));
+      removeOrder(params.orderId.toString());
 
       // Refresh market data
       if (address) {
@@ -437,7 +417,7 @@ export function useGameMarket() {
       });
 
       // Optimistic update
-      removeOrder(Number(orderId));
+      removeOrder(orderId.toString());
 
       return { txHash, receipt };
     },
@@ -460,7 +440,7 @@ export function useGameMarket() {
       });
 
       // Optimistic update
-      updateOrderStatus(Number(orderId), 'PAUSED');
+      updateOrderStatus(orderId.toString(), 'PAUSED');
 
       return { txHash, receipt };
     },
@@ -483,7 +463,7 @@ export function useGameMarket() {
       });
 
       // Optimistic update
-      updateOrderStatus(Number(orderId), 'OPEN');
+      updateOrderStatus(orderId.toString(), 'OPEN');
 
       return { txHash, receipt };
     },

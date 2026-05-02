@@ -11,7 +11,7 @@ export interface IMarketBuyItem {
   priceCurrency: string;
   tooltipItem?: AnyInventoryItem;
   // Extended fields for contract interaction
-  orderId?: number;
+  orderId?: string;
   maker?: string;
   tokenAddress?: string;
   tokenId?: string;
@@ -45,6 +45,6 @@ export interface IMarketSellingItem {
   listedAt: string;
   status: 'on_sale' | 'sold';
   // Extended fields for contract interaction
-  orderId?: number;
+  orderId?: string;
   orderStatus?: string;
 }
