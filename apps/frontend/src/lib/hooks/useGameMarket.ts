@@ -10,6 +10,13 @@ import {
 } from 'viem';
 import { useMarketStore } from '@/lib/store/marketStore';
 import { api } from '@/trpc/react';
+import { trackEvent } from '@/lib/analytics/posthog-utils';
+import { AnalyticsEvents } from '@/lib/analytics/events';
+import type {
+  MarketItemListedProps,
+  WalletConnectionInitiatedProps,
+  WalletPromptShownProps,
+} from '@/lib/analytics/types';
 
 const GAME_MARKET_ADDRESS = process.env
   .NEXT_PUBLIC_GAME_MARKET_ADDRESS as `0x${string}`;
@@ -186,6 +193,14 @@ export function useGameMarket() {
 
   const requireWallet = useCallback(() => {
     if (!address) {
+      const shown: WalletPromptShownProps = {
+        prompt_context: 'market_requires_evm_wallet',
+      };
+      trackEvent(AnalyticsEvents.WALLET_PROMPT_SHOWN, shown);
+      const initiated: WalletConnectionInitiatedProps = {
+        wallet_type: 'Reown',
+      };
+      trackEvent(AnalyticsEvents.WALLET_CONNECTION_INITIATED, initiated);
       void open();
       return false;
     }
@@ -340,6 +355,16 @@ export function useGameMarket() {
           blockNumber: Number(receipt.blockNumber),
           transactionHash: txHash,
         });
+
+        const listed: MarketItemListedProps = {
+          item_id: params.itemId,
+          title: params.title,
+          order_id: Number(orderId),
+          price_wei: params.price.toString(),
+          amount: params.amount.toString(),
+          payment_token: params.paymentToken,
+        };
+        trackEvent(AnalyticsEvents.MARKET_ITEM_LISTED, listed);
       }
 
       // Refresh market data

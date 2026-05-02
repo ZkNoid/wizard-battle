@@ -33,8 +33,10 @@ import {
   useEntityManagement,
   useGameLifecycle,
 } from './hooks';
+import { useGamePlaySessionAnalytics } from '@/lib/analytics/useGamePlaySessionAnalytics';
 
 export default function GamePage() {
+  useGamePlaySessionAnalytics();
   // External hooks
   const { address } = useMinaAppkit();
 

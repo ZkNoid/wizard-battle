@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Button } from '../shared/Button';
 import { motion } from 'motion/react';
 import {
@@ -32,13 +33,13 @@ interface WalletReownProps {
 }
 
 const targetNetwork = env.NEXT_PUBLIC_NETWORK_ID
-  ? (Object.values(allNetworks).find(
+  ? ((Object.values(allNetworks).find(
       (n) =>
         typeof n === 'object' &&
         n !== null &&
         'id' in n &&
         String((n as { id: number }).id) === env.NEXT_PUBLIC_NETWORK_ID
-    ) as (typeof avalanche) | undefined) ?? avalanche
+    ) as typeof avalanche | undefined) ?? avalanche)
   : avalanche;
 
 export default function WalletReown({ className }: WalletReownProps = {}) {
@@ -148,12 +149,30 @@ export default function WalletReown({ className }: WalletReownProps = {}) {
       // transition={{ duration: 0.7, ease: 'easeOut', delay: 2.5 }}
       className={className || 'w-full'}
     >
-      <Button
-        variant="blue"
-        text={displayText}
-        onClick={handleButtonClick}
-        className="w-50 h-15 text-base font-bold"
-      />
+      {isConnected && address ? (
+        <Button
+          variant="blue"
+          text={displayText}
+          onClick={handleButtonClick}
+          className="h-15 w-full text-base font-bold"
+        />
+      ) : (
+        <Button
+          variant="blue"
+          onClick={handleButtonClick}
+          className="h-15 w-full gap-2 text-base font-bold"
+        >
+          <Image
+            src="/wallet/reown-icon.png"
+            alt=""
+            width={24}
+            height={24}
+            className="relative z-[1] h-6 w-6 shrink-0"
+            aria-hidden
+          />
+          <span className="relative z-[1]">{displayText}</span>
+        </Button>
+      )}
     </motion.div>
   );
 }

@@ -19,6 +19,8 @@ import type {
   FunnelCharacterCreatedProps,
   CharacterSelectedProps,
   SkillsSelectedProps,
+  PlayerJoinedGameProps,
+  SkillSelectedProps,
 } from '@/lib/analytics/types';
 
 export default function CharacterSelect({
@@ -156,6 +158,12 @@ export default function CharacterSelect({
               };
               trackEvent(AnalyticsEvents.FUNNEL_CHARACTER_CREATED, funnelProps);
 
+              const joinedProps: PlayerJoinedGameProps = {
+                wizard_id: currentWizard.id.toString(),
+                wizard_name: currentWizard.name,
+              };
+              trackEvent(AnalyticsEvents.PLAYER_JOINED_GAME, joinedProps);
+
               // Track character selected
               const charProps: CharacterSelectedProps = {
                 wizard_id: currentWizard.id.toString(),
@@ -179,6 +187,15 @@ export default function CharacterSelect({
                   }),
               };
               trackEvent(AnalyticsEvents.SKILLS_SELECTED, skillsProps);
+
+              for (const row of skillsProps.skills) {
+                const skillRow: SkillSelectedProps = {
+                  wizard_id: currentWizard.id.toString(),
+                  spell_id: row.spell_id,
+                  spell_name: row.spell_name,
+                };
+                trackEvent(AnalyticsEvents.SKILL_SELECTED, skillRow);
+              }
 
               setPlayStep(PlaySteps.SELECT_MAP);
             }}
