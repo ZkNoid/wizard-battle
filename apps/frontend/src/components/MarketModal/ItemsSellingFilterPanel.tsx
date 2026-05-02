@@ -27,12 +27,13 @@ export function ItemsSellingFilterPanel({
     onFiltersChange({ ...filters, ...patch });
 
   return (
-    <div className="grid w-full grid-cols-5 items-end gap-4">
-      <div className="flex flex-col justify-end px-2 pb-2">
+    <div className="grid w-full grid-cols-5 items-end gap-6">
+      <div className="flex flex-col justify-end px-2">
         <Button
           variant="blue"
-          className="h-12 w-full"
+          className="h-15 w-full"
           onClick={() => setIsSellItemsModalOpen(true)}
+          size="lg"
           enableHoverSound
           enableClickSound
         >

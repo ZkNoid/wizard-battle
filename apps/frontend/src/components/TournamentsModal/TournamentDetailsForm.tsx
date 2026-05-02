@@ -8,12 +8,14 @@ interface TournamentDetailsFormProps {
   tournament: ITournament;
   onJoin?: (tournament: ITournament) => void;
   onClaim?: (tournament: ITournament) => void;
+  onOpen?: (tournament: ITournament) => void;
 }
 
 export function TournamentDetailsForm({
   tournament,
   onJoin,
   onClaim,
+  onOpen,
 }: TournamentDetailsFormProps) {
   return (
     <div className="flex flex-1 flex-row gap-3">
@@ -23,6 +25,7 @@ export function TournamentDetailsForm({
           tournament={tournament}
           onJoin={onJoin}
           onClaim={onClaim}
+          onOpen={onOpen}
         />
       </div>
 

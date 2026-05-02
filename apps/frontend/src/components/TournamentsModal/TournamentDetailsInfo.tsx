@@ -17,6 +17,7 @@ interface TournamentDetailsInfoProps {
   tournament: ITournament;
   onJoin?: (tournament: ITournament) => void;
   onClaim?: (tournament: ITournament) => void;
+  onOpen?: (tournament: ITournament) => void;
 }
 
 function getTargetDate(tournament: ITournament): Date | null {
@@ -76,6 +77,7 @@ export function TournamentDetailsInfo({
   tournament,
   onJoin,
   onClaim,
+  onOpen,
 }: TournamentDetailsInfoProps) {
   const targetDate = getTargetDate(tournament);
   const countdown = useCountdown(targetDate);
@@ -131,6 +133,7 @@ export function TournamentDetailsInfo({
               tournament={tournament}
               onJoin={onJoin}
               onClaim={onClaim}
+              onOpen={onOpen}
             />
           </div>
         </div>
@@ -190,7 +193,9 @@ export function TournamentDetailsInfo({
                   className="text-main-gray"
                 />
               ) : (
-                <span className="font-pixel-klein text-xs font-bold">Free</span>
+                <span className="font-pixel-klein text-main-gray text-xs font-bold">
+                  Free
+                </span>
               )}
             </div>
           </div>

@@ -6,7 +6,7 @@ export default function ModalTitle({
   title,
   onClose,
   onBack,
-  textSizeClass = 'text-4xl',
+  textSizeClass = 'text-3.5xl',
 }: {
   title: string;
   onClose: () => void;

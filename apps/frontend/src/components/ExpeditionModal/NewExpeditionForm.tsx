@@ -123,7 +123,7 @@ export default function NewExpeditionForm({
           variant={disabled ? 'gray' : 'blue'}
           onClick={handleStartExpedition}
           className="h-15 flex w-full flex-row items-center justify-center gap-2.5"
-          isLong
+          size="xxl"
           disabled={disabled}
         >
           <span className="font-pixel text-main-gray whitespace-nowrap text-lg font-bold">

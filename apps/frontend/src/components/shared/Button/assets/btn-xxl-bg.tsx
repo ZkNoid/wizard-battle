@@ -1,21 +1,23 @@
-import { colorSchemes } from './button-background';
+import { colorSchemes, type ButtonColorScheme } from '../utils';
 
-export const LongButtonBackground = ({
+export const BtnXxlBg = ({
   className,
   color = 'gray',
 }: {
   className?: string;
-  color?: 'gray' | 'blue' | 'lightGray' | 'green' | 'red';
+  color?: ButtonColorScheme;
 }) => {
   const scheme = colorSchemes[color];
 
   return (
     <svg
+      width="574"
+      height="64"
       viewBox="0 0 574 64"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="none"
       className={className}
+      preserveAspectRatio="none"
     >
       <path d="M564 0H10V5H564V0Z" fill="#070C19" />
       <path d="M10 5H5V10H10V5Z" fill="#070C19" />

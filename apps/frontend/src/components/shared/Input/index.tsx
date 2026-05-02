@@ -33,7 +33,7 @@ export function Input({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="font-pixel text-main-gray placeholder:text-main-gray/50 relative z-10 h-full w-full bg-transparent px-3 py-2 text-base outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        className="font-pixel text-main-gray placeholder:font-pixel-klein placeholder:text-main-gray/40 relative z-10 h-full w-full bg-transparent pl-5 pr-3 py-2 text-base outline-none disabled:cursor-not-allowed disabled:opacity-50"
       />
       <InputBg className="pointer-events-none absolute inset-0 h-full w-full" />
     </div>

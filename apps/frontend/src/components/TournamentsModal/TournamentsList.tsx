@@ -8,6 +8,7 @@ interface TournamentsListProps {
   tournaments: ITournament[];
   onJoin?: (tournament: ITournament) => void;
   onClaim?: (tournament: ITournament) => void;
+  onOpen?: (tournament: ITournament) => void;
   onViewDetails?: (tournament: ITournament) => void;
 }
 
@@ -15,6 +16,7 @@ export function TournamentsList({
   tournaments,
   onJoin,
   onClaim,
+  onOpen,
   onViewDetails,
 }: TournamentsListProps) {
   return (
@@ -32,6 +34,7 @@ export function TournamentsList({
                 tournament={tournament}
                 onJoin={onJoin}
                 onClaim={onClaim}
+                onOpen={onOpen}
                 onViewDetails={onViewDetails}
               />
             ))}

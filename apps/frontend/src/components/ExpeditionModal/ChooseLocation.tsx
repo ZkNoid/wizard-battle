@@ -46,8 +46,7 @@ export default function ChooseLocation({
               name={location.name}
               isSelected={selectedLocation === location.id}
               onClick={() => handleSelectLocation(location.id, isDisabled)}
-              width={140}
-              height={140}
+              className="h-35 w-35"
               disabled={isDisabled}
             />
           );

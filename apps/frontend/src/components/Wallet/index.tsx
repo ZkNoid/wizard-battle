@@ -20,6 +20,7 @@ import type {
   WalletConnectionInitiatedProps,
   WalletConnectionSuccessProps,
 } from '@/lib/analytics/types';
+import type { ButtonSize } from '../shared/Button/utils';
 
 const NameSchema = Yup.object().shape({
   name: Yup.string()
@@ -40,9 +41,13 @@ const NameSchema = Yup.object().shape({
 
 interface WalletProps {
   className?: string;
+  buttonSize?: ButtonSize;
 }
 
-export default function Wallet({ className }: WalletProps = {}) {
+export default function Wallet({
+  className,
+  buttonSize = 'lg',
+}: WalletProps = {}) {
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   const { address, isConnected, triggerWallet, disconnect, isWalletInstalled } =

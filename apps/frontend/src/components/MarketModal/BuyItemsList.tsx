@@ -31,7 +31,7 @@ export function BuyItemsList({ items, onItemClick }: BuyItemsListProps) {
   return (
     <div className="flex flex-col gap-3">
       {/* Grid wrapper — fixed height to prevent layout jumps */}
-      <div className="h-130 flex items-start">
+      <div className="h-125 flex items-start">
         <div className="grid w-full grid-cols-4 grid-rows-3 gap-3">
           {slots.map((item, idx) => (
             <div
