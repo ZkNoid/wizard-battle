@@ -41,6 +41,11 @@ export interface WalletTransactionInitiatedProps {
 
 export interface WalletPromptDismissedProps {
   reason?: string;
+  prompt_context?: string;
+}
+
+export interface WalletPromptShownProps {
+  prompt_context: string;
 }
 
 // Battle Events
@@ -176,6 +181,50 @@ export interface BlockchainTransactionFailedProps {
   amount: number;
   error: string;
   duration_ms: number;
+}
+
+// In-game session
+export interface GamePlaySessionProps {
+  surface: 'game_battle';
+}
+
+export interface GamePlaySessionEndProps extends GamePlaySessionProps {
+  duration_ms: number;
+}
+
+export interface GameActivityHeartbeatProps extends GamePlaySessionProps {
+  visible: boolean;
+}
+
+// Player
+export interface PlayerJoinedGameProps {
+  wizard_id: string;
+  wizard_name: string;
+}
+
+export interface SkillSelectedProps {
+  wizard_id: string;
+  spell_id: string;
+  spell_name: string;
+}
+
+// Market
+export interface MarketItemListedProps {
+  item_id: string;
+  title: string;
+  order_id: number;
+  price_wei: string;
+  amount: string;
+  payment_token: string;
+}
+
+export interface MarketItemPurchasedProps {
+  item_id: string;
+  title: string;
+  order_id: string;
+  price: number;
+  price_currency: string;
+  quantity: number;
 }
 
 // User Properties

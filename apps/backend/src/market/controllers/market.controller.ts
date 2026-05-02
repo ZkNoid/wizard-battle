@@ -6,16 +6,12 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { MarketService } from '../services/market.service';
-import { MarketIndexerService } from '../services/market-indexer.service';
 import { GetOrdersDto } from '../dto/get-orders.dto';
 import { MarketOrder, OrderStatus } from '../schemas/market-order.schema';
 
 @Controller('market')
 export class MarketController {
-  constructor(
-    private readonly marketService: MarketService,
-    private readonly indexerService: MarketIndexerService,
-  ) {}
+  constructor(private readonly marketService: MarketService) {}
 
   /**
    * Get all open orders with optional filters
@@ -130,21 +126,4 @@ export class MarketController {
     return this.marketService.getOrderStats();
   }
 
-  /**
-   * Get indexer status
-   * GET /market/indexer/status
-   */
-  @Get('indexer/status')
-  async getIndexerStatus() {
-    const status = this.indexerService.getStatus();
-    const state = await this.indexerService.getIndexerState();
-
-    return {
-      ...status,
-      lastProcessedBlock: state?.lastProcessedBlock,
-      isFullySynced: state?.isFullySynced,
-      totalOrdersIndexed: state?.totalOrdersIndexed,
-      lastUpdated: state?.lastUpdated,
-    };
-  }
 }

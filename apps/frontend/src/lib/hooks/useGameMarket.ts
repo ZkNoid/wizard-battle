@@ -1,12 +1,22 @@
 import { useCallback, useMemo } from 'react';
 import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
+import { useWriteContract, usePublicClient, useReadContract } from 'wagmi';
 import {
-  useWriteContract,
-  usePublicClient,
-  useReadContract,
-} from 'wagmi';
-import { parseEther, formatEther, keccak256, toBytes } from 'viem';
+  parseEther,
+  formatEther,
+  keccak256,
+  toBytes,
+  decodeEventLog,
+} from 'viem';
 import { useMarketStore } from '@/lib/store/marketStore';
+import { api } from '@/trpc/react';
+import { trackEvent } from '@/lib/analytics/posthog-utils';
+import { AnalyticsEvents } from '@/lib/analytics/events';
+import type {
+  MarketItemListedProps,
+  WalletConnectionInitiatedProps,
+  WalletPromptShownProps,
+} from '@/lib/analytics/types';
 
 const GAME_MARKET_ADDRESS = process.env
   .NEXT_PUBLIC_GAME_MARKET_ADDRESS as `0x${string}`;
@@ -172,6 +182,8 @@ export function useGameMarket() {
   const { writeContractAsync, isPending } = useWriteContract();
   const publicClient = usePublicClient();
   const { removeOrder, updateOrderStatus, loadAll } = useMarketStore();
+  const { mutateAsync: createOrderRecord } =
+    api.market.createOrder.useMutation();
 
   const { data: protocolFee } = useReadContract({
     address: GAME_MARKET_ADDRESS,
@@ -181,6 +193,14 @@ export function useGameMarket() {
 
   const requireWallet = useCallback(() => {
     if (!address) {
+      const shown: WalletPromptShownProps = {
+        prompt_context: 'market_requires_evm_wallet',
+      };
+      trackEvent(AnalyticsEvents.WALLET_PROMPT_SHOWN, shown);
+      const initiated: WalletConnectionInitiatedProps = {
+        wallet_type: 'Reown',
+      };
+      trackEvent(AnalyticsEvents.WALLET_CONNECTION_INITIATED, initiated);
       void open();
       return false;
     }
@@ -271,17 +291,18 @@ export function useGameMarket() {
 
   const createOrder = useCallback(
     async (params: {
+      itemId: string;
       token: `0x${string}`;
       tokenId: bigint;
       price: bigint;
       amount: bigint;
       paymentToken: `0x${string}`;
       paymentTokenId?: bigint;
-      itemName: string;
+      title: string;
     }) => {
       if (!requireWallet()) return;
 
-      const nameHash = generateNameHash(params.itemName);
+      const nameHash = generateNameHash(params.title);
 
       const txHash = await writeContractAsync({
         address: GAME_MARKET_ADDRESS,
@@ -302,18 +323,63 @@ export function useGameMarket() {
         hash: txHash,
       });
 
+      const createOrderLog = receipt?.logs
+        .map((log) => {
+          try {
+            return decodeEventLog({
+              abi: GAME_MARKET_ABI,
+              data: log.data,
+              topics: log.topics,
+            });
+          } catch {
+            return null;
+          }
+        })
+        .find((decoded) => decoded?.eventName === 'CreateOrder');
+
+      const orderId = (createOrderLog?.args as { orderId?: bigint })?.orderId;
+
+      if (orderId != null && receipt) {
+        await createOrderRecord({
+          orderId: Number(orderId),
+          itemId: params.itemId,
+          title: params.title,
+          maker: address!,
+          token: params.token,
+          tokenId: params.tokenId.toString(),
+          paymentToken: params.paymentToken,
+          paymentTokenId: (params.paymentTokenId ?? 0n).toString(),
+          amount: params.amount.toString(),
+          price: params.price.toString(),
+          nameHash,
+          blockNumber: Number(receipt.blockNumber),
+          transactionHash: txHash,
+        });
+
+        const listed: MarketItemListedProps = {
+          item_id: params.itemId,
+          title: params.title,
+          order_id: Number(orderId),
+          price_wei: params.price.toString(),
+          amount: params.amount.toString(),
+          payment_token: params.paymentToken,
+        };
+        trackEvent(AnalyticsEvents.MARKET_ITEM_LISTED, listed);
+      }
+
       // Refresh market data
       if (address) {
         await loadAll(address);
       }
 
-      return { txHash, receipt };
+      return { txHash, receipt, orderId };
     },
     [
       requireWallet,
       writeContractAsync,
       publicClient,
       generateNameHash,
+      createOrderRecord,
       address,
       loadAll,
     ]
@@ -345,7 +411,14 @@ export function useGameMarket() {
 
       return { txHash, receipt };
     },
-    [requireWallet, writeContractAsync, publicClient, removeOrder, address, loadAll]
+    [
+      requireWallet,
+      writeContractAsync,
+      publicClient,
+      removeOrder,
+      address,
+      loadAll,
+    ]
   );
 
   const cancelOrder = useCallback(

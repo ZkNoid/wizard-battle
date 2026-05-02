@@ -12,6 +12,9 @@ import { useMarketStore } from '@/lib/store';
 import { useGameMarket } from '@/lib/hooks/useGameMarket';
 import { mapOrderToBuyItem } from '@/lib/utils/marketUtils';
 import type { IMarketBuyItem } from '@/lib/types/IMarket';
+import { trackEvent } from '@/lib/analytics/posthog-utils';
+import { AnalyticsEvents } from '@/lib/analytics/events';
+import type { MarketItemPurchasedProps } from '@/lib/analytics/types';
 
 interface BuyItemsFormProps {
   onClose?: () => void;
@@ -60,6 +63,16 @@ export function BuyItemsForm({
         console.error('Invalid order: missing paymentToken for ERC20 payment');
         return;
       }
+
+      const purchased: MarketItemPurchasedProps = {
+        item_id: item.id,
+        title: item.title,
+        order_id: String(item.orderId ?? ''),
+        price: item.price,
+        price_currency: item.priceCurrency,
+        quantity: item.quantity,
+      };
+      trackEvent(AnalyticsEvents.MARKET_ITEM_PURCHASED, purchased);
 
       setSelectedItem(null);
     } catch (error) {

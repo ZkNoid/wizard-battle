@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Button } from '../shared/Button';
 import { motion } from 'motion/react';
 import { WalletBg } from './assets/wallet-bg';
@@ -212,16 +213,23 @@ export default function Wallet({
           text={` ${displayName} `}
           onClick={disconnect}
           className="h-15 w-full text-base font-bold"
-          size={buttonSize}
         />
       ) : (
         <Button
           variant="blue"
-          text="Connect Wallet"
           onClick={triggerWalletOrRedirect}
-          className="h-15 w-full text-base font-bold"
-          size={buttonSize}
-        />
+          className="h-15 w-full gap-2 text-base font-bold"
+        >
+          <Image
+            src="/wallet/wallet-icon.png"
+            alt=""
+            width={24}
+            height={24}
+            className="relative z-[1] h-6 w-6 shrink-0"
+            aria-hidden
+          />
+          <span className="relative z-[1]">Connect Wallet</span>
+        </Button>
       )}
     </motion.div>
   );

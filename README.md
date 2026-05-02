@@ -1,10 +1,11 @@
-# Wizard Battle - Multi-Instance Game Server
+# Wizard Battle - Multi-Instance Game Server 1.2
 
 A real-time multiplayer wizard battle game with Redis-backed multi-instance architecture supporting horizontal scaling and cross-instance matchmaking.
 
 ## 🚀 Features
 
 ### **Multi-Instance Architecture**
+
 - **Horizontal Scaling**: Run multiple server instances simultaneously
 - **Redis State Management**: All game state persisted in Redis
 - **Cross-Instance Communication**: Seamless communication between instances
@@ -12,6 +13,7 @@ A real-time multiplayer wizard battle game with Redis-backed multi-instance arch
 - **Health Monitoring**: Comprehensive system monitoring and statistics
 
 ### **Real-Time Game Features**
+
 - **Cross-Instance Matchmaking**: Players matched across different server instances
 - **WebSocket Communication**: Real-time game updates
 - **Game State Persistence**: Complete game state stored in Redis
@@ -20,12 +22,14 @@ A real-time multiplayer wizard battle game with Redis-backed multi-instance arch
 ## 🏗️ Architecture
 
 ### **Backend Services**
+
 - **GameSessionGateway**: WebSocket handling and game session management
 - **MatchmakingService**: Player matching with Redis-backed queues
 - **GameStateService**: Game state persistence and cross-instance communication
 - **RedisHealthService**: System monitoring and health checks
 
 ### **Redis Data Structure**
+
 ```
 socket_mappings: Hash storing socket-to-instance mappings
 game_states: Hash storing game state for each room
@@ -68,12 +72,14 @@ wizard-battle/
 ```
 
 ## 🚀 Project Deploy
+
 ### **GitHub Secrets Setup**
 
 1. Navigate to your GitHub repository
 2. Go to Settings > Secrets and Variables > Actions
 3. Click "New repository secret"
 4. Add the following required secrets:
+
 - `MONGODB_URI`: MongoDB connection string
 - `MONGODB_DB`: MongoDB database name
 - `SERVER_HOST`: Remote server hostname/IP
@@ -92,12 +98,14 @@ wizard-battle/
 #### Required Secrets:
 
 for dev server
+
 ```bash
 git commit --allow-empty -m "Deploy all to new dev server"
 git push origin dev
 ```
 
 for production server
+
 ```bash
 git commit --allow-empty -m "Deploy all to new prod server"
 git push origin main
@@ -106,16 +114,19 @@ git push origin main
 ## 🚀 Quick Start
 
 ### **Prerequisites**
+
 - Node.js 18+
 - Redis server
 - pnpm package manager
 
 ### **1. Install Dependencies**
+
 ```bash
 pnpm install
 ```
 
 ### **2. Start Redis**
+
 ```bash
 # Using Docker
 docker run -d -p 6379:6379 redis:latest
@@ -125,6 +136,7 @@ redis-server
 ```
 
 ### **3. Start Multi-Instance Backend**
+
 ```bash
 cd apps/backend
 
@@ -136,6 +148,7 @@ npm run start:instances
 ```
 
 ### **4. Start Frontend**
+
 ```bash
 cd apps/frontend
 npm run dev
@@ -144,18 +157,21 @@ npm run dev
 ## 🧪 Testing Multi-Instance Setup
 
 ### **Single Instance Test**
+
 ```bash
 cd apps/backend
 npm run test:single-instance
 ```
 
 ### **Multi-Instance Test**
+
 ```bash
 cd apps/backend
 npm run test:multi-instance
 ```
 
 ### **Manual Testing**
+
 ```bash
 # Start instances manually
 export APP_PORT=3001 && npm run start:dev &
@@ -171,11 +187,14 @@ curl http://localhost:3003/health
 ## 🔧 Configuration
 
 ### **Environment Variables**
+
 - `APP_PORT`: Server port (default: 3030)
 - `REDIS_URL`: Redis connection URL (default: redis://localhost:6379)
 
 ### **Multi-Instance Setup**
+
 The system automatically supports multiple instances:
+
 - Each instance gets a unique instance ID
 - Socket mappings track which instance each connection belongs to
 - Redis pub/sub enables cross-instance communication
@@ -184,11 +203,13 @@ The system automatically supports multiple instances:
 ## 📊 Monitoring & Health
 
 ### **Health Endpoints**
+
 - `GET /health`: Overall system health
 - `GET /health/stats`: Detailed system statistics
 - `POST /health/cleanup`: Clean up orphaned data
 
 ### **Health Response Example**
+
 ```json
 {
   "redis": true,
@@ -208,6 +229,7 @@ The system automatically supports multiple instances:
 ## 🔄 Cross-Instance Matchmaking
 
 ### **How It Works**
+
 1. **Player A** connects to Instance 1
 2. **Player B** connects to Instance 2
 3. Both players join matchmaking queue (stored in Redis)
@@ -217,6 +239,7 @@ The system automatically supports multiple instances:
 7. Game session starts with players on different instances
 
 ### **Cross-Instance Events**
+
 - `matchFound`: Notifies players when match is created
 - `playerJoined`: Handles player joining from different instance
 - `gameMessage`: Broadcasts game messages across instances
@@ -225,40 +248,42 @@ The system automatically supports multiple instances:
 ## 🚀 Production Deployment
 
 ### **Docker Compose Setup**
+
 ```yaml
 version: '3.8'
 services:
   redis:
     image: redis:latest
     ports:
-      - "6379:6379"
-  
+      - '6379:6379'
+
   backend-1:
     build: ./apps/backend
     environment:
       - APP_PORT=3001
       - REDIS_URL=redis://redis:6379
     ports:
-      - "3001:3001"
-  
+      - '3001:3001'
+
   backend-2:
     build: ./apps/backend
     environment:
       - APP_PORT=3002
       - REDIS_URL=redis://redis:6379
     ports:
-      - "3002:3002"
-  
+      - '3002:3002'
+
   backend-3:
     build: ./apps/backend
     environment:
       - APP_PORT=3003
       - REDIS_URL=redis://redis:6379
     ports:
-      - "3003:3003"
+      - '3003:3003'
 ```
 
 ### **Load Balancer Configuration**
+
 - Use sticky sessions for WebSocket connections
 - Configure health checks for all instances
 - Set up Redis clustering for high availability
@@ -268,19 +293,21 @@ services:
 ### **Common Issues**
 
 1. **Port Conflicts**
+
    ```bash
    # Check for running processes
    lsof -i :3001 -i :3002 -i :3003
-   
+
    # Kill existing processes
    pkill -f "nest start"
    ```
 
 2. **Redis Connection Issues**
+
    ```bash
    # Test Redis connection
    redis-cli ping
-   
+
    # Check Redis logs
    docker logs redis-container
    ```
@@ -291,6 +318,7 @@ services:
    - Monitor room events
 
 ### **Debug Commands**
+
 ```bash
 # Check Redis data
 redis-cli hgetall socket_mappings
@@ -309,12 +337,14 @@ curl http://localhost:3003/health
 ## 📈 Performance Considerations
 
 ### **Redis Optimization**
+
 - Use Redis pipelining for batch operations
 - Implement connection pooling
 - Monitor Redis memory usage
 - Consider Redis clustering for high availability
 
 ### **Scaling Guidelines**
+
 - Start with 3-5 instances for testing
 - Monitor memory usage per instance
 - Use load balancer for distribution

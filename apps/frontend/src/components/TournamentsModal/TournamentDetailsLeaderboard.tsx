@@ -1,12 +1,32 @@
 'use client';
 
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import { Scroll } from '../shared/Scroll';
 import { Button } from '../shared/Button';
 import { TournamentAssetDisplay } from './TournamentAssetDisplay';
 import { TournamentsDetailsLeaderboardBg } from './assets/tournaments-details-leaderboard-bg';
-import { ALL_TOURNAMENTS_LEADERBOARD } from '@/lib/constants/tournaments';
-import type { ITournament } from '@/lib/types/ITournament';
+import { fetchTournamentLeaderboard } from '@/lib/services/tournament-api';
+import type {
+  ITournament,
+  ITournamentAsset,
+  ITournamentLeaderboardItem,
+} from '@/lib/types/ITournament';
+
+function mapPrizeToAssets(
+  prize: { type: 'currency'; currency: string; amount: number }[]
+): ITournamentAsset[] {
+  return prize.map((p) => {
+    const c = p.currency.toLowerCase();
+    if (c === 'mina') {
+      return { type: 'currency', currency: 'mina', amount: p.amount };
+    }
+    if (c === 'usdc') {
+      return { type: 'currency', currency: 'usdc', amount: p.amount };
+    }
+    return { type: 'currency', currency: 'gold', amount: p.amount };
+  });
+}
 
 interface TournamentDetailsLeaderboardProps {
   tournament: ITournament;
@@ -41,12 +61,116 @@ const getPlaceDisplay = (place: number): React.ReactNode => {
   return <span>{place}</span>;
 };
 
+interface LeaderboardRowProps {
+  item: ITournamentLeaderboardItem;
+  isCurrentUser: boolean;
+  isPinned: boolean;
+  tournamentStatus: ITournament['status'];
+}
+
+function LeaderboardRow({
+  item,
+  isCurrentUser,
+  isPinned,
+  tournamentStatus,
+}: LeaderboardRowProps) {
+  return (
+    <Button
+      variant={isCurrentUser ? 'blue' : 'lightGray'}
+      className="h-16 w-full shrink-0"
+      isLong
+    >
+      <div className="grid w-full grid-cols-4 gap-2 px-6">
+        {/* Place */}
+        <span className="flex items-center gap-1 text-lg">
+          {getPlaceDisplay(item.place)}
+          {isCurrentUser && (
+            <span className="font-pixel-klein text-xs">(You)</span>
+          )}
+        </span>
+
+        {/* Wallet */}
+        <span className="font-pixel flex items-center text-sm">
+          {shortenAddress(item.walletAddress)}
+        </span>
+
+        {/* Score */}
+        <span className="font-pixel-klein flex flex-col items-center justify-center text-sm font-bold leading-tight">
+          <span>{item.score}</span>
+          <span className="text-main-gray/50 text-[10px] font-normal">
+            {item.wins}W-{item.losses}L
+          </span>
+        </span>
+
+        {/* Prize */}
+        <div className="flex flex-col items-end justify-center gap-0.5">
+          {tournamentStatus !== 'ended' ? (
+            <span className="font-pixel-klein text-main-gray/60 text-xs">
+              Event online
+            </span>
+          ) : item.prize?.length > 0 ? (
+            item.prize.map((asset, i) => (
+              <TournamentAssetDisplay
+                key={i}
+                asset={asset}
+                className="text-main-gray"
+              />
+            ))
+          ) : (
+            <span className="font-pixel-klein text-main-gray/60 text-xs">
+              Sorry, you lost
+            </span>
+          )}
+        </div>
+      </div>
+    </Button>
+  );
+}
+
 export function TournamentDetailsLeaderboard({
   tournament,
   currentUserAddress,
 }: TournamentDetailsLeaderboardProps) {
-  // const entries = ALL_TOURNAMENTS_LEADERBOARD[tournament.id] ?? [];
-  const entries = ALL_TOURNAMENTS_LEADERBOARD['1'];
+  const [entries, setEntries] = useState<ITournamentLeaderboardItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const raw = await fetchTournamentLeaderboard(tournament.id);
+        if (cancelled) return;
+        setEntries(
+          raw.map((e) => ({
+            place: e.place,
+            walletAddress: e.walletAddress,
+            wins: e.wins,
+            losses: e.losses,
+            score: e.score,
+            prize: mapPrizeToAssets(e.prize),
+          }))
+        );
+      } catch (err) {
+        if (cancelled) return;
+        setEntries([]);
+        setError(
+          err instanceof Error ? err.message : 'Failed to load leaderboard'
+        );
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [tournament.id]);
+
   return (
     <div className="relative flex h-full w-full flex-col p-4">
       <TournamentsDetailsLeaderboardBg className="pointer-events-none absolute inset-0 h-full w-full" />
@@ -61,76 +185,62 @@ export function TournamentDetailsLeaderboard({
         <div className="font-pixel text-main-gray border-main-gray/20 grid grid-cols-4 gap-2 border-b pb-2 pl-2 pr-8 text-sm">
           <span>Place</span>
           <span>Wallet</span>
-          <span className="text-center">Wins</span>
-          <span className="pr-6 text-right">Prize</span>
+          <span className="text-center">Score</span>
+          <span className="text-right">Prize</span>
         </div>
 
         {/* Rows */}
-        <div className="flex-1 overflow-hidden">
-          {entries?.length === 0 ? (
+        <div className="flex flex-1 flex-col gap-2 overflow-hidden">
+          {loading ? (
+            <div className="font-pixel text-main-gray/40 flex h-full items-center justify-center text-sm">
+              Loading…
+            </div>
+          ) : error ? (
+            <div className="font-pixel text-main-gray/60 flex h-full items-center justify-center px-4 text-center text-sm">
+              {error}
+            </div>
+          ) : entries.length === 0 ? (
             <div className="font-pixel text-main-gray/40 flex h-full items-center justify-center text-sm">
               No participants yet
             </div>
           ) : (
-            <Scroll height="100%" alwaysShowScrollbar>
-              <div className="flex flex-col gap-2 pr-2">
-                {entries?.map((item) => {
-                  const isCurrentUser =
-                    currentUserAddress === item.walletAddress;
-                  return (
-                    <Button
-                      key={`${item.place}-${item.walletAddress}`}
-                      variant={isCurrentUser ? 'blue' : 'lightGray'}
-                      className="h-16 w-full"
-                      isLong
-                    >
-                      <div className="grid w-full grid-cols-4 gap-2 px-6">
-                        {/* Place */}
-                        <span className="flex items-center gap-1 text-lg">
-                          {getPlaceDisplay(item.place)}
-                          {isCurrentUser && (
-                            <span className="font-pixel-klein text-xs">
-                              (You)
-                            </span>
-                          )}
-                        </span>
+            <>
+              {/* Pinned current-user row — only shown when user is not already first */}
+              {(() => {
+                const userEntry = entries.find(
+                  (e) => e.walletAddress === currentUserAddress
+                );
+                if (!userEntry || userEntry.place === 1) return null;
+                return (
+                  <LeaderboardRow
+                    item={userEntry}
+                    isCurrentUser
+                    isPinned
+                    tournamentStatus={tournament.status}
+                  />
+                );
+              })()}
 
-                        {/* Wallet */}
-                        <span className="font-pixel flex items-center text-sm">
-                          {shortenAddress(item.walletAddress)}
-                        </span>
-
-                        {/* Wins */}
-                        <span className="font-pixel-klein flex items-center justify-center text-sm font-bold">
-                          {item.wins}
-                        </span>
-
-                        {/* Prize */}
-                        <div className="flex flex-col items-end justify-center gap-0.5">
-                          {tournament.status !== 'ended' ? (
-                            <span className="font-pixel-klein text-main-gray/60 text-xs">
-                              Event online
-                            </span>
-                          ) : item.prize?.length > 0 ? (
-                            item.prize.map((asset, i) => (
-                              <TournamentAssetDisplay
-                                key={i}
-                                asset={asset}
-                                className="text-main-gray"
-                              />
-                            ))
-                          ) : (
-                            <span className="font-pixel-klein text-main-gray/60 text-xs">
-                              Sorry, you lost
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </Button>
-                  );
-                })}
+              <div className="flex-1 overflow-hidden">
+                <Scroll height="100%" alwaysShowScrollbar>
+                  <div className="flex flex-col gap-2 pr-2">
+                    {entries.map((item) => {
+                      const isCurrentUser =
+                        currentUserAddress === item.walletAddress;
+                      return (
+                        <LeaderboardRow
+                          key={`${item.place}-${item.walletAddress}`}
+                          item={item}
+                          isCurrentUser={isCurrentUser}
+                          isPinned={false}
+                          tournamentStatus={tournament.status}
+                        />
+                      );
+                    })}
+                  </div>
+                </Scroll>
               </div>
-            </Scroll>
+            </>
           )}
         </div>
       </div>

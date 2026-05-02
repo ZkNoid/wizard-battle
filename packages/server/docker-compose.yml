@@ -74,6 +74,43 @@ services:
   #     - orbitrium_net
   #   restart: unless-stopped
 
+  mongodb-backup:
+    image: alpine:latest
+    container_name: mongodb-backup
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_HOST: mongodb
+      MONGO_PORT: 27017
+      BACKUP_DIR: /backups
+      BACKUP_KEEP_DAYS: 7
+    volumes:
+      - ./backups:/backups
+      - ./scripts/mongodb-backup.sh:/scripts/mongodb-backup.sh
+    command: |
+      sh -c '
+        apk add --no-cache bash dcron curl mongodb-tools
+        chmod +x /scripts/mongodb-backup.sh
+
+        echo "0 2 * * * /scripts/mongodb-backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
+        touch /var/log/backup.log
+
+        echo "MongoDB backup scheduler started - will run daily at 02:00 UTC"
+        crond -f -L /dev/stdout
+      '
+    depends_on:
+      mongodb:
+        condition: service_started
+    networks:
+      - bridge
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'test', '-f', '/backups/.last_backup_success']
+      interval: 1h
+      timeout: 30s
+      retries: 1
+      start_period: 120s
+
   nestjs-main:
     image: nestjs-main:latest
     container_name: nestjs-main
@@ -116,6 +153,16 @@ services:
       - ./redis/redis-data:/data
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes
+    networks:
+      - bridge
+
+  redis-tournament:
+    image: redis:latest
+    container_name: redis-tournament-server
+    restart: unless-stopped
+    volumes:
+      - ./redis/redis-tournament-data:/data
+    command: redis-server --appendonly yes
     networks:
       - bridge
 

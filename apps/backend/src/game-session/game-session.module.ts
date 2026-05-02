@@ -8,20 +8,22 @@ import { BotModule } from '../bot/bot.module';
 import { RedisModule } from '../redis/redis.module';
 import { RewardModule } from '../reward/reward.module';
 import { QuestsModule } from '../quests/quests.module';
+import { TournamentResultsModule } from '../tournament/tournament-results.module';
 
 @Module({
   imports: [
     BotModule,
-    RedisModule,
-    ScheduleModule.forRoot(), // ✅ Enable cron jobs
-    RewardModule, // ✅ Import RewardModule for reward handling
-    QuestsModule, // ✅ Import QuestsModule for quest tracking
+    RedisModule.forFeature(),
+    ScheduleModule.forRoot(),
+    RewardModule,
+    QuestsModule,
+    TournamentResultsModule,
   ],
   providers: [
     GameSessionGateway,
     MatchmakingService,
     GameStateService,
-    GamePhaseSchedulerService, // ✅ Add scheduler service
+    GamePhaseSchedulerService,
   ],
   exports: [MatchmakingService, GameStateService],
 })

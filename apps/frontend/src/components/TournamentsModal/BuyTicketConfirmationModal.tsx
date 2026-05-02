@@ -1,9 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '../shared/Button';
 import { TournamentAssetDisplay } from './TournamentAssetDisplay';
-import { formatDateRange } from './tournamentUtils';
 import type { ITournament } from '@/lib/types/ITournament';
 import { BuyTicketConfirmBg } from './assets/buy-ticket-confirm-bg';
 
@@ -18,6 +18,14 @@ export function BuyTicketConfirmationModal({
   onConfirm,
   onBack,
 }: BuyTicketConfirmationModalProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onBack();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onBack]);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
@@ -38,7 +46,7 @@ export function BuyTicketConfirmationModal({
               src="/tournaments/ticket.png"
               width={96}
               height={96}
-              alt="medal"
+              alt="Tournament ticket"
               className="h-30 w-30 object-contain object-center"
               unoptimized
             />

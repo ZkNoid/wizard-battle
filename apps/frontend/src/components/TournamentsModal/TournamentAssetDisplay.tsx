@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import type { ITournamentAsset } from '@/lib/types/ITournament';
+import { formatTournamentAtomicAmount } from './tournamentUtils';
 
 interface TournamentAssetDisplayProps {
   asset: ITournamentAsset;
@@ -12,6 +13,19 @@ export function TournamentAssetDisplay({
   className,
 }: TournamentAssetDisplayProps) {
   if (asset.type === 'currency') {
+    if (asset.currency === 'mina') {
+      return (
+        <span
+          className={cn(
+            'font-pixel-klein text-sm font-bold tabular-nums',
+            className
+          )}
+        >
+          {formatTournamentAtomicAmount(asset.amount)} MINA
+        </span>
+      );
+    }
+
     const icon =
       asset.currency === 'gold'
         ? '/icons/gold-coin.png'
@@ -31,7 +45,9 @@ export function TournamentAssetDisplay({
           unoptimized
           className="h-3.5 w-3.5 object-contain"
         />
-        {asset.amount.toLocaleString()}
+        {asset.currency === 'usdc'
+          ? formatTournamentAtomicAmount(asset.amount)
+          : asset.amount.toLocaleString('en-US')}
       </span>
     );
   }

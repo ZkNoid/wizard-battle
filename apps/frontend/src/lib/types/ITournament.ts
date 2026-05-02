@@ -1,8 +1,16 @@
+/** Chain-time estimates when we have a live slot anchor (see tournament store). */
+export interface ITournamentScheduleTimes {
+  battleStartsAtMs: number;
+  battleEndsAtMs: number;
+}
+
 export interface ITournament {
   id: string;
   title: string;
   dateFrom: string;
   dateTo: string;
+  /** Present when chain status provides anchor; enables date+time UI and accurate countdown. */
+  scheduleTimes?: ITournamentScheduleTimes;
   prizePool: ITournamentAsset[];
 
   ticketCost: ITournamentAsset | null;
@@ -12,7 +20,8 @@ export interface ITournament {
   imageURL: string;
   description?: string;
 
-  maxParticipants: number;
+  /** Server-reported participant count. */
+  participantCount: number;
   startDate: string;
 
   status: 'upcoming' | 'active' | 'ended';
@@ -31,7 +40,7 @@ export type ITournamentAsset =
 
 export interface ITournamentCurrencyAsset {
   type: 'currency';
-  currency: 'gold' | 'usdc';
+  currency: 'gold' | 'usdc' | 'mina';
   amount: number;
 }
 
@@ -50,5 +59,7 @@ export interface ITournamentLeaderboardItem {
   place: number;
   walletAddress: string;
   wins: number;
+  losses: number;
+  score: number;
   prize: ITournamentAsset[];
 }
