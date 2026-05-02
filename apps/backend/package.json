@@ -36,7 +36,8 @@
     "start:multi": "./start-multi-instance.sh",
     "start:instances": "./start-instances-only.sh",
     "import:inventory-xlsx": "npx ts-node --transpile-only -r dotenv/config scripts/import-inventory-items-from-xlsx.ts",
-    "seed:location-db": "npx ts-node --transpile-only -r dotenv/config scripts/seed-location-db.ts"
+    "seed:location-db": "npx ts-node --transpile-only -r dotenv/config scripts/recent/seed-location-db.ts",
+    "seed:user-inventory-catalog": "npx ts-node --transpile-only -r dotenv/config scripts/recent/seed-user-inventory-from-catalog.ts"
   },
   "dependencies": {
     "@golevelup/ts-jest": "^0.7.0",
