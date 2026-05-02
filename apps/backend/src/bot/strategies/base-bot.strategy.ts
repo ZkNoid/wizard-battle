@@ -37,6 +37,9 @@ export abstract class BaseBotStrategy implements IBotStrategy {
   protected readonly mapSize = MAP_SIZE;
   protected readonly maxSelectedSkills = 4;
 
+  /** Full game state preserved across rounds — drives real Stater physics. */
+  protected botStater: Stater | null = null;
+
   // ── Abstract ─────────────────────────────────────────────────────────────────
 
   /** Returns the specific wizard this strategy plays. */
@@ -79,6 +82,7 @@ export abstract class BaseBotStrategy implements IBotStrategy {
     botState.map = this.generateRandomTilemap();
 
     const stater = new Stater({ state: botState });
+    this.botStater = stater;
     const publicState = stater.generatePublicState();
 
     return {
@@ -100,105 +104,87 @@ export abstract class BaseBotStrategy implements IBotStrategy {
   }
 
   /**
-   * @notice Simulates game-physics effects of all round actions on the bot's state.
-   * @dev This is universal game logic (damage, movement, healing) independent of
-   *      which wizard or strategy is used. Spell damage values mirror the frontend
-   *      game engine so trusted states stay consistent.
+   * @notice Applies all round actions to the bot's persisted Stater instance,
+   *         producing a properly updated trusted state using the real game engine.
+   * @dev Delegates to `Stater.applyActions` — covers ALL spells, endOfRoundEffects,
+   *      onEndEffects, publicStateEffects, cooldown reduction, dodge/accuracy/attack/defense.
+   *      Action caster/target IDs are remapped from string bot IDs to the numeric
+   *      Field IDs stored inside the bot's state, so o1js Field construction succeeds.
+   *      Falls back to the unchanged current state on any error (e.g. no o1js in tests).
    */
   generateTrustedState(
     botId: string,
     currentState: IPublicState,
-    allActions: { [playerId: string]: IUserActions }
+    allActions: { [playerId: string]: IUserActions },
+    opponentPublicState?: IPublicState
   ): ITrustedState {
     const stateCommit = `bot_commit_${botId}_${Date.now()}_${Math.random()}`;
     const signature = `bot_trusted_signature_${botId}_${Date.now()}`;
 
     try {
-      const parsed = JSON.parse(currentState.fields);
+      if (!this.botStater) throw new Error('botStater not initialized');
 
-      let botHP = parseInt(parsed?.playerStats?.hp?.magnitude ?? '100');
-      let botX = parseInt(parsed?.playerStats?.position?.value?.x?.magnitude ?? '0');
-      let botY = parseInt(parsed?.playerStats?.position?.value?.y?.magnitude ?? '0');
+      // ── Reconstruct opponent State from their public JSON ─────────────────────
+      let opponentState: State = State.default();
+      if (opponentPublicState?.fields) {
+        try {
+          opponentState = State.fromJSON(
+            JSON.parse(opponentPublicState.fields)
+          ) as unknown as State;
+        } catch {
+          /* keep default */
+        }
+      }
 
-      const manhattan = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-        Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+      // ── Resolve numeric Field IDs for action remapping ────────────────────────
+      // Bot ID in state is the numeric Field serialised as a string (e.g. "1").
+      // Actions from buildSpellAction carry the raw string botId (e.g. "bot_1").
+      // We remap so Field(caster) / Field(target) succeed inside applyActions.
+      const botNumericId = this.botStater.state.playerId.toString();
+      let opponentNumericId = '0';
+      if (opponentPublicState?.fields) {
+        try {
+          const oppFields = JSON.parse(opponentPublicState.fields);
+          opponentNumericId = String(oppFields.playerId ?? '0');
+        } catch {
+          /* keep '0' */
+        }
+      }
 
-      // Resolve spell IDs needed for physics simulation (universal game knowledge)
-      const spellIds = this.resolveSpellIds();
+      // ── Merge all players' actions into one batch with remapped IDs ───────────
+      const remappedActions: IUserAction[] = [];
+      for (const [pid, ua] of Object.entries(allActions || {})) {
+        const casterId =
+          pid === botId ? botNumericId : opponentNumericId;
 
-      // ── Apply opponent actions → damage bot ───────────────────────────────────
-      let damagedThisRound = false;
-      const preActionPos = { x: botX, y: botY };
-
-      for (const [playerId, ua] of Object.entries(allActions || {})) {
-        if (playerId === botId) continue;
         for (const action of ua?.actions ?? []) {
           if (!action) continue;
-          let targetX = 0;
-          let targetY = 0;
-          try {
-            const info = JSON.parse(action.spellCastInfo || '{}');
-            targetX = parseInt(info?.position?.x?.magnitude ?? '0');
-            targetY = parseInt(info?.position?.y?.magnitude ?? '0');
-          } catch { /* ignore parse errors */ }
+          // If the action targets the bot (by string or numeric ID), map to bot's numeric ID
+          const isTargetingBot =
+            action.playerId === botId ||
+            action.playerId === botNumericId;
 
-          const dist = manhattan(preActionPos, { x: targetX, y: targetY });
-
-          // Accept both hashed IDs and human-readable names from tests
-          const isFireball =
-            action.spellId === spellIds.FIREBALL_ID || action.spellId === 'FireBall';
-          const isLightning =
-            action.spellId === spellIds.LIGHTNING_ID ||
-            action.spellId === 'Lightning' ||
-            action.spellId === 'LightningBold';
-
-          if (isFireball) {
-            const before = botHP;
-            if (dist === 0) botHP = Math.max(0, botHP - 60);
-            else if (dist === 1) botHP = Math.max(0, botHP - 40);
-            else if (dist === 2) botHP = Math.max(0, botHP - 20);
-            if (botHP !== before) damagedThisRound = true;
-          } else if (isLightning) {
-            const before = botHP;
-            if (dist === 0) botHP = Math.max(0, botHP - 100);
-            else if (dist === 1) botHP = Math.max(0, botHP - 50);
-            if (botHP !== before) damagedThisRound = true;
-          }
+          remappedActions.push({
+            ...action,
+            caster: casterId,
+            playerId: isTargetingBot ? botNumericId : opponentNumericId,
+          });
         }
       }
 
-      // ── Apply bot's own actions → movement / healing ──────────────────────────
-      for (const action of allActions?.[botId]?.actions ?? []) {
-        if (!action?.spellId) continue;
-        if (action.spellId === spellIds.TELEPORT_ID) {
-          try {
-            const info = JSON.parse(action.spellCastInfo || '{}');
-            const tx = parseInt(info?.position?.x?.magnitude ?? '0');
-            const ty = parseInt(info?.position?.y?.magnitude ?? '0');
-            if (Number.isFinite(tx) && Number.isFinite(ty)) {
-              botX = tx;
-              botY = ty;
-            }
-          } catch { /* ignore */ }
-        } else if (action.spellId === spellIds.HEAL_ID && !damagedThisRound) {
-          // To make damage visible to clients/tests, skip immediate heal if bot took damage this round
-          botHP = Math.min(100, botHP + 100);
-        }
-      }
+      const mergedUserActions: IUserActions = {
+        actions: remappedActions,
+        signature: '',
+      };
 
-      // ── Write back updated values ─────────────────────────────────────────────
-      if (parsed?.playerStats?.hp) {
-        parsed.playerStats.hp.magnitude = botHP.toString();
-        parsed.playerStats.hp.sgn = 'Positive';
-      }
-      if (parsed?.playerStats?.position?.value?.x) {
-        parsed.playerStats.position.value.x.magnitude = botX.toString();
-        parsed.playerStats.position.value.x.sgn = 'Positive';
-      }
-      if (parsed?.playerStats?.position?.value?.y) {
-        parsed.playerStats.position.value.y.magnitude = botY.toString();
-        parsed.playerStats.position.value.y.sgn = 'Positive';
-      }
+      // ── Apply via real game engine ────────────────────────────────────────────
+      // Handles ALL spells (not just FireBall/Lightning), effects pipeline,
+      // cooldown reduction, dodge/accuracy/attack/defense multipliers, and
+      // random-seed advancement — identical to the frontend Stater flow.
+      const newPublicState = this.botStater.applyActions(
+        mergedUserActions,
+        opponentState
+      );
 
       return {
         playerId: botId,
@@ -206,11 +192,15 @@ export abstract class BaseBotStrategy implements IBotStrategy {
         publicState: {
           socketId: currentState.socketId,
           playerId: botId,
-          fields: JSON.stringify(parsed),
+          fields: JSON.stringify(State.toJSON(newPublicState)),
         },
         signature,
       };
-    } catch {
+    } catch (err) {
+      console.error(
+        `[BotStrategy] generateTrustedState error, returning unchanged state:`,
+        err
+      );
       return {
         playerId: botId,
         stateCommit,

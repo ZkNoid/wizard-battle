@@ -469,7 +469,8 @@ export class BotClient {
     const trustedState = this.strategy.generateTrustedState(
       this.botId,
       this.currentState,
-      this.lastAllActions || {}
+      this.lastAllActions || {},
+      this.opponentState || undefined
     );
 
     // Update current state

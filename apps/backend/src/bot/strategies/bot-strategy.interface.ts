@@ -16,6 +16,7 @@ export interface IBotStrategy {
   generateTrustedState(
     botId: string,
     currentState: IPublicState,
-    allActions: { [playerId: string]: IUserActions }
+    allActions: { [playerId: string]: IUserActions },
+    opponentPublicState?: IPublicState
   ): ITrustedState;
 }
