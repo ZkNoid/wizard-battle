@@ -4,6 +4,7 @@ import { PhantomDuelistBotStrategy } from './phantom-duelist-bot.strategy';
 import { State } from '../../../../common/stater/state';
 import { IPublicState } from '../../../../common/types/matchmaking.types';
 import { IUserActions } from '../../../../common/types/gameplay.types';
+import { allSpells } from '../../../../common/stater/spells';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -383,18 +384,18 @@ describe('MageBotStrategy — generateActions', () => {
     expect(result.actions).toHaveLength(0);
   });
 
-  it('first action is Teleport when Teleport is available', () => {
-    const { TELEPORT_ID } = (strategy as any).resolveSpellIds();
-    if (!TELEPORT_ID) return; // Mage should always have teleport
-
+  it('first action is an ally spell (repositioning) when one is available', () => {
     const available = (strategy as any).getAvailableSpells(botState);
-    const hasTeleport = available.some(
-      (s: any) => s.spellId.toString() === TELEPORT_ID
+    const allySpellIds = allSpells
+      .filter((s) => s.target === 'ally')
+      .map((s) => s.id.toString());
+    const hasAllySpell = available.some((s: any) =>
+      allySpellIds.includes(s.spellId.toString())
     );
 
-    if (hasTeleport) {
+    if (hasAllySpell) {
       const result = strategy.generateActions(BOT_ID, botState, oppState);
-      expect(result.actions[0]?.spellId).toBe(TELEPORT_ID);
+      expect(allySpellIds).toContain(result.actions[0]?.spellId);
     }
   });
 });
@@ -458,12 +459,16 @@ describe('PhantomDuelistBotStrategy — generateActions', () => {
     expect(result.actions).toHaveLength(0);
   });
 
-  it('includes heal when HP <= 60 and heal is available', () => {
-    const { HEAL_ID } = (strategy as any).resolveSpellIds();
+  it('includes an ally spell when HP <= 60 and an ally spell is available', () => {
     const available = (strategy as any).getAvailableSpells(botState);
-    const hasHeal = available.some((s: any) => s.spellId.toString() === HEAL_ID);
+    const allySpellIds = allSpells
+      .filter((s) => s.target === 'ally')
+      .map((s) => s.id.toString());
+    const hasAllySpell = available.some((s: any) =>
+      allySpellIds.includes(s.spellId.toString())
+    );
 
-    if (!hasHeal || !HEAL_ID) return; // skip if PhantomDuelist has no heal
+    if (!hasAllySpell) return; // skip if wizard has no ally spells available
 
     const parsed = JSON.parse(botState.fields);
     if (parsed?.playerStats?.hp) {
@@ -476,12 +481,19 @@ describe('PhantomDuelistBotStrategy — generateActions', () => {
 
     const result = strategy.generateActions(BOT_ID, lowHpState);
 
-    expect(result.actions.some((a) => a.spellId === HEAL_ID)).toBe(true);
+    expect(result.actions.some((a) => allySpellIds.includes(a.spellId))).toBe(true);
   });
 
-  it('does not include heal when HP > 60', () => {
-    const { HEAL_ID } = (strategy as any).resolveSpellIds();
-    if (!HEAL_ID) return;
+  it('does not use an ally spell as first action when HP > 60', () => {
+    const available = (strategy as any).getAvailableSpells(botState);
+    const enemySpellIds = allSpells
+      .filter((s) => s.target === 'enemy')
+      .map((s) => s.id.toString());
+    const hasEnemySpell = available.some((s: any) =>
+      enemySpellIds.includes(s.spellId.toString())
+    );
+
+    if (!hasEnemySpell) return;
 
     const parsed = JSON.parse(botState.fields);
     if (parsed?.playerStats?.hp) {
@@ -494,11 +506,9 @@ describe('PhantomDuelistBotStrategy — generateActions', () => {
 
     const result = strategy.generateActions(BOT_ID, fullHpState);
 
-    // Heal should not be the chosen spell when HP is high
-    const attackActions = result.actions.filter((a) => a.spellId !== HEAL_ID);
-    // If any actions exist, at least one should be an attack
+    // When HP is full, at least one action should be an attack (enemy spell)
     if (result.actions.length > 0) {
-      expect(attackActions.length).toBeGreaterThan(0);
+      expect(result.actions.some((a) => enemySpellIds.includes(a.spellId))).toBe(true);
     }
   });
 });

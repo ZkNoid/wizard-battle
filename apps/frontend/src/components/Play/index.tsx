@@ -6,7 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ModeSelect } from './ModeSelect';
 import { Navigation } from './Navigation';
 import { PlayMode } from '@/lib/enums/PlayMode';
+import { BotType } from '@/lib/enums/BotType';
 import CharacterSelect from '@/components/CharacterSelect';
+import { BotSelect } from './BotSelect';
 import { cn, spellIdToSpell } from '@/lib/utils';
 import MapEditor from '@/components/MapEditor';
 import Matchmaking from './Matchmaking';
@@ -22,6 +24,7 @@ export default function Play() {
   const tournamentBootstrapRef = useRef(false);
   const [playStep, setPlayStep] = useState<PlaySteps>(PlaySteps.SELECT_MODE);
   const [playMode, setPlayMode] = useState<PlayMode | undefined>(undefined);
+  const [botType, setBotType] = useState<BotType>(BotType.MAGE);
   const searchParams = useSearchParams();
 
   // Extract rewards from URL params if present (Gold only for now)
@@ -70,6 +73,7 @@ export default function Play() {
             <Navigation
               playStep={playStep}
               setPlayStep={setPlayStep}
+              playMode={playMode}
               className={cn(playStep === PlaySteps.SELECT_CHARACTER && 'pl-25')}
             />
           )}
@@ -79,6 +83,7 @@ export default function Play() {
           {playStep === PlaySteps.SELECT_CHARACTER && (
             <CharacterSelect
               setPlayStep={setPlayStep}
+              playMode={playMode}
               currentWizard={
                 allWizards.find(
                   (wizard) =>
@@ -90,11 +95,15 @@ export default function Play() {
               setSelectedSkills={setSelectedSkills}
             />
           )}
+          {playStep === PlaySteps.SELECT_BOT && (
+            <BotSelect setPlayStep={setPlayStep} setBotType={setBotType} />
+          )}
           {playStep === PlaySteps.SELECT_MAP && <MapEditor />}
           {playStep === PlaySteps.MATCHMAKING && (
             <Matchmaking
               setPlayStep={setPlayStep}
               playMode={playMode ?? PlayMode.PVP}
+              botType={botType}
             />
           )}
           {(playStep === PlaySteps.LOSE || playStep === PlaySteps.WIN) && (

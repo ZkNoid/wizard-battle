@@ -5,6 +5,7 @@ import type { IWizard, ISkill } from '@/lib/types/IWizard';
 import { SkillsBg } from './assets/skills-bg';
 import { Button } from '../shared/Button';
 import { PlaySteps } from '@/lib/enums/PlaySteps';
+import { PlayMode } from '@/lib/enums/PlayMode';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { MAX_SELECTED_SKILLS } from '@/lib/constants/wizards';
@@ -25,12 +26,14 @@ import type {
 
 export default function CharacterSelect({
   setPlayStep,
+  playMode,
   currentWizard,
   setCurrentWizard,
   selectedSkills,
   setSelectedSkills,
 }: {
   setPlayStep: (playStep: PlaySteps) => void;
+  playMode?: PlayMode;
   currentWizard: Wizard;
   setCurrentWizard: (wizard: Wizard) => void;
   selectedSkills: SpellStats[];
@@ -197,7 +200,11 @@ export default function CharacterSelect({
                 trackEvent(AnalyticsEvents.SKILL_SELECTED, skillRow);
               }
 
-              setPlayStep(PlaySteps.SELECT_MAP);
+              setPlayStep(
+                playMode === PlayMode.PVE
+                  ? PlaySteps.SELECT_BOT
+                  : PlaySteps.SELECT_MAP
+              );
             }}
             isLong={true}
           >

@@ -231,30 +231,39 @@ export abstract class BaseBotStrategy implements IBotStrategy {
 
   /**
    * @notice Constructs a single IUserAction for the given spell.
-   * @dev Determines ally/enemy targeting and position payload from spell type.
-   *      Teleport → ally map + random position near current spot
-   *      Heal     → ally map, no position
-   *      All else → enemy map + random target position
-   * @param targetPos Override target position; random if omitted
+   * @dev Uses the spell's `target` field from `allSpells` to determine
+   *      ally vs enemy targeting — works correctly for every wizard.
+   *      Ally spells → self targeting + position payload (position-less
+   *      Structs such as HealData / ShadowVeilData safely ignore extra fields).
+   *      Enemy spells → opponent targeting + position.
+   *
+   *      If the spell defines `castedArea(x, y)` and `botCurrentState` is
+   *      provided, the bot's current position is extracted and only valid
+   *      cast positions are considered — identical to the client-side check.
+   *
+   * @param targetPos    Explicit override position; skips castedArea validation.
+   * @param botCurrentState  Bot's own public state — required for castedArea.
    */
   protected buildSpellAction(
     botId: string,
     spellId: string,
     opponentState?: IPublicState,
-    targetPos?: { x: number; y: number }
+    targetPos?: { x: number; y: number },
+    botCurrentState?: IPublicState,
   ): IUserAction {
     const spellName = this.getSpellName(spellId);
-    const spellIds = this.resolveSpellIds();
+    const spellDef = allSpells.find((s) => s.id.toString() === spellId);
+    const isAllySpell = spellDef?.target === 'ally';
 
-    const randomPos = targetPos ?? {
-      x: Math.floor(Math.random() * this.mapSize),
-      y: Math.floor(Math.random() * this.mapSize),
-    };
+    // Resolve a valid target position for this spell.
+    const pos = targetPos ?? this.resolveTargetPosition(spellDef, botCurrentState);
 
     console.log(`🤖 Bot ${botId} casting ${spellName} (ID: ${spellId})`);
 
-    if (spellId === spellIds.TELEPORT_ID) {
-      const dest = this.generateRandomPosition(randomPos);
+    if (isAllySpell) {
+      // Ally spell: target self. Always include position — Structs that don't
+      // define a position field (e.g. HealData, ShadowVeilData) ignore it safely.
+      const dest = this.generateRandomPosition(pos);
       return {
         caster: botId,
         playerId: botId,
@@ -268,27 +277,84 @@ export abstract class BaseBotStrategy implements IBotStrategy {
       };
     }
 
-    if (spellId === spellIds.HEAL_ID) {
-      return {
-        caster: botId,
-        playerId: botId,
-        spellId,
-        spellCastInfo: JSON.stringify({}),
-      };
-    }
-
-    // Attack spell → target enemy map
+    // Enemy spell → target opponent map
     return {
       caster: botId,
       playerId: opponentState?.playerId ?? botId,
       spellId,
       spellCastInfo: JSON.stringify({
         position: {
-          x: { magnitude: randomPos.x.toString(), sgn: 'Positive' },
-          y: { magnitude: randomPos.y.toString(), sgn: 'Positive' },
+          x: { magnitude: pos.x.toString(), sgn: 'Positive' },
+          y: { magnitude: pos.y.toString(), sgn: 'Positive' },
         },
       }),
     };
+  }
+
+  /**
+   * @notice Resolves a valid target position for a spell cast.
+   * @dev If the spell defines `castedArea` and the bot state is available,
+   *      extracts the caster's current position and picks randomly from the
+   *      valid positions returned by `castedArea(x, y)`.
+   *      Falls back to a fully random map position when castedArea is absent,
+   *      the valid set is empty, or the bot state cannot be parsed.
+   */
+  private resolveTargetPosition(
+    spellDef: (typeof allSpells)[number] | undefined,
+    botCurrentState?: IPublicState,
+  ): { x: number; y: number } {
+    const fallback = () => ({
+      x: Math.floor(Math.random() * this.mapSize),
+      y: Math.floor(Math.random() * this.mapSize),
+    });
+
+    if (!spellDef?.castedArea || !botCurrentState) return fallback();
+
+    const casterPos = this.getPositionFromState(botCurrentState);
+    if (!casterPos) return fallback();
+
+    const validPositions = spellDef.castedArea(casterPos.x, casterPos.y);
+    if (validPositions.length === 0) return fallback();
+
+    return validPositions[Math.floor(Math.random() * validPositions.length)]!;
+  }
+
+  /**
+   * @notice Extracts the (x, y) position from a serialised IPublicState.
+   * @returns Numeric coords, or null if parsing fails.
+   */
+  protected getPositionFromState(
+    state: IPublicState,
+  ): { x: number; y: number } | null {
+    try {
+      const parsed = JSON.parse(state.fields);
+      const pos = parsed?.playerStats?.position?.value;
+      const x = parseInt(pos?.x?.magnitude ?? '');
+      const y = parseInt(pos?.y?.magnitude ?? '');
+      if (isNaN(x) || isNaN(y)) return null;
+      return { x, y };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * @notice Splits available spells into ally-targeting and enemy-targeting buckets.
+   * @dev Uses the canonical `target` field from `allSpells` — no wizard-specific
+   *      spell-name assumptions.
+   */
+  protected splitSpells(available: SpellStats[]): {
+    allySpells: SpellStats[];
+    enemySpells: SpellStats[];
+  } {
+    const allySpells: SpellStats[] = [];
+    const enemySpells: SpellStats[] = [];
+    for (const s of available) {
+      const def = allSpells.find((d) => d.id.toString() === s.spellId.toString());
+      if (def?.target === 'ally') allySpells.push(s);
+      else enemySpells.push(s);
+    }
+    return { allySpells, enemySpells };
   }
 
   /**
@@ -325,20 +391,6 @@ export abstract class BaseBotStrategy implements IBotStrategy {
     while (selected.length < 5) selected.push(empty());
 
     return selected;
-  }
-
-  /**
-   * @notice Resolves global spell IDs by name.
-   * @dev Used in `generateTrustedState` for physics simulation and in
-   *      `buildSpellAction` for targeting. Not an action-selection concern.
-   */
-  protected resolveSpellIds() {
-    return {
-      FIREBALL_ID:  allSpells.find((s) => s.name === 'FireBall')?.id.toString(),
-      LIGHTNING_ID: allSpells.find((s) => s.name === 'Lightning')?.id.toString(),
-      TELEPORT_ID:  allSpells.find((s) => s.name === 'Teleport')?.id.toString(),
-      HEAL_ID:      allSpells.find((s) => s.name === 'Heal')?.id.toString(),
-    };
   }
 
   protected generateRandomTilemap(): any[] {

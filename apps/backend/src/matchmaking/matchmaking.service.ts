@@ -24,6 +24,10 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { RedisClientType } from 'redis';
 import { GameStateService } from '../game-session/game-state.service';
 import { BotClientService } from '../bot/bot-client.service';
+import { MageBotStrategy } from '../bot/strategies/mage-bot.strategy';
+import { ArcherBotStrategy } from '../bot/strategies/archer-bot.strategy';
+import { PhantomDuelistBotStrategy } from '../bot/strategies/phantom-duelist-bot.strategy';
+import { IBotStrategy } from '../bot/strategies/bot-strategy.interface';
 import { RedisService } from '../redis/redis.service';
 import { TournamentResultRecorderService } from '../tournament/services/index.js';
 import {
@@ -1529,7 +1533,8 @@ export class MatchmakingService {
    */
   async joinBotMatchmaking(
     socket: Socket,
-    addToQueue: IAddToQueue
+    addToQueue: IAddToQueue,
+    botType: string = 'mage'
   ): Promise<string | null> {
     if (!this.botClientService) {
       console.error('Bot client service not available');
@@ -1570,10 +1575,27 @@ export class MatchmakingService {
       const botPort = process.env.APP_PORT || '3030';
       const botServerUrl = `http://localhost:${botPort}`;
       console.log('[DEBUG] Bot connecting to internal URL:', botServerUrl);
+      // Pick strategy based on user's bot selection
+      let strategy: IBotStrategy;
+      switch (botType) {
+        case 'archer':
+          strategy = new ArcherBotStrategy();
+          break;
+        case 'phantom-duelist':
+          strategy = new PhantomDuelistBotStrategy();
+          break;
+        case 'mage':
+        default:
+          strategy = new MageBotStrategy();
+          break;
+      }
+      console.log(`🤖 Using strategy for botType="${botType}": ${strategy.constructor.name}`);
+
       // Create and connect bot client
       const botClient = await this.botClientService.createBotClient(
         botId,
-        botServerUrl
+        botServerUrl,
+        strategy
       );
 
       // Get bot setup

@@ -8,8 +8,9 @@ const LOW_HP_THRESHOLD = 60;
 /**
  * @title Phantom Duelist Bot Strategy
  * @notice Bot strategy for the Phantom Duelist wizard.
- * @dev Action pattern: heal first when HP is low, otherwise attack.
- *      High defense allows tanking hits, so no teleport priority.
+ * @dev Action pattern: use a defensive ally spell (ShadowVeil etc.) when HP is
+ *      low, otherwise attack. Uses generic ally/enemy split — no hardcoded IDs.
+ *      Phantom Duelist has no Heal; its ally spells are utility/stealth buffs.
  */
 export class PhantomDuelistBotStrategy extends BaseBotStrategy {
   protected getWizard(): Wizard {
@@ -28,32 +29,29 @@ export class PhantomDuelistBotStrategy extends BaseBotStrategy {
     const available = this.getAvailableSpells(currentState);
     if (available.length === 0) return [];
 
-    const { HEAL_ID } = this.resolveSpellIds();
+    const { allySpells, enemySpells } = this.splitSpells(available);
     const actions: IUserAction[] = [];
 
-    // Read current HP to decide whether to prioritise healing
+    // Read current HP to decide whether to use a defensive ally spell
     let currentHP = 100;
     try {
       const parsed = JSON.parse(currentState.fields);
       currentHP = parseInt(parsed?.playerStats?.hp?.magnitude ?? '100');
     } catch { /* use default */ }
 
-    const healSpell = available.find((s) => s.spellId.toString() === HEAL_ID);
-    const attackSpells = available.filter((s) => s.spellId.toString() !== HEAL_ID);
-
-    if (currentHP <= LOW_HP_THRESHOLD && healSpell) {
-      // Prioritise heal when low on HP
+    if (currentHP <= LOW_HP_THRESHOLD && allySpells.length > 0) {
+      // Prioritise a defensive/utility ally spell (ShadowVeil, SpectralProjection…)
+      const pick = allySpells[Math.floor(Math.random() * allySpells.length)]!;
       actions.push(
-        this.buildSpellAction(botId, healSpell.spellId.toString(), opponentState)
+        this.buildSpellAction(botId, pick.spellId.toString(), opponentState, undefined, currentState)
       );
     }
 
-    // Fill remaining slot(s) with a random attack spell
-    if (actions.length < 2 && attackSpells.length > 0) {
-      const pick =
-        attackSpells[Math.floor(Math.random() * attackSpells.length)]!;
+    // Fill remaining slot with a random enemy attack spell
+    if (actions.length < 2 && enemySpells.length > 0) {
+      const pick = enemySpells[Math.floor(Math.random() * enemySpells.length)]!;
       actions.push(
-        this.buildSpellAction(botId, pick.spellId.toString(), opponentState)
+        this.buildSpellAction(botId, pick.spellId.toString(), opponentState, undefined, currentState)
       );
     }
 

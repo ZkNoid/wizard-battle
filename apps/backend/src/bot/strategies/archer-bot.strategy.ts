@@ -34,7 +34,7 @@ export class ArcherBotStrategy extends BaseBotStrategy {
       const idx = Math.floor(Math.random() * pool.length);
       const spell = pool.splice(idx, 1)[0]!;
       actions.push(
-        this.buildSpellAction(botId, spell.spellId.toString(), opponentState)
+        this.buildSpellAction(botId, spell.spellId.toString(), opponentState, undefined, currentState)
       );
     }
 

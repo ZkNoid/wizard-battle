@@ -2,6 +2,7 @@
 
 import { PlaySteps } from '@/lib/enums/PlaySteps';
 import { PlayMode } from '@/lib/enums/PlayMode';
+import { BotType } from '@/lib/enums/BotType';
 import { ModeBg } from './assets/mode-bg';
 import { Button } from '../shared/Button';
 import { TimeIcon } from './assets/time-icon';
@@ -34,9 +35,11 @@ import type {
 export default function Matchmaking({
   setPlayStep,
   playMode,
+  botType,
 }: {
   setPlayStep: (playStep: PlaySteps) => void;
   playMode: PlayMode;
+  botType?: BotType;
 }) {
   const router = useRouter();
   const { address } = useMinaAppkit();
@@ -200,6 +203,7 @@ export default function Matchmaking({
       if (playMode === PlayMode.PVE) {
         socket.emit('joinBotMatchmaking', {
           addToQueue: data,
+          botType: botType ?? BotType.MAGE,
         });
       } else if (tournamentId) {
         const tournamentPayload: ITournamentAddToQueue = {

@@ -1,13 +1,14 @@
 import { IPublicState } from '../../../../common/types/matchmaking.types';
 import { IUserAction } from '../../../../common/types/gameplay.types';
 import { Wizard, allWizards, WizardId } from '../../../../common/wizards';
+import { allSpells } from '../../../../common/stater/spells';
 import { BaseBotStrategy } from './base-bot.strategy';
 
 /**
  * @title Mage Bot Strategy
  * @notice Bot strategy for the Mage wizard.
- * @dev Action pattern: always teleport first (reposition), then cast a random
- *      non-teleport spell (attack or heal).
+ * @dev Action pattern: reposition with a movement ally spell first, then cast
+ *      a random enemy spell. Uses generic ally/enemy split — no hardcoded IDs.
  */
 export class MageBotStrategy extends BaseBotStrategy {
   protected getWizard(): Wizard {
@@ -26,27 +27,27 @@ export class MageBotStrategy extends BaseBotStrategy {
     const available = this.getAvailableSpells(currentState);
     if (available.length === 0) return [];
 
-    const { TELEPORT_ID } = this.resolveSpellIds();
+    const { allySpells, enemySpells } = this.splitSpells(available);
     const actions: IUserAction[] = [];
 
-    // 1st action: teleport to reposition before attacking
-    const teleport = available.find(
-      (s) => s.spellId.toString() === TELEPORT_ID
-    );
-    if (teleport) {
+    // 1st action: prefer a movement ally spell (Teleport) for repositioning.
+    // Falls back to any available ally spell if Teleport is on cooldown.
+    const moveSpell = allySpells.find((s) => {
+      const def = allSpells.find((d) => d.id.toString() === s.spellId.toString());
+      return def?.name === 'Teleport';
+    }) ?? allySpells[0];
+
+    if (moveSpell) {
       actions.push(
-        this.buildSpellAction(botId, teleport.spellId.toString(), opponentState)
+        this.buildSpellAction(botId, moveSpell.spellId.toString(), opponentState, undefined, currentState)
       );
     }
 
-    // 2nd action: random spell excluding teleport
-    const others = available.filter(
-      (s) => s.spellId.toString() !== TELEPORT_ID
-    );
-    if (others.length > 0) {
-      const pick = others[Math.floor(Math.random() * others.length)]!;
+    // 2nd action: random enemy spell
+    if (enemySpells.length > 0) {
+      const pick = enemySpells[Math.floor(Math.random() * enemySpells.length)]!;
       actions.push(
-        this.buildSpellAction(botId, pick.spellId.toString(), opponentState)
+        this.buildSpellAction(botId, pick.spellId.toString(), opponentState, undefined, currentState)
       );
     }
 

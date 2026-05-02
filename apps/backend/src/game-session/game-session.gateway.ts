@@ -219,7 +219,7 @@ export class GameSessionGateway {
    */
   async handleJoinBotMatchmaking(
     socket: Socket,
-    data: { addToQueue: IAddToQueue }
+    data: { addToQueue: IAddToQueue; botType?: string }
   ) {
     if (!this.gameStateService.isRedisReady()) {
       console.warn('joinBotMatchmaking rejected: Redis not ready');
@@ -238,7 +238,8 @@ export class GameSessionGateway {
 
     return await this.matchmakingService.joinBotMatchmaking(
       socket,
-      data.addToQueue
+      data.addToQueue,
+      data.botType
     );
   }
 
