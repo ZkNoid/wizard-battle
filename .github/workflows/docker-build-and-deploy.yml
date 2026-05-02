@@ -36,6 +36,7 @@ jobs:
           NEXT_PUBLIC_PROJECT_URL: ${{ secrets.NEXT_PUBLIC_PROJECT_URL }}
           NEXT_PUBLIC_GAME_REGISTRY_ADDRESS: ${{ secrets.NEXT_PUBLIC_GAME_REGISTRY_ADDRESS }}
           EVM_RPC_URL: ${{ secrets.EVM_RPC_URL }}
+          ENVIO_GRAPHQL_URL: ${{ secrets.ENVIO_GRAPHQL_URL }}
         run: pnpm turbo run build
   deploy:
     needs: test-build
