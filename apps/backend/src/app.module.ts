@@ -18,6 +18,7 @@ import { RewardModule } from './reward/reward.module';
 import { UserModule } from './user/user.module';
 import { QuestsModule } from './quests/quests.module';
 import { MarketModule } from './market/market.module';
+import { NftModule } from './nft/nft.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { MarketModule } from './market/market.module';
     UserModule,
     QuestsModule,
     MarketModule,
+    NftModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, RedisHealthService, GameStateService],
