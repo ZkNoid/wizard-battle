@@ -495,6 +495,17 @@ export function useGameMarket() {
     [fillOrder, previewTotalPrice, approveERC20]
   );
 
+  // ERC1155 payment tokens require setApprovalForAll, not ERC20 approve.
+  // Contract fillOrder uses IERC1155.safeTransferFrom when paymentTokenId > 0.
+  // Note: contract transfers only `price` to maker for ERC1155 (no fee collection).
+  const buyWithERC1155 = useCallback(
+    async (orderId: bigint, paymentToken: `0x${string}`) => {
+      await approveNFT(paymentToken, true);
+      return fillOrder({ orderId });
+    },
+    [fillOrder, approveNFT]
+  );
+
   return {
     // State
     address,
@@ -521,5 +532,6 @@ export function useGameMarket() {
     // Convenience methods
     buyWithETH,
     buyWithERC20,
+    buyWithERC1155,
   };
 }
