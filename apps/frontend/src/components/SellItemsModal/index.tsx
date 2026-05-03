@@ -23,7 +23,7 @@ const GAME_REGISTRY_ADDRESS = process.env
 const USDC_TOKEN_ADDRESS = process.env
   .NEXT_PUBLIC_USDC_TOKEN_ADDRESS as `0x${string}`;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
-const GOLD_RESOURCE_ID = 'gold';
+const GOLD_RESOURCE_ID = 'Gold';
 
 interface SellItemsModalProps {
   onClose: () => void;
@@ -42,7 +42,7 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [itemType, setItemType] = useState('');
-  const [currency, setCurrency] = useState('gold');
+  const [currency, setCurrency] = useState('Gold');
   const [price, setPrice] = useState('');
   const [isPlacing, setIsPlacing] = useState(false);
 
@@ -81,7 +81,7 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
 
       const priceWei = parseEther(price);
 
-      const isGoldPayment = currency === 'gold';
+      const isGoldPayment = currency === 'Gold';
       const goldResourceHash = keccak256(toBytes(GOLD_RESOURCE_ID));
       const goldElement = isGoldPayment
         ? await getGameElement(goldResourceHash)
