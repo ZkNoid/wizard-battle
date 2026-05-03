@@ -73,9 +73,7 @@ type ItemType = 'armor' | 'craft' | 'gems';
 type XlsxRow = Record<string, string | number | undefined | null>;
 
 type GameRegistryContract = ethers.Contract & {
-  getGameElementName(
-    name: string
-  ): Promise<{
+  getGameElementName(name: string): Promise<{
     tokenAddress: string;
     tokenId: bigint;
     requiresTokenId: boolean;
@@ -336,7 +334,7 @@ async function main() {
 
   const InventoryItemSchema = new mongoose.Schema(
     {},
-    { strict: false, collection: 'iteminventory' }
+    { strict: false, collection: 'inventoryitems' }
   );
   const InventoryItem =
     (mongoose.models.InventoryItemImport as mongoose.Model<

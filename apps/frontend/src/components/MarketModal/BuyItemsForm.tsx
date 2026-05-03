@@ -38,7 +38,7 @@ export function BuyItemsForm({
   const [isBuying, setIsBuying] = useState(false);
 
   const { openOrders, isLoadingOrders } = useMarketStore();
-  const { buyWithETH, buyWithERC20, isPending } = useGameMarket();
+  const { buyWithETH, buyWithERC20, buyWithERC1155, isPending } = useGameMarket();
 
   const items = useMemo<IMarketBuyItem[]>(() => {
     return openOrders.map((order) => mapOrderToBuyItem(order));
@@ -58,7 +58,14 @@ export function BuyItemsForm({
       if (item.priceCurrency === 'eth') {
         await buyWithETH(orderId, priceWei);
       } else if (item.paymentToken) {
-        await buyWithERC20(orderId, priceWei, item.paymentToken as `0x${string}`);
+        const paymentTokenId = item.paymentTokenId ? BigInt(item.paymentTokenId) : 0n;
+        if (paymentTokenId > 0n) {
+          // ERC1155 payment token — requires setApprovalForAll
+          await buyWithERC1155(orderId, item.paymentToken as `0x${string}`);
+        } else {
+          // ERC20 payment token — requires approve
+          await buyWithERC20(orderId, priceWei, item.paymentToken as `0x${string}`);
+        }
       } else {
         console.error('Invalid order: missing paymentToken for ERC20 payment');
         return;
