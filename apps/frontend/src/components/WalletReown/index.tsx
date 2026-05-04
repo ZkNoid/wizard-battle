@@ -44,7 +44,10 @@ const targetNetwork = env.NEXT_PUBLIC_NETWORK_ID
     ) as typeof avalanche | undefined) ?? avalanche)
   : avalanche;
 
-export default function WalletReown({ className, buttonSize = 'lg' }: WalletReownProps = {}) {
+export default function WalletReown({
+  className,
+  buttonSize = 'lg',
+}: WalletReownProps = {}) {
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const { disconnect } = useDisconnect();
@@ -129,7 +132,15 @@ export default function WalletReown({ className, buttonSize = 'lg' }: WalletReow
       alert('This Mina account is already linked to a different EVM address.');
       disconnect();
     }
-  }, [isConnected, address, minaAddress, user, isSettingEvmAddress, setEvmAddress, disconnect]);
+  }, [
+    isConnected,
+    address,
+    minaAddress,
+    user,
+    isSettingEvmAddress,
+    setEvmAddress,
+    disconnect,
+  ]);
 
   const handleButtonClick = () => {
     if (isConnected) {
@@ -168,7 +179,7 @@ export default function WalletReown({ className, buttonSize = 'lg' }: WalletReow
           className="h-15 w-full gap-2 text-base font-bold"
         >
           <Image
-            src="/wallet/reown-icon.png"
+            src="/wallet/avax-icon.png"
             alt=""
             width={24}
             height={24}

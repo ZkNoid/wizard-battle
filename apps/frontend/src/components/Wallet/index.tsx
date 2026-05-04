@@ -221,7 +221,7 @@ export default function Wallet({
           className="h-15 w-full gap-2 text-base font-bold"
         >
           <Image
-            src="/wallet/wallet-icon.png"
+            src="/wallet/mina-icon.png"
             alt=""
             width={24}
             height={24}
