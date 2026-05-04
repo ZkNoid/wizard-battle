@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { parseEther } from 'viem';
 import ModalTitle from '../shared/ModalTitle';
 import { Button } from '../shared/Button';
@@ -15,6 +15,14 @@ import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionSt
 import { useGameMarket } from '@/lib/hooks/useGameMarket';
 import { MARKET_CURRENCY_OPTIONS } from '@/lib/constants/market';
 import type { IUserInventoryItem } from '@/lib/types/Inventory';
+import { api } from '@/trpc/react';
+import { useInventorySync } from '@/lib/hooks/useInventorySync';
+import { useMinaAppkit } from 'mina-appkit';
+import { useAppKitAccount } from '@reown/appkit/react';
+import { usePublicClient } from 'wagmi';
+
+/** Wait after commit tx confirms before re-reading chain + DB (indexing lag). */
+const POST_COMMIT_REFETCH_MS = 3000;
 
 function onchainQuantity(ui: IUserInventoryItem): number {
   const b = ui.onchainBalance;
@@ -23,8 +31,6 @@ function onchainQuantity(ui: IUserInventoryItem): number {
   return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
 }
 
-const GAME_REGISTRY_ADDRESS = process.env
-  .NEXT_PUBLIC_GAME_REGISTRY_ADDRESS as `0x${string}`;
 const USDC_TOKEN_ADDRESS = process.env
   .NEXT_PUBLIC_USDC_TOKEN_ADDRESS as `0x${string}`;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
@@ -37,7 +43,67 @@ interface SellItemsModalProps {
 export default function SellItemsModal({ onClose }: SellItemsModalProps) {
   useModalSound();
 
+  const { address: minaAddress } = useMinaAppkit();
+  const { address: evmAddress } = useAppKitAccount();
+  const publicClient = usePublicClient();
   const iteminventory = useInventoryStore((state) => state.iteminventory);
+  const loadUserInventory = useInventoryStore(
+    (state) => state.loadUserInventory
+  );
+  const loadOnchainBalances = useInventoryStore(
+    (state) => state.loadOnchainBalances
+  );
+
+  const syncAllMutation = api.inventory.syncAll.useMutation();
+  const { processInventoryData } = useInventorySync();
+  const postCommitRefetchTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (postCommitRefetchTimeoutRef.current) {
+        clearTimeout(postCommitRefetchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const runCommitInventory = useCallback(() => {
+    if (!minaAddress) return;
+    if (postCommitRefetchTimeoutRef.current) {
+      clearTimeout(postCommitRefetchTimeoutRef.current);
+      postCommitRefetchTimeoutRef.current = null;
+    }
+    syncAllMutation.mutate(
+      { userId: minaAddress },
+      {
+        onSuccess: async (data) => {
+          try {
+            await processInventoryData(data);
+          } catch (e) {
+            console.error('processInventoryData failed:', e);
+            return;
+          }
+          postCommitRefetchTimeoutRef.current = setTimeout(() => {
+            postCommitRefetchTimeoutRef.current = null;
+            void loadUserInventory(minaAddress);
+            if (evmAddress && publicClient) {
+              void loadOnchainBalances(evmAddress, publicClient);
+            }
+          }, POST_COMMIT_REFETCH_MS);
+        },
+        onError: (err) => console.error('syncAll error:', err),
+      }
+    );
+  }, [
+    minaAddress,
+    evmAddress,
+    publicClient,
+    syncAllMutation,
+    processInventoryData,
+    loadUserInventory,
+    loadOnchainBalances,
+  ]);
 
   const sellableInventory = useMemo(
     () => iteminventory.filter((ui) => onchainQuantity(ui) > 0),
@@ -202,6 +268,19 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
                 />
               </div>
             </div>
+
+            <p className="font-pixel-klein text-main-gray/80 -mt-1 text-center text-xs leading-relaxed">
+              If you do not see your items —{' '}
+              <button
+                type="button"
+                onClick={runCommitInventory}
+                disabled={!minaAddress || syncAllMutation.isPending}
+                className="font-pixel-klein text-sky-400 underline decoration-sky-400/80 underline-offset-2 transition-colors hover:text-sky-300 disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
+              >
+                commit
+              </button>{' '}
+              them first.
+            </p>
 
             {/* Currency + Amount */}
             <div className="flex flex-row gap-4">
