@@ -8,7 +8,7 @@ test:
 
 deployAll-fuji:; forge script script/DeployAll.s.sol:DeployAll --broadcast --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey --sender 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218 --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
 
-deployAll-avalanche:; forge script script/DeployAll.s.sol:DeployAll --broadcast --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod --sender 0x5b8704e82793cc9da874c64e845089a56ae5ed69 --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
+
 
 deployGR-sepolia:; forge script script/Deploy.s.sol:Deploy --rpc-url $(SEPOLIA_RPC_URL) --account devKey --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
 
@@ -146,15 +146,51 @@ test-anvil:
 
 ## Production
 
+deployAll-avalanche:; forge script script/DeployAll.s.sol:DeployAll  --broadcast --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod --sender 0x5b8704e82793cc9da874c64e845089a56ae5ed69 --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
+deployGR-avalanche:; forge script script/DeployGameRegistry.s.sol:DeployGameRegistry  --broadcast --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod --sender 0x5b8704e82793cc9da874c64e845089a56ae5ed69 --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
+## deployed addresses
 
+# GameRegestry implementation: 	0x20Bb9fC900eBdD70d5E50694FfcEE77cc723C5Cd
+# GameRegestry proxy:          	0xc9BBD19bde003dCcDC465ECF5Cfc100Fe6eE9B75
+
+# WBCharacter implementation: 	0x7B42b7aB63Ac8190B032cBEC18fb49500240C325
+# WBCharacter proxy:         	0x3284975ABbe4cA4C9f92ade76114C02C9d988334
+
+# WBResources implementation: 	0x412184d3696451eb17Ed38Af1aF3D8DA81b7c1FC
+# WBResources proxy:         	0x3adc98717F7126b1cBe9d3FE4375d4223e81CC18
+
+# WBCoin implementation: 		0x0C6F9E48743DE19A313E1D74C00337E628c1935d
+# WBCoin proxy:   				0xce0339Bc8F013ca7CD93A186e3Ed7Bcbc9b049c6
+
+# WBItems implementation:		0x7392130430677eBB78EfB74346B06eD2B8B5c66d
+# WBItems proxy:   				0x65A2F66a1CB852B91c13322bbd0786bBa6ECf9d3
+
+# GameMarket implementation:	0x01c55617741D343096bCA7e3E34AFC460642F479
+# GameMarket proxy:   			0x18750C93C1EA70479291B83ba5Abe7A78564324f
 
 ## Production post deploy
-postDeployAll-fuji:
-		cast send 0x55e1cCD651A3e3e0EfC6b61e8c94878cbe87F64B "setURI(string)" "https://wizard.zknoid.io/nft/characters/" --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod -vvvv
-		cast send 0xee52Ce7D2c46F8B728D74a030efCB78885F90E25 "setURI(string)" "https://wizard.zknoid.io/nft/resources/" --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod -vvvv
-		cast send 0x6fC43f3cf1B27199F52F160f05645b1541292484 "setURI(string)" "https://wizard.zknoid.io/nft/items/" --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod -vvvv
 
-postDeployGM-fuji:
-	cast send 0x8865d8738E37671138D5270A7B4befeE83DeE904 "setGameRegistry(address)" 0x4e590B45fB999d93e981af65eB6A4eC06652A04D --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod -vvvv
-	cast send 0x8865d8738E37671138D5270A7B4befeE83DeE904 "allowToken(address)" 0xee52Ce7D2c46F8B728D74a030efCB78885F90E25 --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod -vvvv
-	cast send 0x8865d8738E37671138D5270A7B4befeE83DeE904 "allowToken(address)" 0x5425890298aed601595a70AB815c96711a31Bc65 --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod -vvvv
+## Test
+test-prod:
+# GameMarket has GameRegistry set
+	cast call 0x18750C93C1EA70479291B83ba5Abe7A78564324f "getGameRegistry()" --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+
+# Admin Role
+	cast call 0xc9BBD19bde003dCcDC465ECF5Cfc100Fe6eE9B75 "hasRole(bytes32,address)" 0x0000000000000000000000000000000000000000000000000000000000000000 0x5b8704E82793CC9dA874c64E845089A56ae5eD69 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+	cast call 0x3284975ABbe4cA4C9f92ade76114C02C9d988334 "hasRole(bytes32,address)" 0x0000000000000000000000000000000000000000000000000000000000000000 0x5b8704E82793CC9dA874c64E845089A56ae5eD69 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+	cast call 0x3adc98717F7126b1cBe9d3FE4375d4223e81CC18 "hasRole(bytes32,address)" 0x0000000000000000000000000000000000000000000000000000000000000000 0x5b8704E82793CC9dA874c64E845089A56ae5eD69 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+	cast call 0xce0339Bc8F013ca7CD93A186e3Ed7Bcbc9b049c6 "hasRole(bytes32,address)" 0x0000000000000000000000000000000000000000000000000000000000000000 0x5b8704E82793CC9dA874c64E845089A56ae5eD69 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+	cast call 0x65A2F66a1CB852B91c13322bbd0786bBa6ECf9d3 "hasRole(bytes32,address)" 0x0000000000000000000000000000000000000000000000000000000000000000 0x5b8704E82793CC9dA874c64E845089A56ae5eD69 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+	cast call 0x18750C93C1EA70479291B83ba5Abe7A78564324f "hasRole(bytes32,address)" 0x0000000000000000000000000000000000000000000000000000000000000000 0x5b8704E82793CC9dA874c64E845089A56ae5eD69 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+
+# GameRegestry has Miner Role
+	cast call 0x3284975ABbe4cA4C9f92ade76114C02C9d988334 "hasRole(bytes32,address)" 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6 0xc9BBD19bde003dCcDC465ECF5Cfc100Fe6eE9B75 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+	cast call 0x3adc98717F7126b1cBe9d3FE4375d4223e81CC18 "hasRole(bytes32,address)" 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6 0xc9BBD19bde003dCcDC465ECF5Cfc100Fe6eE9B75 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+	cast call 0xce0339Bc8F013ca7CD93A186e3Ed7Bcbc9b049c6 "hasRole(bytes32,address)" 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6 0xc9BBD19bde003dCcDC465ECF5Cfc100Fe6eE9B75 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+	cast call 0x65A2F66a1CB852B91c13322bbd0786bBa6ECf9d3 "hasRole(bytes32,address)" 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6 0xc9BBD19bde003dCcDC465ECF5Cfc100Fe6eE9B75 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+
+# GameSigner has Miner Role
+	cast call 0x3284975ABbe4cA4C9f92ade76114C02C9d988334 "hasRole(bytes32,address)" 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6 0xB4Ee8D79974f85AA9D298628A37754d1313dAA99 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+	cast call 0x3adc98717F7126b1cBe9d3FE4375d4223e81CC18 "hasRole(bytes32,address)" 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6 0xB4Ee8D79974f85AA9D298628A37754d1313dAA99 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+	cast call 0xce0339Bc8F013ca7CD93A186e3Ed7Bcbc9b049c6 "hasRole(bytes32,address)" 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6 0xB4Ee8D79974f85AA9D298628A37754d1313dAA99 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
+	cast call 0x65A2F66a1CB852B91c13322bbd0786bBa6ECf9d3 "hasRole(bytes32,address)" 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6 0xB4Ee8D79974f85AA9D298628A37754d1313dAA99 --rpc-url $(AVALANCHE_MAINNET_RPC_URL)
