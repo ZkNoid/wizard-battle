@@ -230,15 +230,17 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
       >
         {item ? (
           <InventoryTooltip userItem={item}>
-            <Image
-              src={`/items/${item.item.image}`}
-              width={100}
-              height={100}
-              alt={item.item.title}
-              className="pointer-events-none size-full select-none object-contain object-center"
-              quality={100}
-              unoptimized={true}
-            />
+            <div className="size-full">
+              <Image
+                src={`/items/${item.item.image}`}
+                width={100}
+                height={100}
+                alt={item.item.title}
+                className="pointer-events-none size-full select-none object-contain object-center"
+                quality={100}
+                unoptimized={true}
+              />
+            </div>
           </InventoryTooltip>
         ) : (
           <Image
