@@ -282,6 +282,8 @@ jobs:
             docker rm ${{ steps.calc-container.outputs.container_name }} || true
 
             docker compose up -d
+            sleep 30
+            docker compose restart nginx
 
             echo "Deployment complete!"
             docker compose ps
