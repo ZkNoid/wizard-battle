@@ -16,8 +16,16 @@ export function getPaymentCurrency(
   return 'gold';
 }
 
-export function formatPrice(priceWei: string, decimals = 18): number {
-  const price = BigInt(priceWei);
+/** Decimals for each payment currency. Gold is ERC-1155 with 0 decimals. */
+export function getPriceDecimals(currency: 'gold' | 'usdc' | 'eth'): number {
+  if (currency === 'gold') return 0;
+  if (currency === 'usdc') return 6;
+  return 18; // ETH / native
+}
+
+export function formatPrice(priceRaw: string, decimals = 0): number {
+  const price = BigInt(priceRaw);
+  if (decimals === 0) return Number(price);
   const divisor = BigInt(10 ** decimals);
   return Number(price) / Number(divisor);
 }
@@ -26,6 +34,8 @@ export function mapOrderToBuyItem(
   order: MarketOrder,
   itemMetadata?: { title: string; level: number; image: string; type: string }
 ): IMarketBuyItem {
+  const priceCurrency = getPaymentCurrency(order.paymentToken);
+  const priceDecimals = getPriceDecimals(priceCurrency);
   return {
     id: order.orderId.toString(),
     title: order.title || itemMetadata?.title || `Item #${order.tokenId}`,
@@ -33,8 +43,8 @@ export function mapOrderToBuyItem(
     image: order.image || itemMetadata?.image || 'default.png',
     quantity: parseInt(order.amount, 10),
     type: itemMetadata?.type || 'unknown',
-    price: formatPrice(order.price),
-    priceCurrency: getPaymentCurrency(order.paymentToken),
+    price: formatPrice(order.price, priceDecimals),
+    priceCurrency,
     // Extended fields for contract interaction
     orderId: order.orderId,
     maker: order.maker,
@@ -50,6 +60,8 @@ export function mapOrderToSellingItem(
   order: MarketOrder,
   itemMetadata?: { title: string; level: number; image: string; type: string }
 ): IMarketSellingItem {
+  const priceCurrency = getPaymentCurrency(order.paymentToken) as 'gold' | 'usdc';
+  const priceDecimals = getPriceDecimals(priceCurrency);
   return {
     id: order.orderId.toString(),
     title: order.title || itemMetadata?.title || `Item #${order.tokenId}`,
@@ -57,8 +69,8 @@ export function mapOrderToSellingItem(
     image: order.image || itemMetadata?.image || 'default.png',
     quantity: parseInt(order.amount, 10),
     type: itemMetadata?.type || 'unknown',
-    price: formatPrice(order.price),
-    priceCurrency: getPaymentCurrency(order.paymentToken) as 'gold' | 'usdc',
+    price: formatPrice(order.price, priceDecimals),
+    priceCurrency,
     listedAt: new Date(Number(order.createdAtTimestamp) * 1000).toISOString(),
     status: order.status === 'FILLED' ? 'sold' : 'on_sale',
     // Extended fields
@@ -73,6 +85,8 @@ export function mapOrderToHistoryItem(
   itemMetadata?: { title: string; level: number; image: string; type: string }
 ): IMarketHistoryItem {
   const isBuyer = order.taker?.toLowerCase() === userAddress.toLowerCase();
+  const priceCurrency = getPaymentCurrency(order.paymentToken) as 'gold' | 'usdc';
+  const priceDecimals = getPriceDecimals(priceCurrency);
 
   return {
     id: order.orderId.toString(),
@@ -81,13 +95,14 @@ export function mapOrderToHistoryItem(
     image: order.image || itemMetadata?.image || 'default.png',
     quantity: parseInt(order.amount, 10),
     type: itemMetadata?.type || 'unknown',
-    price: formatPrice(order.price),
-    priceCurrency: getPaymentCurrency(order.paymentToken) as 'gold' | 'usdc',
+    price: formatPrice(order.price, priceDecimals),
+    priceCurrency,
     date: new Date(Number(order.updatedAtTimestamp) * 1000).toISOString(),
     status: isBuyer ? 'bought' : 'sold',
   };
 }
 
-export function parsePrice(price: number, decimals = 18): bigint {
+export function parsePrice(price: number, decimals = 0): bigint {
+  if (decimals === 0) return BigInt(Math.round(price));
   return BigInt(Math.floor(price * 10 ** decimals));
 }

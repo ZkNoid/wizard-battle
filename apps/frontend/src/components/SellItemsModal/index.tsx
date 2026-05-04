@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { parseEther } from 'viem';
 import ModalTitle from '../shared/ModalTitle';
 import { Button } from '../shared/Button';
 import { QuantitySelector } from '../shared/QuantitySelector';
@@ -114,7 +113,7 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
   const { createOrder, approveNFT, isPending, getGameElement } =
     useGameMarket();
 
-  const [selectedItemId, setSelectedItemId] = useState('');
+  const [selectedItemId, setSelectedItemId] = useState('Gold');
   const [quantity, setQuantity] = useState(1);
   const [currency, setCurrency] = useState('Gold');
   const [price, setPrice] = useState('');
@@ -171,9 +170,10 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
       }
       console.log('[handlePlaceOrder] gameElement:', gameElement);
 
-      const priceWei = parseEther(price);
+      // Gold is an ERC-1155 with 0 decimals — price is a plain integer, not wei.
+      const priceOnchain = BigInt(Math.round(Number(price)));
 
-      const isGoldPayment = currency === 'gold';
+      const isGoldPayment = currency === 'Gold';
       console.log(
         '[handlePlaceOrder] currency:',
         currency,
@@ -212,7 +212,7 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
         itemId: selectedUserItem.item.id,
         token: gameElement.tokenAddress,
         tokenId: gameElement.tokenId,
-        price: priceWei,
+        price: priceOnchain,
         amount: BigInt(quantity),
         paymentToken,
         paymentTokenId,
