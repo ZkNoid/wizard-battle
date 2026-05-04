@@ -97,12 +97,9 @@ const animations: Record<string, AnimationConfig> = {
 
 export const SpectralPhantomDuelist = memo(
   ({ entity }: { entity: IEntity }) => {
-    // Use the mirrorEntityId if provided, otherwise use the entity's own id
-    const animationEntityId = entity.mirrorEntityId ?? entity.id;
-
     const { animation, image, isPlaying, isLoading, error, scale } =
       useEntityAnimations({
-        entityId: animationEntityId,
+        entityId: entity.id,
         animations: animations,
         defaultAnimation: 'idle',
         defaultScale: 2.0,
