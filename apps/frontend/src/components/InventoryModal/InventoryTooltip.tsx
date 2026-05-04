@@ -31,9 +31,12 @@ export function InventoryTooltip({
   const isArmor = isArmorItem(item);
 
   // Get buffs as array of [key, value] pairs
-  const buffs = isArmor && item.buff
-    ? Object.entries(item.buff).filter(([_, value]) => value !== undefined && value !== '')
-    : [];
+  const buffs =
+    isArmor && item.buff
+      ? Object.entries(item.buff).filter(
+          ([_, value]) => value !== undefined && value !== ''
+        )
+      : [];
 
   // Get wear requirements
   const wearRequirements = isArmor ? item.wearRequirements : [];
@@ -41,24 +44,24 @@ export function InventoryTooltip({
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent className="w-72 bg-gray-300 border-[5px] border-slate-500 p-0">
+      <TooltipContent className="w-72 border-[5px] border-slate-500 bg-gray-300 p-0">
         <div className="relative p-3">
           {/* Header with icon and title */}
           <div className="flex flex-row gap-2.5">
-            <div className="w-8 h-8 relative flex-shrink-0">
-              <div className="w-6 h-6 absolute left-[3px] top-[3px] bg-gray-800" />
+            <div className="relative h-8 w-8 flex-shrink-0">
+              <div className="absolute left-[3px] top-[3px] h-6 w-6 bg-gray-800" />
               <Image
                 src={`/items/${item.image}`}
                 alt={item.title}
                 width={32}
                 height={32}
-                className="size-8 object-contain object-center relative z-10"
+                className="relative z-10 size-8 object-contain object-center"
                 unoptimized={true}
                 quality={100}
               />
             </div>
             <div className="flex flex-col">
-              <span className="font-['DePixel'] text-slate-950 text-xs font-bold">
+              <span className="font-['DePixel'] text-xs font-bold text-slate-950">
                 {item.title}
               </span>
               <span
@@ -79,21 +82,22 @@ export function InventoryTooltip({
           {/* Buffs section - only for armor type */}
           {isArmor && buffs.length > 0 && (
             <div className="mt-3">
-              <div className="font-['DePixel'] text-blue-500 text-xs font-normal">
+              <div className="font-['DePixel'] text-xs font-normal text-blue-500">
                 Buffs:
               </div>
               <div className="mt-1.5 space-y-1">
                 {buffs.map(([key, value]) => (
                   <div key={key} className="flex items-center gap-1.5">
-                    <div className="w-4 h-4 overflow-hidden flex-shrink-0">
-                      <div className="w-3 h-3 bg-emerald-700 rounded-sm" />
+                    <div className="h-4 w-4 flex-shrink-0 overflow-hidden">
+                      <div className="h-3 w-3 rounded-sm bg-emerald-700" />
                     </div>
                     <span className="font-['DePixel'] text-xs">
-                      <span className="text-slate-950 font-normal">
+                      <span className="font-normal text-slate-950">
                         {BUFF_LABELS[key] || key}:{' '}
                       </span>
-                      <span className="text-lime-600 font-bold">
-                        +{value}{key !== 'Movement' ? '%' : ''}
+                      <span className="font-bold text-lime-600">
+                        +{value}
+                        {key !== 'Movement' ? '%' : ''}
                       </span>
                     </span>
                   </div>
@@ -105,19 +109,24 @@ export function InventoryTooltip({
           {/* Wear Requirements section - only for armor type */}
           {isArmor && wearRequirements.length > 0 && (
             <div className="mt-3">
-              <div className="font-['DePixel'] text-blue-500 text-xs font-normal">
+              <div className="font-['DePixel'] text-xs font-normal text-blue-500">
                 Wear requirements:
               </div>
               <div className="mt-1.5 space-y-1">
                 {wearRequirements.map((req, idx) => (
                   <div key={idx} className="font-['DePixel'] text-xs">
-                    <span className="text-slate-950 font-normal">
-                      {req.requirement === 'class' ? 'Character class' : 'Character level'}:{' '}
+                    <span className="font-normal text-slate-950">
+                      {req.requirement === 'class'
+                        ? 'Character class'
+                        : 'Character level'}
+                      :{' '}
                     </span>
-                    <span className="text-lime-600 font-bold">
-                      [{req.requirement === 'class' 
-                        ? (CLASS_LABELS[String(req.value)] || req.value)
-                        : req.value}]
+                    <span className="font-bold text-lime-600">
+                      [
+                      {req.requirement === 'class'
+                        ? CLASS_LABELS[String(req.value)] || req.value
+                        : req.value}
+                      ]
                     </span>
                   </div>
                 ))}
@@ -128,7 +137,7 @@ export function InventoryTooltip({
           {/* Description - only for non-armor items */}
           {!isArmor && (
             <div className="mt-3">
-              <span className="font-['DePixel'] text-slate-950 text-[10px]">
+              <span className="font-['DePixel'] text-[10px] text-slate-950">
                 {item.description}
               </span>
             </div>
@@ -136,14 +145,11 @@ export function InventoryTooltip({
 
           {/* Footer with quantity and price - only for non-armor items */}
           {!isArmor && (
-            <div className="mt-3 pt-2 border-t border-slate-500 flex w-full flex-row items-center justify-between">
-              <span className="font-['DePixel'] text-slate-950 text-xs">
+            <div className="mt-3 flex w-full flex-row items-center justify-between border-t border-slate-500 pt-2">
+              <span className="font-['DePixel'] text-xs text-slate-950">
                 Qty: {userItem.quantity}
               </span>
               <div className="flex flex-row items-center gap-1">
-                <span className="font-['DePixel'] text-amber-600 text-xs font-bold">
-                  {item.price}
-                </span>
                 <Image
                   src="/icons/gold-coin.png"
                   width={14}
