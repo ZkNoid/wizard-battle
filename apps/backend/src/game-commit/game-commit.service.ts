@@ -508,105 +508,89 @@ export class GameCommitService {
 
   async commitIinventory(payload: any) {
     try {
-      let failedItems: string[] = [];
-      let signedData: any[] = [];
-
-      console.log(`Committing inventory sync - payload:`, payload);
-
-      const userId = payload.userId || payload.playerAddress; // Extract userId from payload
+      const userId = payload.userId || payload.playerAddress;
       const user = await this.userService.findByAddress(userId);
-
-      console.log(`user: ${JSON.stringify(user)}`);
       const evmAddress = user?.address_evm;
 
       if (!evmAddress || evmAddress == ethers.ZeroAddress) {
         throw new Error(
           `User ${userId} does not have a valid EVM address for inventory sync.`
-        ); // Ensure user has a valid EVM address
+        );
       }
 
-      // 1. Query all items from user inventory with full item details in a single query
-      // 1.1 Call user inventory service to get all items for this user with combined data
       const userInventoryItems =
         await this.userInventoryService.getUserInventory(userId);
 
-      // 1.2 For each inventory item:
-      // - Item type is regestered as resource or item in GameItem collection?
-      for (const invItem of userInventoryItems) {
-        // Check if it's a resource or item by looking up the GameItem collection
-        const metaData = await this.blockchainService.getGameElementHash(
-          invItem.itemId
-        );
-
-        console.log(`📦 Inventory Item: ${invItem.itemId}`);
-
-        // In case item is not regestered add it failed list and skip.
-        if (metaData?.tokenAddress == ethers.ZeroAddress) {
-          failedItems.push(invItem.itemId);
-          // console.log(
-          //   `   ❌ Item ${invItem.itemId} not found in GameItem collection, skipping...`
-          // );
-          continue;
-        }
-
-        const userHasAmount = invItem.quantity || 0;
-        // const userHasBalance = await this.blockchainService.getResourceBalance(
-        //   evmAddress || ethers.ZeroAddress,
-        //   metaData?.tokenId || 0
-        // );
-        const userHasBalance =
-          await this.blockchainService.getGameElementBalance(
-            metaData?.tokenId || 0,
-            metaData?.tokenAddress || ethers.ZeroAddress,
-            metaData?.requiresTokenId || true,
-            evmAddress || ethers.ZeroAddress
-          );
-
-        console.log(
-          `   User has ${userHasAmount} of item ${invItem.itemId} in inventory, on-chain balance: ${userHasBalance}`
-        );
-        let commitData;
-        let amountToBurn;
-        if (userHasAmount > 0 && userHasBalance < userHasAmount) {
-          // 2. For each item, we call BlockchainService to generate signed mint callData to sync the inventory on-chain
-          amountToBurn = userHasAmount - Number(userHasBalance.toString());
-          console.log(
-            `   Generating mint callData to sync ${userHasAmount} of item ${invItem.itemId}...`
-          );
-          commitData = await this.blockchainService.mintResource(
-            invItem.itemId,
-            evmAddress,
-            metaData?.tokenId || 0,
-            amountToBurn
-          );
-        } else if (userHasAmount > 0 && userHasBalance > userHasAmount) {
-          // If user has more than what's in inventory, we need to burn the excess
-          amountToBurn = Number(userHasBalance.toString()) - userHasAmount;
-          console.log(
-            `   Generating burn callData to remove ${amountToBurn} of item ${invItem.itemId}...`
-          );
-          commitData = await this.blockchainService.burnResource(
-            invItem.itemId,
-            evmAddress,
-            metaData?.tokenId || 0,
-            amountToBurn
-          );
-        } else {
-          continue; // No action needed if balances match or user has none
-        }
-
-        signedData.push(commitData);
-        console.log(`   Commit data for item ${invItem.itemId}:`, commitData);
-      }
-      console.log(
-        `Failed to sync:`,
-        failedItems.length > 0 ? failedItems : 'None'
+      // Phase 1: fetch all on-chain metadata in parallel (was sequential per item)
+      const metaDataResults = await Promise.all(
+        userInventoryItems.map((invItem) =>
+          this.blockchainService.getGameElementHash(invItem.itemId)
+        )
       );
+
+      // Partition into registered vs failed
+      const failedItems: string[] = [];
+      const registeredItems: { invItem: any; metaData: NonNullable<Awaited<ReturnType<BlockchainService['getGameElementHash']>>> }[] = [];
+
+      for (let i = 0; i < userInventoryItems.length; i++) {
+        const invItem = userInventoryItems[i]!;
+        const metaData = metaDataResults[i];
+        if (!metaData || metaData.tokenAddress == ethers.ZeroAddress) {
+          failedItems.push(invItem.itemId);
+        } else {
+          registeredItems.push({ invItem, metaData });
+        }
+      }
+
+      // Phase 2: fetch all on-chain balances in parallel (was sequential per item)
+      const balances = await Promise.all(
+        registeredItems.map(({ metaData }) =>
+          this.blockchainService.getGameElementBalance(
+            metaData.tokenId,
+            metaData.tokenAddress,
+            metaData.requiresTokenId,
+            evmAddress
+          )
+        )
+      );
+
+      // Determine which items need mint/burn
+      type CommitTask = {
+        invItem: any;
+        metaData: (typeof registeredItems)[number]['metaData'];
+        action: 'mint' | 'burn';
+        amount: number;
+      };
+
+      const commitTasks: CommitTask[] = [];
+      for (let i = 0; i < registeredItems.length; i++) {
+        const { invItem, metaData } = registeredItems[i]!;
+        const userHasAmount = invItem.quantity || 0;
+        const onChainBalance = balances[i]!;
+        const onChainAmount = Number(onChainBalance.toString());
+
+        if (userHasAmount > 0 && onChainBalance < userHasAmount) {
+          commitTasks.push({ invItem, metaData, action: 'mint', amount: userHasAmount - onChainAmount });
+        } else if (userHasAmount > 0 && onChainBalance > userHasAmount) {
+          commitTasks.push({ invItem, metaData, action: 'burn', amount: onChainAmount - userHasAmount });
+        }
+      }
+
+      // Phase 3: generate all signed commit payloads in parallel (was sequential per item)
+      const signedData = await Promise.all(
+        commitTasks.map(({ invItem, metaData, action, amount }) =>
+          action === 'mint'
+            ? this.blockchainService.mintResource(invItem.itemId, evmAddress, metaData.tokenId, amount)
+            : this.blockchainService.burnResource(invItem.itemId, evmAddress, metaData.tokenId, amount)
+        )
+      );
+
+      console.log(`Failed to sync: ${failedItems.length > 0 ? failedItems.join(', ') : 'None'}`);
 
       return {
         success: true,
-        signedData: signedData,
-        failedItems: failedItems,
+        signedData: signedData.filter(Boolean),
+        failedItems,
       };
     } catch (err) {
       console.error(`❌ Crash syncing inventory:`, err);

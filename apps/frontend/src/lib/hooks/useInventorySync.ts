@@ -66,7 +66,7 @@ export function useInventorySync() {
       console.log('Encoded batch data:', batch);
       console.log('gameRegistryAddress:', gameRegistryAddress);
 
-      const CHUNK_SIZE = 5;
+      const CHUNK_SIZE = 100;
       const chunks: `0x${string}`[][] = [];
       for (let i = 0; i < batch.length; i += CHUNK_SIZE) {
         chunks.push(batch.slice(i, i + CHUNK_SIZE));
