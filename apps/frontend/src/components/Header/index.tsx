@@ -105,7 +105,17 @@ export default function Header({ onTabChange }: HeaderProps) {
               className="h-8 w-7"
             />
           </BoxButton>
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
+          <BoxButton
+            color="gray"
+            onClick={() => {
+              window.open(
+                'https://mail.google.com/mail/',
+                '_blank',
+                'noopener,noreferrer'
+              );
+            }}
+            className="size-16"
+          >
             <Image
               src={'/icons/mail.png'}
               width={32}
