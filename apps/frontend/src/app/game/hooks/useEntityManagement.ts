@@ -53,7 +53,8 @@ export function useEntityManagement({
             ? EntityType.WIZARD
             : stater?.state.wizardId.toString() === WizardId.ARCHER.toString()
               ? EntityType.ARCHER
-              : stater?.state.wizardId.toString() === WizardId.PHANTOM_DUELIST.toString()
+              : stater?.state.wizardId.toString() ===
+                  WizardId.PHANTOM_DUELIST.toString()
                 ? EntityType.PHANTOM_DUELIST
                 : EntityType.WIZARD,
         tilemapPosition: DEFAULT_USER_POSITION,
@@ -68,7 +69,8 @@ export function useEntityManagement({
             ? EntityType.WIZARD
             : opponentState?.wizardId.toString() === WizardId.ARCHER.toString()
               ? EntityType.ARCHER
-              : opponentState?.wizardId.toString() === WizardId.PHANTOM_DUELIST.toString()
+              : opponentState?.wizardId.toString() ===
+                  WizardId.PHANTOM_DUELIST.toString()
                 ? EntityType.PHANTOM_DUELIST
                 : EntityType.WIZARD,
         tilemapPosition: DEFAULT_ENEMY_POSITION,
@@ -86,35 +88,35 @@ export function useEntityManagement({
     };
   }, [initMovementHandler, addEntity, clearEntities, stater, opponentState]);
 
-  // Manage spectral projection entity based on effect presence
-  useEffect(() => {
-    const hasEffect = hasSpectralProjectionEffect();
-    const spectralEntity = getEntity(SPECTRAL_ENTITY_ID);
+  // // Manage spectral projection entity based on effect presence
+  // useEffect(() => {
+  //   const hasEffect = hasSpectralProjectionEffect();
+  //   const spectralEntity = getEntity(SPECTRAL_ENTITY_ID);
 
-    if (hasEffect && !spectralEntity) {
-      const userPosition = stater?.state?.playerStats?.position?.value;
-      const spectral = {
-        id: SPECTRAL_ENTITY_ID,
-        type: EntityType.SPECTRAL_PHANTOM_DUELIST,
-        tilemapPosition: userPosition
-          ? { x: +userPosition.x, y: +userPosition.y }
-          : DEFAULT_USER_POSITION,
-        mirrorEntityId: 'user',
-      };
-      addEntity(spectral);
-      console.log('👻 Created spectral projection entity');
-    } else if (!hasEffect && spectralEntity) {
-      removeEntity(SPECTRAL_ENTITY_ID);
-      console.log('👻 Removed spectral projection entity');
-    }
-  }, [
-    stater?.state?.onEndEffects,
-    hasSpectralProjectionEffect,
-    getEntity,
-    addEntity,
-    removeEntity,
-    stater?.state?.playerStats?.position?.value,
-  ]);
+  //   if (hasEffect && !spectralEntity) {
+  //     const userPosition = stater?.state?.playerStats?.position?.value;
+  //     const spectral = {
+  //       id: SPECTRAL_ENTITY_ID,
+  //       type: EntityType.SPECTRAL_PHANTOM_DUELIST,
+  //       tilemapPosition: userPosition
+  //         ? { x: +userPosition.x, y: +userPosition.y }
+  //         : DEFAULT_USER_POSITION,
+  //       mirrorEntityId: 'user',
+  //     };
+  //     addEntity(spectral);
+  //     console.log('👻 Created spectral projection entity');
+  //   } else if (!hasEffect && spectralEntity) {
+  //     removeEntity(SPECTRAL_ENTITY_ID);
+  //     console.log('👻 Removed spectral projection entity');
+  //   }
+  // }, [
+  //   stater?.state?.onEndEffects,
+  //   hasSpectralProjectionEffect,
+  //   getEntity,
+  //   addEntity,
+  //   removeEntity,
+  //   stater?.state?.playerStats?.position?.value,
+  // ]);
 
   // Manage opponent spectral projection entity
   useEffect(() => {
@@ -196,4 +198,3 @@ export function useEntityManagement({
     entities,
   };
 }
-
