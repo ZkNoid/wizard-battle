@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { parseEther } from 'viem';
 import ModalTitle from '../shared/ModalTitle';
 import { Button } from '../shared/Button';
@@ -14,6 +14,14 @@ import { useModalSound } from '@/lib/hooks/useAudio';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 import { useGameMarket } from '@/lib/hooks/useGameMarket';
 import { MARKET_CURRENCY_OPTIONS } from '@/lib/constants/market';
+import type { IUserInventoryItem } from '@/lib/types/Inventory';
+
+function onchainQuantity(ui: IUserInventoryItem): number {
+  const b = ui.onchainBalance;
+  if (b === undefined || b <= 0n) return 0;
+  const n = Number(b);
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+}
 
 const GAME_REGISTRY_ADDRESS = process.env
   .NEXT_PUBLIC_GAME_REGISTRY_ADDRESS as `0x${string}`;
@@ -30,6 +38,11 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
   useModalSound();
 
   const iteminventory = useInventoryStore((state) => state.iteminventory);
+
+  const sellableInventory = useMemo(
+    () => iteminventory.filter((ui) => onchainQuantity(ui) > 0),
+    [iteminventory]
+  );
   const { setIsRequestSuccessModalOpen, setIsRequestFailureModalOpen } =
     useMiscellaneousSessionStore();
   const { createOrder, approveNFT, isPending, getGameElement } =
@@ -43,19 +56,31 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
 
   const inventoryOptions = useMemo(
     () =>
-      iteminventory.map((ui) => ({
+      sellableInventory.map((ui) => ({
         value: ui.item.id,
-        label: `${ui.item.title} (x${ui.quantity})`,
+        label: `${ui.item.title} (x${onchainQuantity(ui)})`,
       })),
-    [iteminventory]
+    [sellableInventory]
   );
 
   const selectedUserItem = useMemo(
-    () => iteminventory.find((ui) => ui.item.id === selectedItemId) ?? null,
-    [iteminventory, selectedItemId]
+    () => sellableInventory.find((ui) => ui.item.id === selectedItemId) ?? null,
+    [sellableInventory, selectedItemId]
   );
 
-  const maxQuantity = selectedUserItem?.quantity ?? 1;
+  const maxQuantity = selectedUserItem
+    ? Math.max(1, onchainQuantity(selectedUserItem))
+    : 1;
+
+  useEffect(() => {
+    if (
+      selectedItemId &&
+      !sellableInventory.some((ui) => ui.item.id === selectedItemId)
+    ) {
+      setSelectedItemId('');
+      setQuantity(1);
+    }
+  }, [sellableInventory, selectedItemId]);
 
   const handleItemChange = (id: string) => {
     setSelectedItemId(id);
