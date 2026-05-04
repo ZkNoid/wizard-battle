@@ -17,13 +17,26 @@ contract HelperConfig is Script {
     NetworkConfig public activeNetworkConfig;
 
     constructor() {
-        if (block.chainid == 11_155_111) {
+        if (block.chainid == 43_114) {
+            activeNetworkConfig = getAvalancheConfig();
+        } else if (block.chainid == 11_155_111) {
             activeNetworkConfig = getSepoliaEthConfig();
         } else if (block.chainid == 43_113) {
             activeNetworkConfig = getFujiAvlConfig();
         } else {
             activeNetworkConfig = getOrCreateAnvilEthConfig();
         }
+    }
+
+    function getAvalancheConfig() public pure returns (NetworkConfig memory sepoliaConfig) {
+        sepoliaConfig = NetworkConfig({
+            defaultAdmin: 0x5b8704E82793CC9dA874c64E845089A56ae5eD69, // My dev address
+            gameSigner: 0xB4Ee8D79974f85AA9D298628A37754d1313dAA99, // Game signer address
+            pauser: 0x5b8704E82793CC9dA874c64E845089A56ae5eD69, // My dev address
+            minter: 0x5b8704E82793CC9dA874c64E845089A56ae5eD69, // My dev address
+            upgrader: 0x5b8704E82793CC9dA874c64E845089A56ae5eD69, // My dev address
+            usdc: 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E // USDC Avalacnhe
+        });
     }
 
     function getSepoliaEthConfig() public pure returns (NetworkConfig memory sepoliaConfig) {
