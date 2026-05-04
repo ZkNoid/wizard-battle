@@ -44,10 +44,7 @@ export const MARKET_SELLING_SORT_OPTIONS = [
   { value: 'only_usdc', label: 'Only for USDC' },
 ];
 
-export const MARKET_CURRENCY_OPTIONS = [
-  { value: 'gold', label: 'Gold' },
-  { value: 'usdc', label: 'USDC' },
-];
+export const MARKET_CURRENCY_OPTIONS = [{ value: 'Gold', label: 'Gold' }];
 
 export const MARKET_SELL_ITEM_TYPE_OPTIONS = [
   { value: 'crafting', label: 'Crafting Items' },
