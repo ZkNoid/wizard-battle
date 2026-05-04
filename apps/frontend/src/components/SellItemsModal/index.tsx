@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { parseEther, keccak256, toBytes } from 'viem';
+import { parseEther } from 'viem';
 import ModalTitle from '../shared/ModalTitle';
 import { Button } from '../shared/Button';
 import { QuantitySelector } from '../shared/QuantitySelector';
@@ -73,25 +73,33 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
 
     setIsPlacing(true);
     try {
-      const resourceHash = keccak256(toBytes(selectedUserItem.item.id));
-      const gameElement = await getGameElement(resourceHash);
+      console.log('[handlePlaceOrder] fetching game element for item:', selectedUserItem.item.id);
+      const gameElement = await getGameElement(selectedUserItem.item.id);
       if (!gameElement) {
-        throw new Error('Failed to get game element');
+        throw new Error(`Game element not registered for item: ${selectedUserItem.item.id}`);
       }
+      console.log('[handlePlaceOrder] gameElement:', gameElement);
 
       const priceWei = parseEther(price);
 
-      const isGoldPayment = currency === 'Gold';
-      const goldResourceHash = keccak256(toBytes(GOLD_RESOURCE_ID));
+      const isGoldPayment = currency === 'gold';
+      console.log('[handlePlaceOrder] currency:', currency, '| isGoldPayment:', isGoldPayment);
+
       const goldElement = isGoldPayment
-        ? await getGameElement(goldResourceHash)
+        ? await getGameElement(GOLD_RESOURCE_ID)
         : null;
+      console.log('[handlePlaceOrder] goldElement:', goldElement);
 
       const paymentToken = isGoldPayment
         ? (GAME_REGISTRY_ADDRESS ?? ZERO_ADDRESS)
         : (USDC_TOKEN_ADDRESS ?? ZERO_ADDRESS);
       const paymentTokenId =
         isGoldPayment && goldElement ? goldElement.tokenId : 0n;
+
+      console.log('[handlePlaceOrder] paymentToken:', paymentToken, '| paymentTokenId:', paymentTokenId);
+      if (isGoldPayment && paymentTokenId === 0n) {
+        console.error('[handlePlaceOrder] paymentTokenId=0 for gold — goldElement missing or not registered');
+      }
 
       if (gameElement.tokenAddress) {
         await approveNFT(gameElement.tokenAddress, true);
