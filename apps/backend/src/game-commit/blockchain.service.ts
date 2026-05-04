@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
 import { ethers, keccak256 } from 'ethers';
 
 /**
@@ -345,6 +346,11 @@ export class BlockchainService {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  /** Random uint256 for commit EIP-712; avoids collisions when signing in parallel (e.g. Promise.all). */
+  private nextCommitNonce(): bigint {
+    return BigInt(`0x${randomBytes(32).toString('hex')}`);
+  }
+
   private async withRpcRetry<T>(
     label: string,
     fn: () => Promise<T>
@@ -404,8 +410,7 @@ export class BlockchainService {
       console.log('📦 Encoded callData:', callData);
 
       // Step 2: Get signed message (resourceHash, commit, signature)
-      // Generate unique nonce using timestamp to prevent replay attacks
-      const nonce = Date.now();
+      const nonce = this.nextCommitNonce();
 
       const { nameHash, commit, signature } = await this._getSignedMessage(
         name,
@@ -459,8 +464,7 @@ export class BlockchainService {
       console.log('📦 Encoded callData:', callData);
 
       // Step 2: Get signed message (resourceHash, commit, signature)
-      // Generate unique nonce using timestamp to prevent replay attacks
-      const nonce = Date.now();
+      const nonce = this.nextCommitNonce();
 
       const { nameHash, commit, signature } = await this._getSignedMessage(
         name,
@@ -507,8 +511,7 @@ export class BlockchainService {
       console.log('📦 Encoded callData:', callData);
 
       // Step 2: Get signed message (nameHash, commit, signature)
-      // Generate unique nonce using timestamp to prevent replay attacks
-      const nonce = Date.now();
+      const nonce = this.nextCommitNonce();
 
       const { nameHash, commit, signature } = await this._getSignedMessage(
         name,
@@ -556,8 +559,7 @@ export class BlockchainService {
       console.log('📦 Encoded callData:', callData);
 
       // Step 2: Get signed message (nameHash, commit, signature)
-      // Generate unique nonce using timestamp to prevent replay attacks
-      const nonce = Date.now();
+      const nonce = this.nextCommitNonce();
 
       const { nameHash, commit, signature } = await this._getSignedMessage(
         name,
@@ -629,7 +631,7 @@ export class BlockchainService {
    *
    * @param elementName - Name of the game element (e.g., "Wood", "Iron Ore")
    * @param target - Target contract address (WBResources address)
-   * @param nonce - Nonce to prevent replay attacks
+   * @param nonce - Random uint256 to prevent replay (parallel-safe)
    * @param callData - Encoded function call data
    * @param account - Player's address
    * @returns resourceHash, commit, and signature
@@ -637,7 +639,7 @@ export class BlockchainService {
   private async _getSignedMessage(
     elementName: string,
     target: string,
-    nonce: number,
+    nonce: bigint,
     callData: string,
     account: string
   ): Promise<{ nameHash: string; commit: string; signature: string }> {
