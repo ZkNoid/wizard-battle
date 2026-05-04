@@ -9,7 +9,8 @@ import {
 } from 'o1js';
 import { Effect, type SpellCast } from './structs';
 import { allSpells } from './spells';
-import { allEffectsInfo } from './effects/effects';
+import { allEffectsInfo, EffectsId } from './effects/effects';
+import { WizardId } from '../wizards';
 import { State } from './state';
 import { type IUserActions, type ITrustedState } from '../types/gameplay.types';
 import { type IUserAction } from '../types/gameplay.types';
@@ -94,8 +95,13 @@ export class Stater extends Struct({
   applyDamage(damage: UInt64, opponentState: State) {
     // Check dodge and accuracy
     // hitChance = (accuracy + 100) * (100 - dodgeChance) / 100
-    const hitChance = opponentState.playerStats.accuracy.add(CALCULATION_PRECISION)
-      .mul(UInt64.from(CALCULATION_PRECISION).sub(this.state.playerStats.dodgeChance))
+    const hitChance = opponentState.playerStats.accuracy
+      .add(CALCULATION_PRECISION)
+      .mul(
+        UInt64.from(CALCULATION_PRECISION).sub(
+          this.state.playerStats.dodgeChance
+        )
+      )
       .div(CALCULATION_PRECISION);
     const dodgeRandomPercentage = this.getRandomPercentage();
     const isHit = dodgeRandomPercentage.lessThan(hitChance);
@@ -110,13 +116,17 @@ export class Stater extends Struct({
       .div(this.state.playerStats.defense);
     const finalDamage = Provable.if(isHit, fullDamage, UInt64.from(0));
 
-    console.log('hitChance', hitChance);
-    console.log('dodgeRandomPercentage', dodgeRandomPercentage);
-    console.log('isHit', isHit);
-    console.log('damage', damage.toString());
-    console.log('defense', this.state.playerStats.defense.toString());
-    console.log('fullDamage', fullDamage.toString());
-    console.log('finalDamage', finalDamage.toString());
+    const dealtDamage = finalDamage.equals(UInt64.from(0)).not();
+    const isMage = this.state.wizardId.equals(WizardId.MAGE);
+    this.state.pushEffect(
+      new Effect({
+        effectId: EffectsId.Revealed!,
+        duration: Field(2),
+        param: Field(0),
+      }),
+      'public',
+      dealtDamage.and(isMage)
+    );
 
     this.state.playerStats.hp = this.state.playerStats.hp.sub(finalDamage);
   }
@@ -137,7 +147,11 @@ export class Stater extends Struct({
     console.log('applyEffect', effectInfo.name);
 
     effectInfo.apply(this.state, publicState, effect.param);
-    effect.duration = effect.duration.sub(Field.from(1));
+    effect.duration = Provable.if(
+      effect.duration.equals(Field(-1)),
+      Field(-1),
+      effect.duration.sub(Field.from(1))
+    );
     effect.effectId = Provable.if(
       effect.duration.equals(Field.from(0)),
       Field(0),

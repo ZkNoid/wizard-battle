@@ -1,8 +1,8 @@
 'use client';
 
+import Image from 'next/image';
 import { Button } from '../shared/Button';
 import { motion } from 'motion/react';
-import { usePathname } from 'next/navigation';
 import {
   useAppKit,
   useAppKitAccount,
@@ -19,6 +19,9 @@ import type {
   WalletConnectionInitiatedProps,
   WalletConnectionSuccessProps,
 } from '@/lib/analytics/types';
+import { useMinaAppkit } from 'mina-appkit';
+import { api } from '@/trpc/react';
+import type { ButtonSize } from '../shared/Button/utils';
 
 // Helper function to format address (similar to Mina's formatAddress)
 const formatAddress = (address: string): string => {
@@ -28,25 +31,47 @@ const formatAddress = (address: string): string => {
 
 interface WalletReownProps {
   className?: string;
+  buttonSize?: ButtonSize;
 }
 
 const targetNetwork = env.NEXT_PUBLIC_NETWORK_ID
-  ? (Object.values(allNetworks).find(
+  ? ((Object.values(allNetworks).find(
       (n) =>
         typeof n === 'object' &&
         n !== null &&
         'id' in n &&
         String((n as { id: number }).id) === env.NEXT_PUBLIC_NETWORK_ID
-    ) as (typeof avalanche) | undefined) ?? avalanche
+    ) as typeof avalanche | undefined) ?? avalanche)
   : avalanche;
 
-export default function WalletReown({ className }: WalletReownProps = {}) {
-  const pathname = usePathname();
+export default function WalletReown({
+  className,
+  buttonSize = 'lg',
+}: WalletReownProps = {}) {
   const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const { disconnect } = useDisconnect();
   const { chainId, switchNetwork } = useAppKitNetwork();
   const hasTrackedConnection = useRef(false);
+
+  const { address: minaAddress } = useMinaAppkit();
+  const { data: user } = api.users.get.useQuery(
+    { address: minaAddress ?? '' },
+    { enabled: !!minaAddress }
+  );
+  const utils = api.useUtils();
+  const { mutate: setEvmAddress, isPending: isSettingEvmAddress } =
+    api.users.setEvmAddress.useMutation({
+      onSuccess: () => {
+        console.log('EVM address saved successfully');
+        void utils.users.get.invalidate({ address: minaAddress ?? '' });
+      },
+      onError: (err) => {
+        console.warn('Failed to link EVM address:', err.message);
+        alert(err.message);
+        disconnect();
+      },
+    });
 
   // Track if this is the initial mount to prevent auto-popup
   const isInitialMount = useRef(true);
@@ -94,6 +119,29 @@ export default function WalletReown({ className }: WalletReownProps = {}) {
     }
   }, [isConnected, address]);
 
+  // Save EVM address to DB when both wallets are connected and address_evm not yet set
+  useEffect(() => {
+    if (!isConnected || !address || !minaAddress || !user) return;
+    if (isSettingEvmAddress) return;
+
+    if (!user.address_evm) {
+      // No EVM address saved yet — save it
+      setEvmAddress({ address: minaAddress, evmAddress: address });
+    } else if (user.address_evm.toLowerCase() !== address.toLowerCase()) {
+      // A different EVM address is already linked to this account
+      alert('This Mina account is already linked to a different EVM address.');
+      disconnect();
+    }
+  }, [
+    isConnected,
+    address,
+    minaAddress,
+    user,
+    isSettingEvmAddress,
+    setEvmAddress,
+    disconnect,
+  ]);
+
   const handleButtonClick = () => {
     if (isConnected) {
       //disconnect();
@@ -117,12 +165,30 @@ export default function WalletReown({ className }: WalletReownProps = {}) {
       // transition={{ duration: 0.7, ease: 'easeOut', delay: 2.5 }}
       className={className || 'w-full'}
     >
-      <Button
-        variant="blue"
-        text={displayText}
-        onClick={handleButtonClick}
-        className="w-50 h-15 text-base font-bold"
-      />
+      {isConnected && address ? (
+        <Button
+          variant="blue"
+          text={displayText}
+          onClick={handleButtonClick}
+          className="h-15 w-full text-base font-bold"
+        />
+      ) : (
+        <Button
+          variant="blue"
+          onClick={handleButtonClick}
+          className="h-15 w-full gap-2 text-base font-bold"
+        >
+          <Image
+            src="/wallet/avax-icon.png"
+            alt=""
+            width={24}
+            height={24}
+            className="relative z-[1] h-6 w-6 shrink-0"
+            aria-hidden
+          />
+          <span className="relative z-[1]">{displayText}</span>
+        </Button>
+      )}
     </motion.div>
   );
 }

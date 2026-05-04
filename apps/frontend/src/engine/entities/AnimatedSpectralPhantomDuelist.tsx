@@ -12,7 +12,7 @@ const animations: Record<string, AnimationConfig> = {
     spritesheetJson: '/assets/spritesheets/phantom_duelist/Duelist_Idle.json',
     spritesheetImage: '/assets/spritesheets/phantom_duelist/Duelist_Idle.png',
     loop: true,
-    scale: 1.5,
+    scale: 2.0,
   },
   spectral_arrow: {
     name: 'spectral_arrow',
@@ -91,49 +91,37 @@ const animations: Record<string, AnimationConfig> = {
     spritesheetJson: '/assets/spritesheets/phantom_duelist/Duelist_Death.json',
     spritesheetImage: '/assets/spritesheets/phantom_duelist/Duelist_Death.png',
     loop: false,
-    scale: 1,
+    scale: 2.0,
   },
 };
 
-export const SpectralPhantomDuelist = memo(({ entity }: { entity: IEntity }) => {
-  // Use the mirrorEntityId if provided, otherwise use the entity's own id
-  const animationEntityId = entity.mirrorEntityId ?? entity.id;
+export const SpectralPhantomDuelist = memo(
+  ({ entity }: { entity: IEntity }) => {
+    const { animation, image, isPlaying, isLoading, error, scale } =
+      useEntityAnimations({
+        entityId: entity.id,
+        animations: animations,
+        defaultAnimation: 'idle',
+        defaultScale: 2.0,
+      });
 
-  const { animation, image, isPlaying, isLoading, error, scale } =
-    useEntityAnimations({
-      entityId: animationEntityId,
-      animations: animations,
-      defaultAnimation: 'idle',
-      defaultScale: 1.5,
-    });
+    if (isLoading) {
+      return (
+        <div className="flex h-full w-full items-center justify-center rounded-md border-2 border-cyan-700 bg-cyan-500/50 text-xs font-bold text-white shadow-lg">
+          Loading...
+        </div>
+      );
+    }
 
-  if (isLoading) {
+    if (error || !animation || !image) {
+      return (
+        <div className="flex h-full w-full items-center justify-center rounded-md border-2 border-red-700 bg-red-500 text-xs font-bold text-white shadow-lg">
+          Error
+        </div>
+      );
+    }
+
     return (
-      <div className="flex h-full w-full items-center justify-center rounded-md border-2 border-cyan-700 bg-cyan-500/50 text-xs font-bold text-white shadow-lg">
-        Loading...
-      </div>
-    );
-  }
-
-  if (error || !animation || !image) {
-    return (
-      <div className="flex h-full w-full items-center justify-center rounded-md border-2 border-red-700 bg-red-500 text-xs font-bold text-white shadow-lg">
-        Error
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="h-full w-full"
-      style={{
-        // Ghostly effect: semi-transparent with cyan/blue tint
-        filter: 'hue-rotate(180deg) saturate(1.5) brightness(1.3)',
-        opacity: 0.3,
-        // Add a subtle glow effect
-        mixBlendMode: 'screen',
-      }}
-    >
       <AnimatedCanvas
         animation={animation}
         image={image}
@@ -141,8 +129,8 @@ export const SpectralPhantomDuelist = memo(({ entity }: { entity: IEntity }) => 
         scale={scale}
         entityId={entity.id}
       />
-    </div>
-  );
-});
+    );
+  }
+);
 
 SpectralPhantomDuelist.displayName = 'SpectralPhantomDuelist';

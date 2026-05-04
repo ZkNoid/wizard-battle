@@ -20,10 +20,6 @@ const ITEMS_PER_PAGE = 28; // 7 columns × 4 rows
 const ROWS = 4;
 const COLS = 7;
 
-// Mock for pagination (temporary for styling)
-const MOCK_PAGINATION = true;
-const MOCK_TOTAL_PAGES = 2;
-
 // Memoized component for inventory item
 const InventoryItem = memo(
   ({
@@ -139,11 +135,10 @@ export function InventoryModalForm({
       : iteminventory.filter((userItem) => userItem.item.type === activeFilter);
   }, [iteminventory, activeFilter]);
 
-  const totalPages = useMemo(() => {
-    return MOCK_PAGINATION
-      ? MOCK_TOTAL_PAGES
-      : Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
-  }, [filteredItems.length]);
+  const totalPages = useMemo(
+    () => Math.ceil(filteredItems.length / ITEMS_PER_PAGE),
+    [filteredItems.length]
+  );
 
   const paginatedItems = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -177,18 +172,13 @@ export function InventoryModalForm({
   const syncAllMutation = api.inventory.syncAll.useMutation();
   const { processInventoryData } = useInventorySync();
 
-  const hadleCommitData = (data: unknown) => {
-    processInventoryData(data);
-  };
-
   const handleCommitInventory = useCallback(() => {
-    alert(`Committing inventory to blockchain... address: ${address}`);
     if (!address) return;
     syncAllMutation.mutate(
       { userId: address },
       {
         onSuccess: (data) => {
-          hadleCommitData(data);
+          void processInventoryData(data);
         },
         onError: (err) => console.error('syncAll error:', err),
       }
@@ -282,7 +272,7 @@ export function InventoryModalForm({
         </div>
 
         {/* Pagination */}
-        {(MOCK_PAGINATION || totalPages > 1) && (
+        {totalPages > 1 && (
           <div className="relative mt-5 flex w-full items-center">
             {/* Action button - left side */}
             <div className="flex-1">

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.27;
 
 import {Script} from "forge-std/Script.sol";
+import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 
 contract HelperConfig is Script {
     struct NetworkConfig {
@@ -10,12 +11,15 @@ contract HelperConfig is Script {
         address pauser;
         address minter;
         address upgrader;
+        address usdc;
     }
 
     NetworkConfig public activeNetworkConfig;
 
     constructor() {
-        if (block.chainid == 11_155_111) {
+        if (block.chainid == 43_114) {
+            activeNetworkConfig = getAvalancheConfig();
+        } else if (block.chainid == 11_155_111) {
             activeNetworkConfig = getSepoliaEthConfig();
         } else if (block.chainid == 43_113) {
             activeNetworkConfig = getFujiAvlConfig();
@@ -24,13 +28,25 @@ contract HelperConfig is Script {
         }
     }
 
+    function getAvalancheConfig() public pure returns (NetworkConfig memory sepoliaConfig) {
+        sepoliaConfig = NetworkConfig({
+            defaultAdmin: 0x5b8704E82793CC9dA874c64E845089A56ae5eD69, // My dev address
+            gameSigner: 0xB4Ee8D79974f85AA9D298628A37754d1313dAA99, // Game signer address
+            pauser: 0x5b8704E82793CC9dA874c64E845089A56ae5eD69, // My dev address
+            minter: 0x5b8704E82793CC9dA874c64E845089A56ae5eD69, // My dev address
+            upgrader: 0x5b8704E82793CC9dA874c64E845089A56ae5eD69, // My dev address
+            usdc: 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E // USDC Avalacnhe
+        });
+    }
+
     function getSepoliaEthConfig() public pure returns (NetworkConfig memory sepoliaConfig) {
         sepoliaConfig = NetworkConfig({
             defaultAdmin: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218, // My dev address
             gameSigner: 0xB4Ee8D79974f85AA9D298628A37754d1313dAA99, // Game signer address
             pauser: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218, // My dev address
             minter: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218, // My dev address
-            upgrader: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218 // My dev address
+            upgrader: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218, // My dev address
+            usdc: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238
         });
     }
 
@@ -40,21 +56,25 @@ contract HelperConfig is Script {
             gameSigner: 0xB4Ee8D79974f85AA9D298628A37754d1313dAA99, // Game signer address
             pauser: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218, // My dev address
             minter: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218, // My dev address
-            upgrader: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218 // My dev address
+            upgrader: 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218, // My dev address
+            usdc: 0x5425890298aed601595a70AB815c96711a31Bc65
         });
     }
 
-    function getOrCreateAnvilEthConfig() public view returns (NetworkConfig memory anvilConfig) {
+    function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory anvilConfig) {
         if (activeNetworkConfig.gameSigner != address(0)) {
             return activeNetworkConfig;
         }
+
+        address usdc = address(new ERC20Mock());
 
         anvilConfig = NetworkConfig({
             defaultAdmin: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // My dev address
             gameSigner: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // Game signer address
             pauser: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // My dev address
             minter: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // My dev address
-            upgrader: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 // My dev address
+            upgrader: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, // My dev address
+            usdc: usdc
         });
     }
 

@@ -18,12 +18,12 @@ jobs:
           node-version: '23'
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 10.13.1
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Run build
         env:
@@ -34,7 +34,9 @@ jobs:
           SPELL_CAST_TIMEOUT: ${{ secrets.SPELL_CAST_TIMEOUT }}
           NEXT_PUBLIC_REOWN_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_REOWN_PROJECT_ID }}
           NEXT_PUBLIC_PROJECT_URL: ${{ secrets.NEXT_PUBLIC_PROJECT_URL }}
-          NEXT_PUBLIC_GAME_REGISTRY_ADDRES: ${{ NEXT_PUBLIC_GAME_REGISTRY_ADDRESS }}
+          NEXT_PUBLIC_GAME_REGISTRY_ADDRESS: ${{ secrets.NEXT_PUBLIC_GAME_REGISTRY_ADDRESS }}
+          EVM_RPC_URL: ${{ secrets.EVM_RPC_URL }}
+          ENVIO_GRAPHQL_URL: ${{ secrets.ENVIO_GRAPHQL_URL }}
         run: pnpm turbo run build
   deploy:
     needs: test-build
@@ -148,9 +150,32 @@ jobs:
           target: ${{ secrets.TARGET_PATH }}
           strip_components: 2
 
+  copy-mongodb-backup-script:
+    needs: test-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install ssh client
+        run: sudo apt-get update && sudo apt-get install -y openssh-client
+
+      - name: Copy mongodb-backup.sh to remote server via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          port: ${{ secrets.SERVER_PORT }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: 'packages/server/scripts/mongodb-backup.sh'
+          target: ${{ secrets.TARGET_PATH }}
+          strip_components: 2
+
   build-and-deploy:
     needs: test-build
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
     env:
       DEPLOY_CONTAINER: '{"main": "nestjs-main", "dev": "nestjs-dev"}'
       APP_PORT: '{"main": "3030", "dev": "3031"}'
@@ -184,9 +209,24 @@ jobs:
             --build-arg SPELL_CAST_TIMEOUT=${{ secrets.SPELL_CAST_TIMEOUT }} \
             --build-arg MINA_NETWORK_URL=${{ secrets.MINA_NETWORK_URL }} \
             --build-arg MINA_ADMIN_PRIVATE_KEY=${{ secrets.MINA_ADMIN_PRIVATE_KEY }} \
-            --build-arg MINA_CONTRACT_ADDRESS=${{ secrets.MINa_CONTRACT_ADDRESS }} \
+            --build-arg MINA_CONTRACT_ADDRESS=${{ secrets.MINA_CONTRACT_ADDRESS }} \
             --build-arg BULLMQ_REDIS_HOST=${{ secrets.BULLMQ_REDIS_HOST }} \
             --build-arg BULLMQ_REDIS_PORT=${{ secrets.BULLMQ_REDIS_PORT }} \
+            --build-arg EVM_RPC_URL=${{ secrets.EVM_RPC_URL }} \
+            --build-arg GAME_SIGNER_PUBLIC_KEY=${{ secrets.GAME_SIGNER_PUBLIC_KEY }} \
+            --build-arg GAME_SIGNER_PRIVATE_KEY=${{ secrets.GAME_SIGNER_PRIVATE_KEY }} \
+            --build-arg GAME_REGISTRY_ADDRESS=${{ secrets.GAME_REGISTRY_ADDRESS }} \
+            --build-arg WB_RESOURCES_ADDRESS=${{ secrets.WB_RESOURCES_ADDRESS }} \
+            --build-arg WB_CHARACTER_ADDRESS=${{ secrets.WB_CHARACTER_ADDRESS }} \
+            --build-arg WB_COINS_ADDRESS=${{ secrets.WB_COINS_ADDRESS }} \
+            --build-arg WB_ITEMS_ADDRESS=${{ secrets.WB_ITEMS_ADDRESS }} \
+            --build-arg GAME_MARKET_ADDRESS=${{ secrets.GAME_MARKET_ADDRESS }} \
+            --build-arg RPC_WS_URL=${{ secrets.RPC_WS_URL }} \
+            --build-arg GAME_MARKET_DEPLOYMENT_BLOCK=${{ secrets.GAME_MARKET_DEPLOYMENT_BLOCK }} \
+            --build-arg TOURNAMENT_APP_PORT=${{ secrets.TOURNAMENT_APP_PORT }} \
+            --build-arg TOURNAMENT_CONTRACT_ADDRESS=${{ secrets.TOURNAMENT_CONTRACT_ADDRESS }} \
+            --build-arg TOURNAMENT_REDIS_URL=${{ secrets.TOURNAMENT_REDIS_URL }} \
+            --build-arg TOURNAMENT_ADMIN_PRIVATE_KEY=${{ secrets.TOURNAMENT_ADMIN_PRIVATE_KEY }} \
             -t ${{ steps.calc-container.outputs.container_name }} .
 
       - name: Save Docker image to tar
@@ -217,6 +257,11 @@ jobs:
           script: |
             cd ${{ secrets.TARGET_PATH }}
 
+            # === Ensure required directories exist ===
+            mkdir -p backups scripts
+            chmod 755 backups scripts
+            chown -R docker:docker backups scripts
+
             # === Regenerate .env securely ===
             cat > .env << 'EOT'
             MONGO_USERNAME=${{ secrets.MONGO_USERNAME }}
@@ -225,7 +270,6 @@ jobs:
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_DB=${{ secrets.POSTGRES_DB }}
             REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-            RPC_URL=${{ secrets.RPC_URL }}
             EOT
 
             chmod 600 .env

@@ -10,6 +10,25 @@ import type { IHeroStats } from '@/lib/types/IHeroStat';
 import { trpcClient } from '@/trpc/vanilla';
 import { allWizards } from '../../../../common/wizards';
 import { defaultHeroStats } from '@/lib/constants/stat';
+import type { PublicClient } from 'viem';
+import { env } from '@/env';
+
+const WB_RESOURCES_ADDRESS = (
+  env.NEXT_PUBLIC_RESOURCES_CONTRACT_ADDRESS ?? ''
+) as `0x${string}`;
+
+const BALANCE_OF_BATCH_ABI = [
+  {
+    type: 'function',
+    name: 'balanceOfBatch',
+    inputs: [
+      { name: 'accounts', type: 'address[]' },
+      { name: 'ids', type: 'uint256[]' },
+    ],
+    outputs: [{ name: '', type: 'uint256[]' }],
+    stateMutability: 'view',
+  },
+] as const;
 
 export type EquippedSlots = Record<
   InventoryItemWearableArmorSlot,
@@ -95,12 +114,14 @@ interface InventoryStore {
   // Stats per wizard (calculated from equipped items)
   statsByWizard: Record<string, IHeroStats>;
 
-  // User's inventory items (from database)
+  // User's inventory items (from database + on-chain).
+  // Items that only exist on-chain carry onchainOnly: true.
   iteminventory: IUserInventoryItem[];
 
   // Actions - address comes from useMinaAppkit hook in components
   loadUserInventory: (address: string) => Promise<void>;
   loadCurrencies: (address: string) => Promise<void>;
+  loadOnchainBalances: (evmAddress: string, publicClient: PublicClient) => Promise<void>;
   getEquippedItems: (wizardId: string) => EquippedSlots;
   getStats: (wizardId: string) => IHeroStats;
   equipItem: (
@@ -131,6 +152,53 @@ export const useInventoryStore = create<InventoryStore>()(
       equippedItemsByWizard: {},
       statsByWizard: {},
       iteminventory: [],
+
+      loadOnchainBalances: async (evmAddress: string, publicClient: PublicClient) => {
+        if (!WB_RESOURCES_ADDRESS) {
+          console.warn('loadOnchainBalances: NEXT_PUBLIC_RESOURCES_CONTRACT_ADDRESS is not set');
+          return;
+        }
+
+        try {
+          // allItems comes from `iteminventory` collection (item definitions) which has tokenId.
+          // The store's iteminventory items come from `userinventory` (ownership records) and
+          // may not have tokenId, so we use allItems as the authoritative tokenId source.
+          const allItems = await trpcClient.items.getAllTokenIds.query();
+          if (allItems.length === 0) return;
+
+          const accounts = allItems.map(() => evmAddress as `0x${string}`);
+          const ids = allItems.map((i) => BigInt(i.tokenId));
+
+          const balances = await publicClient.readContract({
+            address: WB_RESOURCES_ADDRESS,
+            abi: BALANCE_OF_BATCH_ABI,
+            functionName: 'balanceOfBatch',
+            args: [accounts, ids],
+          }) as bigint[];
+
+          // Build a map: itemId -> balance
+          const balanceByItemId = new Map<string, bigint>();
+          allItems.forEach((itemDef, idx) => {
+            const balance = balances[idx];
+            if (balance !== undefined) {
+              balanceByItemId.set(itemDef.id, balance);
+            }
+          });
+
+          const state = get();
+
+          // Stamp onchainBalance onto existing DB items (matched by item.id)
+          const updatedInventory = state.iteminventory.map((userItem) => {
+            const balance = balanceByItemId.get(userItem.item.id);
+            if (balance === undefined) return userItem;
+            return { ...userItem, onchainBalance: balance };
+          });
+
+          set({ iteminventory: updatedInventory });
+        } catch (error) {
+          console.error('loadOnchainBalances failed:', error);
+        }
+      },
 
       loadCurrencies: async (address: string) => {
         try {

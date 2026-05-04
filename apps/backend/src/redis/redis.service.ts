@@ -1,27 +1,26 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 import { createClient, RedisClientType } from 'redis';
+import { REDIS_URL } from './redis.constants';
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private redisClient: RedisClientType;
   private isConnected = false;
 
-  constructor() {
-    this.redisClient = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
-    });
+  constructor(@Inject(REDIS_URL) private readonly redisUrl: string) {
+    this.redisClient = createClient({ url: this.redisUrl });
 
     this.redisClient.on('error', (err) =>
-      console.error('RedisService Redis Client Error', err)
+      console.error(`RedisService [${this.redisUrl}] Error`, err)
     );
 
     this.redisClient.on('connect', () => {
-      console.log('RedisService Redis Connected');
+      console.log(`RedisService [${this.redisUrl}] Connected`);
       this.isConnected = true;
     });
 
     this.redisClient.on('disconnect', () => {
-      console.log('RedisService Redis Disconnected');
+      console.log(`RedisService [${this.redisUrl}] Disconnected`);
       this.isConnected = false;
     });
 

@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PlaySteps } from '@/lib/enums/PlaySteps';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ModeSelect } from './ModeSelect';
 import { Navigation } from './Navigation';
 import { PlayMode } from '@/lib/enums/PlayMode';
+import { BotType } from '@/lib/enums/BotType';
 import CharacterSelect from '@/components/CharacterSelect';
+import { BotSelect } from './BotSelect';
 import { cn, spellIdToSpell } from '@/lib/utils';
 import MapEditor from '@/components/MapEditor';
 import Matchmaking from './Matchmaking';
@@ -15,10 +17,14 @@ import { allWizards } from '../../../../common/wizards';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
 import Header from '../Header';
 import Modals from '../Header/Modals';
+import { TOURNAMENT_MATCHMAKING_STORAGE_KEY } from '@/lib/constants/tournament-matchmaking';
 
 export default function Play() {
+  const router = useRouter();
+  const tournamentBootstrapRef = useRef(false);
   const [playStep, setPlayStep] = useState<PlaySteps>(PlaySteps.SELECT_MODE);
   const [playMode, setPlayMode] = useState<PlayMode | undefined>(undefined);
+  const [botType, setBotType] = useState<BotType>(BotType.MAGE);
   const searchParams = useSearchParams();
 
   // Extract rewards from URL params if present (Gold only for now)
@@ -35,6 +41,18 @@ export default function Play() {
 
   const { stater, setSelectedSkills, setCurrentWizard } =
     useUserInformationStore();
+
+  useEffect(() => {
+    const tid = searchParams.get('tournamentId');
+    if (!tid || tournamentBootstrapRef.current) return;
+    tournamentBootstrapRef.current = true;
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(TOURNAMENT_MATCHMAKING_STORAGE_KEY, tid);
+    }
+    setPlayMode(PlayMode.PVP);
+    setPlayStep(PlaySteps.SELECT_CHARACTER);
+    router.replace('/play');
+  }, [searchParams, router]);
 
   // Reset selected skills when wizard changes
   // useEffect(() => {
@@ -55,6 +73,7 @@ export default function Play() {
             <Navigation
               playStep={playStep}
               setPlayStep={setPlayStep}
+              playMode={playMode}
               className={cn(playStep === PlaySteps.SELECT_CHARACTER && 'pl-25')}
             />
           )}
@@ -64,6 +83,7 @@ export default function Play() {
           {playStep === PlaySteps.SELECT_CHARACTER && (
             <CharacterSelect
               setPlayStep={setPlayStep}
+              playMode={playMode}
               currentWizard={
                 allWizards.find(
                   (wizard) =>
@@ -75,11 +95,15 @@ export default function Play() {
               setSelectedSkills={setSelectedSkills}
             />
           )}
+          {playStep === PlaySteps.SELECT_BOT && (
+            <BotSelect setPlayStep={setPlayStep} setBotType={setBotType} />
+          )}
           {playStep === PlaySteps.SELECT_MAP && <MapEditor />}
           {playStep === PlaySteps.MATCHMAKING && (
             <Matchmaking
               setPlayStep={setPlayStep}
               playMode={playMode ?? PlayMode.PVP}
+              botType={botType}
             />
           )}
           {(playStep === PlaySteps.LOSE || playStep === PlaySteps.WIN) && (

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
 import { ethers, keccak256 } from 'ethers';
 
 /**
@@ -18,7 +19,7 @@ export class BlockchainService {
   constructor() {
     // Initialize blockchain connection
     // Make sure to set these environment variables:
-    const rpcUrl = process.env.RPC_URL || 'http://localhost:8545';
+    const rpcUrl = process.env.EVM_RPC_URL || 'http://localhost:8545';
     const privateKey = process.env.GAME_SIGNER_PRIVATE_KEY;
     this.gameRegistryAddress = process.env.GAME_REGISTRY_ADDRESS || '';
     this.wbResourcesAddress = process.env.WB_RESOURCES_ADDRESS || '';
@@ -250,7 +251,10 @@ export class BlockchainService {
         ],
         this.provider
       );
-      return await contract.balanceOf!(playerAddress, tokenId);
+      return await this.withRpcRetry(
+        `balanceOf1155(${tokenAddress.slice(0, 10)}… id=${tokenId})`,
+        () => contract.balanceOf!(playerAddress, tokenId)
+      );
     } else {
       // ERC721: balanceOf(address owner)
       const contract = new ethers.Contract(
@@ -258,7 +262,10 @@ export class BlockchainService {
         ['function balanceOf(address owner) view returns (uint256)'],
         this.provider
       );
-      return await contract.balanceOf!(playerAddress);
+      return await this.withRpcRetry(
+        `balanceOf721(${tokenAddress.slice(0, 10)}…)`,
+        () => contract.balanceOf!(playerAddress)
+      );
     }
   }
 
@@ -286,7 +293,10 @@ export class BlockchainService {
     console.log(`🔍 [getGameElement] Fetching element for "${name}"`);
     console.log(`   Resource hash: ${resourceHash}`);
 
-    const result = await gameRegistryContract.getGameElementHash!(resourceHash);
+    const result = await this.withRpcRetry(
+      `getGameElementHash("${name}")`,
+      () => gameRegistryContract.getGameElementHash!(resourceHash)
+    );
 
     console.log(`🔍 [getGameElement] Raw result:`, result);
 
@@ -304,6 +314,67 @@ export class BlockchainService {
   /*//////////////////////////////////////////////////////////////
                            PRIVATE FUNCTIONS
   //////////////////////////////////////////////////////////////*/
+
+  /** Transient JSON-RPC failures often surface as CALL_EXCEPTION with empty revert data. */
+  private isRetryableRpcError(error: unknown): boolean {
+    const e = error as { code?: string; message?: string };
+    const msg = String(e?.message ?? error ?? '');
+    if (
+      e?.code === 'CALL_EXCEPTION' ||
+      e?.code === 'TIMEOUT' ||
+      e?.code === 'NETWORK_ERROR' ||
+      e?.code === 'SERVER_ERROR'
+    ) {
+      return true;
+    }
+    if (
+      msg.includes('missing revert data') ||
+      msg.includes('could not coalesce error') ||
+      msg.includes('ECONNRESET') ||
+      msg.includes('ETIMEDOUT') ||
+      msg.includes('EPIPE') ||
+      msg.includes('503') ||
+      msg.includes('502') ||
+      msg.includes('429')
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /** Random uint256 for commit EIP-712; avoids collisions when signing in parallel (e.g. Promise.all). */
+  private nextCommitNonce(): bigint {
+    return BigInt(`0x${randomBytes(32).toString('hex')}`);
+  }
+
+  private async withRpcRetry<T>(
+    label: string,
+    fn: () => Promise<T>
+  ): Promise<T> {
+    const maxAttempts = 4;
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        lastError = err;
+        if (!this.isRetryableRpcError(err) || attempt === maxAttempts) {
+          throw err;
+        }
+        const backoff = 500 * 2 ** (attempt - 1);
+        console.warn(
+          `[BlockchainService] ${label} RPC attempt ${attempt}/${maxAttempts} failed, retrying in ${backoff}ms:`,
+          (err as Error)?.message ?? err
+        );
+        await this.sleep(backoff);
+      }
+    }
+    throw lastError;
+  }
 
   private async _mint(
     name: string,
@@ -339,8 +410,7 @@ export class BlockchainService {
       console.log('📦 Encoded callData:', callData);
 
       // Step 2: Get signed message (resourceHash, commit, signature)
-      // Generate unique nonce using timestamp to prevent replay attacks
-      const nonce = Date.now();
+      const nonce = this.nextCommitNonce();
 
       const { nameHash, commit, signature } = await this._getSignedMessage(
         name,
@@ -376,7 +446,7 @@ export class BlockchainService {
       }
 
       console.log(
-        `🪙 Minting ${amount} ${name} (tokenId: ${tokenId}) to player: ${playerAddress}`
+        `🪙 Burning ${amount} ${name} (tokenId: ${tokenId}) to player: ${playerAddress}`
       );
 
       // Step 1: Encode callData for mint function
@@ -394,8 +464,7 @@ export class BlockchainService {
       console.log('📦 Encoded callData:', callData);
 
       // Step 2: Get signed message (resourceHash, commit, signature)
-      // Generate unique nonce using timestamp to prevent replay attacks
-      const nonce = Date.now();
+      const nonce = this.nextCommitNonce();
 
       const { nameHash, commit, signature } = await this._getSignedMessage(
         name,
@@ -442,8 +511,7 @@ export class BlockchainService {
       console.log('📦 Encoded callData:', callData);
 
       // Step 2: Get signed message (nameHash, commit, signature)
-      // Generate unique nonce using timestamp to prevent replay attacks
-      const nonce = Date.now();
+      const nonce = this.nextCommitNonce();
 
       const { nameHash, commit, signature } = await this._getSignedMessage(
         name,
@@ -491,8 +559,7 @@ export class BlockchainService {
       console.log('📦 Encoded callData:', callData);
 
       // Step 2: Get signed message (nameHash, commit, signature)
-      // Generate unique nonce using timestamp to prevent replay attacks
-      const nonce = Date.now();
+      const nonce = this.nextCommitNonce();
 
       const { nameHash, commit, signature } = await this._getSignedMessage(
         name,
@@ -564,7 +631,7 @@ export class BlockchainService {
    *
    * @param elementName - Name of the game element (e.g., "Wood", "Iron Ore")
    * @param target - Target contract address (WBResources address)
-   * @param nonce - Nonce to prevent replay attacks
+   * @param nonce - Random uint256 to prevent replay (parallel-safe)
    * @param callData - Encoded function call data
    * @param account - Player's address
    * @returns resourceHash, commit, and signature
@@ -572,7 +639,7 @@ export class BlockchainService {
   private async _getSignedMessage(
     elementName: string,
     target: string,
-    nonce: number,
+    nonce: bigint,
     callData: string,
     account: string
   ): Promise<{ nameHash: string; commit: string; signature: string }> {

@@ -4,6 +4,7 @@ import { PveIcon } from './assets/pve-icon';
 import { PvpIcon } from './assets/pvp-icon';
 import { PlaySteps } from '@/lib/enums/PlaySteps';
 import { PlayMode } from '@/lib/enums/PlayMode';
+import { TOURNAMENT_MATCHMAKING_STORAGE_KEY } from '@/lib/constants/tournament-matchmaking';
 
 export function ModeSelect({
   setPlayStep,
@@ -28,6 +29,9 @@ export function ModeSelect({
             variant="gray"
             className="w-106 h-15"
             onClick={() => {
+              if (typeof window !== 'undefined') {
+                sessionStorage.removeItem(TOURNAMENT_MATCHMAKING_STORAGE_KEY);
+              }
               setPlayStep(PlaySteps.SELECT_CHARACTER);
               setPlayMode(PlayMode.PVP);
             }}
@@ -53,6 +57,9 @@ export function ModeSelect({
             variant="gray"
             className="w-106 h-15"
             onClick={() => {
+              if (typeof window !== 'undefined') {
+                sessionStorage.removeItem(TOURNAMENT_MATCHMAKING_STORAGE_KEY);
+              }
               setPlayStep(PlaySteps.SELECT_CHARACTER);
               setPlayMode(PlayMode.PVE);
             }}

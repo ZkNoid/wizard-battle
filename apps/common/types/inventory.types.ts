@@ -51,6 +51,7 @@ export interface IInventoryItem {
   type: ItemType;
   amount: number;
   price: number;
+  tokenId?: string;
 }
 
 // For frontend display - includes full item objects in requirements
@@ -107,6 +108,8 @@ export interface IUserInventoryItem {
   equippedToWizardId?: string;
   acquiredAt?: Date;
   acquiredFrom?: ItemAcquiredFrom;
+  /** Balance confirmed on-chain via ERC1155.balanceOfBatch. undefined = not yet fetched. */
+  onchainBalance?: bigint;
 }
 
 // Populated user inventory armor item

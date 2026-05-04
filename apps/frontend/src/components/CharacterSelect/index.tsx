@@ -5,6 +5,7 @@ import type { IWizard, ISkill } from '@/lib/types/IWizard';
 import { SkillsBg } from './assets/skills-bg';
 import { Button } from '../shared/Button';
 import { PlaySteps } from '@/lib/enums/PlaySteps';
+import { PlayMode } from '@/lib/enums/PlayMode';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { MAX_SELECTED_SKILLS } from '@/lib/constants/wizards';
@@ -19,16 +20,20 @@ import type {
   FunnelCharacterCreatedProps,
   CharacterSelectedProps,
   SkillsSelectedProps,
+  PlayerJoinedGameProps,
+  SkillSelectedProps,
 } from '@/lib/analytics/types';
 
 export default function CharacterSelect({
   setPlayStep,
+  playMode,
   currentWizard,
   setCurrentWizard,
   selectedSkills,
   setSelectedSkills,
 }: {
   setPlayStep: (playStep: PlaySteps) => void;
+  playMode?: PlayMode;
   currentWizard: Wizard;
   setCurrentWizard: (wizard: Wizard) => void;
   selectedSkills: SpellStats[];
@@ -156,6 +161,12 @@ export default function CharacterSelect({
               };
               trackEvent(AnalyticsEvents.FUNNEL_CHARACTER_CREATED, funnelProps);
 
+              const joinedProps: PlayerJoinedGameProps = {
+                wizard_id: currentWizard.id.toString(),
+                wizard_name: currentWizard.name,
+              };
+              trackEvent(AnalyticsEvents.PLAYER_JOINED_GAME, joinedProps);
+
               // Track character selected
               const charProps: CharacterSelectedProps = {
                 wizard_id: currentWizard.id.toString(),
@@ -180,7 +191,20 @@ export default function CharacterSelect({
               };
               trackEvent(AnalyticsEvents.SKILLS_SELECTED, skillsProps);
 
-              setPlayStep(PlaySteps.SELECT_MAP);
+              for (const row of skillsProps.skills) {
+                const skillRow: SkillSelectedProps = {
+                  wizard_id: currentWizard.id.toString(),
+                  spell_id: row.spell_id,
+                  spell_name: row.spell_name,
+                };
+                trackEvent(AnalyticsEvents.SKILL_SELECTED, skillRow);
+              }
+
+              setPlayStep(
+                playMode === PlayMode.PVE
+                  ? PlaySteps.SELECT_BOT
+                  : PlaySteps.SELECT_MAP
+              );
             }}
             isLong={true}
           >

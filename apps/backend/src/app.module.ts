@@ -17,12 +17,16 @@ import { CraftingModule } from './crafting/crafting.module';
 import { RewardModule } from './reward/reward.module';
 import { UserModule } from './user/user.module';
 import { QuestsModule } from './quests/quests.module';
+import { MarketModule } from './market/market.module';
+import { NftModule } from './nft/nft.module';
 
 @Module({
   imports: [
     GameSessionModule,
     ScheduleModule.forRoot(),
-    RedisModule,
+    RedisModule.forRoot({
+      url: process.env.REDIS_URL || 'redis://localhost:6379',
+    }),
     GameItemModule,
     GameCommitModule,
     UserInventoryModule,
@@ -38,6 +42,8 @@ import { QuestsModule } from './quests/quests.module';
     RewardModule,
     UserModule,
     QuestsModule,
+    MarketModule,
+    NftModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, RedisHealthService, GameStateService],

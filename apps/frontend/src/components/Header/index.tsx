@@ -49,6 +49,8 @@ export default function Header({ onTabChange }: HeaderProps) {
     setIsInventoryModalOpen,
     setIsCraftModalOpen,
     setIsExpeditionModalOpen,
+    setIsTournamentsModalOpen,
+    setIsMarketModalOpen,
   } = useMiscellaneousSessionStore();
   const { gold, blackOrb, loadCurrencies } = useInventoryStore();
 
@@ -69,7 +71,13 @@ export default function Header({ onTabChange }: HeaderProps) {
       <div className="absolute left-0 top-2.5 z-50 grid w-full grid-cols-3 items-center px-20">
         <SettingsBar setTab={onTabChange} />
         <div className="flex w-full items-center justify-center gap-5">
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
+          <BoxButton
+            color="gray"
+            onClick={() => {
+              setIsMarketModalOpen(true);
+            }}
+            className="size-16"
+          >
             <Image
               src={'/icons/market.png'}
               width={32}
@@ -97,7 +105,17 @@ export default function Header({ onTabChange }: HeaderProps) {
               className="h-8 w-7"
             />
           </BoxButton>
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
+          <BoxButton
+            color="gray"
+            onClick={() => {
+              window.open(
+                'https://mail.google.com/mail/',
+                '_blank',
+                'noopener,noreferrer'
+              );
+            }}
+            className="size-16"
+          >
             <Image
               src={'/icons/mail.png'}
               width={32}
@@ -108,7 +126,11 @@ export default function Header({ onTabChange }: HeaderProps) {
               className="h-6 w-8"
             />
           </BoxButton>
-          <BoxButton color="gray" onClick={() => {}} className="size-16">
+          <BoxButton
+            color="gray"
+            onClick={() => setIsTournamentsModalOpen(true)}
+            className="size-16"
+          >
             <Image
               src={'/icons/tournaments.png'}
               width={36}
@@ -121,21 +143,25 @@ export default function Header({ onTabChange }: HeaderProps) {
           </BoxButton>
         </div>
         <div className="ml-10 flex w-full items-center justify-between gap-2 px-0">
-          <Button
-            variant="gray"
-            className="h-15 w-45 flex items-center justify-center gap-2.5"
-          >
-            <Image
-              src={'/icons/gold-coin.png'}
-              width={32}
-              height={32}
-              unoptimized={true}
-              alt="gold-coin"
-              quality={100}
-              className="h-8 w-10"
-            />
-            <span>{formatCurrency(gold)}</span>
-          </Button>
+          <div className="w-40 shrink-0">
+            <Button
+              variant="gray"
+              className="h-15 flex w-full items-center justify-center gap-2.5"
+              size="sm"
+            >
+              <Image
+                src={'/icons/gold-coin.png'}
+                width={32}
+                height={32}
+                unoptimized={true}
+                alt="gold-coin"
+                quality={100}
+                className="h-8 w-10"
+              />
+              <span>{formatCurrency(gold)}</span>
+            </Button>
+          </div>
+
           {/* <Button
             variant="gray"
             className="h-15 flex w-32 items-center justify-center gap-2.5"
@@ -151,14 +177,13 @@ export default function Header({ onTabChange }: HeaderProps) {
             />
             <span>{formatCurrency(blackOrb)}</span>
           </Button> */}
-          <div className="w-80 shrink-0">
+          <div className="w-60 shrink-0">
             <Wallet />
           </div>
-          {
-            <div className="w-40 shrink-0">
-              <WalletReown />
-            </div>
-          }
+
+          <div className="w-60 shrink-0">
+            <WalletReown />
+          </div>
         </div>
       </div>
     </>

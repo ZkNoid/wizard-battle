@@ -31,7 +31,7 @@ export default function CraftModal({ onClose }: { onClose: () => void }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <CraftModalForm onClose={onClose} address={address} />
       <InventoryModalForm
         onClose={onClose}

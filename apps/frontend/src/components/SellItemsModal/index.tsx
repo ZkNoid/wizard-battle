@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ModalTitle from '../shared/ModalTitle';
 import { Button } from '../shared/Button';
 import { QuantitySelector } from '../shared/QuantitySelector';
@@ -11,10 +11,29 @@ import { OfferPreview } from './OfferPreview';
 import { useInventoryStore } from '@/lib/store';
 import { useModalSound } from '@/lib/hooks/useAudio';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
-import {
-  MARKET_CURRENCY_OPTIONS,
-  MARKET_SELL_ITEM_TYPE_OPTIONS,
-} from '@/lib/constants/market';
+import { useGameMarket } from '@/lib/hooks/useGameMarket';
+import { MARKET_CURRENCY_OPTIONS } from '@/lib/constants/market';
+import type { IUserInventoryItem } from '@/lib/types/Inventory';
+import { api } from '@/trpc/react';
+import { useInventorySync } from '@/lib/hooks/useInventorySync';
+import { useMinaAppkit } from 'mina-appkit';
+import { useAppKitAccount } from '@reown/appkit/react';
+import { usePublicClient } from 'wagmi';
+
+/** Wait after commit tx confirms before re-reading chain + DB (indexing lag). */
+const POST_COMMIT_REFETCH_MS = 3000;
+
+function onchainQuantity(ui: IUserInventoryItem): number {
+  const b = ui.onchainBalance;
+  if (b === undefined || b <= 0n) return 0;
+  const n = Number(b);
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+}
+
+const USDC_TOKEN_ADDRESS = process.env
+  .NEXT_PUBLIC_USDC_TOKEN_ADDRESS as `0x${string}`;
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+const GOLD_RESOURCE_ID = 'Gold';
 
 interface SellItemsModalProps {
   onClose: () => void;
@@ -23,45 +42,190 @@ interface SellItemsModalProps {
 export default function SellItemsModal({ onClose }: SellItemsModalProps) {
   useModalSound();
 
+  const { address: minaAddress } = useMinaAppkit();
+  const { address: evmAddress } = useAppKitAccount();
+  const publicClient = usePublicClient();
   const iteminventory = useInventoryStore((state) => state.iteminventory);
+  const loadUserInventory = useInventoryStore(
+    (state) => state.loadUserInventory
+  );
+  const loadOnchainBalances = useInventoryStore(
+    (state) => state.loadOnchainBalances
+  );
+
+  const syncAllMutation = api.inventory.syncAll.useMutation();
+  const { processInventoryData } = useInventorySync();
+  const postCommitRefetchTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (postCommitRefetchTimeoutRef.current) {
+        clearTimeout(postCommitRefetchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const runCommitInventory = useCallback(() => {
+    if (!minaAddress) return;
+    if (postCommitRefetchTimeoutRef.current) {
+      clearTimeout(postCommitRefetchTimeoutRef.current);
+      postCommitRefetchTimeoutRef.current = null;
+    }
+    syncAllMutation.mutate(
+      { userId: minaAddress },
+      {
+        onSuccess: async (data) => {
+          try {
+            await processInventoryData(data);
+          } catch (e) {
+            console.error('processInventoryData failed:', e);
+            return;
+          }
+          postCommitRefetchTimeoutRef.current = setTimeout(() => {
+            postCommitRefetchTimeoutRef.current = null;
+            void loadUserInventory(minaAddress);
+            if (evmAddress && publicClient) {
+              void loadOnchainBalances(evmAddress, publicClient);
+            }
+          }, POST_COMMIT_REFETCH_MS);
+        },
+        onError: (err) => console.error('syncAll error:', err),
+      }
+    );
+  }, [
+    minaAddress,
+    evmAddress,
+    publicClient,
+    syncAllMutation,
+    processInventoryData,
+    loadUserInventory,
+    loadOnchainBalances,
+  ]);
+
+  const sellableInventory = useMemo(
+    () => iteminventory.filter((ui) => onchainQuantity(ui) > 0),
+    [iteminventory]
+  );
   const { setIsRequestSuccessModalOpen, setIsRequestFailureModalOpen } =
     useMiscellaneousSessionStore();
+  const { createOrder, approveNFT, isPending, getGameElement } =
+    useGameMarket();
 
-  const [itemName, setItemName] = useState('');
-  const [selectedItemId, setSelectedItemId] = useState('');
+  const [selectedItemId, setSelectedItemId] = useState('Gold');
   const [quantity, setQuantity] = useState(1);
-  const [itemType, setItemType] = useState('');
-  const [currency, setCurrency] = useState('gold');
+  const [currency, setCurrency] = useState('Gold');
   const [price, setPrice] = useState('');
+  const [isPlacing, setIsPlacing] = useState(false);
 
   const inventoryOptions = useMemo(
     () =>
-      iteminventory.map((ui) => ({
+      sellableInventory.map((ui) => ({
         value: ui.item.id,
-        label: `${ui.item.title} (x${ui.quantity})`,
+        label: `${ui.item.title} (x${onchainQuantity(ui)})`,
       })),
-    [iteminventory]
+    [sellableInventory]
   );
 
   const selectedUserItem = useMemo(
-    () => iteminventory.find((ui) => ui.item.id === selectedItemId) ?? null,
-    [iteminventory, selectedItemId]
+    () => sellableInventory.find((ui) => ui.item.id === selectedItemId) ?? null,
+    [sellableInventory, selectedItemId]
   );
 
-  const maxQuantity = selectedUserItem?.quantity ?? 1;
+  const maxQuantity = selectedUserItem
+    ? Math.max(1, onchainQuantity(selectedUserItem))
+    : 1;
+
+  useEffect(() => {
+    if (
+      selectedItemId &&
+      !sellableInventory.some((ui) => ui.item.id === selectedItemId)
+    ) {
+      setSelectedItemId('');
+      setQuantity(1);
+    }
+  }, [sellableInventory, selectedItemId]);
 
   const handleItemChange = (id: string) => {
     setSelectedItemId(id);
     setQuantity(1);
   };
 
-  const handlePlaceOrder = () => {
-    if (!selectedItemId || !price || Number(price) <= 0) return;
+  const handlePlaceOrder = async () => {
+    if (!selectedItemId || !price || Number(price) <= 0 || !selectedUserItem)
+      return;
 
-    if (Math.random() < 0.5) {
+    setIsPlacing(true);
+    try {
+      console.log(
+        '[handlePlaceOrder] fetching game element for item:',
+        selectedUserItem.item.id
+      );
+      const gameElement = await getGameElement(selectedUserItem.item.id);
+      if (!gameElement) {
+        throw new Error(
+          `Game element not registered for item: ${selectedUserItem.item.id}`
+        );
+      }
+      console.log('[handlePlaceOrder] gameElement:', gameElement);
+
+      // Gold is an ERC-1155 with 0 decimals — price is a plain integer, not wei.
+      const priceOnchain = BigInt(Math.round(Number(price)));
+
+      const isGoldPayment = currency === 'Gold';
+      console.log(
+        '[handlePlaceOrder] currency:',
+        currency,
+        '| isGoldPayment:',
+        isGoldPayment
+      );
+
+      const goldElement = isGoldPayment
+        ? await getGameElement(GOLD_RESOURCE_ID)
+        : null;
+      console.log('[handlePlaceOrder] goldElement:', goldElement);
+
+      const paymentToken = isGoldPayment
+        ? (goldElement?.tokenAddress ?? ZERO_ADDRESS)
+        : (USDC_TOKEN_ADDRESS ?? ZERO_ADDRESS);
+      const paymentTokenId =
+        isGoldPayment && goldElement ? goldElement.tokenId : 0n;
+
+      console.log(
+        '[handlePlaceOrder] paymentToken:',
+        paymentToken,
+        '| paymentTokenId:',
+        paymentTokenId
+      );
+      if (isGoldPayment && paymentTokenId === 0n) {
+        console.error(
+          '[handlePlaceOrder] paymentTokenId=0 for gold — goldElement missing or not registered'
+        );
+      }
+
+      if (gameElement.tokenAddress) {
+        await approveNFT(gameElement.tokenAddress, true);
+      }
+
+      await createOrder({
+        itemId: selectedUserItem.item.id,
+        token: gameElement.tokenAddress,
+        tokenId: gameElement.tokenId,
+        price: priceOnchain,
+        amount: BigInt(quantity),
+        paymentToken,
+        paymentTokenId,
+        title: selectedUserItem.item.title,
+      });
+
       setIsRequestSuccessModalOpen(true);
-    } else {
+      onClose();
+    } catch (error) {
+      console.error('Failed to place order:', error);
       setIsRequestFailureModalOpen(true);
+    } finally {
+      setIsPlacing(false);
     }
   };
 
@@ -69,15 +233,11 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
     price && Number(price) > 0 ? Number(price) * quantity : null;
 
   const isFormValid =
-    itemName.trim() !== '' &&
-    selectedItemId !== '' &&
-    itemType !== '' &&
-    price !== '' &&
-    Number(price) > 0;
+    selectedItemId !== '' && price !== '' && Number(price) > 0;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -88,15 +248,6 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
           <ModalTitle title="Sell Items" onClose={onClose} />
 
           <div className="mt-4 flex flex-col gap-4">
-            {/* Item name */}
-            <InputWithLabel
-              label="Item name"
-              value={itemName}
-              onChange={setItemName}
-              placeholder="Give name for Item you want to sell"
-              size="xl"
-            />
-
             {/* Choose Item & Quantity */}
             <div className="flex w-full flex-row items-end gap-3">
               <div className="w-[55%]">
@@ -118,16 +269,18 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
               </div>
             </div>
 
-            {/* Choose type of items */}
-            <div className="w-[55%]">
-              <SelectWithLabel
-                label="Choose type of items"
-                options={MARKET_SELL_ITEM_TYPE_OPTIONS}
-                value={itemType}
-                onChange={setItemType}
-                placeholder="item type"
-              />
-            </div>
+            <p className="font-pixel-klein text-main-gray/80 -mt-1 text-center text-xs leading-relaxed">
+              If you do not see your items —{' '}
+              <button
+                type="button"
+                onClick={runCommitInventory}
+                disabled={!minaAddress || syncAllMutation.isPending}
+                className="font-pixel-klein text-sky-400 underline decoration-sky-400/80 underline-offset-2 transition-colors hover:text-sky-300 disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
+              >
+                commit
+              </button>{' '}
+              them first.
+            </p>
 
             {/* Currency + Amount */}
             <div className="flex flex-row gap-4">
@@ -162,13 +315,13 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
             variant="gray"
             className="mt-auto h-14 w-full"
             onClick={handlePlaceOrder}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isPlacing || isPending}
             enableHoverSound
             enableClickSound
             isLong
           >
             <span className="font-pixel text-main-gray text-lg font-bold">
-              Place order
+              {isPlacing || isPending ? 'Placing order...' : 'Place order'}
             </span>
           </Button>
         </div>

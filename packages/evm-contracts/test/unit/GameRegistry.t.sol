@@ -25,6 +25,7 @@ contract GameRegistryTest is Test {
 
     address public GAME_SIGNER;
     address public ADMIN;
+    address public PLAYER;
 
     uint256 public GAME_SIGNER_PRIV_KEY;
 
@@ -42,6 +43,7 @@ contract GameRegistryTest is Test {
 
         ADMIN = msg.sender;
         (GAME_SIGNER, GAME_SIGNER_PRIV_KEY) = makeAddrAndKey("GAME_SIGNER");
+        PLAYER = makeAddr("player");
 
         vm.prank(ADMIN);
         gameRegistry.grantRole(GAME_SIGNER_ROLE, GAME_SIGNER);
@@ -53,7 +55,7 @@ contract GameRegistryTest is Test {
 
     modifier addGameElement() {
         address tokenAddress = address(gameRegistry);
-        uint256 elementTokenId = 100;
+        uint256 elementTokenId = 1;
         bool elementHasTokenId = false;
 
         vm.prank(GAME_SIGNER);
@@ -242,9 +244,11 @@ contract GameRegistryTest is Test {
         // Use a nonce
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
         (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage(0, callData);
+        vm.prank(PLAYER);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
 
         // Test used nonce
+        vm.prank(PLAYER);
         assertTrue(gameRegistry.getIsNonceUsed(0), "Nonce 0 should be used");
     }
 
@@ -382,7 +386,7 @@ contract GameRegistryTest is Test {
                       COMMIT RESOURCE - SUCCESS
     //////////////////////////////////////////////////////////////*/
 
-    function test_commitSingle() public addGameElement {
+    function test_commitSingle_() public addGameElement {
         address tokenAddress = gameRegistry.getGameElementHash(keccak256(bytes(ELEMENT_NAME))).tokenAddress;
         console2.log("Token address:", tokenAddress);
         assertTrue(tokenAddress != address(0), "Token address should not be zero");
@@ -390,6 +394,7 @@ contract GameRegistryTest is Test {
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
         (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage(0, callData);
 
+        vm.prank(PLAYER);
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
@@ -430,7 +435,7 @@ contract GameRegistryTest is Test {
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
 
         address target = address(0); // Invalid target
-        address account = makeAddr("player");
+        address account = PLAYER;
         address signer = GAME_SIGNER;
         uint256 nonce = 1;
 
@@ -440,6 +445,7 @@ contract GameRegistryTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(GAME_SIGNER_PRIV_KEY, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
+        vm.prank(PLAYER);
         vm.expectRevert(IGameRegistry.GameRegistry__InvalidTarget.selector);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
@@ -451,7 +457,7 @@ contract GameRegistryTest is Test {
         bytes memory callData = abi.encodeWithSignature("nonExistentFunction()");
 
         address target = address(gameRegistry);
-        address account = makeAddr("player");
+        address account = PLAYER;
         address signer = GAME_SIGNER;
         uint256 nonce = 1;
 
@@ -461,6 +467,7 @@ contract GameRegistryTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(GAME_SIGNER_PRIV_KEY, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
+        vm.prank(PLAYER);
         vm.expectRevert(IGameRegistry.GameRegistry__CommitFailed.selector);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
@@ -470,9 +477,11 @@ contract GameRegistryTest is Test {
         (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage(5, callData);
 
         // First commit - should succeed
+        vm.prank(PLAYER);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
 
         // Second commit with same nonce - should fail
+        vm.prank(PLAYER);
         vm.expectRevert(IGameRegistry.GameRegistry__NonceAlreadyUsed.selector);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
@@ -482,7 +491,7 @@ contract GameRegistryTest is Test {
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
 
         address target = address(gameRegistry);
-        address account = makeAddr("player");
+        address account = PLAYER;
         address signer = GAME_SIGNER;
         uint256 nonce = 1;
 
@@ -492,6 +501,7 @@ contract GameRegistryTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(GAME_SIGNER_PRIV_KEY, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
+        vm.prank(PLAYER);
         vm.expectRevert(IGameRegistry.GameRegistry__InvalidResource.selector);
         gameRegistry.commitSingle({resourceHash: nonExistentResourceHash, commit: commit, signature: signature});
     }
@@ -501,7 +511,7 @@ contract GameRegistryTest is Test {
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
 
         address target = makeAddr("wrongTarget"); // Different from gameElement.tokenAddress
-        address account = makeAddr("player");
+        address account = PLAYER;
         address signer = GAME_SIGNER;
         uint256 nonce = 1;
 
@@ -511,6 +521,7 @@ contract GameRegistryTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(GAME_SIGNER_PRIV_KEY, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
+        vm.prank(PLAYER);
         vm.expectRevert(IGameRegistry.GameRegistry__UnknownTargetAddress.selector);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
@@ -530,6 +541,7 @@ contract GameRegistryTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(GAME_SIGNER_PRIV_KEY, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
+        vm.prank(address(0));
         vm.expectRevert(IGameRegistry.GameRegistry__InvalidPlayer.selector);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
@@ -539,7 +551,7 @@ contract GameRegistryTest is Test {
         bytes memory callData = abi.encodeWithSignature("getIsNonceUsed(uint256)", 1);
 
         address target = address(gameRegistry);
-        address account = makeAddr("player");
+        address account = PLAYER;
         address invalidSigner = makeAddr("invalidSigner"); // Not GAME_SIGNER_ROLE
         uint256 nonce = 1;
 
@@ -552,6 +564,7 @@ contract GameRegistryTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(randomKey, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
+        vm.prank(PLAYER);
         vm.expectRevert(IGameRegistry.GameRegistry__InvalidSigner.selector);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
@@ -563,6 +576,7 @@ contract GameRegistryTest is Test {
         // Create a fake/invalid signature
         bytes memory invalidSignature = abi.encodePacked(bytes32(uint256(1)), bytes32(uint256(2)), bytes1(uint8(27)));
 
+        vm.prank(PLAYER);
         vm.expectRevert(IGameRegistry.GameRegistry__NotSigner.selector);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: invalidSignature});
     }
@@ -585,6 +599,7 @@ contract GameRegistryTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(wrongKey, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
+        vm.prank(GAME_SIGNER);
         vm.expectRevert(IGameRegistry.GameRegistry__NotAllowedToCommit.selector);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
     }
@@ -611,6 +626,7 @@ contract GameRegistryTest is Test {
         batch[1] = abi.encode(resourceHash, commit, signature);
 
         nonce += 1;
+        vm.prank(PLAYER);
         gameRegistry.commitBatch(batch);
     }
 
@@ -675,11 +691,11 @@ contract GameRegistryTest is Test {
         return MessageHashUtils.toTypedDataHash(domainSeparatorV4, hashStruct);
     }
 
-    function getSignedMessage(uint256 nonce, bytes memory callData) public returns (bytes32, bytes memory, bytes memory) {
+    function getSignedMessage(uint256 nonce, bytes memory callData) public view returns (bytes32, bytes memory, bytes memory) {
         bytes32 resourceHash = keccak256(bytes(ELEMENT_NAME));
 
         address target = address(gameRegistry);
-        address account = makeAddr("player");
+        address account = PLAYER;
         address signer = GAME_SIGNER;
 
         bytes memory commit = abi.encode(target, account, signer, nonce, callData);

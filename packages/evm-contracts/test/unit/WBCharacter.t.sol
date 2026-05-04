@@ -428,4 +428,15 @@ contract WBCharactersTest is Test {
         // This test ensures the _increaseBalance function is executed
         assertEq(helper.balanceOf(user1), initialBalance);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                                  URI
+    //////////////////////////////////////////////////////////////*/
+    function test_uriTokenId() public {
+        uint256 tokenId = wbCharacters.mint(user1);
+        tokenId = wbCharacters.mint(user1);
+        wbCharacters.setURI("https://wizard.zknoid.io/nft/characters/");
+        string memory uri = wbCharacters.tokenURI(tokenId);
+        console2.log("uri: ", uri);
+    }
 }

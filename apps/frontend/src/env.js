@@ -11,6 +11,8 @@ export const env = createEnv({
     MONGODB_URI: z.string(),
     MONGODB_DB: z.string(),
     BACKEND_URL: z.string().default('http://localhost:3030'),
+    EVM_RPC_URL: z.string(),
+    ENVIO_GRAPHQL_URL: z.string().default('http://localhost:3000/graphql'),
   },
 
   /**
@@ -26,7 +28,10 @@ export const env = createEnv({
       .string()
       .default('An epic wizard battle game'),
     NEXT_PUBLIC_REOWN_PROJECT_ID: z.string(),
-    NEXT_PUBLIC_GAME_REGISTRY_ADDRESS: z.string(),
+    NEXT_PUBLIC_GAME_REGISTRY_ADDRESS: z.string().optional(),
+    NEXT_PUBLIC_GAME_MARKET_ADDRESS: z.string().optional(),
+    NEXT_PUBLIC_RESOURCES_CONTRACT_ADDRESS: z.string().optional(),
+    NEXT_PUBLIC_USDC_TOKEN_ADDRESS: z.string().optional(),
     NEXT_PUBLIC_NETWORK_ID: z.string().optional(),
   },
 
@@ -39,8 +44,16 @@ export const env = createEnv({
     MONGODB_URI: process.env.MONGODB_URI,
     MONGODB_DB: process.env.MONGODB_DB,
     BACKEND_URL: process.env.BACKEND_URL,
+    EVM_RPC_URL: process.env.EVM_RPC_URL,
+    ENVIO_GRAPHQL_URL: process.env.ENVIO_GRAPHQL_URL,
     NEXT_PUBLIC_REOWN_PROJECT_ID: process.env.NEXT_PUBLIC_REOWN_PROJECT_ID,
-    NEXT_PUBLIC_GAME_REGISTRY_ADDRESS: process.env.NEXT_PUBLIC_GAME_REGISTRY_ADDRESS,
+    NEXT_PUBLIC_GAME_REGISTRY_ADDRESS:
+      process.env.NEXT_PUBLIC_GAME_REGISTRY_ADDRESS,
+    NEXT_PUBLIC_GAME_MARKET_ADDRESS:
+      process.env.NEXT_PUBLIC_GAME_MARKET_ADDRESS,
+    NEXT_PUBLIC_RESOURCES_CONTRACT_ADDRESS:
+      process.env.NEXT_PUBLIC_RESOURCES_CONTRACT_ADDRESS,
+    NEXT_PUBLIC_USDC_TOKEN_ADDRESS: process.env.NEXT_PUBLIC_USDC_TOKEN_ADDRESS,
     NEXT_PUBLIC_NETWORK_ID: process.env.NEXT_PUBLIC_NETWORK_ID,
     NEXT_PUBLIC_PROJECT_NAME: process.env.NEXT_PUBLIC_PROJECT_NAME,
     NEXT_PUBLIC_PROJECT_URL: process.env.NEXT_PUBLIC_PROJECT_URL,

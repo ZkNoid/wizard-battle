@@ -10,7 +10,7 @@ const animations: Record<string, AnimationConfig> = {
     spritesheetJson: '/assets/spritesheets/phantom_duelist/Duelist_Idle.json',
     spritesheetImage: '/assets/spritesheets/phantom_duelist/Duelist_Idle.png',
     loop: true,
-    scale: 1.5,
+    scale: 2.0,
   },
   spectral_arrow: {
     name: 'spectral_arrow',
@@ -89,7 +89,7 @@ const animations: Record<string, AnimationConfig> = {
     spritesheetJson: '/assets/spritesheets/phantom_duelist/Duelist_Death.json',
     spritesheetImage: '/assets/spritesheets/phantom_duelist/Duelist_Death.png',
     loop: false,
-    scale: 1,
+    scale: 2.0,
   },
 };
 
@@ -99,7 +99,7 @@ export const AnimatedPhantomDuelist = memo(({ entity }: { entity: IEntity }) => 
       entityId: entity.id,
       animations: animations,
       defaultAnimation: 'idle',
-      defaultScale: 1.5,
+      defaultScale: 2.0,
     });
 
   if (isLoading) {

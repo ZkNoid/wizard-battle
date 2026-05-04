@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Compatible with OpenZeppelin Contracts ^5.5.0
-pragma solidity ^0.8.27;
+pragma solidity ^0.8.30;
 
 import {AccessControlDefaultAdminRulesUpgradeable} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlDefaultAdminRulesUpgradeable.sol";
 import {AccessControlEnumerableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/extensions/AccessControlEnumerableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {ERC1155Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-// integraded, not implemented
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ERC1155PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155PausableUpgradeable.sol";
 import {ERC1155SupplyUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
@@ -29,15 +29,9 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeab
  * - Pause/unpause capability restricted to PAUSER_ROLE
  * - Upgrade capability restricted to UPGRADER_ROLE
  */
-contract WBResources is
-    Initializable,
-    ERC1155Upgradeable,
-    AccessControlUpgradeable,
-    ERC1155PausableUpgradeable,
-    /* ERC1155BurnableUpgradeable,*/
-    ERC1155SupplyUpgradeable,
-    UUPSUpgradeable
-{
+contract WBResources is Initializable, ERC1155Upgradeable, AccessControlUpgradeable, ERC1155PausableUpgradeable, ERC1155SupplyUpgradeable, UUPSUpgradeable {
+    using Strings for uint256;
+
     /// @notice Role identifier for addresses that can set token URIs
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
 
@@ -78,30 +72,32 @@ contract WBResources is
         _mint(address(this), 0, 1, ""); // reserver id 0 by owner
     }
 
+    /*//////////////////////////////////////////////////////////////
+                            EXTERNAL FUNCTIONS
+     //////////////////////////////////////////////////////////////*/
     /**
-     * @notice Pauses all token transfers
-     * @dev Can only be called by addresses with PAUSER_ROLE
-     * @dev TODO: Verify URI should return a JSON according to ERC1155 metadata specs
+     * @notice Sets the base URI for all token metadata
+     * @dev Can only be called by addresses with DEFAULT_ADMIN_ROLE. The URI should
+     *      conform to ERC1155 metadata spec, with token ID appended automatically via {uri}
+     * @param _uri New base URI string
      */
-    function pause() public onlyRole(PAUSER_ROLE) {
-        _pause();
+    function setURI(string memory _uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        super._setURI(_uri);
     }
 
     /**
-     * @notice Returns the URI for a given token ID
-     * @dev Returns the metadata URI for the specified resource token
-     * @param tokenId ID of the token to query
-     * @return string The URI pointing to the token's metadata (should be JSON per ERC1155 spec)
+     * @notice Pauses all token transfers
+     * @dev Can only be called by addresses with PAUSER_ROLE
      */
-    function uri(uint256 tokenId) public view override returns (string memory) {
-        return super.uri(tokenId);
+    function pause() external onlyRole(PAUSER_ROLE) {
+        _pause();
     }
 
     /**
      * @notice Unpauses all token transfers
      * @dev Can only be called by addresses with PAUSER_ROLE
      */
-    function unpause() public onlyRole(PAUSER_ROLE) {
+    function unpause() external onlyRole(PAUSER_ROLE) {
         _unpause();
     }
 
@@ -113,7 +109,7 @@ contract WBResources is
      * @param amount Amount of tokens to mint
      * @param data Additional data to pass to the receiver (if it's a contract)
      */
-    function mint(address account, uint256 id, uint256 amount, bytes memory data) public onlyRole(MINTER_ROLE) {
+    function mint(address account, uint256 id, uint256 amount, bytes memory data) external onlyRole(MINTER_ROLE) {
         _mint(account, id, amount, data);
     }
 
@@ -124,7 +120,7 @@ contract WBResources is
      * @param id Token ID to burn
      * @param value Amount of tokens to burn
      */
-    function burn(address account, uint256 id, uint256 value) public {
+    function burn(address account, uint256 id, uint256 value) external {
         if (account != _msgSender() && !isApprovedForAll(account, _msgSender()) && !hasRole(MINTER_ROLE, _msgSender())) {
             revert ERC1155MissingApprovalForAll(_msgSender(), account);
         }
@@ -139,16 +135,27 @@ contract WBResources is
      * @param amounts Array of amounts to mint for each token ID
      * @param data Additional data to pass to the receiver (if it's a contract)
      */
-    function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) public onlyRole(MINTER_ROLE) {
+    function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) external onlyRole(MINTER_ROLE) {
         _mintBatch(to, ids, amounts, data);
     }
 
-    function burnBatch(address account, uint256[] memory ids, uint256[] memory values) public {
+    /**
+     * @notice Burns multiple token types from an address in a single transaction
+     * @dev Caller must be the token owner, approved for all, or hold MINTER_ROLE. Arrays must have equal length
+     * @param account Address from which the tokens will be burned
+     * @param ids Array of token IDs to burn
+     * @param values Array of amounts to burn for each token ID
+     */
+    function burnBatch(address account, uint256[] memory ids, uint256[] memory values) external {
         if (account != _msgSender() && !isApprovedForAll(account, _msgSender()) && !hasRole(MINTER_ROLE, _msgSender())) {
             revert ERC1155MissingApprovalForAll(_msgSender(), account);
         }
         _burnBatch(account, ids, values);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           INERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Authorizes an upgrade to a new implementation
@@ -178,6 +185,21 @@ contract WBResources is
         super._update(from, to, ids, values);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                         PUBLIC VIEW FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Returns the URI for a given token ID
+     * @dev Returns the metadata URI for the specified resource token
+     * @param tokenId ID of the token to query
+     * @return string The URI pointing to the token's metadata (should be JSON per ERC1155 spec)
+     */
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        string memory baseURI = super.uri(tokenId);
+        return bytes(baseURI).length > 0 ? string.concat(baseURI, tokenId.toString()) : "";
+    }
+
     /**
      * @notice Checks if this contract implements a given interface
      * @param interfaceId Interface identifier to check
@@ -187,3 +209,25 @@ contract WBResources is
         return ERC1155Upgradeable.supportsInterface(interfaceId) || AccessControlUpgradeable.supportsInterface(interfaceId);
     }
 }
+
+// Layout of Contract:
+// version
+// imports
+// interfaces, libraries, contracts
+// errors
+// Type declarations
+// State variables
+// Events
+// Modifiers
+// Functions
+
+// Layout of Functions:
+// constructor
+// receive function (if exists)
+// fallback function (if exists)
+// external
+// public
+// internal
+// private
+// internal & private view & pure functions
+// external & public view & pure functions

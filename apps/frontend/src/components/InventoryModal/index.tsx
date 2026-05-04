@@ -1,34 +1,30 @@
 'use client';
 
-import { InventoryBg } from './assets/inventory-bg';
 import Image from 'next/image';
 import type {
   IInventoryArmorItem,
-  InventoryFilterType,
   InventoryItemWearableArmorSlot,
   IUserInventoryItem,
   WizardClassName,
 } from '@/lib/types/Inventory';
 import { ItemBg } from './assets/item-bg';
 import { useState, useMemo } from 'react';
+import { AnimatedHero } from '@/components/AnimatedHero';
 import { CharacterBg } from './assets/character-bg';
 import { LvlBg } from './assets/lvl-bg';
 import { LEVELS_XP, levelFromXp } from '@/lib/constants/levels';
 import { InventoryTooltip } from './InventoryTooltip';
-import type { IInventoryFilterBtnProps } from './InventoryFilterBtn';
-import InventoryFilterBtn from './InventoryFilterBtn';
 import { heroStatsConfig } from '@/lib/constants/stat';
 import type { IHeroStatConfig, IHeroStats } from '@/lib/types/IHeroStat';
-import { useInventoryStore, useUserDataStore, type EquippedSlots } from '@/lib/store';
-import { WizardId } from '../../../../common/wizards';
 import {
-  useModalSound,
-  useClickSound,
-  useHoverSound,
-} from '@/lib/hooks/useAudio';
+  useInventoryStore,
+  useUserDataStore,
+  type EquippedSlots,
+} from '@/lib/store';
+import { WizardId } from '../../../../common/wizards';
+import { useModalSound, useClickSound } from '@/lib/hooks/useAudio';
 import { useMinaAppkit } from 'mina-appkit';
-
-const MAX_ITEMS = 35;
+import { InventoryModalForm } from '@/components/InventoryModalForm';
 
 enum Wizards {
   ARCHER,
@@ -36,7 +32,6 @@ enum Wizards {
   MAGE,
 }
 
-// Map UI wizard enum to actual WizardId strings
 const getWizardId = (wizard: Wizards): string => {
   switch (wizard) {
     case Wizards.ARCHER:
@@ -48,7 +43,6 @@ const getWizardId = (wizard: Wizards): string => {
   }
 };
 
-// Map UI wizard enum to class name for wear requirements
 const getWizardClassName = (wizard: Wizards): WizardClassName => {
   switch (wizard) {
     case Wizards.ARCHER:
@@ -61,25 +55,17 @@ const getWizardClassName = (wizard: Wizards): WizardClassName => {
 };
 
 export default function InventoryModal({ onClose }: { onClose: () => void }) {
-  // Play modal sounds
   useModalSound();
   const playClickSound = useClickSound();
-  const playHoverSound = useHoverSound();
 
-  // Get wallet address for tRPC calls
   const { address } = useMinaAppkit();
-
-  // Get wizard-specific XP from store
   const userData = useUserDataStore((state) => state.userData);
 
   const [currentWizard, setCurrentWizard] = useState<Wizards>(Wizards.MAGE);
   const [draggedItem, setDraggedItem] = useState<IUserInventoryItem | null>(
     null
   );
-  const [activeFilter, setActiveFilter] = useState<InventoryFilterType>('all');
 
-  // Get inventory data from store
-  const iteminventory = useInventoryStore((state) => state.iteminventory);
   const equippedItemsByWizard = useInventoryStore(
     (state) => state.equippedItemsByWizard
   );
@@ -88,13 +74,11 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const equipItem = useInventoryStore((state) => state.equipItem);
   const unequipItem = useInventoryStore((state) => state.unequipItem);
 
-  // Get current wizard ID string
   const currentWizardId = useMemo(
     () => getWizardId(currentWizard),
     [currentWizard]
   );
 
-  // Get equipped items for current wizard
   const equippedItems = useMemo((): EquippedSlots => {
     const defaultSlots: EquippedSlots = {
       Orb: null,
@@ -107,12 +91,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     return equippedItemsByWizard[currentWizardId] ?? defaultSlots;
   }, [equippedItemsByWizard, currentWizardId]);
 
-  // Get stats for current wizard from store
   const stats = useMemo(() => {
     return getStats(currentWizardId);
   }, [getStats, currentWizardId, statsByWizard]);
 
-  // Get XP for the currently selected wizard
   const xp = useMemo(() => {
     switch (currentWizard) {
       case Wizards.ARCHER:
@@ -124,13 +106,8 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     }
   }, [currentWizard, userData]);
 
-  const handleNext = () => {
-    setCurrentWizard((prev) => (prev + 1) % 3);
-  };
-
-  const handlePrev = () => {
-    setCurrentWizard((prev) => (prev - 1 + 3) % 3);
-  };
+  const handleNext = () => setCurrentWizard((prev) => (prev + 1) % 3);
+  const handlePrev = () => setCurrentWizard((prev) => (prev - 1 + 3) % 3);
 
   const getWizardImage = (wizard: Wizards) => {
     switch (wizard) {
@@ -143,13 +120,8 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const getPrevWizard = (current: Wizards): Wizards => {
-    return (current - 1 + 3) % 3;
-  };
-
-  const getNextWizard = (current: Wizards): Wizards => {
-    return (current + 1) % 3;
-  };
+  const getPrevWizard = (current: Wizards): Wizards => (current - 1 + 3) % 3;
+  const getNextWizard = (current: Wizards): Wizards => (current + 1) % 3;
 
   const formatStat = (stat: IHeroStatConfig): string => {
     switch (stat.id) {
@@ -164,7 +136,6 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   };
 
   const getLevelProgress = (xp: number): number => {
-    // Find the current level's XP requirements
     let xpAtCurrentLevel = 0;
     let xpAtNextLevel = LEVELS_XP[0]!;
 
@@ -174,7 +145,6 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
         xpAtNextLevel = LEVELS_XP[i]!;
         break;
       }
-      // If we've reached the last level
       if (i === LEVELS_XP.length - 1) {
         xpAtCurrentLevel = LEVELS_XP[i]!;
         xpAtNextLevel = LEVELS_XP[i]!;
@@ -184,25 +154,15 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
 
     const xpInCurrentLevel = xp - xpAtCurrentLevel;
     const xpNeededForNextLevel = xpAtNextLevel - xpAtCurrentLevel;
-
     if (xpNeededForNextLevel <= 0) return 100;
-
-    const progress = (xpInCurrentLevel / xpNeededForNextLevel) * 100;
-    return Math.min(100, Math.max(0, progress));
+    return Math.min(100, Math.max(0, (xpInCurrentLevel / xpNeededForNextLevel) * 100));
   };
 
-  const handleDragStart = (userItem: IUserInventoryItem) => {
-    setDraggedItem(userItem);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedItem(null);
-  };
+  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 
   const handleDrop = async (slotId: InventoryItemWearableArmorSlot) => {
     if (!draggedItem || !address) return;
 
-    // Check if dragged item can be equipped in this slot
     if (draggedItem.item.type !== 'armor') {
       setDraggedItem(null);
       return;
@@ -214,25 +174,27 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    // Check wear requirements (class and level)
     if (wearableItem.wearRequirements && wearableItem.wearRequirements.length > 0) {
       const currentClassName = getWizardClassName(currentWizard);
       const currentLevel = levelFromXp(xp);
 
       for (const req of wearableItem.wearRequirements) {
-        // Check class requirement
         if (req.requirement.toLowerCase() === 'class') {
           if (req.value !== currentClassName) {
-            console.warn(`Cannot equip ${wearableItem.title}: Requires class ${req.value}, but current wizard is ${currentClassName}`);
+            console.warn(
+              `Cannot equip ${wearableItem.title}: Requires class ${req.value}, but current wizard is ${currentClassName}`
+            );
             setDraggedItem(null);
             return;
           }
         }
-        // Check level requirement
         if (req.requirement.toLowerCase() === 'level') {
-          const requiredLevel = typeof req.value === 'string' ? parseInt(req.value, 10) : req.value;
+          const requiredLevel =
+            typeof req.value === 'string' ? parseInt(req.value, 10) : req.value;
           if (currentLevel < requiredLevel) {
-            console.warn(`Cannot equip ${wearableItem.title}: Requires level ${requiredLevel}, but current wizard is level ${currentLevel}`);
+            console.warn(
+              `Cannot equip ${wearableItem.title}: Requires level ${requiredLevel}, but current wizard is level ${currentLevel}`
+            );
             setDraggedItem(null);
             return;
           }
@@ -240,63 +202,59 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
       }
     }
 
-    // Use store action to equip item (handles inventory swap automatically)
     await equipItem(address, currentWizardId, slotId, draggedItem);
-    
     setDraggedItem(null);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
   };
 
   const handleUnequip = async (slotId: InventoryItemWearableArmorSlot) => {
     if (!address) return;
-    
     const userItem = equippedItems[slotId];
     if (!userItem) return;
-
-    // Use store action to unequip item
     await unequipItem(address, currentWizardId, slotId);
   };
 
-  const filteredItems =
-    activeFilter === 'all'
-      ? iteminventory
-      : iteminventory.filter((userItem) => userItem.item.type === activeFilter);
-
-  const handleChangeFilter = (filterMode: InventoryFilterType) => {
-    setActiveFilter(filterMode);
+  const EquipSlot = ({
+    slotId,
+    placeholder,
+  }: {
+    slotId: InventoryItemWearableArmorSlot;
+    placeholder: string;
+  }) => {
+    const item = equippedItems[slotId];
+    return (
+      <div
+        className="size-25 relative cursor-pointer p-6 transition-all duration-200"
+        onDrop={() => handleDrop(slotId)}
+        onDragOver={handleDragOver}
+        onClick={() => handleUnequip(slotId)}
+      >
+        {item ? (
+          <InventoryTooltip userItem={item}>
+            <div className="size-full">
+              <Image
+                src={`/items/${item.item.image}`}
+                width={100}
+                height={100}
+                alt={item.item.title}
+                className="pointer-events-none size-full select-none object-contain object-center"
+                quality={100}
+                unoptimized={true}
+              />
+            </div>
+          </InventoryTooltip>
+        ) : (
+          <Image
+            src={`/inventory/placeholders/${placeholder}.png`}
+            width={100}
+            height={100}
+            alt={`${placeholder}-placeholder`}
+            className="pointer-events-none size-full select-none object-contain object-center"
+          />
+        )}
+        <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
+      </div>
+    );
   };
-
-  const filterBtns: IInventoryFilterBtnProps[] = [
-    {
-      isActiveFilter: activeFilter === 'all',
-      title: 'All',
-      handleChangeFilter: () => handleChangeFilter('all'),
-    },
-    {
-      isActiveFilter: activeFilter === 'armor',
-      title: 'Armor',
-      imgSrc: '/icons/armor.png',
-      alt: 'armor',
-      handleChangeFilter: () => handleChangeFilter('armor'),
-    },
-    {
-      isActiveFilter: activeFilter === 'craft',
-      title: 'Craft',
-      imgSrc: '/icons/pickaxe.png',
-      alt: 'pickaxe',
-      handleChangeFilter: () => handleChangeFilter('craft'),
-    },
-    {
-      isActiveFilter: activeFilter === 'gems',
-      title: 'Gems',
-      imgSrc: '/icons/gem.png',
-      alt: 'gem',
-      handleChangeFilter: () => handleChangeFilter('gems'),
-    },
-  ];
 
   return (
     <div
@@ -307,7 +265,7 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
         className="flex flex-row items-end gap-5"
       >
-        {/* Left side */}
+        {/* Left side: wizard carousel + equipment slots + stats */}
         <div className="h-210 flex flex-col justify-end gap-5">
           {/* Carousel */}
           <div className="relative flex w-full flex-row items-center justify-center gap-5">
@@ -324,7 +282,6 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
               />
             </button>
             <div className="flex items-center justify-center gap-2">
-              {/* Prev wizard (left) */}
               <div
                 onClick={handlePrev}
                 className="size-25 mt-auto flex-shrink-0 cursor-pointer select-none"
@@ -341,7 +298,6 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   unoptimized={true}
                 />
               </div>
-              {/* Center/current wizard */}
               <div className="size-35 flex-shrink-0">
                 <Image
                   src={getWizardImage(currentWizard)}
@@ -355,7 +311,6 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                   unoptimized={true}
                 />
               </div>
-              {/* Next wizard (right) */}
               <div
                 onClick={handleNext}
                 className="size-25 mt-auto flex-shrink-0 cursor-pointer select-none"
@@ -386,8 +341,9 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
               />
             </button>
           </div>
+
           <div className="w-144 relative flex h-auto flex-col gap-5 px-5 pt-5">
-            {/* Title */}
+            {/* Wizard title */}
             <div className="relative mx-auto flex size-full items-center justify-center">
               <Image
                 src={`/inventory/${currentWizard === Wizards.ARCHER ? 'green-title-bg.png' : currentWizard === Wizards.WARRIOR ? 'red-title-bg.png' : 'violet-title-bg.png'}`}
@@ -404,300 +360,72 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
                     : 'Arcane Sorcerer'}
               </div>
             </div>
+
+            {/* Equipment slots + animated hero */}
             <div className="mt-9 flex size-full flex-row gap-5">
               <div className="flex h-full w-1/4 flex-col gap-5">
-                <div
-                  className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('Orb')}
-                  onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('Orb')}
-                >
-                  {equippedItems.Orb ? (
-                    <InventoryTooltip userItem={equippedItems.Orb}>
-                      <Image
-                        src={`/items/${equippedItems.Orb.item.image}`}
-                        width={100}
-                        height={100}
-                        alt={equippedItems.Orb.item.title}
-                        className="pointer-events-none size-full select-none object-contain object-center"
-                        quality={100}
-                        unoptimized={true}
-                      />
-                    </InventoryTooltip>
-                  ) : (
-                    <Image
-                      src="/inventory/placeholders/orb.png"
-                      width={100}
-                      height={100}
-                      alt="orb-placeholder"
-                      className="pointer-events-none size-full select-none object-contain object-center"
-                    />
-                  )}
-                  <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
-                </div>
-                <div
-                  className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('Ring')}
-                  onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('Ring')}
-                >
-                  {equippedItems.Ring ? (
-                    <InventoryTooltip userItem={equippedItems.Ring}>
-                      <Image
-                        src={`/items/${equippedItems.Ring.item.image}`}
-                        width={100}
-                        height={100}
-                        alt={equippedItems.Ring.item.title}
-                        className="pointer-events-none size-full select-none object-contain object-center"
-                        quality={100}
-                        unoptimized={true}
-                      />
-                    </InventoryTooltip>
-                  ) : (
-                    <Image
-                      src="/inventory/placeholders/ring.png"
-                      width={100}
-                      height={100}
-                      alt="ring-placeholder"
-                      className="pointer-events-none size-full select-none object-contain object-center"
-                    />
-                  )}
-                  <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
-                </div>
-                <div
-                  className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('Amulet')}
-                  onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('Amulet')}
-                >
-                  {equippedItems.Amulet ? (
-                    <InventoryTooltip userItem={equippedItems.Amulet}>
-                      <Image
-                        src={`/items/${equippedItems.Amulet.item.image}`}
-                        width={100}
-                        height={100}
-                        alt={equippedItems.Amulet.item.title}
-                        className="pointer-events-none size-full select-none object-contain object-center"
-                        quality={100}
-                        unoptimized={true}
-                      />
-                    </InventoryTooltip>
-                  ) : (
-                    <Image
-                      src="/inventory/placeholders/amulet.png"
-                      width={100}
-                      height={100}
-                      alt="amulet-placeholder"
-                      className="pointer-events-none size-full select-none object-contain object-center"
-                    />
-                  )}
-                  <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
-                </div>
+                <EquipSlot slotId="Orb" placeholder="orb" />
+                <EquipSlot slotId="Ring" placeholder="ring" />
+                <EquipSlot slotId="Amulet" placeholder="amulet" />
               </div>
-              <div className="relative size-[95%]">
-                <Image
-                  src={`/inventory/wall/${currentWizard === Wizards.ARCHER ? 'archer.png' : currentWizard === Wizards.WARRIOR ? 'warrior.png' : 'mage.png'}`}
-                  width={1000}
-                  height={1000}
-                  quality={100}
-                  unoptimized={true}
-                  alt="wall"
-                  className="size-full object-contain object-center"
-                />
 
+              <div className="relative size-[95%]">
+                <AnimatedHero wizardId={currentWizardId} className="size-full" />
                 {/* Level bar */}
                 <div className="w-38 -z-1 absolute -top-5 left-1/2 h-6 -translate-x-1/2 overflow-hidden">
                   <LvlBg className="-z-1 absolute inset-0 size-full" />
                   <div className="-z-3 absolute inset-0 ml-1 mt-1 h-[80%] w-full bg-[#D5D8DD]" />
                   <div
                     className="-z-2 absolute inset-0 ml-1 mt-1 h-[80%] bg-[#006D00]"
-                    style={{
-                      width: `${getLevelProgress(xp)}%`,
-                    }}
+                    style={{ width: `${getLevelProgress(xp)}%` }}
                   />
                   <div className="font-pixel absolute left-1/2 top-2/3 -translate-x-1/2 -translate-y-1/2 text-[0.417vw] font-bold text-white">
                     Lvl. {levelFromXp(xp)}
                   </div>
                 </div>
               </div>
+
               <div className="flex h-full w-1/4 flex-col gap-5">
-                <div
-                  className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('Gloves')}
-                  onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('Gloves')}
-                >
-                  {equippedItems.Gloves ? (
-                    <InventoryTooltip userItem={equippedItems.Gloves}>
-                      <Image
-                        src={`/items/${equippedItems.Gloves.item.image}`}
-                        width={100}
-                        height={100}
-                        alt={equippedItems.Gloves.item.title}
-                        className="pointer-events-none size-full select-none object-contain object-center"
-                        quality={100}
-                        unoptimized={true}
-                      />
-                    </InventoryTooltip>
-                  ) : (
-                    <Image
-                      src="/inventory/placeholders/gloves.png"
-                      width={100}
-                      height={100}
-                      alt="gloves-placeholder"
-                      className="pointer-events-none size-full select-none object-contain object-center"
-                    />
-                  )}
-                  <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
-                </div>
-                <div
-                  className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('Boots')}
-                  onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('Boots')}
-                >
-                  {equippedItems.Boots ? (
-                    <InventoryTooltip userItem={equippedItems.Boots}>
-                      <Image
-                        src={`/items/${equippedItems.Boots.item.image}`}
-                        width={100}
-                        height={100}
-                        alt={equippedItems.Boots.item.title}
-                        className="pointer-events-none size-full select-none object-contain object-center"
-                        quality={100}
-                        unoptimized={true}
-                      />
-                    </InventoryTooltip>
-                  ) : (
-                    <Image
-                      src="/inventory/placeholders/boots.png"
-                      width={100}
-                      height={100}
-                      alt="boots-placeholder"
-                      className="pointer-events-none size-full select-none object-contain object-center"
-                    />
-                  )}
-                  <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
-                </div>
-                <div
-                  className={`size-25 relative cursor-pointer p-6 transition-all duration-200`}
-                  onDrop={() => handleDrop('Belt')}
-                  onDragOver={handleDragOver}
-                  onClick={() => handleUnequip('Belt')}
-                >
-                  {equippedItems.Belt ? (
-                    <InventoryTooltip userItem={equippedItems.Belt}>
-                      <Image
-                        src={`/items/${equippedItems.Belt.item.image}`}
-                        width={100}
-                        height={100}
-                        alt={equippedItems.Belt.item.title}
-                        className="pointer-events-none size-full select-none object-contain object-center"
-                        quality={100}
-                        unoptimized={true}
-                      />
-                    </InventoryTooltip>
-                  ) : (
-                    <Image
-                      src="/inventory/placeholders/belt.png"
-                      width={100}
-                      height={100}
-                      alt="belt-placeholder"
-                      className="pointer-events-none size-full select-none object-contain object-center"
-                    />
-                  )}
-                  <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
-                </div>
+                <EquipSlot slotId="Gloves" placeholder="gloves" />
+                <EquipSlot slotId="Boots" placeholder="boots" />
+                <EquipSlot slotId="Belt" placeholder="belt" />
               </div>
             </div>
+
             {/* Stats */}
             <div className="grid grid-cols-3 items-center gap-x-10 gap-y-2.5">
-              {heroStatsConfig.map((stat) => {
-                return (
-                  <div
-                    key={stat.id}
-                    className="flex flex-row items-center gap-2"
-                  >
-                    <Image
-                      src={stat.icon}
-                      width={100}
-                      height={100}
-                      alt={stat.alt}
-                      className="size-8 object-contain object-center"
-                    />
-                    <span className="font-pixel text-nowrap text-lg font-bold text-[#747C8F]">
-                      {stat.label}:{' '}
-                      <b className="text-main-gray">{formatStat(stat)}</b>
-                    </span>
-                  </div>
-                );
-              })}
+              {heroStatsConfig.map((stat) => (
+                <div key={stat.id} className="flex flex-row items-center gap-2">
+                  <Image
+                    src={stat.icon}
+                    width={100}
+                    height={100}
+                    alt={stat.alt}
+                    className="size-8 object-contain object-center"
+                  />
+                  <span className="font-pixel text-nowrap text-lg font-bold text-[#747C8F]">
+                    {stat.label}:{' '}
+                    <b className="text-main-gray">{formatStat(stat)}</b>
+                  </span>
+                </div>
+              ))}
             </div>
+
             <CharacterBg className="-z-5 absolute inset-0 h-auto w-full" />
           </div>
         </div>
-        {/* Right side */}
-        <div className="w-218 h-189 relative -mb-2.5 px-5 pt-5">
-          <div className="font-pixel text-main-gray w-full pb-5 pt-2.5 text-center text-3xl font-bold">
-            Inventory
-          </div>
-          {/* Items */}
-          <div className="grid grid-cols-7 gap-2.5">
-            <div className="col-span-7 mb-2.5 grid grid-cols-8 gap-2.5">
-              {filterBtns.map((btnProps, index) => (
-                <InventoryFilterBtn
-                  key={`${btnProps.title}-${index}`}
-                  {...btnProps}
-                />
-              ))}
-            </div>
-            {filteredItems.map((userItem) => (
-              <div
-                key={userItem.item.id}
-                className="size-25 relative cursor-grab p-6 active:cursor-grabbing"
-                draggable
-                onDragStart={() => handleDragStart(userItem)}
-                onDragEnd={handleDragEnd}
-              >
-                <InventoryTooltip userItem={userItem}>
-                  <Image
-                    src={`/items/${userItem.item.image}`}
-                    width={100}
-                    height={100}
-                    alt={userItem.item.title}
-                    quality={100}
-                    unoptimized={true}
-                    className="size-full object-contain object-center"
-                  />
-                </InventoryTooltip>
-                <div className="font-pixel text-main-gray absolute bottom-2 right-2 text-sm font-bold">
-                  {userItem.quantity}
-                </div>
-                <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
-              </div>
-            ))}
-            {Array.from({ length: MAX_ITEMS - filteredItems.length }).map(
-              (_, index) => (
-                <div key={index} className="size-25 relative p-6">
-                  <ItemBg className="-z-1 pointer-events-none absolute inset-0 size-full select-none" />
-                </div>
-              )
-            )}
-          </div>
-          <Image
-            src="/icons/cross.png"
-            width={32}
-            height={32}
-            alt="close"
-            className="absolute right-5 top-5 size-8 cursor-pointer transition-transform duration-300 hover:rotate-90"
-            onClick={() => {
-              playClickSound();
-              onClose();
-            }}
-            onMouseEnter={playHoverSound}
-          />
-          <InventoryBg className="-z-5 absolute inset-0 size-full" />
-        </div>
+
+        {/* Right side: inventory grid via InventoryModalForm */}
+        <InventoryModalForm
+          onClose={() => {
+            playClickSound();
+            onClose();
+          }}
+          address={address ?? undefined}
+          onItemDragStart={(userItem) => setDraggedItem(userItem)}
+          onItemDragEnd={() => setDraggedItem(null)}
+          draggedItem={draggedItem}
+        />
       </div>
     </div>
   );

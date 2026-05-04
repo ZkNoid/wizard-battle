@@ -6,6 +6,7 @@ import ExpeditionModal from '../ExpeditionModal';
 import TestnetModal from '../TestnetModal';
 import QuickGuideModal from '../QuickGuideModal';
 import SoundSettingsModal from '../SoundSettingsModal';
+import TournamentsModal from '../TournamentsModal';
 import MarketModal from '../MarketModal';
 import SellItemsModal from '../SellItemsModal';
 import { RequestResultModal } from '../shared/RequestResultModal';
@@ -25,6 +26,8 @@ export default function Modals() {
     setIsQuickGuideModalOpen,
     isSoundSettingsModalOpen,
     setIsSoundSettingsModalOpen,
+    isTournamentsModalOpen,
+    setIsTournamentsModalOpen,
     isMarketModalOpen,
     setIsMarketModalOpen,
     isSellItemsModalOpen,
@@ -59,6 +62,10 @@ export default function Modals() {
 
       {isSoundSettingsModalOpen && (
         <SoundSettingsModal onClose={() => setIsSoundSettingsModalOpen(false)} />
+      )}
+
+      {isTournamentsModalOpen && (
+        <TournamentsModal onClose={() => setIsTournamentsModalOpen(false)} />
       )}
 
       {isMarketModalOpen && (

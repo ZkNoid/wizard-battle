@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Button } from '../shared/Button';
 import { motion } from 'motion/react';
 import { WalletBg } from './assets/wallet-bg';
@@ -19,6 +20,7 @@ import type {
   WalletConnectionInitiatedProps,
   WalletConnectionSuccessProps,
 } from '@/lib/analytics/types';
+import type { ButtonSize } from '../shared/Button/utils';
 
 const NameSchema = Yup.object().shape({
   name: Yup.string()
@@ -39,9 +41,13 @@ const NameSchema = Yup.object().shape({
 
 interface WalletProps {
   className?: string;
+  buttonSize?: ButtonSize;
 }
 
-export default function Wallet({ className }: WalletProps = {}) {
+export default function Wallet({
+  className,
+  buttonSize = 'lg',
+}: WalletProps = {}) {
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   const { address, isConnected, triggerWallet, disconnect, isWalletInstalled } =
@@ -207,16 +213,23 @@ export default function Wallet({ className }: WalletProps = {}) {
           text={` ${displayName} `}
           onClick={disconnect}
           className="h-15 w-full text-base font-bold"
-          isLong={true}
         />
       ) : (
         <Button
           variant="blue"
-          text="Connect Wallet"
           onClick={triggerWalletOrRedirect}
-          className="h-15 w-full text-base font-bold"
-          isLong={true}
-        />
+          className="h-15 w-full gap-2 text-base font-bold"
+        >
+          <Image
+            src="/wallet/mina-icon.png"
+            alt=""
+            width={24}
+            height={24}
+            className="relative z-[1] h-6 w-6 shrink-0"
+            aria-hidden
+          />
+          <span className="relative z-[1]">Connect Wallet</span>
+        </Button>
       )}
     </motion.div>
   );

@@ -71,6 +71,38 @@ export const usersRouter = createTRPCRouter({
       return true;
     }),
 
+  setEvmAddress: publicProcedure
+    .input(z.object({ address: z.string(), evmAddress: z.string() }))
+    .mutation(async ({ input }) => {
+      if (!db) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database not connected',
+        });
+      }
+
+      // Check if this EVM address is already linked to a different user
+      const existing = await db
+        .collection(collectionName)
+        .findOne({ address_evm: input.evmAddress });
+
+      if (existing && existing.address !== input.address) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'This EVM address is already linked to another account',
+        });
+      }
+
+      await db
+        .collection(collectionName)
+        .updateOne(
+          { address: input.address, address_evm: { $exists: false } },
+          { $set: { address_evm: input.evmAddress, updatedAt: new Date().toISOString() } }
+        );
+
+      return true;
+    }),
+
   getXp: publicProcedure
     .input(z.object({ address: z.string() }))
     .query(async ({ input }) => {

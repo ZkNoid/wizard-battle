@@ -114,6 +114,50 @@ export const itemsRouter = createTRPCRouter({
     return populatedItems;
   }),
 
+  // Get all items with their tokenIds — lightweight, no population, used for on-chain balance lookup.
+  // Explicit return type so tRPC infers a concrete shape (not `{ tokenId: any }` from .project()).
+  getAllTokenIds: publicProcedure.query(async (): Promise<
+    Array<{
+      id: string;
+      tokenId: string;
+      title: string;
+      description: string;
+      image: string;
+      rarity: IInventoryItem['rarity'];
+      type: IInventoryItem['type'];
+      amount: number;
+      price: number;
+    }>
+  > => {
+    if (!db) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Database not connected',
+      });
+    }
+
+    const raw = (await db
+      .collection(itemsCollection)
+      .find({ tokenId: { $exists: true, $ne: null } })
+      .toArray()) as unknown as IInventoryItem[];
+
+    return raw
+      .filter((i): i is IInventoryItem & { tokenId: string } =>
+        i.tokenId != null && i.tokenId !== ''
+      )
+      .map((i) => ({
+        id: i.id,
+        tokenId: i.tokenId,
+        title: i.title,
+        description: i.description,
+        image: i.image,
+        rarity: i.rarity,
+        type: i.type,
+        amount: i.amount,
+        price: i.price,
+      }));
+  }),
+
   // Get a single item definition by id (populated)
   getOne: publicProcedure
     .input(z.object({ id: z.string() }))

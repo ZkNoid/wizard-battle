@@ -267,7 +267,7 @@ contract WBCoinTest is Test {
 
     function test_SupportsInterface() public view {
         // ERC20 interface ID: 0x36372b07
-        bytes4 erc20InterfaceId = 0x36372b07;
+        //bytes4 erc20InterfaceId = 0x36372b07;
         assertTrue(wbCoin.supportsInterface(type(IAccessControl).interfaceId));
 
         // Should return false for random interface

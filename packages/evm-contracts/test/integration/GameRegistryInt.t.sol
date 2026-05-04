@@ -104,6 +104,7 @@ contract GameRegistryIntTest is Test {
         bytes memory callData = abi.encodeWithSignature("mint(address,uint256)", PLAYER, amount);
         (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage("WBCoin", address(wBCoin), 0, callData);
 
+        vm.prank(PLAYER);
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
@@ -126,6 +127,7 @@ contract GameRegistryIntTest is Test {
         bytes memory callData = abi.encodeWithSignature("mint(address,uint256,uint256,bytes)", PLAYER, 1, amount, "");
         (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage("Wood", address(wbResources), 0, callData);
 
+        vm.prank(PLAYER);
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});
@@ -152,6 +154,8 @@ contract GameRegistryIntTest is Test {
         // emit CommitConfirmed(callData);
         bytes[] memory batch = new bytes[](1);
         batch[0] = abi.encode(resourceHash, commit, signature);
+
+        vm.prank(PLAYER);
         gameRegistry.commitBatch(batch);
 
         uint256 playerWBCResourceBalance = wbResources.balanceOf(PLAYER, 1);
@@ -172,12 +176,14 @@ contract GameRegistryIntTest is Test {
         bytes memory burnCallData = abi.encodeWithSignature("burn(address,uint256,uint256)", PLAYER, 1, amount);
         (bytes32 burnResourceHash, bytes memory burnCommit, bytes memory burnSignature) = getSignedMessage("Wood", address(wbResources), 1, burnCallData);
 
+        vm.prank(PLAYER);
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(mintCallData);
         gameRegistry.commitSingle({resourceHash: mintResourceHash, commit: mintCommit, signature: mintSignature});
 
         uint256 playerWBCResourceMintedBalance = wbResources.balanceOf(PLAYER, 1);
 
+        vm.prank(PLAYER);
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(burnCallData);
         gameRegistry.commitSingle({resourceHash: burnResourceHash, commit: burnCommit, signature: burnSignature});
@@ -201,6 +207,7 @@ contract GameRegistryIntTest is Test {
         bytes memory callData = abi.encodeWithSignature("mint(address)", PLAYER);
         (bytes32 resourceHash, bytes memory commit, bytes memory signature) = getSignedMessage("Wizard", address(wbCharacters), 0, callData);
 
+        vm.prank(PLAYER);
         vm.expectEmit(true, false, false, true);
         emit CommitConfirmed(callData);
         gameRegistry.commitSingle({resourceHash: resourceHash, commit: commit, signature: signature});

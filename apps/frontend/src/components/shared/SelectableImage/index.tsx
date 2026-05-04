@@ -10,8 +10,6 @@ export interface SelectableImageProps {
   alt: string;
   isSelected: boolean;
   onClick?: () => void;
-  width?: number;
-  height?: number;
   className?: string;
   imageClassName?: string;
   name?: string;
@@ -23,8 +21,6 @@ export function SelectableImage({
   alt,
   isSelected,
   onClick,
-  width = 100,
-  height = 100,
   className,
   imageClassName,
   name,
@@ -38,20 +34,13 @@ export function SelectableImage({
         disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
         className
       )}
-      style={{
-        width: `${width}px`,
-        height: `${height}px`,
-      }}
     >
       <Image
         src={src}
         alt={alt}
-        width={width}
-        height={height}
+        fill
         className={cn('object-contain object-center', imageClassName)}
         style={{
-          width: `${width}px`,
-          height: `${height}px`,
           clipPath:
             'polygon(8% 0%, 92% 0%, 96% 4%, 100% 8%, 100% 92%, 96% 96%, 92% 100%, 8% 100%, 4% 96%, 0% 92%, 0% 8%, 4% 4%)',
         }}
@@ -65,16 +54,14 @@ export function SelectableImage({
       )}
       {isSelected && name && (
         <div
-          className="font-pixel pointer-events-none absolute bottom-0 left-0 right-0 py-1 text-center text-xs text-black"
+          className="font-pixel pointer-events-none absolute bottom-0 left-0 right-0 flex min-h-6 items-center justify-center py-1 text-center text-xs text-black h-[35%]"
           style={{
             backgroundColor: '#5B7AC4',
-            height: `${height * 0.35}px`,
-            minHeight: '24px',
             clipPath:
               'polygon(0% 0%, 100% 0%, 100% 75%, 95% 85%, 85% 100%, 15% 100%, 5% 85%, 0% 75%)',
           }}
         >
-          <span className="font-pixel-klein text-main-gray text-bold text-xs">
+          <span className="font-pixel text-main-gray text-bold text-xs">
             {name}
           </span>
         </div>

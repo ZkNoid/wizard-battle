@@ -13,6 +13,21 @@ ARG MINA_ADMIN_PRIVATE_KEY
 ARG MINA_CONTRACT_ADDRESS
 ARG BULLMQ_REDIS_HOST
 ARG BULLMQ_REDIS_PORT
+ARG EVM_RPC_URL
+ARG GAME_SIGNER_PUBLIC_KEY
+ARG GAME_SIGNER_PRIVATE_KEY
+ARG GAME_REGISTRY_ADDRESS
+ARG WB_RESOURCES_ADDRESS
+ARG WB_CHARACTER_ADDRESS
+ARG WB_COINS_ADDRESS
+ARG WB_ITEMS_ADDRESS
+ARG GAME_MARKET_ADDRESS
+ARG RPC_WS_URL
+ARG GAME_MARKET_DEPLOYMENT_BLOCK
+ARG TOURNAMENT_APP_PORT
+ARG TOURNAMENT_CONTRACT_ADDRESS
+ARG TOURNAMENT_REDIS_URL
+ARG TOURNAMENT_ADMIN_PRIVATE_KEY
 
 WORKDIR /usr/share/nestjs/main
 COPY . .
@@ -64,8 +79,24 @@ echo "MINA_ADMIN_PRIVATE_KEY=${MINA_ADMIN_PRIVATE_KEY}" >> /usr/share/nestjs/mai
 echo "MINA_CONTRACT_ADDRESS=${MINA_CONTRACT_ADDRESS}" >> /usr/share/nestjs/main/.env
 echo "BULLMQ_REDIS_HOST=${BULLMQ_REDIS_HOST}" >> /usr/share/nestjs/main/.env
 echo "BULLMQ_REDIS_PORT=${BULLMQ_REDIS_PORT}" >> /usr/share/nestjs/main/.env
+echo "EVM_RPC_URL=${EVM_RPC_URL}" >> /usr/share/nestjs/main/.env
+echo "GAME_SIGNER_PUBLIC_KEY=${GAME_SIGNER_PUBLIC_KEY}" >> /usr/share/nestjs/main/.env
+echo "GAME_SIGNER_PRIVATE_KEY=${GAME_SIGNER_PRIVATE_KEY}" >> /usr/share/nestjs/main/.env
+echo "GAME_REGISTRY_ADDRESS=${GAME_REGISTRY_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "WB_RESOURCES_ADDRESS=${WB_RESOURCES_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "WB_CHARACTER_ADDRESS=${WB_CHARACTER_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "WB_COINS_ADDRESS=${WB_COINS_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "WB_ITEMS_ADDRESS=${WB_ITEMS_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "GAME_MARKET_ADDRESS=${GAME_MARKET_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "RPC_WS_URL=${RPC_WS_URL}" >> /usr/share/nestjs/main/.env
+echo "GAME_MARKET_DEPLOYMENT_BLOCK=${GAME_MARKET_DEPLOYMENT_BLOCK}" >> /usr/share/nestjs/main/.env
+echo "TOURNAMENT_APP_PORT=${TOURNAMENT_APP_PORT:-3032}" >> /usr/share/nestjs/main/.env
+echo "TOURNAMENT_CONTRACT_ADDRESS=${TOURNAMENT_CONTRACT_ADDRESS}" >> /usr/share/nestjs/main/.env
+echo "TOURNAMENT_REDIS_URL=${TOURNAMENT_REDIS_URL:-redis://redis-tournament:6379}" >> /usr/share/nestjs/main/.env
+echo "TOURNAMENT_ADMIN_PRIVATE_KEY=${TOURNAMENT_ADMIN_PRIVATE_KEY}" >> /usr/share/nestjs/main/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/backend/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/frontend/.env
+#. .env
 pnpm turbo run build
 
 # Enable PM2 monitoring
@@ -75,9 +106,8 @@ pm2 set pm2-server-monit:threshold 80
 # Start the application with PM2 and wait for it to initialize
 #pm2 start apps/backend/dist/backend/src/main.js --name nestjs-app --instances max --max-memory-restart 1G --env production --log /usr/share/temp/log/nestjs-app.log
 pm2 start apps/backend/dist/backend/src/main.js --name nestjs-app --instances 1 --max-memory-restart 1G --env production
-# Add a small delay to ensure PM2 is ready
+pm2 start apps/backend/dist/backend/src/main-tournament.js --name tournament-app --instances 1 --max-memory-restart 4G --env production
 sleep 5
-# Save the PM2 configuration    
 pm2 save
 EOF
 VOLUME ["/temp"]

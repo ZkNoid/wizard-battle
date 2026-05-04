@@ -9,12 +9,14 @@ interface CancelSaleConfirmModalProps {
   item: IMarketSellingItem;
   onConfirm: (item: IMarketSellingItem) => void;
   onBack: () => void;
+  isLoading?: boolean;
 }
 
 export function CancelSaleConfirmModal({
   item,
   onConfirm,
   onBack,
+  isLoading = false,
 }: CancelSaleConfirmModalProps) {
   return (
     <div
@@ -95,6 +97,7 @@ export function CancelSaleConfirmModal({
               className="h-12 flex-1"
               enableHoverSound
               enableClickSound
+              disabled={isLoading}
             >
               <span className="font-pixel text-main-gray text-base font-bold">
                 Back
@@ -106,9 +109,10 @@ export function CancelSaleConfirmModal({
               className="h-12 flex-1"
               enableHoverSound
               enableClickSound
+              disabled={isLoading}
             >
               <span className="font-pixel text-base font-bold text-white">
-                Cancel
+                {isLoading ? 'Processing...' : 'Cancel'}
               </span>
             </Button>
           </div>

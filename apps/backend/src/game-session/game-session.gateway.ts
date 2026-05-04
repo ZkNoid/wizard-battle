@@ -10,6 +10,7 @@ import { MatchmakingService } from '../matchmaking/matchmaking.service';
 import { GameStateService } from './game-state.service';
 import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
 import { RewardService } from '../reward/reward.service';
+import { TournamentResultRecorderService } from '../tournament/services/index.js';
 import {
   IAddToQueue,
   IAddToQueueResponse,
@@ -18,6 +19,7 @@ import {
   IFoundMatch,
   IPublicState,
 } from '../../../common/types/matchmaking.types';
+import { ITournamentAddToQueue } from '../../../common/types/tournament-matchmaking.types';
 import {
   GamePhase,
   IUserActions,
@@ -61,7 +63,8 @@ export class GameSessionGateway {
     private readonly gameStateService: GameStateService,
     private readonly gamePhaseScheduler: GamePhaseSchedulerService,
     private readonly rewardService: RewardService,
-    private readonly questsService: QuestsService
+    private readonly questsService: QuestsService,
+    private readonly tournamentResultRecorder: TournamentResultRecorderService
   ) {}
   /**
    * @dev Invoked once the gateway is initialized. Injects the Socket.IO
@@ -216,7 +219,7 @@ export class GameSessionGateway {
    */
   async handleJoinBotMatchmaking(
     socket: Socket,
-    data: { addToQueue: IAddToQueue }
+    data: { addToQueue: IAddToQueue; botType?: string }
   ) {
     if (!this.gameStateService.isRedisReady()) {
       console.warn('joinBotMatchmaking rejected: Redis not ready');
@@ -235,7 +238,29 @@ export class GameSessionGateway {
 
     return await this.matchmakingService.joinBotMatchmaking(
       socket,
-      data.addToQueue
+      data.addToQueue,
+      data.botType
+    );
+  }
+
+  @SubscribeMessage('joinTournamentMatchmaking')
+  async handleJoinTournamentMatchmaking(
+    socket: Socket,
+    data: { addToQueue: ITournamentAddToQueue }
+  ) {
+    if (!this.gameStateService.isRedisReady()) {
+      console.warn('joinTournamentMatchmaking rejected: Redis not ready');
+      return null;
+    }
+
+    return await this.matchmakingService.joinTournamentMatchmaking(
+      socket,
+      data.addToQueue,
+      (tournamentId, walletAddress) =>
+        this.tournamentResultRecorder.validateParticipant(
+          tournamentId,
+          walletAddress
+        )
     );
   }
 
@@ -979,14 +1004,41 @@ export class GameSessionGateway {
           );
         } catch (questError) {
           console.error('Failed to track quest progress:', questError);
-          // Don't fail the game end flow if quest tracking fails
+        }
+
+        // Record tournament match result if this is a tournament game
+        if (this.tournamentResultRecorder.isTournamentRoom(data.roomId)) {
+          try {
+            const gameState = await this.gameStateService.getGameState(
+              data.roomId
+            );
+            await this.tournamentResultRecorder.recordResult({
+              roomId: data.roomId,
+              winnerId: winnerData.wUserId ?? winnerData.wPlayerId,
+              loserId: winnerData.lUserId ?? winnerData.lPlayerId,
+              winnerPlayerId: winnerData.wPlayerId,
+              loserPlayerId: winnerData.lPlayerId,
+              rounds: gameState?.turn ?? 1,
+              surrendered: data.dead.surrendered ?? false,
+            });
+          } catch (tournamentErr) {
+            console.error(
+              'Failed to record tournament match result:',
+              tournamentErr
+            );
+          }
         }
 
         // Immediately destroy room resources when game ends
         try {
-          // Use Redis transaction to ensure atomic cleanup
+          const isTournament =
+            this.tournamentResultRecorder.isTournamentRoom(data.roomId);
+          const matchHashKey = isTournament
+            ? 'tournament_matches_active'
+            : 'matches';
+
           const multi = this.matchmakingService.redisClient.multi();
-          multi.hDel('matches', data.roomId);
+          multi.hDel(matchHashKey, data.roomId);
           multi.hDel('game_states', data.roomId);
 
           const results = await multi.exec();
