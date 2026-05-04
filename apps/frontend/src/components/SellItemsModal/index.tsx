@@ -73,17 +73,27 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
 
     setIsPlacing(true);
     try {
-      console.log('[handlePlaceOrder] fetching game element for item:', selectedUserItem.item.id);
+      console.log(
+        '[handlePlaceOrder] fetching game element for item:',
+        selectedUserItem.item.id
+      );
       const gameElement = await getGameElement(selectedUserItem.item.id);
       if (!gameElement) {
-        throw new Error(`Game element not registered for item: ${selectedUserItem.item.id}`);
+        throw new Error(
+          `Game element not registered for item: ${selectedUserItem.item.id}`
+        );
       }
       console.log('[handlePlaceOrder] gameElement:', gameElement);
 
       const priceWei = parseEther(price);
 
       const isGoldPayment = currency === 'gold';
-      console.log('[handlePlaceOrder] currency:', currency, '| isGoldPayment:', isGoldPayment);
+      console.log(
+        '[handlePlaceOrder] currency:',
+        currency,
+        '| isGoldPayment:',
+        isGoldPayment
+      );
 
       const goldElement = isGoldPayment
         ? await getGameElement(GOLD_RESOURCE_ID)
@@ -91,14 +101,21 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
       console.log('[handlePlaceOrder] goldElement:', goldElement);
 
       const paymentToken = isGoldPayment
-        ? (GAME_REGISTRY_ADDRESS ?? ZERO_ADDRESS)
+        ? (goldElement?.tokenAddress ?? ZERO_ADDRESS)
         : (USDC_TOKEN_ADDRESS ?? ZERO_ADDRESS);
       const paymentTokenId =
         isGoldPayment && goldElement ? goldElement.tokenId : 0n;
 
-      console.log('[handlePlaceOrder] paymentToken:', paymentToken, '| paymentTokenId:', paymentTokenId);
+      console.log(
+        '[handlePlaceOrder] paymentToken:',
+        paymentToken,
+        '| paymentTokenId:',
+        paymentTokenId
+      );
       if (isGoldPayment && paymentTokenId === 0n) {
-        console.error('[handlePlaceOrder] paymentTokenId=0 for gold — goldElement missing or not registered');
+        console.error(
+          '[handlePlaceOrder] paymentTokenId=0 for gold — goldElement missing or not registered'
+        );
       }
 
       if (gameElement.tokenAddress) {
