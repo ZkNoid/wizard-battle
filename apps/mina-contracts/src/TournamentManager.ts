@@ -62,9 +62,11 @@ export class TournamentConfig extends Struct({
   }
 
   assertValidDistribution() {
-    let total = this.prizePercents[0];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    let total = this.prizePercents[0]!;
     for (let i = 1; i < NUM_WINNERS; i++) {
-      total = total.add(this.prizePercents[i]);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      total = total.add(this.prizePercents[i]!);
     }
     total.assertEquals(PERCENT_BASE);
   }
@@ -299,9 +301,11 @@ export class TournamentManager extends SmartContract {
       'Battle phase not ended yet'
     );
 
-    let totalPrizes = prizesInput.items[0];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    let totalPrizes = prizesInput.items[0]!;
     for (let i = 1; i < NUM_WINNERS; i++) {
-      totalPrizes = totalPrizes.add(prizesInput.items[i]);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      totalPrizes = totalPrizes.add(prizesInput.items[i]!);
     }
     totalPrizes.assertLessThanOrEqual(currentTournament.prizePool, 'Prizes exceed pool');
 

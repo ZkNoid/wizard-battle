@@ -274,7 +274,12 @@ async function replayTournamentCreated(
   events: TournamentCreatedEvent[],
   tournamentsRoot: string
 ): Promise<EventStats> {
-  const stats: EventStats = { total: events.length, replayed: 0, skipped: 0, failed: 0 };
+  const stats: EventStats = {
+    total: events.length,
+    replayed: 0,
+    skipped: 0,
+    failed: 0,
+  };
 
   for (const ev of events) {
     const tournamentId = ev.tournamentId.toString();
@@ -283,7 +288,9 @@ async function replayTournamentCreated(
     const result = await post(`${BACKEND_URL}/tournament`, {
       tournamentId,
       ticketPrice: ev.ticketPrice.toBigInt().toString(),
-      prizePercents: (ev.prizePercents as UInt32[]).map((p) => Number(p.toBigint())),
+      prizePercents: (ev.prizePercents as UInt32[]).map((p) =>
+        Number(p.toBigint())
+      ),
       battleStartSlot: Number(ev.battleStartSlot.toBigint()),
       battleEndSlot: Number(ev.battleEndSlot.toBigint()),
       tournamentsRoot,
@@ -296,7 +303,9 @@ async function replayTournamentCreated(
       console.log('OK');
       stats.replayed++;
     } else {
-      console.log(`FAIL [${result.status ?? 'network error'}] ${result.error ?? ''}`);
+      console.log(
+        `FAIL [${result.status ?? 'network error'}] ${result.error ?? ''}`
+      );
       stats.failed++;
     }
   }
@@ -307,15 +316,27 @@ async function replayTournamentCreated(
 async function replayTicketPurchased(
   events: TicketPurchasedEvent[]
 ): Promise<EventStats> {
-  const stats: EventStats = { total: events.length, replayed: 0, skipped: 0, failed: 0 };
+  const stats: EventStats = {
+    total: events.length,
+    replayed: 0,
+    skipped: 0,
+    failed: 0,
+  };
 
   for (const ev of events) {
     const tournamentId = ev.tournamentId.toString();
     const playerPubKey = ev.player.toBase58();
-    process.stdout.write(`  [TicketPurchased] tournament=${tournamentId} player=${playerPubKey.slice(0, 16)}… `);
+    process.stdout.write(
+      `  [TicketPurchased] tournament=${tournamentId} player=${playerPubKey.slice(
+        0,
+        16
+      )}… `
+    );
 
     const result = await post(
-      `${BACKEND_URL}/tournament/${encodeURIComponent(tournamentId)}/buy-ticket`,
+      `${BACKEND_URL}/tournament/${encodeURIComponent(
+        tournamentId
+      )}/buy-ticket`,
       { playerPubKey }
     );
 
@@ -326,7 +347,9 @@ async function replayTicketPurchased(
       console.log('OK');
       stats.replayed++;
     } else {
-      console.log(`FAIL [${result.status ?? 'network error'}] ${result.error ?? ''}`);
+      console.log(
+        `FAIL [${result.status ?? 'network error'}] ${result.error ?? ''}`
+      );
       stats.failed++;
     }
   }
@@ -337,7 +360,12 @@ async function replayTicketPurchased(
 async function replayTournamentFinalized(
   events: TournamentFinalizedEvent[]
 ): Promise<EventStats> {
-  const stats: EventStats = { total: events.length, replayed: 0, skipped: 0, failed: 0 };
+  const stats: EventStats = {
+    total: events.length,
+    replayed: 0,
+    skipped: 0,
+    failed: 0,
+  };
 
   if (events.length === 0) return stats;
 
@@ -351,9 +379,15 @@ async function replayTournamentFinalized(
   for (const ev of events) {
     const id = ev.tournamentId.toString();
     console.log(`    tournament=${id}`);
-    console.log(`      winner1=${ev.winner1.toBase58()} prize=${ev.prize1.toBigInt()}nMINA`);
-    console.log(`      winner2=${ev.winner2.toBase58()} prize=${ev.prize2.toBigInt()}nMINA`);
-    console.log(`      winner3=${ev.winner3.toBase58()} prize=${ev.prize3.toBigInt()}nMINA`);
+    console.log(
+      `      winner1=${ev.winners[0].toBase58()} prize=${ev.prizes[0].toBigInt()}nMINA`
+    );
+    console.log(
+      `      winner2=${ev.winners[1].toBase58()} prize=${ev.prizes[1].toBigInt()}nMINA`
+    );
+    console.log(
+      `      winner3=${ev.winners[2].toBase58()} prize=${ev.prizes[2].toBigInt()}nMINA`
+    );
   }
   console.log(
     '  To trigger finalization use the backend admin API or restart the chain monitor.'
@@ -367,15 +401,27 @@ async function replayTournamentFinalized(
 async function replayPrizeClaimed(
   events: PrizeClaimedEvent[]
 ): Promise<EventStats> {
-  const stats: EventStats = { total: events.length, replayed: 0, skipped: 0, failed: 0 };
+  const stats: EventStats = {
+    total: events.length,
+    replayed: 0,
+    skipped: 0,
+    failed: 0,
+  };
 
   for (const ev of events) {
     const tournamentId = ev.tournamentId.toString();
     const playerPubKey = ev.player.toBase58();
-    process.stdout.write(`  [PrizeClaimed] tournament=${tournamentId} player=${playerPubKey.slice(0, 16)}… `);
+    process.stdout.write(
+      `  [PrizeClaimed] tournament=${tournamentId} player=${playerPubKey.slice(
+        0,
+        16
+      )}… `
+    );
 
     const result = await post(
-      `${BACKEND_URL}/tournament/${encodeURIComponent(tournamentId)}/claim-prize`,
+      `${BACKEND_URL}/tournament/${encodeURIComponent(
+        tournamentId
+      )}/claim-prize`,
       { playerPubKey }
     );
 
@@ -386,7 +432,9 @@ async function replayPrizeClaimed(
       console.log('OK');
       stats.replayed++;
     } else {
-      console.log(`FAIL [${result.status ?? 'network error'}] ${result.error ?? ''}`);
+      console.log(
+        `FAIL [${result.status ?? 'network error'}] ${result.error ?? ''}`
+      );
       stats.failed++;
     }
   }
@@ -403,7 +451,9 @@ async function main() {
 
   const contractAddressBase58 = process.env.TOURNAMENT_CONTRACT_ADDRESS;
   if (!contractAddressBase58) {
-    console.error('ERROR: TOURNAMENT_CONTRACT_ADDRESS environment variable not set');
+    console.error(
+      'ERROR: TOURNAMENT_CONTRACT_ADDRESS environment variable not set'
+    );
     process.exit(1);
   }
 
@@ -446,7 +496,10 @@ async function main() {
   // ── Replay each event type ────────────────────────────────────────────────────
   console.log('\n' + '─'.repeat(60));
   console.log('Replaying TournamentCreated events...');
-  const createdStats = await replayTournamentCreated(events.tournamentCreated, tournamentsRoot);
+  const createdStats = await replayTournamentCreated(
+    events.tournamentCreated,
+    tournamentsRoot
+  );
 
   console.log('\n' + '─'.repeat(60));
   console.log('Replaying TicketPurchased events...');
@@ -454,7 +507,9 @@ async function main() {
 
   console.log('\n' + '─'.repeat(60));
   console.log('Replaying TournamentFinalized events...');
-  const finalizedStats = await replayTournamentFinalized(events.tournamentFinalized);
+  const finalizedStats = await replayTournamentFinalized(
+    events.tournamentFinalized
+  );
 
   console.log('\n' + '─'.repeat(60));
   console.log('Replaying PrizeClaimed events...');
@@ -474,12 +529,18 @@ async function main() {
   console.log('REPLAY SUMMARY');
   console.log('='.repeat(60));
   console.log(
-    `${'Event type'.padEnd(24)} ${'Total'.padStart(6)} ${'Replayed'.padStart(9)} ${'Skipped'.padStart(8)} ${'Failed'.padStart(7)}`
+    `${'Event type'.padEnd(24)} ${'Total'.padStart(6)} ${'Replayed'.padStart(
+      9
+    )} ${'Skipped'.padStart(8)} ${'Failed'.padStart(7)}`
   );
   console.log('─'.repeat(60));
   for (const [name, s] of Object.entries(allStats)) {
     console.log(
-      `${name.padEnd(24)} ${String(s.total).padStart(6)} ${String(s.replayed).padStart(9)} ${String(s.skipped).padStart(8)} ${String(s.failed).padStart(7)}`
+      `${name.padEnd(24)} ${String(s.total).padStart(6)} ${String(
+        s.replayed
+      ).padStart(9)} ${String(s.skipped).padStart(8)} ${String(
+        s.failed
+      ).padStart(7)}`
     );
   }
   console.log('─'.repeat(60));
@@ -493,12 +554,18 @@ async function main() {
     { total: 0, replayed: 0, skipped: 0, failed: 0 }
   );
   console.log(
-    `${'TOTAL'.padEnd(24)} ${String(totals.total).padStart(6)} ${String(totals.replayed).padStart(9)} ${String(totals.skipped).padStart(8)} ${String(totals.failed).padStart(7)}`
+    `${'TOTAL'.padEnd(24)} ${String(totals.total).padStart(6)} ${String(
+      totals.replayed
+    ).padStart(9)} ${String(totals.skipped).padStart(8)} ${String(
+      totals.failed
+    ).padStart(7)}`
   );
   console.log('='.repeat(60));
 
   if (totalFailed > 0) {
-    console.error(`\n${totalFailed} event(s) failed to replay. See output above for details.`);
+    console.error(
+      `\n${totalFailed} event(s) failed to replay. See output above for details.`
+    );
     process.exit(1);
   }
 
