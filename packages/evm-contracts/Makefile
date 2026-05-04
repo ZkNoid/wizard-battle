@@ -8,6 +8,7 @@ test:
 
 deployAll-fuji:; forge script script/DeployAll.s.sol:DeployAll --broadcast --rpc-url $(AVALANCHE_FUJI_RPC_URL) --account devKey --sender 0x667c1aBD4E25BE048b8217F90Fc576780CCa8218 --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
 
+deployAll-avalanche:; forge script script/DeployAll.s.sol:DeployAll --broadcast --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod --sender 0x5b8704e82793cc9da874c64e845089a56ae5ed69 --verify --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan --etherscan-api-key verifyContract -vvvv
 
 deployGR-sepolia:; forge script script/Deploy.s.sol:Deploy --rpc-url $(SEPOLIA_RPC_URL) --account devKey --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
 
@@ -141,3 +142,19 @@ test-anvil:
 
 # GameMarket implementation:		0x610178dA211FEF7D417bC0e6FeD39F05609AD788
 # GameMarket proxy:   				0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e
+
+
+## Production
+
+
+
+## Production post deploy
+postDeployAll-fuji:
+		cast send 0x55e1cCD651A3e3e0EfC6b61e8c94878cbe87F64B "setURI(string)" "https://wizard.zknoid.io/nft/characters/" --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod -vvvv
+		cast send 0xee52Ce7D2c46F8B728D74a030efCB78885F90E25 "setURI(string)" "https://wizard.zknoid.io/nft/resources/" --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod -vvvv
+		cast send 0x6fC43f3cf1B27199F52F160f05645b1541292484 "setURI(string)" "https://wizard.zknoid.io/nft/items/" --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod -vvvv
+
+postDeployGM-fuji:
+	cast send 0x8865d8738E37671138D5270A7B4befeE83DeE904 "setGameRegistry(address)" 0x4e590B45fB999d93e981af65eB6A4eC06652A04D --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod -vvvv
+	cast send 0x8865d8738E37671138D5270A7B4befeE83DeE904 "allowToken(address)" 0xee52Ce7D2c46F8B728D74a030efCB78885F90E25 --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod -vvvv
+	cast send 0x8865d8738E37671138D5270A7B4befeE83DeE904 "allowToken(address)" 0x5425890298aed601595a70AB815c96711a31Bc65 --rpc-url $(AVALANCHE_MAINNET_RPC_URL) --account prod -vvvv
