@@ -16,9 +16,7 @@ export interface TournamentBackendSponsor {
 export type TournamentBackendPayload = {
   tournamentId: string;
   ticketPrice: string;
-  prize1Percent: number;
-  prize2Percent: number;
-  prize3Percent: number;
+  prizePercents: number[];
   battleStartSlot: number;
   battleEndSlot: number;
   tournamentsRoot: string;

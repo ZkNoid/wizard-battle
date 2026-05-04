@@ -15,9 +15,7 @@ export interface OptimisticView {
   battleStartSlot: number;
   battleEndSlot: number;
   ticketPrice: string;
-  prize1Percent: number;
-  prize2Percent: number;
-  prize3Percent: number;
+  prizePercents: number[];
   prizePool: string;
   participantCount: number;
   registeredPlayers: string[];
@@ -38,9 +36,7 @@ export interface AddPendingOperationDto {
 
 export interface CreateTournamentConfig {
   ticketPrice: string;
-  prize1Percent: number;
-  prize2Percent: number;
-  prize3Percent: number;
+  prizePercents: number[];
   battleStartSlot: number;
   battleEndSlot: number;
 }

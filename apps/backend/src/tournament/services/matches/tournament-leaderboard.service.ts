@@ -98,13 +98,7 @@ export class TournamentLeaderboardService {
     const prizePool = tournament
       ? BigInt(tournament.verified.prizePool)
       : BigInt(0);
-    const percents = tournament
-      ? [
-          tournament.verified.prize1Percent,
-          tournament.verified.prize2Percent,
-          tournament.verified.prize3Percent,
-        ]
-      : [0, 0, 0];
+    const percents = tournament?.verified.prizePercents ?? [];
 
     return entries.map((entry, idx) => {
       const place = idx + 1;
@@ -133,21 +127,19 @@ export class TournamentLeaderboardService {
    */
   async getTopWinners(
     tournamentId: string,
-    topN: number = 3
-  ): Promise<
-    { publicKey: string; prizeAmount: string; place: 1 | 2 | 3 }[]
-  > {
+    topN: number = 10
+  ): Promise<{ publicKey: string; prizeAmount: string; place: number }[]> {
     const leaderboard = await this.getLeaderboard(tournamentId);
 
     return leaderboard
       .slice(0, topN)
-      .filter((e) => e.totalGames > 0 && e.place <= 3)
+      .filter((e) => e.totalGames > 0)
       .map((entry) => {
         const totalPrize = entry.prize.reduce((sum, p) => sum + p.amount, 0);
         return {
           publicKey: entry.walletAddress,
           prizeAmount: String(totalPrize),
-          place: entry.place as 1 | 2 | 3,
+          place: entry.place,
         };
       });
   }

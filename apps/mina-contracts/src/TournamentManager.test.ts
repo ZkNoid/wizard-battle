@@ -17,7 +17,28 @@ import {
   TournamentLeaf,
   TournamentStatus,
   WinnerLeaf,
+  WinnersInput,
+  PrizesInput,
+  NUM_WINNERS,
 } from './TournamentManager';
+
+const PRIZE_PERCENTS_50_30_20 = [
+  UInt32.from(5000), UInt32.from(3000), UInt32.from(2000),
+  UInt32.from(0), UInt32.from(0), UInt32.from(0),
+  UInt32.from(0), UInt32.from(0), UInt32.from(0), UInt32.from(0),
+];
+
+function makeWinnersInput(pks: PublicKey[]): WinnersInput {
+  return new WinnersInput({
+    items: Array.from({ length: NUM_WINNERS }, (_, i) => pks[i] ?? PublicKey.empty()),
+  });
+}
+
+function makePrizesInput(amounts: UInt64[]): PrizesInput {
+  return new PrizesInput({
+    items: Array.from({ length: NUM_WINNERS }, (_, i) => amounts[i] ?? UInt64.from(0)),
+  });
+}
 
 describe('TournamentManager', () => {
   let Local: any;
@@ -136,9 +157,7 @@ describe('TournamentManager', () => {
       const tournamentId = Field(1);
       const config = new TournamentConfig({
         ticketPrice: UInt64.from(1_000_000_000), // 1 MINA
-        prize1Percent: UInt32.from(5000), // 50%
-        prize2Percent: UInt32.from(3000), // 30%
-        prize3Percent: UInt32.from(2000), // 20%
+        prizePercents: PRIZE_PERCENTS_50_30_20,
       });
 
       const witness = tournamentsMap.getWitness(getTournamentKey(tournamentId));
@@ -160,9 +179,7 @@ describe('TournamentManager', () => {
         battleStartSlot: UInt32.from(11_000),
         battleEndSlot: UInt32.from(12_000),
         ticketPrice: config.ticketPrice,
-        prize1Percent: config.prize1Percent,
-        prize2Percent: config.prize2Percent,
-        prize3Percent: config.prize3Percent,
+        prizePercents: config.prizePercents,
         participantsRoot: new MerkleMap().getRoot(),
         winnersRoot: new MerkleMap().getRoot(),
         prizePool: UInt64.from(0),
@@ -177,9 +194,11 @@ describe('TournamentManager', () => {
       const tournamentId = Field(1);
       const invalidConfig = new TournamentConfig({
         ticketPrice: UInt64.from(1_000_000_000),
-        prize1Percent: UInt32.from(5000),
-        prize2Percent: UInt32.from(3000),
-        prize3Percent: UInt32.from(1000), // Total: 90%, not 100%
+        prizePercents: [
+          UInt32.from(5000), UInt32.from(3000), UInt32.from(1000),
+          UInt32.from(0), UInt32.from(0), UInt32.from(0),
+          UInt32.from(0), UInt32.from(0), UInt32.from(0), UInt32.from(0),
+        ], // Total: 90%, not 100%
       });
 
       const witness = tournamentsMap.getWitness(getTournamentKey(tournamentId));
@@ -211,9 +230,7 @@ describe('TournamentManager', () => {
 
       const config = new TournamentConfig({
         ticketPrice: UInt64.from(1_000_000_000), // 1 MINA
-        prize1Percent: UInt32.from(5000),
-        prize2Percent: UInt32.from(3000),
-        prize3Percent: UInt32.from(2000),
+        prizePercents: PRIZE_PERCENTS_50_30_20,
       });
 
       currentTournament = new TournamentLeaf({
@@ -221,9 +238,7 @@ describe('TournamentManager', () => {
         battleStartSlot: UInt32.from(11_000),
         battleEndSlot: UInt32.from(12_000),
         ticketPrice: config.ticketPrice,
-        prize1Percent: config.prize1Percent,
-        prize2Percent: config.prize2Percent,
-        prize3Percent: config.prize3Percent,
+        prizePercents: config.prizePercents,
         participantsRoot: participantsMap.getRoot(),
         winnersRoot: new MerkleMap().getRoot(),
         prizePool: UInt64.from(0),
@@ -282,9 +297,7 @@ describe('TournamentManager', () => {
         battleStartSlot: currentTournament.battleStartSlot,
         battleEndSlot: currentTournament.battleEndSlot,
         ticketPrice: currentTournament.ticketPrice,
-        prize1Percent: currentTournament.prize1Percent,
-        prize2Percent: currentTournament.prize2Percent,
-        prize3Percent: currentTournament.prize3Percent,
+        prizePercents: currentTournament.prizePercents,
         participantsRoot: participantsMap.getRoot(),
         winnersRoot: currentTournament.winnersRoot,
         prizePool: prizeContribution,
@@ -354,9 +367,7 @@ describe('TournamentManager', () => {
         battleStartSlot: currentTournament.battleStartSlot,
         battleEndSlot: currentTournament.battleEndSlot,
         ticketPrice: currentTournament.ticketPrice,
-        prize1Percent: currentTournament.prize1Percent,
-        prize2Percent: currentTournament.prize2Percent,
-        prize3Percent: currentTournament.prize3Percent,
+        prizePercents: currentTournament.prizePercents,
         participantsRoot: participantsMap.getRoot(),
         winnersRoot: currentTournament.winnersRoot,
         prizePool: prizeContribution,
@@ -399,9 +410,7 @@ describe('TournamentManager', () => {
       const ticketPrice = UInt64.from(1_000_000_000); // 1 MINA
       const config = new TournamentConfig({
         ticketPrice,
-        prize1Percent: UInt32.from(5000),
-        prize2Percent: UInt32.from(3000),
-        prize3Percent: UInt32.from(2000),
+        prizePercents: PRIZE_PERCENTS_50_30_20,
       });
 
       currentTournament = new TournamentLeaf({
@@ -409,9 +418,7 @@ describe('TournamentManager', () => {
         battleStartSlot: UInt32.from(11_000),
         battleEndSlot: UInt32.from(12_000),
         ticketPrice: config.ticketPrice,
-        prize1Percent: config.prize1Percent,
-        prize2Percent: config.prize2Percent,
-        prize3Percent: config.prize3Percent,
+        prizePercents: config.prizePercents,
         participantsRoot: participantsMap.getRoot(),
         winnersRoot: winnersMap.getRoot(),
         prizePool: UInt64.from(0),
@@ -470,9 +477,7 @@ describe('TournamentManager', () => {
           battleStartSlot: currentTournament.battleStartSlot,
           battleEndSlot: currentTournament.battleEndSlot,
           ticketPrice: currentTournament.ticketPrice,
-          prize1Percent: currentTournament.prize1Percent,
-          prize2Percent: currentTournament.prize2Percent,
-          prize3Percent: currentTournament.prize3Percent,
+          prizePercents: currentTournament.prizePercents,
           participantsRoot: participantsMap.getRoot(),
           winnersRoot: winnersMap.getRoot(),
           prizePool,
@@ -515,12 +520,8 @@ describe('TournamentManager', () => {
           tournamentId,
           currentTournament,
           tournamentWitness,
-          player1,
-          player2,
-          player3,
-          prize1,
-          prize2,
-          prize3,
+          makeWinnersInput([player1, player2, player3]),
+          makePrizesInput([prize1, prize2, prize3]),
           winnersMap.getRoot()
         );
       });
@@ -532,9 +533,7 @@ describe('TournamentManager', () => {
         battleStartSlot: currentTournament.battleStartSlot,
         battleEndSlot: currentTournament.battleEndSlot,
         ticketPrice: currentTournament.ticketPrice,
-        prize1Percent: currentTournament.prize1Percent,
-        prize2Percent: currentTournament.prize2Percent,
-        prize3Percent: currentTournament.prize3Percent,
+        prizePercents: currentTournament.prizePercents,
         participantsRoot: currentTournament.participantsRoot,
         winnersRoot: winnersMap.getRoot(),
         prizePool: currentTournament.prizePool,
@@ -578,12 +577,8 @@ describe('TournamentManager', () => {
           tournamentId,
           currentTournament,
           tournamentWitness,
-          player1,
-          player2,
-          player3,
-          prize1,
-          prize2,
-          prize3,
+          makeWinnersInput([player1, player2, player3]),
+          makePrizesInput([prize1, prize2, prize3]),
           winnersMap.getRoot()
         );
       });
@@ -595,9 +590,7 @@ describe('TournamentManager', () => {
         battleStartSlot: currentTournament.battleStartSlot,
         battleEndSlot: currentTournament.battleEndSlot,
         ticketPrice: currentTournament.ticketPrice,
-        prize1Percent: currentTournament.prize1Percent,
-        prize2Percent: currentTournament.prize2Percent,
-        prize3Percent: currentTournament.prize3Percent,
+        prizePercents: currentTournament.prizePercents,
         participantsRoot: currentTournament.participantsRoot,
         winnersRoot: winnersMap.getRoot(),
         prizePool: currentTournament.prizePool,
@@ -661,12 +654,8 @@ describe('TournamentManager', () => {
           tournamentId,
           currentTournament,
           tournamentWitness,
-          player1,
-          player2,
-          player3,
-          prize1,
-          prize2,
-          prize3,
+          makeWinnersInput([player1, player2, player3]),
+          makePrizesInput([prize1, prize2, prize3]),
           winnersMap.getRoot()
         );
       });
@@ -678,9 +667,7 @@ describe('TournamentManager', () => {
         battleStartSlot: currentTournament.battleStartSlot,
         battleEndSlot: currentTournament.battleEndSlot,
         ticketPrice: currentTournament.ticketPrice,
-        prize1Percent: currentTournament.prize1Percent,
-        prize2Percent: currentTournament.prize2Percent,
-        prize3Percent: currentTournament.prize3Percent,
+        prizePercents: currentTournament.prizePercents,
         participantsRoot: currentTournament.participantsRoot,
         winnersRoot: winnersMap.getRoot(),
         prizePool: currentTournament.prizePool,
@@ -714,9 +701,7 @@ describe('TournamentManager', () => {
         battleStartSlot: currentTournament.battleStartSlot,
         battleEndSlot: currentTournament.battleEndSlot,
         ticketPrice: currentTournament.ticketPrice,
-        prize1Percent: currentTournament.prize1Percent,
-        prize2Percent: currentTournament.prize2Percent,
-        prize3Percent: currentTournament.prize3Percent,
+        prizePercents: currentTournament.prizePercents,
         participantsRoot: currentTournament.participantsRoot,
         winnersRoot: winnersMap.getRoot(),
         prizePool: currentTournament.prizePool,

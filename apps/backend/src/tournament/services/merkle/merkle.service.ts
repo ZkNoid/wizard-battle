@@ -86,9 +86,9 @@ export class MerkleService {
       Field(tournament.verified.battleStartSlot),
       Field(tournament.verified.battleEndSlot),
       Field(BigInt(tournament.verified.ticketPrice)),
-      Field(tournament.verified.prize1Percent),
-      Field(tournament.verified.prize2Percent),
-      Field(tournament.verified.prize3Percent),
+      ...Array.from({ length: 10 }, (_, i) =>
+        Field(tournament.verified.prizePercents[i] ?? 0)
+      ),
       Field(tournament.verified.participantsRoot),
       Field(tournament.verified.winnersRoot),
       Field(BigInt(tournament.verified.prizePool)),

@@ -8,6 +8,8 @@ import {
   MaxLength,
   IsArray,
   ValidateNested,
+  ArrayMinSize,
+  ArrayMaxSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -32,17 +34,12 @@ export class CreateTournamentDto {
   @IsNumberString()
   ticketPrice!: string;
 
-  @IsNumber()
-  @Min(0)
-  prize1Percent!: number;
-
-  @IsNumber()
-  @Min(0)
-  prize2Percent!: number;
-
-  @IsNumber()
-  @Min(0)
-  prize3Percent!: number;
+  @IsArray()
+  @ArrayMinSize(10)
+  @ArrayMaxSize(10)
+  @IsNumber({}, { each: true })
+  @Min(0, { each: true })
+  prizePercents!: number[];
 
   @IsNumber()
   @Min(0)
