@@ -197,9 +197,7 @@ function rebuildTournamentsMap(events: {
       battleStartSlot: event.battleStartSlot,
       battleEndSlot: event.battleEndSlot,
       ticketPrice: event.ticketPrice,
-      prize1Percent: event.prize1Percent,
-      prize2Percent: event.prize2Percent,
-      prize3Percent: event.prize3Percent,
+      prizePercents: event.prizePercents,
       participantsRoot: new MerkleMap().getRoot(),
       winnersRoot: new MerkleMap().getRoot(),
       prizePool: UInt64.from(0),
@@ -228,9 +226,7 @@ function rebuildTournamentsMap(events: {
         battleStartSlot: state.leaf.battleStartSlot,
         battleEndSlot: state.leaf.battleEndSlot,
         ticketPrice: state.leaf.ticketPrice,
-        prize1Percent: state.leaf.prize1Percent,
-        prize2Percent: state.leaf.prize2Percent,
-        prize3Percent: state.leaf.prize3Percent,
+        prizePercents: state.leaf.prizePercents,
         participantsRoot: event.newParticipantsRoot,
         winnersRoot: state.leaf.winnersRoot,
         prizePool: event.newPrizePool,
@@ -255,9 +251,7 @@ function rebuildTournamentsMap(events: {
         battleStartSlot: state.leaf.battleStartSlot,
         battleEndSlot: state.leaf.battleEndSlot,
         ticketPrice: state.leaf.ticketPrice,
-        prize1Percent: state.leaf.prize1Percent,
-        prize2Percent: state.leaf.prize2Percent,
-        prize3Percent: state.leaf.prize3Percent,
+        prizePercents: state.leaf.prizePercents,
         participantsRoot: state.leaf.participantsRoot,
         winnersRoot: event.newWinnersRoot,
         prizePool: state.leaf.prizePool,
@@ -279,9 +273,7 @@ function rebuildTournamentsMap(events: {
         battleStartSlot: state.leaf.battleStartSlot,
         battleEndSlot: state.leaf.battleEndSlot,
         ticketPrice: state.leaf.ticketPrice,
-        prize1Percent: state.leaf.prize1Percent,
-        prize2Percent: state.leaf.prize2Percent,
-        prize3Percent: state.leaf.prize3Percent,
+        prizePercents: state.leaf.prizePercents,
         participantsRoot: state.leaf.participantsRoot,
         winnersRoot: event.newWinnersRoot,
         prizePool: state.leaf.prizePool,
@@ -417,9 +409,12 @@ async function main() {
 
   const config = new TournamentConfig({
     ticketPrice: UInt64.from(ticketPrice),
-    prize1Percent: UInt32.from(5000), // 50%
-    prize2Percent: UInt32.from(3000), // 30%
-    prize3Percent: UInt32.from(2000), // 20%
+    prizePercents: [
+      UInt32.from(2500), UInt32.from(1500), UInt32.from(1000),
+      UInt32.from(1000), UInt32.from(1000), UInt32.from(700),
+      UInt32.from(700),  UInt32.from(700),  UInt32.from(500),
+      UInt32.from(400),
+    ],
   });
 
   // Get witness for new tournament (should be empty slot)
@@ -453,9 +448,7 @@ async function main() {
     battleStartSlot: UInt32.from(battleStartSlot),
     battleEndSlot: UInt32.from(battleEndSlot),
     ticketPrice: UInt64.from(ticketPrice),
-    prize1Percent: UInt32.from(5000),
-    prize2Percent: UInt32.from(3000),
-    prize3Percent: UInt32.from(2000),
+    prizePercents: config.prizePercents,
     participantsRoot: new MerkleMap().getRoot(),
     winnersRoot: new MerkleMap().getRoot(),
     prizePool: UInt64.from(0),
@@ -467,9 +460,7 @@ async function main() {
   const backendPayloadObject = {
     tournamentId: nextTournamentId.toString(),
     ticketPrice: ticketPrice.toString(),
-    prize1Percent: 5000,
-    prize2Percent: 3000,
-    prize3Percent: 2000,
+    prizePercents: [2500, 1500, 1000, 1000, 1000, 700, 700, 700, 500, 400],
     battleStartSlot,
     battleEndSlot,
     tournamentsRoot: newTournamentsRoot,

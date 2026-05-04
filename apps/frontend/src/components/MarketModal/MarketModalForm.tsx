@@ -17,9 +17,9 @@ export function MarketModalForm({ onClose }: MarketModalFormProps) {
 
   const gold = useInventoryStore((s) => s.gold);
   const iteminventory = useInventoryStore((s) => s.iteminventory);
-  const committedGold = iteminventory.find((i) => i.item.id === 'Gold')?.onchainBalance ?? 0n;
+  const committedGold =
+    iteminventory.find((i) => i.item.id === 'Gold')?.onchainBalance ?? 0n;
   const committedGoldDisplay = Number(committedGold);
-
 
   const buttonClassName =
     'flex h-20 flex-1 flex-row items-center justify-center gap-2.5';
@@ -79,16 +79,15 @@ export function MarketModalForm({ onClose }: MarketModalFormProps) {
         </Button>
       </div>
       <div className="h-200 relative z-10 -mt-5 w-full">
-        <div className="absolute right-6 top-8 z-20 flex items-center gap-1.5">
-          <span className="font-pixel text-sm text-yellow-400">⚡</span>
+        <div className="absolute bottom-6 right-6 z-20 flex items-center gap-1.5">
           <span className="font-pixel text-sm font-bold text-yellow-400">
             {committedGoldDisplay}
           </span>
-          <span className="font-pixel text-sm text-main-gray">/</span>
+          <span className="font-pixel text-main-gray text-sm">/</span>
           <span className="font-pixel text-sm font-bold text-yellow-300">
             {gold}
           </span>
-          <span className="font-pixel text-xs text-main-gray">Gold</span>
+          <span className="font-pixel text-main-gray text-xs">Gold</span>
         </div>
         <div className="h-full w-full px-4 py-4">{getForm(activeTab)}</div>
         <MarketModalBg className="absolute inset-0 -z-10 size-full h-full w-full" />

@@ -79,9 +79,7 @@ export class TournamentController {
         dto.tournamentId,
         {
           ticketPrice: dto.ticketPrice,
-          prize1Percent: dto.prize1Percent,
-          prize2Percent: dto.prize2Percent,
-          prize3Percent: dto.prize3Percent,
+          prizePercents: dto.prizePercents,
           battleStartSlot: dto.battleStartSlot,
           battleEndSlot: dto.battleEndSlot,
         },

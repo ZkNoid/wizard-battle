@@ -1,6 +1,8 @@
 import { BadRequestException } from '@nestjs/common';
 import type { CreateTournamentConfig } from './tournament-state.types.js';
 
+const NUM_WINNERS = 10;
+
 export function validateCreateTournamentConfig(
   config: CreateTournamentConfig
 ): void {
@@ -14,19 +16,21 @@ export function validateCreateTournamentConfig(
     throw new BadRequestException('Invalid ticket price format');
   }
 
-  const totalPrizePercent =
-    config.prize1Percent + config.prize2Percent + config.prize3Percent;
-  if (totalPrizePercent > 10000) {
+  if (!Array.isArray(config.prizePercents) || config.prizePercents.length !== NUM_WINNERS) {
     throw new BadRequestException(
-      `Prize percentages sum to ${totalPrizePercent}%, must not exceed 100%`
+      `prizePercents must be an array of exactly ${NUM_WINNERS} values`
     );
   }
-  if (
-    config.prize1Percent < 0 ||
-    config.prize2Percent < 0 ||
-    config.prize3Percent < 0
-  ) {
+
+  if (config.prizePercents.some((p) => p < 0)) {
     throw new BadRequestException('Prize percentages cannot be negative');
+  }
+
+  const totalPrizePercent = config.prizePercents.reduce((sum, p) => sum + p, 0);
+  if (totalPrizePercent > 10000) {
+    throw new BadRequestException(
+      `Prize percentages sum to ${totalPrizePercent}, must not exceed 10000 (100.00%)`
+    );
   }
 
   if (config.battleStartSlot < 0) {

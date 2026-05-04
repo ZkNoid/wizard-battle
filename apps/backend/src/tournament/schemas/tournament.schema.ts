@@ -37,14 +37,8 @@ export class VerifiedState {
   @Prop({ required: true })
   ticketPrice!: string;
 
-  @Prop({ required: true })
-  prize1Percent!: number;
-
-  @Prop({ required: true })
-  prize2Percent!: number;
-
-  @Prop({ required: true })
-  prize3Percent!: number;
+  @Prop({ required: true, type: [Number] })
+  prizePercents!: number[];
 
   @Prop({ required: true, default: '0' })
   prizePool!: string;

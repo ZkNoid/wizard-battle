@@ -14,7 +14,10 @@ import {
   TournamentManager,
   TournamentLeaf,
   WinnerLeaf,
+  WinnersInput,
+  PrizesInput,
   TournamentStatus as ContractTournamentStatus,
+  NUM_WINNERS,
 } from '../../../../../mina-contracts/src/TournamentManager.js';
 import { RedisService } from '../../../redis/redis.service.js';
 import { TournamentStateService } from '../state/tournament-state.service.js';
@@ -402,22 +405,19 @@ export class ProofGeneratorService implements OnModuleInit {
     const winnersMap = this.merkleService.buildWinnersMap(winnerEntries);
     const newWinnersRoot = winnersMap.getRoot();
 
-    const w1 = PublicKey.fromBase58(first.publicKey);
-    const prize1 = UInt64.from(BigInt(first.prizeAmount));
-    let w2 = PublicKey.empty();
-    let prize2 = UInt64.from(0);
-    let w3 = PublicKey.empty();
-    let prize3 = UInt64.from(0);
-    const second = sorted[1];
-    if (second) {
-      w2 = PublicKey.fromBase58(second.publicKey);
-      prize2 = UInt64.from(BigInt(second.prizeAmount));
-    }
-    const third = sorted[2];
-    if (third) {
-      w3 = PublicKey.fromBase58(third.publicKey);
-      prize3 = UInt64.from(BigInt(third.prizeAmount));
-    }
+    const winnersInput = new WinnersInput({
+      items: Array.from({ length: NUM_WINNERS }, (_, i) => {
+        const entry = sorted[i];
+        return entry ? PublicKey.fromBase58(entry.publicKey) : PublicKey.empty();
+      }),
+    });
+
+    const prizesInput = new PrizesInput({
+      items: Array.from({ length: NUM_WINNERS }, (_, i) => {
+        const entry = sorted[i];
+        return entry ? UInt64.from(BigInt(entry.prizeAmount)) : UInt64.from(0);
+      }),
+    });
 
     const tx = await Mina.transaction(
       { sender: playerPubKey, fee: 100_000_000 },
@@ -426,12 +426,8 @@ export class ProofGeneratorService implements OnModuleInit {
           Field(op.tournamentId),
           currentTournamentLeaf,
           tournamentWitness,
-          w1,
-          w2,
-          w3,
-          prize1,
-          prize2,
-          prize3,
+          winnersInput,
+          prizesInput,
           newWinnersRoot
         );
       }
@@ -501,14 +497,16 @@ export class ProofGeneratorService implements OnModuleInit {
       );
     }
 
+    const prizePercents = Array.from({ length: NUM_WINNERS }, (_, i) =>
+      UInt32.from(tournament.verified.prizePercents[i] ?? 0)
+    );
+
     return new TournamentLeaf({
       status,
       battleStartSlot: UInt32.from(tournament.verified.battleStartSlot),
       battleEndSlot: UInt32.from(tournament.verified.battleEndSlot),
       ticketPrice: UInt64.from(BigInt(tournament.verified.ticketPrice)),
-      prize1Percent: UInt32.from(tournament.verified.prize1Percent),
-      prize2Percent: UInt32.from(tournament.verified.prize2Percent),
-      prize3Percent: UInt32.from(tournament.verified.prize3Percent),
+      prizePercents,
       participantsRoot: Field(tournament.verified.participantsRoot),
       winnersRoot: Field(tournament.verified.winnersRoot),
       prizePool: UInt64.from(BigInt(tournament.verified.prizePool)),

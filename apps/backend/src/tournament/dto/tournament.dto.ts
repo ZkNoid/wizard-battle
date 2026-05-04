@@ -9,9 +9,7 @@ export class TournamentResponseDto {
   battleStartSlot!: number;
   battleEndSlot!: number;
   ticketPrice!: string;
-  prize1Percent!: number;
-  prize2Percent!: number;
-  prize3Percent!: number;
+  prizePercents!: number[];
   prizePool!: string;
   participantCount!: number;
   registeredPlayers!: string[];

@@ -5,7 +5,7 @@ import type {
   InventoryFilterType,
   IUserInventoryItem,
 } from '@/lib/types/Inventory';
-import { useState, useCallback, useMemo, memo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { InventoryTooltip } from '../InventoryModal/InventoryTooltip';
 import type { IInventoryFilterBtnProps } from '../InventoryModal/InventoryFilterBtn';
 import InventoryFilterBtn from '../InventoryModal/InventoryFilterBtn';
@@ -15,11 +15,6 @@ import { Button } from '../shared/Button';
 import { useInventoryStore } from '@/lib/store';
 import { api } from '@/trpc/react';
 import { useInventorySync } from '@/lib/hooks/useInventorySync';
-import { useAppKitAccount } from '@reown/appkit/react';
-import { usePublicClient } from 'wagmi';
-
-/** Wait after commit tx confirms before re-reading chain + DB (indexing lag). */
-const POST_COMMIT_REFETCH_MS = 3000;
 
 const ITEMS_PER_PAGE = 28; // 7 columns × 4 rows
 const ROWS = 4;
@@ -104,26 +99,6 @@ export function InventoryModalForm({
   const removeFromInventory = useInventoryStore(
     (state) => state.removeFromInventory
   );
-  const loadUserInventory = useInventoryStore(
-    (state) => state.loadUserInventory
-  );
-  const loadOnchainBalances = useInventoryStore(
-    (state) => state.loadOnchainBalances
-  );
-
-  const { address: evmAddress } = useAppKitAccount();
-  const publicClient = usePublicClient();
-  const postCommitRefetchTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (postCommitRefetchTimeoutRef.current) {
-        clearTimeout(postCommitRefetchTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const [internalDraggedItem, setInternalDraggedItem] =
     useState<IUserInventoryItem | null>(null);
@@ -197,42 +172,18 @@ export function InventoryModalForm({
   const syncAllMutation = api.inventory.syncAll.useMutation();
   const { processInventoryData } = useInventorySync();
 
-  const runCommitInventory = useCallback(() => {
+  const handleCommitInventory = useCallback(() => {
     if (!address) return;
-    if (postCommitRefetchTimeoutRef.current) {
-      clearTimeout(postCommitRefetchTimeoutRef.current);
-      postCommitRefetchTimeoutRef.current = null;
-    }
     syncAllMutation.mutate(
       { userId: address },
       {
-        onSuccess: async (data) => {
-          try {
-            await processInventoryData(data);
-          } catch (e) {
-            console.error('processInventoryData failed:', e);
-            return;
-          }
-          postCommitRefetchTimeoutRef.current = setTimeout(() => {
-            postCommitRefetchTimeoutRef.current = null;
-            void loadUserInventory(address);
-            if (evmAddress && publicClient) {
-              void loadOnchainBalances(evmAddress, publicClient);
-            }
-          }, POST_COMMIT_REFETCH_MS);
+        onSuccess: (data) => {
+          void processInventoryData(data);
         },
         onError: (err) => console.error('syncAll error:', err),
       }
     );
-  }, [
-    address,
-    evmAddress,
-    publicClient,
-    syncAllMutation,
-    processInventoryData,
-    loadUserInventory,
-    loadOnchainBalances,
-  ]);
+  }, [address, syncAllMutation, processInventoryData]);
 
   const handleItemDragStart = useCallback(
     (userItem: IUserInventoryItem, e: React.DragEvent) => {
@@ -320,19 +271,6 @@ export function InventoryModalForm({
           ))}
         </div>
 
-        <p className="font-pixel-klein text-main-gray/80 mt-3 text-center text-xs leading-relaxed">
-          If you do not see your items —{' '}
-          <button
-            type="button"
-            onClick={runCommitInventory}
-            disabled={!address || syncAllMutation.isPending}
-            className="font-pixel-klein text-sky-400 underline decoration-sky-400/80 underline-offset-2 transition-colors hover:text-sky-300 disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
-          >
-            commit
-          </button>{' '}
-          them first.
-        </p>
-
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="relative mt-5 flex w-full items-center">
@@ -372,8 +310,7 @@ export function InventoryModalForm({
                 <Button
                   variant="gray"
                   text="Commit"
-                  onClick={runCommitInventory}
-                  disabled={!address || syncAllMutation.isPending}
+                  onClick={handleCommitInventory}
                   className={`flex h-16 w-auto flex-row items-center gap-2.5 px-6 transition-all duration-200`}
                 />
               </div>
