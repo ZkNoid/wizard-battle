@@ -102,6 +102,23 @@ const GAME_MARKET_ABI = [
     ],
     stateMutability: 'view',
   },
+  {
+    type: 'function',
+    name: 'getGameElementName',
+    inputs: [{ name: 'name', type: 'string' }],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple',
+        components: [
+          { name: 'tokenAddress', type: 'address' },
+          { name: 'tokenId', type: 'uint256' },
+          { name: 'requiresTokenId', type: 'bool' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
 ] as const;
 
 const ERC20_ABI = [
@@ -210,7 +227,7 @@ export function useGameMarket() {
 
   const getGameElement = useCallback(
     async (
-      resourceHash: `0x${string}`
+      name: string
     ): Promise<{
       tokenAddress: `0x${string}`;
       tokenId: bigint;
@@ -221,15 +238,22 @@ export function useGameMarket() {
       const result = await publicClient.readContract({
         address: GAME_MARKET_ADDRESS,
         abi: GAME_MARKET_ABI,
-        functionName: 'getGameElementHash',
-        args: [resourceHash],
+        functionName: 'getGameElementName',
+        args: [name],
       });
 
-      return result as {
+      const element = result as {
         tokenAddress: `0x${string}`;
         tokenId: bigint;
         requiresTokenId: boolean;
       };
+
+      if (element.tokenAddress === ZERO_ADDRESS) {
+        console.warn(`[getGameElement] element not registered for name="${name}"`);
+        return null;
+      }
+
+      return element;
     },
     [publicClient]
   );
