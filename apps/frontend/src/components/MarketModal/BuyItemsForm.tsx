@@ -8,13 +8,17 @@ import {
 } from './BuyItemsFilterPanel';
 import { BuyItemsList } from './BuyItemsList';
 import { BuyConfirmModal } from './BuyConfirmModal';
-import { useMarketStore } from '@/lib/store';
+import { useMarketStore, useInventoryStore } from '@/lib/store';
 import { useGameMarket } from '@/lib/hooks/useGameMarket';
 import { mapOrderToBuyItem } from '@/lib/utils/marketUtils';
 import type { IMarketBuyItem } from '@/lib/types/IMarket';
 import { trackEvent } from '@/lib/analytics/posthog-utils';
 import { AnalyticsEvents } from '@/lib/analytics/events';
 import type { MarketItemPurchasedProps } from '@/lib/analytics/types';
+import { api } from '@/trpc/react';
+import { useMinaAppkit } from 'mina-appkit';
+import { useAppKitAccount } from '@reown/appkit/react';
+import { usePublicClient } from 'wagmi';
 
 interface BuyItemsFormProps {
   onClose?: () => void;
@@ -37,8 +41,14 @@ export function BuyItemsForm({
   const [selectedItem, setSelectedItem] = useState<IMarketBuyItem | null>(null);
   const [isBuying, setIsBuying] = useState(false);
 
+  const { address: minaAddress } = useMinaAppkit();
+  const { address: evmAddress } = useAppKitAccount();
+  const publicClient = usePublicClient();
+
   const { openOrders, isLoadingOrders } = useMarketStore();
   const { buyWithETH, buyWithERC20, buyWithERC1155, isPending } = useGameMarket();
+  const { loadUserInventory, loadOnchainBalances } = useInventoryStore();
+  const fulfillOrderMutation = api.inventory.fulfillOrder.useMutation();
 
   const items = useMemo<IMarketBuyItem[]>(() => {
     return openOrders.map((order) => mapOrderToBuyItem(order));
@@ -55,16 +65,16 @@ export function BuyItemsForm({
       const orderId = BigInt(item.orderId);
       const priceWei = BigInt(Math.floor(item.price * 1e18));
 
+      let result: { txHash: `0x${string}` } | undefined;
+
       if (item.priceCurrency === 'eth') {
-        await buyWithETH(orderId, priceWei);
+        result = await buyWithETH(orderId, priceWei) ?? undefined;
       } else if (item.paymentToken) {
         const paymentTokenId = item.paymentTokenId ? BigInt(item.paymentTokenId) : 0n;
         if (paymentTokenId > 0n) {
-          // ERC1155 payment token — requires setApprovalForAll
-          await buyWithERC1155(orderId, item.paymentToken as `0x${string}`);
+          result = await buyWithERC1155(orderId, item.paymentToken as `0x${string}`) ?? undefined;
         } else {
-          // ERC20 payment token — requires approve
-          await buyWithERC20(orderId, priceWei, item.paymentToken as `0x${string}`);
+          result = await buyWithERC20(orderId, priceWei, item.paymentToken as `0x${string}`) ?? undefined;
         }
       } else {
         console.error('Invalid order: missing paymentToken for ERC20 payment');
@@ -80,6 +90,28 @@ export function BuyItemsForm({
         quantity: item.quantity,
       };
       trackEvent(AnalyticsEvents.MARKET_ITEM_PURCHASED, purchased);
+
+      // Notify backend: verifies tx on-chain, adds item, removes cost.
+      // The chain transfer already happened, so we always refresh balances
+      // even if the DB sync fails.
+      if (result?.txHash && minaAddress && evmAddress) {
+        try {
+          await fulfillOrderMutation.mutateAsync({
+            txHash: result.txHash,
+            orderId: String(item.orderId),
+            buyerEvmAddress: evmAddress,
+            buyerMinaAddress: minaAddress,
+            itemId: item.title,
+          });
+        } catch (err) {
+          console.warn('[buy] fulfillOrder failed:', err);
+        }
+
+        void loadUserInventory(minaAddress);
+      }
+      if (evmAddress && publicClient) {
+        void loadOnchainBalances(evmAddress, publicClient);
+      }
 
       setSelectedItem(null);
     } catch (error) {
