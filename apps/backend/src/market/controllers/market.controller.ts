@@ -1,13 +1,41 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
+  Post,
   Query,
   ParseIntPipe,
 } from '@nestjs/common';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { MarketService } from '../services/market.service';
 import { GetOrdersDto } from '../dto/get-orders.dto';
 import { MarketOrder, OrderStatus } from '../schemas/market-order.schema';
+
+class FulfillOrderBody {
+  @IsString()
+  @IsNotEmpty()
+  txHash!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  orderId!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  buyerEvmAddress!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  buyerMinaAddress!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  itemId!: string;
+}
 
 @Controller('market')
 export class MarketController {
@@ -36,7 +64,9 @@ export class MarketController {
    * GET /market/orders/:orderId
    */
   @Get('orders/:orderId')
-  getOrder(@Param('orderId', ParseIntPipe) orderId: number): Promise<MarketOrder> {
+  getOrder(
+    @Param('orderId', ParseIntPipe) orderId: number
+  ): Promise<MarketOrder> {
     return this.marketService.getOrderById(orderId);
   }
 
@@ -45,7 +75,9 @@ export class MarketController {
    * GET /market/user/:address/selling
    */
   @Get('user/:address/selling')
-  getUserActiveOrders(@Param('address') address: string): Promise<MarketOrder[]> {
+  getUserActiveOrders(
+    @Param('address') address: string
+  ): Promise<MarketOrder[]> {
     return this.marketService.getUserActiveOrders(address);
   }
 
@@ -56,7 +88,7 @@ export class MarketController {
   @Get('user/:address/orders')
   getUserOrders(
     @Param('address') address: string,
-    @Query('status') status?: OrderStatus,
+    @Query('status') status?: OrderStatus
   ): Promise<MarketOrder[]> {
     return this.marketService.getUserOrders(address, status);
   }
@@ -95,7 +127,7 @@ export class MarketController {
   @Get('items/:nameHash')
   getOrdersByNameHash(
     @Param('nameHash') nameHash: string,
-    @Query('status') status?: OrderStatus,
+    @Query('status') status?: OrderStatus
   ): Promise<MarketOrder[]> {
     return this.marketService.getOrdersByNameHash(nameHash, status);
   }
@@ -106,7 +138,7 @@ export class MarketController {
    */
   @Get('items/:nameHash/floor')
   async getFloorPrice(
-    @Param('nameHash') nameHash: string,
+    @Param('nameHash') nameHash: string
   ): Promise<{ floorPrice: string | null }> {
     const floorPrice = await this.marketService.getFloorPrice(nameHash);
     return { floorPrice };
@@ -126,4 +158,23 @@ export class MarketController {
     return this.marketService.getOrderStats();
   }
 
+  /**
+   * Verify a fillOrder transaction and update the buyer's inventory.
+   *
+   * Security:
+   *  – the txHash is verified on-chain (receipt + OrderFilled event)
+   *  – taker must match buyerEvmAddress
+   *  – keccak256(itemId) must match the nameHash in the event
+   *  – each txHash is stored with a unique index; duplicate calls return 409
+   *
+   * POST /market/orders/fulfill
+   */
+  @Post('orders/fulfill')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async fulfillOrder(@Body() body: FulfillOrderBody): Promise<void> {
+    if (!body.txHash?.startsWith('0x')) {
+      throw new BadRequestException('txHash must be a 0x-prefixed hex string');
+    }
+    await this.marketService.fulfillOrder(body);
+  }
 }
