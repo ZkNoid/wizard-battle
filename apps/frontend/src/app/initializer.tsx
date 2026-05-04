@@ -16,14 +16,21 @@ import { useInventoryStore, useUserDataStore } from '@/lib/store';
 import { useExpeditionStore } from '@/lib/store/expeditionStore';
 import { useMinaAppkit } from 'mina-appkit';
 import { api } from '@/trpc/react';
+import { useAppKitAccount } from '@reown/appkit/react';
+import { usePublicClient } from 'wagmi';
 
 export default function Initializer() {
   const { address } = useMinaAppkit();
+  const { address: evmAddress } = useAppKitAccount();
+  const publicClient = usePublicClient();
   const { socket, setSocket, setStater, isBootstrapped, setBootstrapped } =
     useUserInformationStore();
   const statsByWizard = useInventoryStore((state) => state.statsByWizard);
   const loadUserInventory = useInventoryStore(
     (state) => state.loadUserInventory
+  );
+  const loadOnchainBalances = useInventoryStore(
+    (state) => state.loadOnchainBalances
   );
   const loadUserExpeditions = useExpeditionStore(
     (state) => state.loadUserExpeditions
@@ -98,6 +105,13 @@ export default function Initializer() {
       clearUserData();
     }
   }, [address, loadUserInventory, loadUserExpeditions, clearUserData]);
+
+  // Load on-chain balances after DB inventory is ready, whenever EVM wallet connects
+  useEffect(() => {
+    if (evmAddress && publicClient) {
+      void loadOnchainBalances(evmAddress, publicClient);
+    }
+  }, [evmAddress, publicClient, loadOnchainBalances]);
 
   // Update store when user data is fetched
   useEffect(() => {
