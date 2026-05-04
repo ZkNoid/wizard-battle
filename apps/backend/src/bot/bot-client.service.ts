@@ -493,7 +493,10 @@ export class BotClient {
       let hp = Number.POSITIVE_INFINITY;
       if (typeof fields === 'string') {
         const parsed = JSON.parse(fields);
-        hp = parseInt(parsed?.playerStats?.hp?.magnitude ?? '100');
+        const hpField = parsed?.playerStats?.hp;
+        const magnitude = parseInt(hpField?.magnitude ?? '100');
+        const isNegative = hpField?.sgn === 'Negative';
+        hp = isNegative ? -magnitude : magnitude;
       } else if (Array.isArray(fields) && fields.length > 0) {
         hp = parseInt((fields[0] as any)?.value ?? fields[0]);
       }
