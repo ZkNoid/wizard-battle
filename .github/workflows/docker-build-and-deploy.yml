@@ -8,6 +8,8 @@ on:
 jobs:
   test-build:
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -282,6 +284,8 @@ jobs:
             docker rm ${{ steps.calc-container.outputs.container_name }} || true
 
             docker compose up -d
+            sleep 30
+            docker compose restart nginx
 
             echo "Deployment complete!"
             docker compose ps
