@@ -24,7 +24,7 @@ export enum OperationStatus {
 export type FinalizeWinnerPayload = {
   publicKey: string;
   prizeAmount: string;
-  place: 1 | 2 | 3;
+  place: number;
 };
 
 @Schema({ timestamps: true, collection: 'pending_operations' })

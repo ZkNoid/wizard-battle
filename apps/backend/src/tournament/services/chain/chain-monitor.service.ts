@@ -14,7 +14,7 @@ import { TournamentStatus } from '../../schemas/tournament.schema.js';
 export interface WinnerInfo {
   publicKey: string;
   prizeAmount: string;
-  place: 1 | 2 | 3;
+  place: number;
 }
 
 @Injectable()
