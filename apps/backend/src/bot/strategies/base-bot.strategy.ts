@@ -21,13 +21,21 @@ try {
 } catch {
   class MockField {
     constructor(private value: number) {}
-    static from(v: number) { return new MockField(v); }
-    toString() { return this.value.toString(); }
+    static from(v: number) {
+      return new MockField(v);
+    }
+    toString() {
+      return this.value.toString();
+    }
   }
   class MockInt64 {
     constructor(private value: number) {}
-    static from(v: number) { return new MockInt64(v); }
-    toString() { return this.value.toString(); }
+    static from(v: number) {
+      return new MockInt64(v);
+    }
+    toString() {
+      return this.value.toString();
+    }
   }
   Field = MockField;
   Int64 = MockInt64;
@@ -73,8 +81,7 @@ export abstract class BaseBotStrategy implements IBotStrategy {
     botState.playerId = Field(
       parseInt(botId.replace(/\D/g, '')) || Math.floor(Math.random() * 10000)
     );
-    botState.wizardId = wizard.id;
-    botState.playerStats.hp = Int64.from(wizard.defaultHealth);
+
     botState.playerStats.position.value.x = Int64.from(startPosition.x);
     botState.playerStats.position.value.y = Int64.from(startPosition.y);
     botState.randomSeed = Field(Math.floor(Math.random() * 1000000));
@@ -154,15 +161,13 @@ export abstract class BaseBotStrategy implements IBotStrategy {
       // ── Merge all players' actions into one batch with remapped IDs ───────────
       const remappedActions: IUserAction[] = [];
       for (const [pid, ua] of Object.entries(allActions || {})) {
-        const casterId =
-          pid === botId ? botNumericId : opponentNumericId;
+        const casterId = pid === botId ? botNumericId : opponentNumericId;
 
         for (const action of ua?.actions ?? []) {
           if (!action) continue;
           // If the action targets the bot (by string or numeric ID), map to bot's numeric ID
           const isTargetingBot =
-            action.playerId === botId ||
-            action.playerId === botNumericId;
+            action.playerId === botId || action.playerId === botNumericId;
 
           remappedActions.push({
             ...action,
@@ -224,8 +229,7 @@ export abstract class BaseBotStrategy implements IBotStrategy {
     const stateData = State.fromJSON(JSON.parse(currentState.fields));
     return (stateData.spellStats as SpellStats[]).filter(
       (s) =>
-        s.spellId.toString() !== '0' &&
-        s.currentCooldown.toString() === '0'
+        s.spellId.toString() !== '0' && s.currentCooldown.toString() === '0'
     );
   }
 
@@ -249,14 +253,15 @@ export abstract class BaseBotStrategy implements IBotStrategy {
     spellId: string,
     opponentState?: IPublicState,
     targetPos?: { x: number; y: number },
-    botCurrentState?: IPublicState,
+    botCurrentState?: IPublicState
   ): IUserAction {
     const spellName = this.getSpellName(spellId);
     const spellDef = allSpells.find((s) => s.id.toString() === spellId);
     const isAllySpell = spellDef?.target === 'ally';
 
     // Resolve a valid target position for this spell.
-    const pos = targetPos ?? this.resolveTargetPosition(spellDef, botCurrentState);
+    const pos =
+      targetPos ?? this.resolveTargetPosition(spellDef, botCurrentState);
 
     console.log(`🤖 Bot ${botId} casting ${spellName} (ID: ${spellId})`);
 
@@ -301,7 +306,7 @@ export abstract class BaseBotStrategy implements IBotStrategy {
    */
   private resolveTargetPosition(
     spellDef: (typeof allSpells)[number] | undefined,
-    botCurrentState?: IPublicState,
+    botCurrentState?: IPublicState
   ): { x: number; y: number } {
     const fallback = () => ({
       x: Math.floor(Math.random() * this.mapSize),
@@ -324,7 +329,7 @@ export abstract class BaseBotStrategy implements IBotStrategy {
    * @returns Numeric coords, or null if parsing fails.
    */
   protected getPositionFromState(
-    state: IPublicState,
+    state: IPublicState
   ): { x: number; y: number } | null {
     try {
       const parsed = JSON.parse(state.fields);
@@ -350,7 +355,9 @@ export abstract class BaseBotStrategy implements IBotStrategy {
     const allySpells: SpellStats[] = [];
     const enemySpells: SpellStats[] = [];
     for (const s of available) {
-      const def = allSpells.find((d) => d.id.toString() === s.spellId.toString());
+      const def = allSpells.find(
+        (d) => d.id.toString() === s.spellId.toString()
+      );
       if (def?.target === 'ally') allySpells.push(s);
       else enemySpells.push(s);
     }
@@ -365,7 +372,9 @@ export abstract class BaseBotStrategy implements IBotStrategy {
     const wizardSpells = allSpells.filter(
       (s) => s.wizardId.toString() === wizard.id.toString()
     );
-    console.log(`🤖 Found ${wizardSpells.length} spells for wizard ${wizard.name}`);
+    console.log(
+      `🤖 Found ${wizardSpells.length} spells for wizard ${wizard.name}`
+    );
 
     const empty = () =>
       new SpellStats({
@@ -394,9 +403,7 @@ export abstract class BaseBotStrategy implements IBotStrategy {
   }
 
   protected generateRandomTilemap(): any[] {
-    return Array.from({ length: 64 }, () =>
-      Field(Math.random() < 0.5 ? 1 : 2)
-    );
+    return Array.from({ length: 64 }, () => Field(Math.random() < 0.5 ? 1 : 2));
   }
 
   protected generateRandomPosition(current: { x: number; y: number }): {

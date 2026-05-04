@@ -1,9 +1,7 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
 import { useWriteContract, usePublicClient, useReadContract } from 'wagmi';
 import {
-  parseEther,
-  formatEther,
   keccak256,
   toBytes,
   decodeEventLog,
@@ -19,6 +17,11 @@ import type {
 
 const GAME_MARKET_ADDRESS = process.env
   .NEXT_PUBLIC_GAME_MARKET_ADDRESS as `0x${string}`;
+
+const BACKEND_URL =
+  typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL
+    ? process.env.NEXT_PUBLIC_API_URL
+    : 'http://localhost:3030';
 
 const GAME_MARKET_ABI = [
   {
@@ -404,6 +407,20 @@ export function useGameMarket() {
       const receipt = await publicClient?.waitForTransactionReceipt({
         hash: txHash,
       });
+
+      // Notify backend so DB state reflects the purchase
+      if (receipt && address) {
+        await fetch(
+          `${BACKEND_URL}/market/orders/${params.orderId}/fill`,
+          {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ taker: address }),
+          },
+        ).catch((err) =>
+          console.warn('[fillOrder] backend notify failed:', err),
+        );
+      }
 
       // Optimistic update
       removeOrder(params.orderId.toString());

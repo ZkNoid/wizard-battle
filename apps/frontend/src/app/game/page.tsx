@@ -171,6 +171,7 @@ export default function GamePage() {
           <EntityOverlay
             entities={entities.filter((entity) => {
               if (entity.id === 'user') return false;
+              if (entity.id === SPECTRAL_ENTITY_ID) return false;
               if (entity.id === OPPONENT_SPECTRAL_ENTITY_ID) return false;
               if (entity.id === 'enemy') {
                 return (

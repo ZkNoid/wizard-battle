@@ -73,9 +73,6 @@ export function EntityOverlay({
             {entity.type === EntityType.PHANTOM_DUELIST && (
               <AnimatedPhantomDuelist entity={entity} />
             )}
-            {entity.type === EntityType.SPECTRAL_PHANTOM_DUELIST && (
-              <SpectralPhantomDuelist entity={entity} />
-            )}
             {entity.type === EntityType.DECOY && <Decoy entity={entity} />}
           </div>
         );

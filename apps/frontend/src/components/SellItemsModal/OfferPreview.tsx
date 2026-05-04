@@ -16,7 +16,7 @@ export function OfferPreview({
   totalPrice,
 }: OfferPreviewProps) {
   const currencyIcon =
-    currency === 'gold' ? '/icons/gold-coin.png' : '/icons/usdс-coin.png';
+    currency === 'Gold' ? '/icons/gold-coin.png' : '/icons/usdс-coin.png';
 
   return (
     <div className="flex flex-col gap-2">
