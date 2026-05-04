@@ -13,10 +13,7 @@ import { useInventoryStore } from '@/lib/store';
 import { useModalSound } from '@/lib/hooks/useAudio';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 import { useGameMarket } from '@/lib/hooks/useGameMarket';
-import {
-  MARKET_CURRENCY_OPTIONS,
-  MARKET_SELL_ITEM_TYPE_OPTIONS,
-} from '@/lib/constants/market';
+import { MARKET_CURRENCY_OPTIONS } from '@/lib/constants/market';
 
 const GAME_REGISTRY_ADDRESS = process.env
   .NEXT_PUBLIC_GAME_REGISTRY_ADDRESS as `0x${string}`;
@@ -38,10 +35,8 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
   const { createOrder, approveNFT, isPending, getGameElement } =
     useGameMarket();
 
-  const [title, setTitle] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [itemType, setItemType] = useState('');
   const [currency, setCurrency] = useState('Gold');
   const [price, setPrice] = useState('');
   const [isPlacing, setIsPlacing] = useState(false);
@@ -130,7 +125,7 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
         amount: BigInt(quantity),
         paymentToken,
         paymentTokenId,
-        title: title || selectedUserItem.item.title,
+        title: selectedUserItem.item.title,
       });
 
       setIsRequestSuccessModalOpen(true);
@@ -147,11 +142,7 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
     price && Number(price) > 0 ? Number(price) * quantity : null;
 
   const isFormValid =
-    title.trim() !== '' &&
-    selectedItemId !== '' &&
-    itemType !== '' &&
-    price !== '' &&
-    Number(price) > 0;
+    selectedItemId !== '' && price !== '' && Number(price) > 0;
 
   return (
     <div
@@ -166,15 +157,6 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
           <ModalTitle title="Sell Items" onClose={onClose} />
 
           <div className="mt-4 flex flex-col gap-4">
-            {/* Item name */}
-            <InputWithLabel
-              label="Item name"
-              value={title}
-              onChange={setTitle}
-              placeholder="Give name for Item you want to sell"
-              size="xl"
-            />
-
             {/* Choose Item & Quantity */}
             <div className="flex w-full flex-row items-end gap-3">
               <div className="w-[55%]">
@@ -194,17 +176,6 @@ export default function SellItemsModal({ onClose }: SellItemsModalProps) {
                   max={maxQuantity}
                 />
               </div>
-            </div>
-
-            {/* Choose type of items */}
-            <div className="w-[55%]">
-              <SelectWithLabel
-                label="Choose type of items"
-                options={MARKET_SELL_ITEM_TYPE_OPTIONS}
-                value={itemType}
-                onChange={setItemType}
-                placeholder="item type"
-              />
             </div>
 
             {/* Currency + Amount */}
