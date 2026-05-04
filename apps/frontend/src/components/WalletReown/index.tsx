@@ -56,7 +56,19 @@ export default function WalletReown({ className, buttonSize = 'lg' }: WalletReow
     { address: minaAddress ?? '' },
     { enabled: !!minaAddress }
   );
-  const { mutate: setEvmAddress } = api.users.setEvmAddress.useMutation();
+  const utils = api.useUtils();
+  const { mutate: setEvmAddress, isPending: isSettingEvmAddress } =
+    api.users.setEvmAddress.useMutation({
+      onSuccess: () => {
+        console.log('EVM address saved successfully');
+        void utils.users.get.invalidate({ address: minaAddress ?? '' });
+      },
+      onError: (err) => {
+        console.warn('Failed to link EVM address:', err.message);
+        alert(err.message);
+        disconnect();
+      },
+    });
 
   // Track if this is the initial mount to prevent auto-popup
   const isInitialMount = useRef(true);
@@ -107,26 +119,17 @@ export default function WalletReown({ className, buttonSize = 'lg' }: WalletReow
   // Save EVM address to DB when both wallets are connected and address_evm not yet set
   useEffect(() => {
     if (!isConnected || !address || !minaAddress || !user) return;
+    if (isSettingEvmAddress) return;
 
     if (!user.address_evm) {
       // No EVM address saved yet — save it
-      setEvmAddress(
-        { address: minaAddress, evmAddress: address },
-        {
-          onSuccess: () => console.log('EVM address saved successfully'),
-          onError: (err) => {
-            console.warn('Failed to link EVM address:', err.message);
-            alert(err.message);
-            disconnect();
-          },
-        }
-      );
+      setEvmAddress({ address: minaAddress, evmAddress: address });
     } else if (user.address_evm.toLowerCase() !== address.toLowerCase()) {
       // A different EVM address is already linked to this account
       alert('This Mina account is already linked to a different EVM address.');
       disconnect();
     }
-  }, [isConnected, address, minaAddress, user, setEvmAddress, disconnect]);
+  }, [isConnected, address, minaAddress, user, isSettingEvmAddress, setEvmAddress, disconnect]);
 
   const handleButtonClick = () => {
     if (isConnected) {
