@@ -21,6 +21,7 @@ export enum TournamentStatus {
   Created = 'Created',
   Battle = 'Battle',
   Claiming = 'Claiming',
+  Settled = 'Settled',
 }
 
 @Schema({ _id: false })
@@ -34,14 +35,30 @@ export class VerifiedState {
   @Prop({ required: true })
   battleEndSlot!: number;
 
+  /**
+   * Slot at which the claim window closes. Must mirror the on-chain leaf
+   * (`battleEndSlot + claimWindow`). After this slot, only `recoverUnclaimed`
+   * is permitted on-chain.
+   */
+  @Prop({ required: true, default: 0 })
+  claimDeadlineSlot!: number;
+
   @Prop({ required: true })
   ticketPrice!: string;
+
+  /** Per-tournament fee in basis points; mirrors leaf snapshot. */
+  @Prop({ required: true, default: 0 })
+  feePercent!: number;
 
   @Prop({ required: true, type: [Number] })
   prizePercents!: number[];
 
   @Prop({ required: true, default: '0' })
   prizePool!: string;
+
+  /** Total amount supplied by sponsors (in nanoMINA). */
+  @Prop({ required: true, default: '0' })
+  sponsorContribution!: string;
 
   @Prop({ required: true, default: 0 })
   participantCount!: number;

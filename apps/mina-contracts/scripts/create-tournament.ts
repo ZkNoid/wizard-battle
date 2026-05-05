@@ -22,6 +22,9 @@
  *   DEPLOYER_PRIVATE_KEY - Private key for admin account
  *   TOURNAMENT_CONTRACT_ADDRESS - Deployed contract address
  *   TICKET_PRICE - Tournament ticket price in nanoMINA (default: 1000000000 = 1 MINA)
+ *   FEE_PERCENT - Per-tournament fee in basis points (default: 500 = 5%)
+ *   CLAIM_WINDOW - Slots after battleEndSlot during which winners may claim
+ *                  (default: 20000)
  *   BATTLE_START_DELAY - Slots until battle opens for joining (default: 10 = ~30 min)
  *   BATTLE_SLOTS - Number of slots for battle phase / join window (default: 400 = ~20 hours)
  *   BACKEND_URL - Backend API base URL (default: http://localhost:3001)
@@ -51,9 +54,14 @@ import {
   TournamentLeaf,
   TournamentStatus,
   TournamentCreatedEvent,
+  PrizePercentSetEvent,
   TicketPurchasedEvent,
   TournamentFinalizedEvent,
+  WinnerAllocatedEvent,
   PrizeClaimedEvent,
+  SponsorFundedEvent,
+  UnclaimedRecoveredEvent,
+  NUM_WINNERS,
 } from '../src/TournamentManager.js';
 import { parseRequiredTournamentDisplayArgs } from './tournament-display-cli.js';
 
@@ -107,6 +115,8 @@ async function fetchCurrentSlot(): Promise<number> {
 // Tournament timing configuration (~3 minutes per slot on typical networks)
 const BATTLE_START_DELAY = Number(process.env.BATTLE_START_DELAY || '10');
 const BATTLE_SLOTS = Number(process.env.BATTLE_SLOTS || '400');
+const FEE_PERCENT = Number(process.env.FEE_PERCENT || '500');
+const CLAIM_WINDOW = Number(process.env.CLAIM_WINDOW || '20000');
 
 interface TournamentState {
   leaf: TournamentLeaf;
@@ -118,40 +128,100 @@ function hashTournamentKey(tournamentId: Field): Field {
   return Poseidon.hash([tournamentId]);
 }
 
-async function fetchContractEvents(contractAddress: PublicKey): Promise<{
+interface ContractEventBundle {
   tournamentCreated: TournamentCreatedEvent[];
+  prizePercentSet: PrizePercentSetEvent[];
   ticketPurchased: TicketPurchasedEvent[];
+  sponsorFunded: SponsorFundedEvent[];
   tournamentFinalized: TournamentFinalizedEvent[];
+  winnerAllocated: WinnerAllocatedEvent[];
   prizeClaimed: PrizeClaimedEvent[];
-}> {
+  unclaimedRecovered: UnclaimedRecoveredEvent[];
+}
+
+/**
+ * Reassemble per-tournament `prizePercents` (length NUM_WINNERS) from the
+ * fan-out `PrizePercentSet` events. Mirrors aggregation in the other
+ * scripts so all consumers agree on how to recover the array.
+ */
+function aggregatePrizePercents(
+  events: PrizePercentSetEvent[]
+): Map<string, UInt32[]> {
+  const out = new Map<string, UInt32[]>();
+  for (const ev of events) {
+    const id = ev.tournamentId.toString();
+    let arr = out.get(id);
+    if (!arr) {
+      arr = Array.from({ length: NUM_WINNERS }, () => UInt32.from(0));
+      out.set(id, arr);
+    }
+    const place = Number(ev.place.toBigint());
+    if (place >= 0 && place < NUM_WINNERS) {
+      arr[place] = ev.percent;
+    }
+  }
+  return out;
+}
+
+async function fetchContractEvents(
+  contractAddress: PublicKey
+): Promise<ContractEventBundle> {
   console.log('Fetching contract events from archive...');
   const tournament = new TournamentManager(contractAddress);
 
   const events = await tournament.fetchEvents();
   console.log(`Found ${events.length} events`);
 
-  const tournamentCreated: TournamentCreatedEvent[] = [];
-  const ticketPurchased: TicketPurchasedEvent[] = [];
-  const tournamentFinalized: TournamentFinalizedEvent[] = [];
-  const prizeClaimed: PrizeClaimedEvent[] = [];
+  const bundle: ContractEventBundle = {
+    tournamentCreated: [],
+    prizePercentSet: [],
+    ticketPurchased: [],
+    sponsorFunded: [],
+    tournamentFinalized: [],
+    winnerAllocated: [],
+    prizeClaimed: [],
+    unclaimedRecovered: [],
+  };
 
   for (const eventRecord of events) {
     const eventData = eventRecord.event.data;
 
     switch (eventRecord.type) {
       case 'TournamentCreated':
-        tournamentCreated.push(eventData as unknown as TournamentCreatedEvent);
+        bundle.tournamentCreated.push(
+          eventData as unknown as TournamentCreatedEvent
+        );
+        break;
+      case 'PrizePercentSet':
+        bundle.prizePercentSet.push(
+          eventData as unknown as PrizePercentSetEvent
+        );
         break;
       case 'TicketPurchased':
-        ticketPurchased.push(eventData as unknown as TicketPurchasedEvent);
+        bundle.ticketPurchased.push(
+          eventData as unknown as TicketPurchasedEvent
+        );
+        break;
+      case 'SponsorFunded':
+        bundle.sponsorFunded.push(eventData as unknown as SponsorFundedEvent);
         break;
       case 'TournamentFinalized':
-        tournamentFinalized.push(
+        bundle.tournamentFinalized.push(
           eventData as unknown as TournamentFinalizedEvent
         );
         break;
+      case 'WinnerAllocated':
+        bundle.winnerAllocated.push(
+          eventData as unknown as WinnerAllocatedEvent
+        );
+        break;
       case 'PrizeClaimed':
-        prizeClaimed.push(eventData as unknown as PrizeClaimedEvent);
+        bundle.prizeClaimed.push(eventData as unknown as PrizeClaimedEvent);
+        break;
+      case 'UnclaimedRecovered':
+        bundle.unclaimedRecovered.push(
+          eventData as unknown as UnclaimedRecoveredEvent
+        );
         break;
       default:
         console.warn(`Unknown event type: ${eventRecord.type}`);
@@ -159,25 +229,47 @@ async function fetchContractEvents(contractAddress: PublicKey): Promise<{
   }
 
   console.log(`Parsed events:`);
-  console.log(`  - TournamentCreated: ${tournamentCreated.length}`);
-  console.log(`  - TicketPurchased: ${ticketPurchased.length}`);
-  console.log(`  - TournamentFinalized: ${tournamentFinalized.length}`);
-  console.log(`  - PrizeClaimed: ${prizeClaimed.length}`);
+  console.log(`  - TournamentCreated:   ${bundle.tournamentCreated.length}`);
+  console.log(`  - PrizePercentSet:     ${bundle.prizePercentSet.length}`);
+  console.log(`  - TicketPurchased:     ${bundle.ticketPurchased.length}`);
+  console.log(`  - SponsorFunded:       ${bundle.sponsorFunded.length}`);
+  console.log(`  - TournamentFinalized: ${bundle.tournamentFinalized.length}`);
+  console.log(`  - WinnerAllocated:     ${bundle.winnerAllocated.length}`);
+  console.log(`  - PrizeClaimed:        ${bundle.prizeClaimed.length}`);
+  console.log(`  - UnclaimedRecovered:  ${bundle.unclaimedRecovered.length}`);
 
-  return {
-    tournamentCreated,
-    ticketPurchased,
-    tournamentFinalized,
-    prizeClaimed,
-  };
+  return bundle;
 }
 
-function rebuildTournamentsMap(events: {
-  tournamentCreated: TournamentCreatedEvent[];
-  ticketPurchased: TicketPurchasedEvent[];
-  tournamentFinalized: TournamentFinalizedEvent[];
-  prizeClaimed: PrizeClaimedEvent[];
-}): {
+function cloneLeafWith(
+  leaf: TournamentLeaf,
+  overrides: Partial<{
+    status: typeof leaf.status;
+    participantsRoot: typeof leaf.participantsRoot;
+    winnersRoot: typeof leaf.winnersRoot;
+    prizePool: typeof leaf.prizePool;
+    participantCount: typeof leaf.participantCount;
+    sponsorContribution: typeof leaf.sponsorContribution;
+  }>
+): TournamentLeaf {
+  return new TournamentLeaf({
+    status: overrides.status ?? leaf.status,
+    battleStartSlot: leaf.battleStartSlot,
+    battleEndSlot: leaf.battleEndSlot,
+    claimDeadlineSlot: leaf.claimDeadlineSlot,
+    ticketPrice: leaf.ticketPrice,
+    feePercent: leaf.feePercent,
+    prizePercents: leaf.prizePercents,
+    participantsRoot: overrides.participantsRoot ?? leaf.participantsRoot,
+    winnersRoot: overrides.winnersRoot ?? leaf.winnersRoot,
+    prizePool: overrides.prizePool ?? leaf.prizePool,
+    participantCount: overrides.participantCount ?? leaf.participantCount,
+    sponsorContribution:
+      overrides.sponsorContribution ?? leaf.sponsorContribution,
+  });
+}
+
+function rebuildTournamentsMap(events: ContractEventBundle): {
   tournamentsMap: MerkleMap;
   tournaments: Map<string, TournamentState>;
   maxTournamentId: number;
@@ -188,20 +280,35 @@ function rebuildTournamentsMap(events: {
   const tournaments = new Map<string, TournamentState>();
   let maxTournamentId = 0;
 
+  // Pair each TournamentCreated header with the per-place fan-out so we
+  // can reconstruct the full leaf hash. Without this the rebuilt root
+  // will differ from the on-chain root.
+  const prizePercentsByTournament = aggregatePrizePercents(
+    events.prizePercentSet
+  );
+
   for (const event of events.tournamentCreated) {
     const tournamentIdNum = Number(event.tournamentId.toBigInt());
     maxTournamentId = Math.max(maxTournamentId, tournamentIdNum);
+
+    const id = event.tournamentId.toString();
+    const prizePercents =
+      prizePercentsByTournament.get(id) ??
+      Array.from({ length: NUM_WINNERS }, () => UInt32.from(0));
 
     const leaf = new TournamentLeaf({
       status: TournamentStatus.Battle,
       battleStartSlot: event.battleStartSlot,
       battleEndSlot: event.battleEndSlot,
+      claimDeadlineSlot: event.claimDeadlineSlot,
       ticketPrice: event.ticketPrice,
-      prizePercents: event.prizePercents,
+      feePercent: event.feePercent,
+      prizePercents,
       participantsRoot: new MerkleMap().getRoot(),
       winnersRoot: new MerkleMap().getRoot(),
       prizePool: UInt64.from(0),
       participantCount: UInt32.from(0),
+      sponsorContribution: UInt64.from(0),
     });
 
     const key = hashTournamentKey(event.tournamentId);
@@ -221,14 +328,8 @@ function rebuildTournamentsMap(events: {
     const state = tournaments.get(tournamentId);
 
     if (state) {
-      state.leaf = new TournamentLeaf({
-        status: state.leaf.status,
-        battleStartSlot: state.leaf.battleStartSlot,
-        battleEndSlot: state.leaf.battleEndSlot,
-        ticketPrice: state.leaf.ticketPrice,
-        prizePercents: state.leaf.prizePercents,
+      state.leaf = cloneLeafWith(state.leaf, {
         participantsRoot: event.newParticipantsRoot,
-        winnersRoot: state.leaf.winnersRoot,
         prizePool: event.newPrizePool,
         participantCount: event.newParticipantCount,
       });
@@ -241,21 +342,30 @@ function rebuildTournamentsMap(events: {
     }
   }
 
+  for (const event of events.sponsorFunded) {
+    const tournamentId = event.tournamentId.toString();
+    const state = tournaments.get(tournamentId);
+
+    if (state) {
+      state.leaf = cloneLeafWith(state.leaf, {
+        prizePool: event.newPrizePool,
+        sponsorContribution: event.newSponsorContribution,
+      });
+
+      const key = hashTournamentKey(event.tournamentId);
+      tournamentsMap.set(key, state.leaf.hash());
+    }
+  }
+
   for (const event of events.tournamentFinalized) {
     const tournamentId = event.tournamentId.toString();
     const state = tournaments.get(tournamentId);
 
     if (state) {
-      state.leaf = new TournamentLeaf({
+      state.leaf = cloneLeafWith(state.leaf, {
         status: TournamentStatus.Claiming,
-        battleStartSlot: state.leaf.battleStartSlot,
-        battleEndSlot: state.leaf.battleEndSlot,
-        ticketPrice: state.leaf.ticketPrice,
-        prizePercents: state.leaf.prizePercents,
-        participantsRoot: state.leaf.participantsRoot,
         winnersRoot: event.newWinnersRoot,
-        prizePool: state.leaf.prizePool,
-        participantCount: state.leaf.participantCount,
+        prizePool: event.totalAllocated,
       });
 
       const key = hashTournamentKey(event.tournamentId);
@@ -268,16 +378,24 @@ function rebuildTournamentsMap(events: {
     const state = tournaments.get(tournamentId);
 
     if (state) {
-      state.leaf = new TournamentLeaf({
-        status: state.leaf.status,
-        battleStartSlot: state.leaf.battleStartSlot,
-        battleEndSlot: state.leaf.battleEndSlot,
-        ticketPrice: state.leaf.ticketPrice,
-        prizePercents: state.leaf.prizePercents,
-        participantsRoot: state.leaf.participantsRoot,
+      state.leaf = cloneLeafWith(state.leaf, {
         winnersRoot: event.newWinnersRoot,
-        prizePool: state.leaf.prizePool,
-        participantCount: state.leaf.participantCount,
+        prizePool: event.newPrizePool,
+      });
+
+      const key = hashTournamentKey(event.tournamentId);
+      tournamentsMap.set(key, state.leaf.hash());
+    }
+  }
+
+  for (const event of events.unclaimedRecovered) {
+    const tournamentId = event.tournamentId.toString();
+    const state = tournaments.get(tournamentId);
+
+    if (state) {
+      state.leaf = cloneLeafWith(state.leaf, {
+        status: TournamentStatus.Settled,
+        prizePool: UInt64.from(0),
       });
 
       const key = hashTournamentKey(event.tournamentId);
@@ -398,6 +516,7 @@ async function main() {
 
   const battleStartSlot = currentSlot + BATTLE_START_DELAY;
   const battleEndSlot = battleStartSlot + BATTLE_SLOTS;
+  const claimDeadlineSlot = battleEndSlot + CLAIM_WINDOW;
 
   console.log(`\nTournament timing:`);
   console.log(`  Current slot: ${currentSlot}`);
@@ -406,9 +525,17 @@ async function main() {
       BATTLE_START_DELAY * 3
     } min until open, then ~${BATTLE_SLOTS * 3} min window)`
   );
+  console.log(
+    `  Claim window: slot ${battleEndSlot} → ${claimDeadlineSlot} (~${
+      CLAIM_WINDOW * 3
+    } min)`
+  );
+  console.log(`  Fee: ${FEE_PERCENT / 100}% (${FEE_PERCENT} bps)`);
 
   const config = new TournamentConfig({
     ticketPrice: UInt64.from(ticketPrice),
+    feePercent: UInt32.from(FEE_PERCENT),
+    claimWindow: UInt32.from(CLAIM_WINDOW),
     prizePercents: [
       UInt32.from(2500), UInt32.from(1500), UInt32.from(1000),
       UInt32.from(1000), UInt32.from(1000), UInt32.from(700),
@@ -447,12 +574,15 @@ async function main() {
     status: TournamentStatus.Battle,
     battleStartSlot: UInt32.from(battleStartSlot),
     battleEndSlot: UInt32.from(battleEndSlot),
+    claimDeadlineSlot: UInt32.from(claimDeadlineSlot),
     ticketPrice: UInt64.from(ticketPrice),
+    feePercent: UInt32.from(FEE_PERCENT),
     prizePercents: config.prizePercents,
     participantsRoot: new MerkleMap().getRoot(),
     winnersRoot: new MerkleMap().getRoot(),
     prizePool: UInt64.from(0),
     participantCount: UInt32.from(0),
+    sponsorContribution: UInt64.from(0),
   });
   tournamentsMap.set(tournamentKey, newLeaf.hash());
   const newTournamentsRoot = tournamentsMap.getRoot().toString();
@@ -460,9 +590,12 @@ async function main() {
   const backendPayloadObject = {
     tournamentId: nextTournamentId.toString(),
     ticketPrice: ticketPrice.toString(),
+    feePercent: FEE_PERCENT,
+    claimWindow: CLAIM_WINDOW,
     prizePercents: [2500, 1500, 1000, 1000, 1000, 700, 700, 700, 500, 400],
     battleStartSlot,
     battleEndSlot,
+    claimDeadlineSlot,
     tournamentsRoot: newTournamentsRoot,
     txHash: createResult.hash,
     title: tournamentTitle,
@@ -582,8 +715,10 @@ async function main() {
   console.log('='.repeat(60));
   console.log(`Tournament ID: ${nextTournamentId.toString()}`);
   console.log(`Ticket Price: ${Number(ticketPrice) / 1e9} MINA`);
+  console.log(`Fee: ${FEE_PERCENT / 100}% (${FEE_PERCENT} bps)`);
   console.log(`Battle Start Slot: ${battleStartSlot}`);
   console.log(`Battle End Slot: ${battleEndSlot}`);
+  console.log(`Claim Deadline Slot: ${claimDeadlineSlot}`);
   console.log(`Tournaments Root: ${newTournamentsRoot}`);
   console.log(`Display title: ${tournamentTitle}`);
   console.log(`Image URL: ${tournamentImageUrl}`);

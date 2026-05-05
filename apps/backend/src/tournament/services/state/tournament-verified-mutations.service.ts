@@ -57,7 +57,11 @@ export class TournamentVerifiedMutationsService {
     tournament.participants.set(playerPubKey, true);
 
     const ticketPrice = BigInt(tournament.verified.ticketPrice);
-    const prizeContribution = calculatePrizeContribution(ticketPrice);
+    // Mirror contract math: use the leaf-locked feePercent.
+    const prizeContribution = calculatePrizeContribution(
+      ticketPrice,
+      BigInt(tournament.verified.feePercent ?? 0)
+    );
 
     tournament.verified.prizePool = (
       BigInt(tournament.verified.prizePool) + prizeContribution
@@ -100,15 +104,31 @@ export class TournamentVerifiedMutationsService {
       return;
     }
 
+    // Mirror the on-chain `prizePool.sub(prizeAmount)` so the off-chain leaf
+    // hash stays in sync with the contract; otherwise every subsequent claim
+    // proof fails because the witness is computed against a stale leaf.
+    // Validate before mutating any state so an inconsistent prize amount
+    // surfaces as a clean BadRequestException instead of partially-applied
+    // saves or downstream merkle errors.
+    const prizeAmount = BigInt(winnerInfo.prizeAmount);
+    const currentPool = BigInt(tournament.verified.prizePool);
+    const remaining = currentPool - prizeAmount;
+    if (remaining < 0n) {
+      throw new BadRequestException(
+        `Cannot apply claimPrize: prize ${prizeAmount} exceeds remaining pool ${currentPool}`
+      );
+    }
+
     winnerInfo.claimed = true;
     tournament.winners.set(playerPubKey, winnerInfo);
 
     const winnersMap = this.merkleService.buildWinnersMap(tournament.winners);
     tournament.verified.winnersRoot = winnersMap.getRoot().toString();
+    tournament.verified.prizePool = remaining.toString();
 
     await tournament.save();
     this.logger.log(
-      `Applied claimPrize for ${playerPubKey} in tournament ${tournamentId}`
+      `Applied claimPrize for ${playerPubKey} in tournament ${tournamentId} (remaining pool ${remaining})`
     );
   }
 
@@ -143,19 +163,113 @@ export class TournamentVerifiedMutationsService {
 
     const sorted = [...rows].sort((a, b) => a.place - b.place);
     const winners = new Map<string, { prizeAmount: string; claimed: boolean }>();
+    let totalAllocated = 0n;
     for (const w of sorted) {
+      const prizeBn = BigInt(w.prizeAmount);
+      if (prizeBn < 0n) {
+        throw new BadRequestException(
+          `Cannot apply finalizeTournament: negative prize for ${w.publicKey}`
+        );
+      }
+      totalAllocated += prizeBn;
       winners.set(w.publicKey, {
         prizeAmount: w.prizeAmount,
         claimed: false,
       });
     }
+
+    const currentPool = BigInt(tournament.verified.prizePool);
+    if (totalAllocated > currentPool) {
+      throw new BadRequestException(
+        `Cannot apply finalizeTournament: prizes ${totalAllocated} exceed pool ${currentPool}`
+      );
+    }
+
     tournament.winners = winners;
 
     const winnersMap = this.merkleService.buildWinnersMap(tournament.winners);
     tournament.verified.winnersRoot = winnersMap.getRoot().toString();
     tournament.verified.status = TournamentStatus.Claiming;
+    // Contract sets `prizePool = totalAllocated` and refunds the remainder to
+    // admin in the same finalize tx; mirror that or every subsequent claim
+    // fails because the off-chain leaf hash drifts.
+    tournament.verified.prizePool = totalAllocated.toString();
 
     await tournament.save();
-    this.logger.log(`Applied finalizeTournament for tournament ${tournamentId}`);
+    this.logger.log(
+      `Applied finalizeTournament for tournament ${tournamentId} (allocated ${totalAllocated} of ${currentPool})`
+    );
+  }
+
+  async applySponsorFundToVerified(
+    tournamentId: string,
+    sponsorAmount: string
+  ): Promise<void> {
+    let amount: bigint;
+    try {
+      amount = BigInt(sponsorAmount);
+    } catch {
+      throw new BadRequestException(
+        `Cannot apply sponsorFund: amount ${sponsorAmount} is not numeric`
+      );
+    }
+    if (amount <= 0n) {
+      throw new BadRequestException(
+        `Cannot apply sponsorFund: amount must be > 0 (got ${amount})`
+      );
+    }
+
+    const tournament = await this.requireTournament(
+      tournamentId,
+      `Cannot apply sponsorFund: Tournament ${tournamentId} not found`
+    );
+
+    const previousPool = BigInt(tournament.verified.prizePool);
+    const previousSponsor = BigInt(
+      tournament.verified.sponsorContribution ?? '0'
+    );
+
+    tournament.verified.prizePool = (previousPool + amount).toString();
+    tournament.verified.sponsorContribution = (
+      previousSponsor + amount
+    ).toString();
+
+    await tournament.save();
+    this.logger.log(
+      `Applied sponsorFund of ${amount} to tournament ${tournamentId} (new pool ${tournament.verified.prizePool})`
+    );
+  }
+
+  /**
+   * Idempotently mark a tournament as Settled with an empty pool. Mirrors
+   * the on-chain `recoverUnclaimed` which sweeps the remaining `prizePool`
+   * to admin and stamps the leaf as Settled.
+   */
+  async applyRecoverUnclaimedToVerified(tournamentId: string): Promise<void> {
+    const tournament = await this.requireTournament(
+      tournamentId,
+      `Cannot apply recoverUnclaimed: Tournament ${tournamentId} not found`
+    );
+
+    if (tournament.verified.status === TournamentStatus.Settled) {
+      this.logger.warn(
+        `recoverUnclaimed for ${tournamentId} already applied, skipping`
+      );
+      return;
+    }
+
+    if (tournament.verified.status !== TournamentStatus.Claiming) {
+      throw new BadRequestException(
+        `Cannot apply recoverUnclaimed from status ${tournament.verified.status}`
+      );
+    }
+
+    tournament.verified.status = TournamentStatus.Settled;
+    tournament.verified.prizePool = '0';
+
+    await tournament.save();
+    this.logger.log(
+      `Applied recoverUnclaimed for tournament ${tournamentId}`
+    );
   }
 }

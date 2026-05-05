@@ -99,7 +99,9 @@ const SpectralArrowAffectedArea = (x: number, y: number) => {
 // Next attack deals +50% damage and reveals the duelist
 // ============================================================================
 
-export class ShadowVeilData extends Struct({}) {}
+export class ShadowVeilData extends Struct({
+  position: Position,
+}) {}
 
 export class ShadowVeilSpellCast
   extends Struct({
@@ -111,20 +113,26 @@ export class ShadowVeilSpellCast
   implements SpellCast<ShadowVeilData>
 {
   hash(): Field {
-    return Poseidon.hash([this.caster, this.spellId, this.target]);
+    return Poseidon.hash([
+      this.caster,
+      this.spellId,
+      this.target,
+      this.additionalData.position.hash(),
+    ]);
   }
 }
 
 export const ShadowVeilCast = (
   state: State,
   caster: Field,
-  target: Field
+  target: Field,
+  position: Position
 ): SpellCast<ShadowVeilData> => {
   return new ShadowVeilSpellCast({
     spellId: CircuitString.fromString('ShadowVeil').hash(),
     caster,
     target,
-    additionalData: {},
+    additionalData: { position },
   });
 };
 

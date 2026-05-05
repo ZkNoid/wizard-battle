@@ -5,22 +5,19 @@ import {
   PublicKey,
   Field,
   UInt64,
-  UInt32,
   PrivateKey,
   AccountUpdate,
-  MerkleMap,
+  fetchAccount,
 } from 'o1js';
 import {
   TournamentManager,
-  TournamentLeaf,
-  WinnerLeaf,
   WinnersInput,
   PrizesInput,
-  TournamentStatus as ContractTournamentStatus,
   NUM_WINNERS,
 } from '../../../../../mina-contracts/src/TournamentManager.js';
 import { RedisService } from '../../../redis/redis.service.js';
 import { TournamentStateService } from '../state/tournament-state.service.js';
+import { TournamentOptimisticOverlayService } from '../state/tournament-optimistic-overlay.service.js';
 import { MerkleService } from '../merkle/merkle.service.js';
 import { MinaClientService } from './mina-client.service.js';
 import {
@@ -28,10 +25,7 @@ import {
   OperationStatus,
   OperationType,
 } from '../../schemas/pending-operation.schema.js';
-import {
-  TournamentDocument,
-  TournamentStatus,
-} from '../../schemas/tournament.schema.js';
+import { TournamentStatus } from '../../schemas/tournament.schema.js';
 
 type UnsignedZkappTx = Awaited<ReturnType<typeof Mina.transaction>>;
 
@@ -46,7 +40,8 @@ export class ProofGeneratorService implements OnModuleInit {
     private readonly redisService: RedisService,
     private readonly tournamentStateService: TournamentStateService,
     private readonly merkleService: MerkleService,
-    private readonly minaClientService: MinaClientService
+    private readonly minaClientService: MinaClientService,
+    private readonly overlayService: TournamentOptimisticOverlayService
   ) {}
 
   async onModuleInit() {
@@ -137,6 +132,15 @@ export class ProofGeneratorService implements OnModuleInit {
     }
   }
 
+  /**
+   * Initial lock window. Must comfortably exceed a single proof generation
+   * worst-case so we don't lose the lock between heartbeats.
+   */
+  private static readonly PROOF_LOCK_TTL_SECONDS = 15 * 60;
+
+  /** How often we refresh the lock TTL while processing is in flight. */
+  private static readonly PROOF_LOCK_HEARTBEAT_MS = 60_000;
+
   async processQueue(tournamentId: string): Promise<void> {
     if (!this.isCompiled) {
       this.logger.warn('Contract not compiled, cannot process queue');
@@ -145,10 +149,14 @@ export class ProofGeneratorService implements OnModuleInit {
 
     const redis = this.redisService.getClient();
     const lockKey = `tournament:${tournamentId}:proof-lock`;
-    const lockTtlSeconds = 300;
+    // Unique token so we never delete or refresh a lock that was taken over
+    // by another worker after a TTL expiry.
+    const lockToken = `${process.pid}:${Date.now()}:${Math.random()
+      .toString(36)
+      .slice(2)}`;
 
-    const acquired = await redis.set(lockKey, '1', {
-      EX: lockTtlSeconds,
+    const acquired = await redis.set(lockKey, lockToken, {
+      EX: ProofGeneratorService.PROOF_LOCK_TTL_SECONDS,
       NX: true,
     });
 
@@ -160,6 +168,20 @@ export class ProofGeneratorService implements OnModuleInit {
     }
 
     this.processingTournaments.add(tournamentId);
+
+    const heartbeat = setInterval(() => {
+      this.refreshProofLock(lockKey, lockToken).catch((err) => {
+        this.logger.warn(
+          `Heartbeat refresh failed for ${lockKey}: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
+      });
+    }, ProofGeneratorService.PROOF_LOCK_HEARTBEAT_MS);
+    // Don't keep the event loop alive solely for the heartbeat.
+    if (typeof heartbeat.unref === 'function') {
+      heartbeat.unref();
+    }
 
     try {
       const pendingOps = await this.tournamentStateService.getPendingOperations(
@@ -175,8 +197,66 @@ export class ProofGeneratorService implements OnModuleInit {
         await this.processOperation(op);
       }
     } finally {
-      await redis.del(lockKey);
+      clearInterval(heartbeat);
+      await this.releaseProofLock(lockKey, lockToken);
       this.processingTournaments.delete(tournamentId);
+    }
+  }
+
+  /**
+   * Atomically extend the TTL only if we still own the lock. Prevents a
+   * stalled worker from refreshing a lock another worker already took over.
+   */
+  private async refreshProofLock(
+    lockKey: string,
+    expectedToken: string
+  ): Promise<void> {
+    const redis = this.redisService.getClient();
+    const lua = `
+      if redis.call('GET', KEYS[1]) == ARGV[1] then
+        return redis.call('EXPIRE', KEYS[1], ARGV[2])
+      else
+        return 0
+      end
+    `;
+    const result = await redis.eval(lua, {
+      keys: [lockKey],
+      arguments: [
+        expectedToken,
+        ProofGeneratorService.PROOF_LOCK_TTL_SECONDS.toString(),
+      ],
+    });
+    if (Number(result) !== 1) {
+      this.logger.warn(
+        `Lost ownership of lock ${lockKey} during heartbeat (token mismatch or expired)`
+      );
+    }
+  }
+
+  /** Compare-and-delete so we never wipe somebody else's lock. */
+  private async releaseProofLock(
+    lockKey: string,
+    expectedToken: string
+  ): Promise<void> {
+    const redis = this.redisService.getClient();
+    const lua = `
+      if redis.call('GET', KEYS[1]) == ARGV[1] then
+        return redis.call('DEL', KEYS[1])
+      else
+        return 0
+      end
+    `;
+    try {
+      await redis.eval(lua, {
+        keys: [lockKey],
+        arguments: [expectedToken],
+      });
+    } catch (err) {
+      this.logger.warn(
+        `Failed to release lock ${lockKey}: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
     }
   }
 
@@ -201,8 +281,14 @@ export class ProofGeneratorService implements OnModuleInit {
         case OperationType.ClaimPrize:
           await this.processClaimPrize(op);
           break;
+        case OperationType.SponsorFund:
+          await this.processSponsorFund(op);
+          break;
+        case OperationType.RecoverUnclaimed:
+          await this.processRecoverUnclaimed(op);
+          break;
         default:
-          throw new Error(`Unknown operation type: ${op.type}`);
+          throw new Error(`Unknown operation type: ${op.type as string}`);
       }
     } catch (error) {
       const errorMessage =
@@ -218,37 +304,70 @@ export class ProofGeneratorService implements OnModuleInit {
     }
   }
 
+  /**
+   * Build the proof inputs for `op` by overlaying every Submitted-but-not-
+   * yet-confirmed mutation on top of verified state. This lets the second
+   * concurrent proof reference the witness chain that *will* exist on
+   * inclusion of the first transaction, so back-to-back ops compose
+   * without the chain rejecting the later proofs for stale roots.
+   */
   private async prepareProofContext(op: PendingOperationDocument) {
-    const tournament = await this.tournamentStateService.getVerifiedState(
-      op.tournamentId
-    );
-    if (!tournament) {
-      throw new Error(`Tournament ${op.tournamentId} not found`);
-    }
+    const overlay = await this.overlayService.getOverlayForOperation(op);
 
-    const allTournaments =
-      await this.tournamentStateService.getAllTournaments();
-    const tournamentsMap =
-      this.merkleService.buildTournamentsMap(allTournaments);
-
-    const { tournamentWitness } = this.merkleService.getTournamentWitness(
-      tournamentsMap,
-      op.tournamentId
-    );
-
-    const currentTournamentLeaf = this.buildTournamentLeaf(tournament);
     const contractAddress = this.minaClientService.getContractAddress();
     const contract = new TournamentManager(contractAddress);
     const playerPubKey = PublicKey.fromBase58(op.playerPubKey);
 
+    // Pre-fetch all accounts the proof will read (`getAndRequireEquals`,
+    // `requireSignature`, `balance.subInPlace`). Without these calls o1js has
+    // no cached account state and proof generation either fails or proves
+    // against stale/empty state, producing transactions the network rejects.
+    await this.fetchProofAccounts(contractAddress, playerPubKey);
+
+    if (overlay.foldedOps.length > 0) {
+      this.logger.log(
+        `Op ${op._id} (${op.type}) proving against overlay with ${overlay.foldedOps.length} ` +
+          `pending mutation(s) folded in for tournament ${op.tournamentId}`
+      );
+    }
+
     return {
-      tournament,
-      tournamentWitness,
-      currentTournamentLeaf,
+      overlay,
+      tournamentWitness: overlay.tournamentWitness,
+      currentTournamentLeaf: overlay.leaf,
       contractAddress,
       contract,
       playerPubKey,
     };
+  }
+
+  private async fetchProofAccounts(
+    contractAddress: PublicKey,
+    playerPubKey: PublicKey
+  ): Promise<void> {
+    const targets: { label: string; publicKey: PublicKey }[] = [
+      { label: 'contract', publicKey: contractAddress },
+      { label: 'sender', publicKey: playerPubKey },
+    ];
+
+    await Promise.all(
+      targets.map(async ({ label, publicKey }) => {
+        try {
+          const result = await fetchAccount({ publicKey });
+          if (!result.account) {
+            throw new Error(
+              `fetchAccount(${label}=${publicKey.toBase58()}) returned no account`
+            );
+          }
+        } catch (error) {
+          this.logger.error(
+            `Failed to fetch ${label} account ${publicKey.toBase58()} before proving`,
+            error instanceof Error ? error.stack : undefined
+          );
+          throw error;
+        }
+      })
+    );
   }
 
   /**
@@ -284,7 +403,13 @@ export class ProofGeneratorService implements OnModuleInit {
     await tx.prove();
 
     const feePayerKey = this.getConfiguredFeePayerKeyIfMatchesOp(op);
-    if (op.type === OperationType.FinalizeTournament) {
+    // All admin-signed phase transitions are broadcast directly from the
+    // backend; player-driven ops still hand the unsigned tx back to the
+    // wallet for signing.
+    const adminDriven =
+      op.type === OperationType.FinalizeTournament ||
+      op.type === OperationType.RecoverUnclaimed;
+    if (adminDriven) {
       if (!feePayerKey) {
         throw new Error('No fee payer key found');
       }
@@ -316,34 +441,30 @@ export class ProofGeneratorService implements OnModuleInit {
 
   private async processBuyTicket(op: PendingOperationDocument): Promise<void> {
     const {
-      tournament,
+      overlay,
       tournamentWitness,
       currentTournamentLeaf,
-      contractAddress,
       contract,
       playerPubKey,
     } = await this.prepareProofContext(op);
 
-    const participantsMap = this.merkleService.buildParticipantsMap(
-      tournament.participants
-    );
-
     if (
       !this.merkleService.verifyParticipantNotRegistered(
-        participantsMap,
+        overlay.participantsMap,
         op.playerPubKey
       )
     ) {
-      throw new Error(`Player ${op.playerPubKey} is already registered`);
+      throw new Error(
+        `Player ${op.playerPubKey} is already registered (per overlay state)`
+      );
     }
 
-    const { witness: participantWitness } =
-      this.merkleService.computeNewParticipantsRoot(
-        this.merkleService.buildParticipantsMap(tournament.participants),
-        op.playerPubKey
-      );
+    const { participantWitness } = this.merkleService.getParticipantWitness(
+      overlay.participantsMap,
+      op.playerPubKey
+    );
 
-    const ticketPrice = UInt64.from(BigInt(tournament.verified.ticketPrice));
+    const ticketPrice = UInt64.from(BigInt(overlay.snapshot.ticketPrice));
 
     const tx = await Mina.transaction(playerPubKey, async () => {
       const playerUpdate = AccountUpdate.createSigned(playerPubKey);
@@ -364,16 +485,16 @@ export class ProofGeneratorService implements OnModuleInit {
     op: PendingOperationDocument
   ): Promise<void> {
     const {
-      tournament,
+      overlay,
       tournamentWitness,
       currentTournamentLeaf,
       contract,
       playerPubKey,
     } = await this.prepareProofContext(op);
 
-    if (tournament.verified.status !== TournamentStatus.Battle) {
+    if (overlay.snapshot.status !== TournamentStatus.Battle) {
       throw new Error(
-        `Tournament ${op.tournamentId} must be in Battle phase to finalize (status: ${tournament.verified.status})`
+        `Tournament ${op.tournamentId} must be in Battle phase to finalize (overlay status: ${overlay.snapshot.status})`
       );
     }
 
@@ -438,20 +559,20 @@ export class ProofGeneratorService implements OnModuleInit {
 
   private async processClaimPrize(op: PendingOperationDocument): Promise<void> {
     const {
-      tournament,
+      overlay,
       tournamentWitness,
       currentTournamentLeaf,
       contract,
       playerPubKey,
     } = await this.prepareProofContext(op);
 
-    if (tournament.verified.status !== 'Claiming') {
+    if (overlay.snapshot.status !== TournamentStatus.Claiming) {
       throw new Error(
-        `Tournament ${op.tournamentId} is not in claiming phase (status: ${tournament.verified.status})`
+        `Tournament ${op.tournamentId} is not in claiming phase (overlay status: ${overlay.snapshot.status})`
       );
     }
 
-    const winnerInfo = tournament.winners?.get(op.playerPubKey);
+    const winnerInfo = overlay.snapshot.winners.get(op.playerPubKey);
     if (!winnerInfo) {
       throw new Error(
         `Player ${op.playerPubKey} is not a winner in tournament ${op.tournamentId}`
@@ -459,13 +580,12 @@ export class ProofGeneratorService implements OnModuleInit {
     }
     if (winnerInfo.claimed) {
       throw new Error(
-        `Player ${op.playerPubKey} has already claimed their prize`
+        `Player ${op.playerPubKey} has already claimed their prize (per overlay state)`
       );
     }
 
-    const winnersMap = this.merkleService.buildWinnersMap(tournament.winners);
     const { winnerWitness, winnerLeaf } = this.merkleService.getWinnerWitness(
-      winnersMap,
+      overlay.winnersMap,
       op.playerPubKey,
       winnerInfo
     );
@@ -483,35 +603,96 @@ export class ProofGeneratorService implements OnModuleInit {
     await this.submitProvedTransaction(op, tx);
   }
 
-  private buildTournamentLeaf(tournament: TournamentDocument): TournamentLeaf {
-    const statusMap: Record<string, UInt32> = {
-      Created: ContractTournamentStatus.Created,
-      Battle: ContractTournamentStatus.Battle,
-      Claiming: ContractTournamentStatus.Claiming,
-    };
+  private async processSponsorFund(
+    op: PendingOperationDocument
+  ): Promise<void> {
+    const {
+      overlay,
+      tournamentWitness,
+      currentTournamentLeaf,
+      contract,
+      playerPubKey,
+    } = await this.prepareProofContext(op);
 
-    const status = statusMap[tournament.verified.status];
-    if (!status) {
+    if (overlay.snapshot.status !== TournamentStatus.Battle) {
       throw new Error(
-        `Unknown tournament status: ${tournament.verified.status}`
+        `SponsorFund: tournament ${op.tournamentId} must be in Battle phase (overlay status: ${overlay.snapshot.status})`
       );
     }
 
-    const prizePercents = Array.from({ length: NUM_WINNERS }, (_, i) =>
-      UInt32.from(tournament.verified.prizePercents[i] ?? 0)
+    if (!op.sponsorAmount) {
+      throw new Error(
+        `SponsorFund operation ${op._id} is missing sponsorAmount`
+      );
+    }
+
+    let amountBn: bigint;
+    try {
+      amountBn = BigInt(op.sponsorAmount);
+    } catch {
+      throw new Error(
+        `SponsorFund operation ${op._id} has non-numeric sponsorAmount`
+      );
+    }
+    if (amountBn <= 0n) {
+      throw new Error(
+        `SponsorFund operation ${op._id}: sponsorAmount must be > 0`
+      );
+    }
+
+    const amount = UInt64.from(amountBn);
+
+    const tx = await Mina.transaction(playerPubKey, async () => {
+      const sponsorUpdate = AccountUpdate.createSigned(playerPubKey);
+      sponsorUpdate.balance.subInPlace(amount);
+
+      await contract.sponsorFund(
+        Field(op.tournamentId),
+        currentTournamentLeaf,
+        tournamentWitness,
+        amount
+      );
+    });
+
+    await this.submitProvedTransaction(op, tx);
+  }
+
+  private async processRecoverUnclaimed(
+    op: PendingOperationDocument
+  ): Promise<void> {
+    const {
+      overlay,
+      tournamentWitness,
+      currentTournamentLeaf,
+      contract,
+      playerPubKey,
+    } = await this.prepareProofContext(op);
+
+    if (overlay.snapshot.status !== TournamentStatus.Claiming) {
+      throw new Error(
+        `RecoverUnclaimed: tournament ${op.tournamentId} must be in Claiming phase (overlay status: ${overlay.snapshot.status})`
+      );
+    }
+
+    const currentSlot = await this.minaClientService.getCurrentSlot();
+    if (currentSlot < overlay.snapshot.claimDeadlineSlot) {
+      throw new Error(
+        `RecoverUnclaimed: claim window still open until slot ${overlay.snapshot.claimDeadlineSlot} (current: ${currentSlot})`
+      );
+    }
+
+    const tx = await Mina.transaction(
+      { sender: playerPubKey, fee: 100_000_000 },
+      async () => {
+        await contract.recoverUnclaimed(
+          Field(op.tournamentId),
+          currentTournamentLeaf,
+          tournamentWitness
+        );
+      }
     );
 
-    return new TournamentLeaf({
-      status,
-      battleStartSlot: UInt32.from(tournament.verified.battleStartSlot),
-      battleEndSlot: UInt32.from(tournament.verified.battleEndSlot),
-      ticketPrice: UInt64.from(BigInt(tournament.verified.ticketPrice)),
-      prizePercents,
-      participantsRoot: Field(tournament.verified.participantsRoot),
-      winnersRoot: Field(tournament.verified.winnersRoot),
-      prizePool: UInt64.from(BigInt(tournament.verified.prizePool)),
-      participantCount: UInt32.from(tournament.verified.participantCount),
-    });
+    await this.submitProvedTransaction(op, tx);
   }
 
   isReady(): boolean {

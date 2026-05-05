@@ -10,6 +10,7 @@ import { MerkleService } from '../merkle/merkle.service.js';
 import { RedisService } from '../../../redis/redis.service.js';
 import { OperationEventsService } from '../events/operation-events.service.js';
 import { TournamentVerifiedMutationsService } from './tournament-verified-mutations.service.js';
+import { TournamentOptimisticOverlayService } from './tournament-optimistic-overlay.service.js';
 import {
   Tournament,
   TournamentDocument,
@@ -37,9 +38,14 @@ describe('TournamentStateService', () => {
       status: TournamentStatus.Battle,
       battleStartSlot: 500,
       battleEndSlot: 1000,
+      claimDeadlineSlot: 21000,
       ticketPrice: '1000000000',
+      // Mirror the per-tournament fee snapshot now that getOptimisticState
+      // reads `verified.feePercent` (no longer a hardcoded constant).
+      feePercent: 500,
       prizePercents: [2500, 1500, 1000, 1000, 1000, 700, 700, 700, 500, 400],
       prizePool: '5000000000',
+      sponsorContribution: '0',
       participantCount: 5,
       participantsRoot: '123456',
       winnersRoot: '0',
@@ -114,6 +120,10 @@ describe('TournamentStateService', () => {
         {
           provide: TournamentVerifiedMutationsService,
           useValue: createMock<TournamentVerifiedMutationsService>(),
+        },
+        {
+          provide: TournamentOptimisticOverlayService,
+          useValue: createMock<TournamentOptimisticOverlayService>(),
         },
       ],
     }).compile();

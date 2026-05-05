@@ -1,7 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MerkleService } from './merkle.service.js';
-import { MerkleMap, Field, PublicKey } from 'o1js';
-import { TournamentDocument, TournamentStatus } from '../../schemas/tournament.schema.js';
+import { MerkleMap, Field, PublicKey, PrivateKey } from 'o1js';
+
+// Generate fresh, valid Mina pubkeys so PublicKey.fromBase58 succeeds against
+// whichever o1js version the workspace pins. Hardcoded fixtures previously
+// here drifted out of sync with the current base58 checksum logic.
+const PUBKEY_A = PrivateKey.random().toPublicKey().toBase58();
+const PUBKEY_B = PrivateKey.random().toPublicKey().toBase58();
 
 describe('MerkleService', () => {
   let service: MerkleService;
@@ -23,8 +28,8 @@ describe('MerkleService', () => {
 
     it('should build map from Map object', () => {
       const participants = new Map<string, boolean>([
-        ['B62qiy32p8kAKnny8ZFwoMhYpBppM1DWVCqAPBYNcXnsAHhnfAAuXgg', true],
-        ['B62qjSytpSK7aEauBprjXDSZwc9ai4YMv9tpmXLQK14Fn8W1tZiJvmB', true],
+        [PUBKEY_A, true],
+        [PUBKEY_B, true],
       ]);
 
       const map = service.buildParticipantsMap(participants);
@@ -34,14 +39,12 @@ describe('MerkleService', () => {
 
     it('should build map from plain object', () => {
       const participants = {
-        'B62qiy32p8kAKnny8ZFwoMhYpBppM1DWVCqAPBYNcXnsAHhnfAAuXgg': true,
+        [PUBKEY_A]: true,
       };
 
       const map = service.buildParticipantsMap(participants);
 
-      const pubKey = PublicKey.fromBase58(
-        'B62qiy32p8kAKnny8ZFwoMhYpBppM1DWVCqAPBYNcXnsAHhnfAAuXgg'
-      );
+      const pubKey = PublicKey.fromBase58(PUBKEY_A);
       const key = MerkleService.keyForPublicKey(pubKey);
       const value = map.get(key);
 
@@ -51,29 +54,19 @@ describe('MerkleService', () => {
 
   describe('verifyParticipantNotRegistered', () => {
     it('should return true for unregistered participant', () => {
-      const participants = new Map<string, boolean>([
-        ['B62qiy32p8kAKnny8ZFwoMhYpBppM1DWVCqAPBYNcXnsAHhnfAAuXgg', true],
-      ]);
+      const participants = new Map<string, boolean>([[PUBKEY_A, true]]);
       const map = service.buildParticipantsMap(participants);
 
-      const result = service.verifyParticipantNotRegistered(
-        map,
-        'B62qjSytpSK7aEauBprjXDSZwc9ai4YMv9tpmXLQK14Fn8W1tZiJvmB'
-      );
+      const result = service.verifyParticipantNotRegistered(map, PUBKEY_B);
 
       expect(result).toBe(true);
     });
 
     it('should return false for registered participant', () => {
-      const participants = new Map<string, boolean>([
-        ['B62qiy32p8kAKnny8ZFwoMhYpBppM1DWVCqAPBYNcXnsAHhnfAAuXgg', true],
-      ]);
+      const participants = new Map<string, boolean>([[PUBKEY_A, true]]);
       const map = service.buildParticipantsMap(participants);
 
-      const result = service.verifyParticipantNotRegistered(
-        map,
-        'B62qiy32p8kAKnny8ZFwoMhYpBppM1DWVCqAPBYNcXnsAHhnfAAuXgg'
-      );
+      const result = service.verifyParticipantNotRegistered(map, PUBKEY_A);
 
       expect(result).toBe(false);
     });
@@ -86,7 +79,7 @@ describe('MerkleService', () => {
 
       const { newRoot, witness } = service.computeNewParticipantsRoot(
         map,
-        'B62qiy32p8kAKnny8ZFwoMhYpBppM1DWVCqAPBYNcXnsAHhnfAAuXgg'
+        PUBKEY_A
       );
 
       expect(newRoot.toString()).not.toBe(initialRoot);
@@ -113,9 +106,7 @@ describe('MerkleService', () => {
 
   describe('keyForPublicKey', () => {
     it('should generate consistent keys for public keys', () => {
-      const pubKey = PublicKey.fromBase58(
-        'B62qiy32p8kAKnny8ZFwoMhYpBppM1DWVCqAPBYNcXnsAHhnfAAuXgg'
-      );
+      const pubKey = PublicKey.fromBase58(PUBKEY_A);
       const key1 = MerkleService.keyForPublicKey(pubKey);
       const key2 = MerkleService.keyForPublicKey(pubKey);
 
