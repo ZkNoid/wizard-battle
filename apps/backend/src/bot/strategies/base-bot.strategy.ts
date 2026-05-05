@@ -7,10 +7,26 @@ import {
 import { State } from '../../../../common/stater/state';
 import { SpellStats } from '../../../../common/stater/structs';
 import { Wizard } from '../../../../common/wizards';
-import { allSpells } from '../../../../common/stater/spells';
+import { allSpells, SpellId } from '../../../../common/stater/spells';
 import { Stater } from '../../../../common/stater/stater';
 import { MAP_SIZE } from '../../../../common/constants';
 import { IBotStrategy } from './bot-strategy.interface';
+
+export interface BotPosition {
+  x: number;
+  y: number;
+}
+
+/** Snapshot of relevant info parsed from the bot's and opponent's public states. */
+export interface BotPerception {
+  selfPos: BotPosition | null;
+  selfSpeed: number;
+  selfHp: number;
+  selfMaxHp: number;
+  oppPos: BotPosition | null;
+  oppHp: number;
+  oppVisible: boolean;
+}
 
 // o1js components — fall back to mocks when not available
 let Field: any, Int64: any;
@@ -268,7 +284,8 @@ export abstract class BaseBotStrategy implements IBotStrategy {
     if (isAllySpell) {
       // Ally spell: target self. Always include position — Structs that don't
       // define a position field (e.g. HealData, ShadowVeilData) ignore it safely.
-      const dest = this.generateRandomPosition(pos);
+      // Honour explicit override; otherwise jitter near current pos.
+      const dest = targetPos ?? this.generateRandomPosition(pos);
       return {
         caster: botId,
         playerId: botId,
@@ -434,5 +451,216 @@ export abstract class BaseBotStrategy implements IBotStrategy {
       allSpells.find((s) => s.id.toString() === spellId)?.name ??
       `Unknown(${spellId})`
     );
+  }
+
+  // ── Perception / movement helpers ────────────────────────────────────────────
+
+  /**
+   * @notice Parses bot + opponent public state into a flat perception snapshot.
+   * @dev Falls back to safe defaults whenever a field cannot be read.
+   */
+  protected perceive(
+    currentState: IPublicState,
+    opponentState?: IPublicState
+  ): BotPerception {
+    const selfStats = this.parsePlayerStats(currentState);
+    const oppStats = opponentState
+      ? this.parsePlayerStats(opponentState)
+      : null;
+
+    return {
+      selfPos: selfStats?.pos ?? null,
+      selfSpeed: Math.max(0, selfStats?.speed ?? 1),
+      selfHp: selfStats?.hp ?? 100,
+      selfMaxHp: selfStats?.maxHp ?? 100,
+      oppPos: oppStats?.pos ?? null,
+      oppHp: oppStats?.hp ?? 100,
+      oppVisible: !!oppStats?.pos,
+    };
+  }
+
+  private parsePlayerStats(state: IPublicState): {
+    pos: BotPosition | null;
+    speed: number;
+    hp: number;
+    maxHp: number;
+  } | null {
+    try {
+      const parsed = JSON.parse(state.fields);
+      const ps = parsed?.playerStats;
+      const x = parseInt(ps?.position?.value?.x?.magnitude ?? '');
+      const y = parseInt(ps?.position?.value?.y?.magnitude ?? '');
+      const speed = parseInt(ps?.speed?.magnitude ?? '1');
+      const hp = parseInt(ps?.hp?.magnitude ?? '100');
+      const maxHp = parseInt(ps?.maxHp?.magnitude ?? '100');
+      const pos =
+        Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
+      return {
+        pos,
+        speed: Number.isFinite(speed) ? speed : 1,
+        hp: Number.isFinite(hp) ? hp : 100,
+        maxHp: Number.isFinite(maxHp) ? maxHp : 100,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * @notice Constructs a Move action setting the bot's position to `target`.
+   * @dev Move is a COMMON spell — its modifier is dispatched via spellId,
+   *      independent of the wizard's own selected spellStats.
+   */
+  protected buildMoveAction(
+    botId: string,
+    target: BotPosition
+  ): IUserAction | null {
+    const moveId = SpellId['Move']?.toString();
+    if (!moveId) return null;
+    return {
+      caster: botId,
+      playerId: botId,
+      spellId: moveId,
+      spellCastInfo: JSON.stringify({
+        position: {
+          x: { magnitude: target.x.toString(), sgn: 'Positive' },
+          y: { magnitude: target.y.toString(), sgn: 'Positive' },
+        },
+      }),
+    };
+  }
+
+  /**
+   * @notice Picks a destination within `speed` Manhattan steps of `from` that
+   *         brings the bot to the desired Manhattan distance from `goal`.
+   * @param idealDistance  0 → close in (melee), 3 → kite, etc. Defaults to 0.
+   */
+  protected pickMoveTowards(
+    from: BotPosition,
+    goal: BotPosition,
+    speed: number,
+    idealDistance: number = 0
+  ): BotPosition {
+    if (speed <= 0) return from;
+    let best = from;
+    const score = (p: BotPosition) =>
+      Math.abs(
+        Math.abs(p.x - goal.x) + Math.abs(p.y - goal.y) - idealDistance
+      );
+    let bestScore = score(from);
+    for (let dx = -speed; dx <= speed; dx++) {
+      for (let dy = -speed; dy <= speed; dy++) {
+        if (Math.abs(dx) + Math.abs(dy) > speed) continue;
+        const nx = from.x + dx;
+        const ny = from.y + dy;
+        if (nx < 0 || ny < 0 || nx >= this.mapSize || ny >= this.mapSize)
+          continue;
+        const s = score({ x: nx, y: ny });
+        if (s < bestScore) {
+          bestScore = s;
+          best = { x: nx, y: ny };
+        }
+      }
+    }
+    return best;
+  }
+
+  /** Random reachable tile within `speed` (used when opponent unseen). */
+  protected randomWalk(from: BotPosition, speed: number): BotPosition {
+    if (speed <= 0) return from;
+    const moves: BotPosition[] = [];
+    for (let dx = -speed; dx <= speed; dx++) {
+      for (let dy = -speed; dy <= speed; dy++) {
+        if (Math.abs(dx) + Math.abs(dy) > speed) continue;
+        const nx = from.x + dx;
+        const ny = from.y + dy;
+        if (nx < 0 || ny < 0 || nx >= this.mapSize || ny >= this.mapSize)
+          continue;
+        moves.push({ x: nx, y: ny });
+      }
+    }
+    if (moves.length === 0) return from;
+    return moves[Math.floor(Math.random() * moves.length)]!;
+  }
+
+  /**
+   * @notice Scores a single enemy spell against opponent at `oppPos`,
+   *         choosing the best valid cast tile.
+   * @dev Score = Σ AOE-overlap with opponent (×100) − caster→cast manhattan.
+   *      Spells that cannot reach are still ranked by minimal distance to opp,
+   *      so the bot prefers the closest plausible attack.
+   */
+  protected evaluateEnemySpell(
+    spellDef: (typeof allSpells)[number],
+    selfPos: BotPosition,
+    oppPos: BotPosition
+  ): { targetPos: BotPosition; score: number } | null {
+    const candidates = spellDef.castedArea
+      ? spellDef.castedArea(selfPos.x, selfPos.y)
+      : [{ x: oppPos.x, y: oppPos.y }];
+
+    let best: { targetPos: BotPosition; score: number } | null = null;
+    for (const cast of candidates) {
+      if (
+        cast.x < 0 ||
+        cast.y < 0 ||
+        cast.x >= this.mapSize ||
+        cast.y >= this.mapSize
+      )
+        continue;
+      const area = spellDef.affectedArea
+        ? spellDef.affectedArea(cast.x, cast.y)
+        : [cast];
+
+      let score = 0;
+      for (const cell of area) {
+        if (cell.x === oppPos.x && cell.y === oppPos.y) score += 100;
+      }
+      // Most spell modifiers compute damage from caster→cast distance, so a
+      // cast tile near the opponent is also where the caster needs to be.
+      score -= Math.abs(cast.x - oppPos.x) + Math.abs(cast.y - oppPos.y);
+
+      if (!best || score > best.score) best = { targetPos: cast, score };
+    }
+    return best;
+  }
+
+  /**
+   * @notice Picks the highest-scoring (spell, cast tile) pair for the bot.
+   * @dev When opponent is invisible falls back to a random spell + random tile,
+   *      preserving previous behaviour.
+   */
+  protected pickBestAttack(
+    enemySpells: SpellStats[],
+    selfPos: BotPosition | null,
+    oppPos: BotPosition | null
+  ): { spell: SpellStats; targetPos: BotPosition } | null {
+    if (enemySpells.length === 0) return null;
+    if (!oppPos || !selfPos) {
+      const pick = enemySpells[Math.floor(Math.random() * enemySpells.length)]!;
+      return {
+        spell: pick,
+        targetPos: {
+          x: Math.floor(Math.random() * this.mapSize),
+          y: Math.floor(Math.random() * this.mapSize),
+        },
+      };
+    }
+    let best:
+      | { spell: SpellStats; targetPos: BotPosition; score: number }
+      | null = null;
+    for (const s of enemySpells) {
+      const def = allSpells.find(
+        (d) => d.id.toString() === s.spellId.toString()
+      );
+      if (!def) continue;
+      const ev = this.evaluateEnemySpell(def, selfPos, oppPos);
+      if (!ev) continue;
+      if (!best || ev.score > best.score)
+        best = { spell: s, targetPos: ev.targetPos, score: ev.score };
+    }
+    return best
+      ? { spell: best.spell, targetPos: best.targetPos }
+      : null;
   }
 }
