@@ -12,64 +12,65 @@ const animations: Record<string, AnimationConfig> = {
     loop: true,
     scale: 2.0,
   },
-  spectral_arrow: {
-    name: 'spectral_arrow',
+  // Keys match spell.name.toLowerCase() (e.g. 'SpectralArrow' → 'spectralarrow')
+  spectralarrow: {
+    name: 'spectralarrow',
     spritesheetJson: '/assets/spritesheets/phantom_duelist/Spectral_Arrow.json',
     spritesheetImage: '/assets/spritesheets/phantom_duelist/Spectral_Arrow.png',
     loop: false,
     scale: 3,
   },
-  shadow_veil: {
-    name: 'shadow_veil',
+  shadowveil: {
+    name: 'shadowveil',
     spritesheetJson: '/assets/spritesheets/phantom_duelist/Shadow_Veil.json',
     spritesheetImage: '/assets/spritesheets/phantom_duelist/Shadow_Veil.png',
     loop: false,
     scale: 3,
   },
-  dusks_embrace: {
-    name: 'dusks_embrace',
+  dusksembrace: {
+    name: 'dusksembrace',
     spritesheetJson: '/assets/spritesheets/phantom_duelist/Dusk_Embrance.json',
     spritesheetImage: '/assets/spritesheets/phantom_duelist/Dusk_Embrance.png',
     loop: false,
     scale: 3,
   },
-  phantom_echo: {
-    name: 'phantom_echo',
+  phantomecho: {
+    name: 'phantomecho',
     spritesheetJson: '/assets/spritesheets/phantom_duelist/Phantom_Echo.json',
     spritesheetImage: '/assets/spritesheets/phantom_duelist/Phantom_Echo.png',
     loop: false,
     scale: 3,
   },
-  shadow_strike: {
-    name: 'shadow_strike',
+  shadowstrike: {
+    name: 'shadowstrike',
     spritesheetJson: '/assets/spritesheets/phantom_duelist/Shadow_Strike.json',
     spritesheetImage: '/assets/spritesheets/phantom_duelist/Shadow_Strike.png',
     loop: false,
     scale: 3,
   },
-  shadow_dash: {
-    name: 'shadow_dash',
+  shadowdash: {
+    name: 'shadowdash',
     spritesheetJson: '/assets/spritesheets/phantom_duelist/Shadow_Dash.json',
     spritesheetImage: '/assets/spritesheets/phantom_duelist/Shadow_Dash.png',
     loop: false,
     scale: 3,
   },
-  shadow_dash_move: {
-    name: 'shadow_dash_move',
+  shadowdashmove: {
+    name: 'shadowdashmove',
     spritesheetJson: '/assets/spritesheets/phantom_duelist/Shadow_Dash.json',
     spritesheetImage: '/assets/spritesheets/phantom_duelist/Shadow_Dash.png',
     loop: false,
     scale: 3,
   },
-  whirling_blades: {
-    name: 'whirling_blades',
+  whirlingblades: {
+    name: 'whirlingblades',
     spritesheetJson: '/assets/spritesheets/phantom_duelist/Whiring_Blades.json',
     spritesheetImage: '/assets/spritesheets/phantom_duelist/Whiring_Blades.png',
     loop: false,
     scale: 3,
   },
-  spectral_projection: {
-    name: 'spectral_projection',
+  spectralprojection: {
+    name: 'spectralprojection',
     spritesheetJson:
       '/assets/spritesheets/phantom_duelist/Spectral_Projection.json',
     spritesheetImage:
@@ -77,8 +78,8 @@ const animations: Record<string, AnimationConfig> = {
     loop: false,
     scale: 1,
   },
-  phantom_armor: {
-    name: 'phantom_armor',
+  phantomarmor: {
+    name: 'phantomarmor',
     spritesheetJson: '/assets/spritesheets/phantom_duelist/Phantom_Armor.json',
     spritesheetImage: '/assets/spritesheets/phantom_duelist/Phantom_Armor.png',
     loop: false,

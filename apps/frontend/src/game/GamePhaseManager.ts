@@ -674,46 +674,49 @@ export class GamePhaseManager {
   }
 
   private handleSpellCastEffects(allActions: Record<string, IUserActions>) {
-    console.log(
-      '//////////////////////////handleSpellCastEffects////////////////////////////'
-    );
-    console.log('handleSpellCastEffects');
-    console.log('thisInstance playerId', this.getPlayerId());
-
-    console.log('allActions', JSON.stringify(allActions));
+    console.log('handleSpellCastEffects, thisInstance playerId:', this.getPlayerId());
 
     for (const playerId of Object.keys(allActions)) {
-      console.log('Processing playerId', playerId);
-
       const actions = allActions[playerId];
 
       actions?.actions.forEach((action) => {
-        const type = action.playerId === this.getPlayerId() ? 'user' : 'enemy';
+        try {
+          const type = action.playerId === this.getPlayerId() ? 'user' : 'enemy';
 
-        let spell = allSpells.find(
-          (spell) => spell.id.toString() === action.spellId.toString()
-        );
+          const spell = allSpells.find(
+            (spell) => spell.id.toString() === action.spellId.toString()
+          );
 
-        let coordinates = spell?.modifierData.fromJSON(
-          JSON.parse(action.spellCastInfo)
-        ).position;
+          if (!spell) {
+            console.warn(`Spell not found for spellId: ${action.spellId}`);
+            return;
+          }
 
-        if (!coordinates) {
-          coordinates = {
-            x: 0,
-            y: 0,
-          };
-        }
+          let coordinates: { x: number | bigint; y: number | bigint } | undefined;
+          try {
+            coordinates = spell.modifierData.fromJSON(
+              JSON.parse(action.spellCastInfo)
+            ).position;
+          } catch {
+            // Spell struct has no position field (e.g. ShadowVeil)
+          }
 
-        const sceneeffectNewTurnFunction = spell?.sceneEffect?.(
-          +coordinates.x,
-          +coordinates.y,
-          gameEventEmitter,
-          type
-        );
+          if (!coordinates) {
+            coordinates = { x: 0, y: 0 };
+          }
 
-        if (sceneeffectNewTurnFunction) {
-          gameEventEmitter.on('newTurn', sceneeffectNewTurnFunction);
+          const sceneeffectNewTurnFunction = spell.sceneEffect?.(
+            +coordinates.x,
+            +coordinates.y,
+            gameEventEmitter,
+            type
+          );
+
+          if (sceneeffectNewTurnFunction) {
+            gameEventEmitter.on('newTurn', sceneeffectNewTurnFunction);
+          }
+        } catch (err) {
+          console.error('Error processing spell cast effect for action:', action, err);
         }
       });
     }

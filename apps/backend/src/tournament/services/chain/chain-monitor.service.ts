@@ -10,6 +10,7 @@ import {
   PendingOperationDocument,
 } from '../../schemas/pending-operation.schema.js';
 import { TournamentStatus } from '../../schemas/tournament.schema.js';
+import { NUM_WINNERS } from '../../../../../mina-contracts/src/TournamentManager.js';
 
 export interface WinnerInfo {
   publicKey: string;
@@ -113,6 +114,18 @@ export class ChainMonitorService implements OnModuleInit {
             `Tournament ${tournament.tournamentId} battle has ended, ready for finalization`
           );
           await this.checkAndTriggerFinalization(tournament.tournamentId);
+          continue;
+        }
+
+        if (
+          tournament.verified.status === TournamentStatus.Claiming &&
+          tournament.verified.claimDeadlineSlot > 0 &&
+          currentSlot >= tournament.verified.claimDeadlineSlot
+        ) {
+          this.logger.log(
+            `Tournament ${tournament.tournamentId} claim window closed at slot ${tournament.verified.claimDeadlineSlot}, scheduling recoverUnclaimed`
+          );
+          await this.checkAndTriggerRecoverUnclaimed(tournament.tournamentId);
         }
       }
     } catch (error) {
@@ -177,39 +190,23 @@ export class ChainMonitorService implements OnModuleInit {
       return;
     }
 
+    // Distribute prize pool across all NUM_WINNERS slots so leftover
+    // basis-point allocation does not get permanently stranded in the contract.
     const winners =
-      await this.leaderboardService.getTopWinners(tournamentId, 3);
+      await this.leaderboardService.getTopWinners(tournamentId, NUM_WINNERS);
 
-    let finalizeWinners: WinnerInfo[];
+    // No leaderboard winners → finalize with an empty winner set and zero
+    // prizes. The contract will refund the entire `prizePool` to admin in
+    // the same transaction (see `finalizeTournament` remainder handling),
+    // so we never strand sponsor / ticket money even when the bracket is
+    // empty, and we never bypass the per-place `prizePercents` distribution
+    // when there *are* winners.
+    const finalizeWinners: WinnerInfo[] = winners;
     if (winners.length === 0) {
-      const tournament =
-        await this.tournamentStateService.getVerifiedState(tournamentId);
-      if (!tournament) {
-        this.logger.warn(
-          `Tournament ${tournamentId} not found, cannot finalize with admin fallback`
-        );
-        return;
-      }
-      const adminPubKey = await this.getAdminPublicKey();
-      if (!adminPubKey) {
-        this.logger.warn(
-          `Tournament ${tournamentId}: no leaderboard winners and admin public key unavailable`
-        );
-        return;
-      }
-      const prizePool = tournament.verified.prizePool;
-      finalizeWinners = [
-        {
-          publicKey: adminPubKey,
-          prizeAmount: String(prizePool),
-          place: 1,
-        },
-      ];
       this.logger.log(
-        `Tournament ${tournamentId}: no matches / no ranked winners; finalizing with admin as sole winner for full prize pool (${prizePool})`
+        `Tournament ${tournamentId}: no leaderboard winners; finalizing with zero prizes — entire pool auto-refunds to admin via contract remainder logic`
       );
     } else {
-      finalizeWinners = winners;
       this.logger.log(
         `Tournament ${tournamentId}: finalizing with ${winners.length} winners from leaderboard`
       );
@@ -257,6 +254,55 @@ export class ChainMonitorService implements OnModuleInit {
 
     this.logger.log(
       `Created FinalizeTournament operation for tournament ${tournamentId}`
+    );
+  }
+
+  /**
+   * After the on-chain claim window closes, queue a `recoverUnclaimed` op so
+   * any leftover prize money (unclaimed by winners) is swept back to the
+   * admin. Prevents sponsor / ticket funds from getting permanently locked.
+   */
+  async checkAndTriggerRecoverUnclaimed(tournamentId: string): Promise<void> {
+    const existing = await this.findExistingPhaseTransitionOp(
+      tournamentId,
+      OperationType.RecoverUnclaimed
+    );
+    if (existing) {
+      this.logger.debug(
+        `RecoverUnclaimed op already in flight for tournament ${tournamentId}`
+      );
+      return;
+    }
+
+    const tournament =
+      await this.tournamentStateService.getVerifiedState(tournamentId);
+    if (!tournament) {
+      this.logger.warn(
+        `Tournament ${tournamentId} not found, cannot recover unclaimed`
+      );
+      return;
+    }
+
+    if (tournament.verified.status !== TournamentStatus.Claiming) {
+      return;
+    }
+
+    const adminPubKey = await this.getAdminPublicKey();
+    if (!adminPubKey) {
+      this.logger.warn(
+        `RecoverUnclaimed for ${tournamentId}: admin public key unavailable`
+      );
+      return;
+    }
+
+    await this.tournamentStateService.addPendingOperation({
+      tournamentId,
+      type: OperationType.RecoverUnclaimed,
+      playerPubKey: adminPubKey,
+    });
+
+    this.logger.log(
+      `Created RecoverUnclaimed operation for tournament ${tournamentId}`
     );
   }
 

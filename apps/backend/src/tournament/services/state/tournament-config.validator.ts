@@ -2,6 +2,8 @@ import { BadRequestException } from '@nestjs/common';
 import type { CreateTournamentConfig } from './tournament-state.types.js';
 
 const NUM_WINNERS = 10;
+const PERCENT_BASE = 10_000;
+const MAX_FEE_PERCENT = 5_000; // 50%
 
 export function validateCreateTournamentConfig(
   config: CreateTournamentConfig
@@ -16,7 +18,26 @@ export function validateCreateTournamentConfig(
     throw new BadRequestException('Invalid ticket price format');
   }
 
-  if (!Array.isArray(config.prizePercents) || config.prizePercents.length !== NUM_WINNERS) {
+  if (
+    !Number.isInteger(config.feePercent) ||
+    config.feePercent < 0 ||
+    config.feePercent > MAX_FEE_PERCENT
+  ) {
+    throw new BadRequestException(
+      `feePercent must be an integer in [0, ${MAX_FEE_PERCENT}] basis points`
+    );
+  }
+
+  if (!Number.isInteger(config.claimWindow) || config.claimWindow <= 0) {
+    throw new BadRequestException(
+      'claimWindow must be a positive integer (slots)'
+    );
+  }
+
+  if (
+    !Array.isArray(config.prizePercents) ||
+    config.prizePercents.length !== NUM_WINNERS
+  ) {
     throw new BadRequestException(
       `prizePercents must be an array of exactly ${NUM_WINNERS} values`
     );
@@ -26,10 +47,15 @@ export function validateCreateTournamentConfig(
     throw new BadRequestException('Prize percentages cannot be negative');
   }
 
-  const totalPrizePercent = config.prizePercents.reduce((sum, p) => sum + p, 0);
-  if (totalPrizePercent > 10000) {
+  // Contract enforces sum === PERCENT_BASE; validate exactly to surface
+  // misconfiguration before paying for proof generation.
+  const totalPrizePercent = config.prizePercents.reduce(
+    (sum, p) => sum + p,
+    0
+  );
+  if (totalPrizePercent !== PERCENT_BASE) {
     throw new BadRequestException(
-      `Prize percentages sum to ${totalPrizePercent}, must not exceed 10000 (100.00%)`
+      `prizePercents must sum to exactly ${PERCENT_BASE} basis points (got ${totalPrizePercent})`
     );
   }
 

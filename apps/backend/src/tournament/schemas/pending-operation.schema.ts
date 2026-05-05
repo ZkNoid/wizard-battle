@@ -10,6 +10,8 @@ export enum OperationType {
   BuyTicket = 'buyTicket',
   FinalizeTournament = 'finalizeTournament',
   ClaimPrize = 'claimPrize',
+  SponsorFund = 'sponsorFund',
+  RecoverUnclaimed = 'recoverUnclaimed',
 }
 
 export enum OperationStatus {
@@ -72,6 +74,10 @@ export class PendingOperation {
     required: false,
   })
   finalizeWinners?: FinalizeWinnerPayload[];
+
+  /** Required for {@link OperationType.SponsorFund}: amount in nanoMINA. */
+  @Prop({ required: false })
+  sponsorAmount?: string;
 }
 
 export const PendingOperationSchema =

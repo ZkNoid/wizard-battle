@@ -1,7 +1,26 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { MerkleMap, Field, Poseidon, PublicKey, MerkleMapWitness, Bool, UInt64 } from 'o1js';
-import { WinnerLeaf } from '../../../../../mina-contracts/src/TournamentManager.js';
-import { TournamentDocument, WinnerInfo } from '../../schemas/tournament.schema.js';
+import {
+  MerkleMap,
+  Field,
+  Poseidon,
+  PublicKey,
+  MerkleMapWitness,
+  Bool,
+  UInt64,
+  UInt32,
+} from 'o1js';
+import {
+  WinnerLeaf,
+  TournamentLeaf,
+  TournamentStatus as ContractTournamentStatus,
+  NUM_WINNERS,
+} from '../../../../../mina-contracts/src/TournamentManager.js';
+import {
+  TournamentDocument,
+  TournamentStatus,
+  WinnerInfo,
+} from '../../schemas/tournament.schema.js';
+import type { TournamentSnapshot } from '../state/tournament-snapshot.types.js';
 
 export interface TournamentWitnessData {
   tournamentWitness: MerkleMapWitness;
@@ -74,28 +93,102 @@ export class MerkleService {
     return map;
   }
 
-  computeTournamentLeafHash(tournament: TournamentDocument): Field {
-    const statusMap: Record<string, number> = {
-      Created: 0,
-      Battle: 1,
-      Claiming: 2,
+  /**
+   * Build a `TournamentLeaf` (provable struct) from a backend document so we
+   * always derive the leaf hash via the shared `TournamentLeaf.hash()` method.
+   * This guarantees off-chain storage and on-chain proofs cannot drift apart
+   * when the leaf shape changes.
+   */
+  buildTournamentLeaf(tournament: TournamentDocument): TournamentLeaf {
+    return this.buildTournamentLeafFromFields({
+      status: tournament.verified.status,
+      battleStartSlot: tournament.verified.battleStartSlot,
+      battleEndSlot: tournament.verified.battleEndSlot,
+      claimDeadlineSlot: tournament.verified.claimDeadlineSlot,
+      ticketPrice: tournament.verified.ticketPrice,
+      feePercent: tournament.verified.feePercent,
+      prizePercents: tournament.verified.prizePercents,
+      participantsRoot: tournament.verified.participantsRoot,
+      winnersRoot: tournament.verified.winnersRoot,
+      prizePool: tournament.verified.prizePool,
+      participantCount: tournament.verified.participantCount,
+      sponsorContribution: tournament.verified.sponsorContribution ?? '0',
+    });
+  }
+
+  /**
+   * Build a `TournamentLeaf` from an in-memory {@link TournamentSnapshot}
+   * plus the freshly-computed Merkle roots. Used by the optimistic-overlay
+   * pipeline so a proof can reference state that includes pending mutations
+   * still en route to the chain.
+   */
+  buildTournamentLeafFromSnapshot(
+    snapshot: TournamentSnapshot,
+    participantsRoot: Field,
+    winnersRoot: Field
+  ): TournamentLeaf {
+    return this.buildTournamentLeafFromFields({
+      status: snapshot.status,
+      battleStartSlot: snapshot.battleStartSlot,
+      battleEndSlot: snapshot.battleEndSlot,
+      claimDeadlineSlot: snapshot.claimDeadlineSlot,
+      ticketPrice: snapshot.ticketPrice,
+      feePercent: snapshot.feePercent,
+      prizePercents: snapshot.prizePercents,
+      participantsRoot: participantsRoot.toString(),
+      winnersRoot: winnersRoot.toString(),
+      prizePool: snapshot.prizePool.toString(),
+      participantCount: snapshot.participantCount,
+      sponsorContribution: snapshot.sponsorContribution.toString(),
+    });
+  }
+
+  private buildTournamentLeafFromFields(fields: {
+    status: TournamentStatus;
+    battleStartSlot: number;
+    battleEndSlot: number;
+    claimDeadlineSlot: number;
+    ticketPrice: string;
+    feePercent: number;
+    prizePercents: number[];
+    participantsRoot: string;
+    winnersRoot: string;
+    prizePool: string;
+    participantCount: number;
+    sponsorContribution: string;
+  }): TournamentLeaf {
+    const statusByName: Record<TournamentStatus, UInt32> = {
+      [TournamentStatus.Created]: ContractTournamentStatus.Created,
+      [TournamentStatus.Battle]: ContractTournamentStatus.Battle,
+      [TournamentStatus.Claiming]: ContractTournamentStatus.Claiming,
+      [TournamentStatus.Settled]: ContractTournamentStatus.Settled,
     };
 
-    const fields = [
-      Field(statusMap[tournament.verified.status] ?? 0),
-      Field(tournament.verified.battleStartSlot),
-      Field(tournament.verified.battleEndSlot),
-      Field(BigInt(tournament.verified.ticketPrice)),
-      ...Array.from({ length: 10 }, (_, i) =>
-        Field(tournament.verified.prizePercents[i] ?? 0)
-      ),
-      Field(tournament.verified.participantsRoot),
-      Field(tournament.verified.winnersRoot),
-      Field(BigInt(tournament.verified.prizePool)),
-      Field(tournament.verified.participantCount),
-    ];
+    const status = statusByName[fields.status];
+    if (!status) {
+      throw new Error(`Unknown tournament status: ${fields.status}`);
+    }
 
-    return Poseidon.hash(fields);
+    return new TournamentLeaf({
+      status,
+      battleStartSlot: UInt32.from(fields.battleStartSlot),
+      battleEndSlot: UInt32.from(fields.battleEndSlot),
+      claimDeadlineSlot: UInt32.from(fields.claimDeadlineSlot),
+      ticketPrice: UInt64.from(BigInt(fields.ticketPrice)),
+      feePercent: UInt32.from(fields.feePercent),
+      prizePercents: Array.from({ length: NUM_WINNERS }, (_, i) =>
+        UInt32.from(fields.prizePercents[i] ?? 0)
+      ),
+      participantsRoot: Field(fields.participantsRoot),
+      winnersRoot: Field(fields.winnersRoot),
+      prizePool: UInt64.from(BigInt(fields.prizePool)),
+      participantCount: UInt32.from(fields.participantCount),
+      sponsorContribution: UInt64.from(BigInt(fields.sponsorContribution)),
+    });
+  }
+
+  computeTournamentLeafHash(tournament: TournamentDocument): Field {
+    return this.buildTournamentLeaf(tournament).hash();
   }
 
   getTournamentWitness(

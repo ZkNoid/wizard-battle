@@ -314,7 +314,9 @@ describe('Phantom Duelist Spells', () => {
         spellId: shadowVeilSpell.id,
         caster: Field(42),
         target: Field(42),
-        additionalData: new ShadowVeilData({}),
+        additionalData: new ShadowVeilData({
+          position: new Position({ x: Int64.from(5), y: Int64.from(5) }),
+        }),
       });
 
       ShadowVeilModifier(stater, spellCast, opponentState);
@@ -339,7 +341,9 @@ describe('Phantom Duelist Spells', () => {
         spellId: shadowVeilSpell.id,
         caster: Field(42),
         target: Field(42),
-        additionalData: new ShadowVeilData({}),
+        additionalData: new ShadowVeilData({
+          position: new Position({ x: Int64.from(5), y: Int64.from(5) }),
+        }),
       });
 
       ShadowVeilModifier(stater, spellCast, opponentState);
@@ -358,8 +362,7 @@ describe('Phantom Duelist Spells', () => {
       );
 
       // Set up spells that should be transformed
-      const spectralArrowId =
-        CircuitString.fromString('SpectralArrow').hash();
+      const spectralArrowId = CircuitString.fromString('SpectralArrow').hash();
       const dusksEmbraceId = CircuitString.fromString('DusksEmbrace').hash();
       const phantomEchoId = CircuitString.fromString('PhantomEcho').hash();
 
@@ -433,9 +436,7 @@ describe('Phantom Duelist Spells', () => {
       SpectralProjectionModifier(stater, spellCast, opponentState);
 
       expect(
-        stater.state.spellStats[2]!.spellId
-          .equals(whirlingBladesId)
-          .toBoolean()
+        stater.state.spellStats[2]!.spellId.equals(whirlingBladesId).toBoolean()
       ).toBe(true);
     });
 
@@ -888,8 +889,8 @@ describe('Phantom Duelist Spells', () => {
       expect(shadowDashSpell).toBeDefined();
       expect(shadowDashSpell!.companionSpellId).toBeDefined();
       expect(
-        shadowDashSpell!.companionSpellId!
-          .equals(shadowDashMoveSpell.id)
+        shadowDashSpell!
+          .companionSpellId!.equals(shadowDashMoveSpell.id)
           .toBoolean()
       ).toBe(true);
     });
@@ -1120,4 +1121,3 @@ describe('Phantom Duelist Spells', () => {
     });
   });
 });
-

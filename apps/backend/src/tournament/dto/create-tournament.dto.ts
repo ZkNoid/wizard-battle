@@ -1,8 +1,10 @@
 import {
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   IsNumber,
+  Max,
   Min,
   IsNumberString,
   MaxLength,
@@ -33,6 +35,17 @@ export class CreateTournamentDto {
   @IsNotEmpty()
   @IsNumberString()
   ticketPrice!: string;
+
+  /** Per-tournament fee in basis points; mirrors the on-chain leaf snapshot. */
+  @IsInt()
+  @Min(0)
+  @Max(5000)
+  feePercent!: number;
+
+  /** Number of slots after `battleEndSlot` during which winners may claim. */
+  @IsInt()
+  @Min(1)
+  claimWindow!: number;
 
   @IsArray()
   @ArrayMinSize(10)
