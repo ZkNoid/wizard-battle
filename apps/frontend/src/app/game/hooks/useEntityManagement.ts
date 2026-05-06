@@ -46,6 +46,7 @@ export function useEntityManagement({
     const cleanupMovement = initMovementHandler();
 
     if (!isInitialized.current) {
+      const userPos = stater?.state?.playerStats?.position?.value;
       const user = {
         id: 'user',
         type:
@@ -57,11 +58,14 @@ export function useEntityManagement({
                   WizardId.PHANTOM_DUELIST.toString()
                 ? EntityType.PHANTOM_DUELIST
                 : EntityType.WIZARD,
-        tilemapPosition: DEFAULT_USER_POSITION,
+        tilemapPosition: userPos
+          ? { x: +userPos.x, y: +userPos.y }
+          : DEFAULT_USER_POSITION,
       };
 
       addEntity(user);
 
+      const enemyPos = opponentState?.playerStats?.position?.value;
       const enemy = {
         id: 'enemy',
         type:
@@ -73,7 +77,9 @@ export function useEntityManagement({
                   WizardId.PHANTOM_DUELIST.toString()
                 ? EntityType.PHANTOM_DUELIST
                 : EntityType.WIZARD,
-        tilemapPosition: DEFAULT_ENEMY_POSITION,
+        tilemapPosition: enemyPos
+          ? { x: +enemyPos.x, y: +enemyPos.y }
+          : DEFAULT_ENEMY_POSITION,
       };
 
       addEntity(enemy);
