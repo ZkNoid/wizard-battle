@@ -10,8 +10,8 @@ export function validateCreateTournamentConfig(
 ): void {
   try {
     const ticketPrice = BigInt(config.ticketPrice);
-    if (ticketPrice <= 0n) {
-      throw new BadRequestException('Ticket price must be positive');
+    if (ticketPrice < 0n) {
+      throw new BadRequestException('Ticket price cannot be negative');
     }
   } catch (e) {
     if (e instanceof BadRequestException) throw e;
