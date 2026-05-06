@@ -1,0 +1,11 @@
+{
+  "title": "Mainnet event 1: Genesis arena",
+  "imageUrl": "/tournaments/First.png",
+  "description": "This is the first sponsored tournament in the mainnet launch event.\n\nCompete for glory, rewards, and a place in the game's earliest history!",
+  "ticketPrice": "0",
+  "feePercent": 0,
+  "claimWindow": 14400,
+  "battleStartDelay": 0,
+  "battleSlots": 3360,
+  "prizePercents": [3000, 2500, 1500, 1000, 500, 300, 300, 300, 300, 300]
+}
