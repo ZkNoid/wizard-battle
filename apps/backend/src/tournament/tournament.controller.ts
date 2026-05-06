@@ -32,6 +32,8 @@ import {
   CreateTournamentResponseDto,
   SponsorFundDto,
   SponsorFundResponseDto,
+  SponsorFundNotifyDto,
+  SponsorFundNotifyResponseDto,
   TournamentResponseDto,
   ParticipantsResponseDto,
   PendingOperationResponseDto,
@@ -366,6 +368,72 @@ export class TournamentController {
       );
       throw new HttpException(
         error instanceof Error ? error.message : 'Failed to queue operation',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  /**
+   * Notify the backend of a `sponsorFund` tx that was submitted directly
+   * on-chain by an external script (e.g. the admin sponsor-tournament script)
+   * rather than through the proof-generator queue. Applies the amount to the
+   * tournament's verified state so the backend's off-chain leaf stays in sync.
+   *
+   * POST /tournament/:id/sponsor-fund/notify
+   * Body: { sponsorPubKey, amount (nanoMINA string), txHash }
+   */
+  @Post(':id/sponsor-fund/notify')
+  async notifySponsorFund(
+    @Param('id') tournamentId: string,
+    @Body() dto: SponsorFundNotifyDto
+  ): Promise<SponsorFundNotifyResponseDto> {
+    this.logger.log(
+      `External sponsorFund notify for tournament ${tournamentId}: ` +
+        `sponsor=${dto.sponsorPubKey} amount=${dto.amount} txHash=${dto.txHash}`
+    );
+
+    const tournament =
+      await this.tournamentStateService.getVerifiedState(tournamentId);
+    if (!tournament) {
+      throw new HttpException(
+        `Tournament ${tournamentId} not found`,
+        HttpStatus.NOT_FOUND
+      );
+    }
+
+    let amountBn: bigint;
+    try {
+      amountBn = BigInt(dto.amount);
+    } catch {
+      throw new HttpException('amount must be a numeric string', HttpStatus.BAD_REQUEST);
+    }
+    if (amountBn <= 0n) {
+      throw new HttpException('amount must be greater than zero', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      const { newPrizePool } =
+        await this.tournamentStateService.applySponsorFundExternal(
+          tournamentId,
+          dto.amount
+        );
+      this.logger.log(
+        `Applied external sponsorFund of ${dto.amount} to tournament ${tournamentId}, ` +
+          `new prize pool: ${newPrizePool} (txHash=${dto.txHash})`
+      );
+      return {
+        message: `SponsorFund applied to tournament ${tournamentId}`,
+        tournamentId,
+        newPrizePool,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      this.logger.error(
+        `Failed to apply external sponsorFund to tournament ${tournamentId}`,
+        error
+      );
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Failed to apply sponsor fund',
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }

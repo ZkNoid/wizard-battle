@@ -734,6 +734,24 @@ export class TournamentStateService {
     );
   }
 
+  /**
+   * Apply a sponsorFund that was submitted directly on-chain (e.g. via the
+   * admin sponsor-tournament script) rather than through the proof-generator
+   * queue. Mirrors `confirmOperation` for SponsorFund but skips pending-op
+   * bookkeeping since there is no op document for the external tx.
+   */
+  async applySponsorFundExternal(
+    tournamentId: string,
+    amount: string
+  ): Promise<{ newPrizePool: string }> {
+    await this.verifiedMutations.applySponsorFundToVerified(tournamentId, amount);
+    const tournament = await this.tournamentModel
+      .findOne({ tournamentId })
+      .lean()
+      .exec();
+    return { newPrizePool: tournament?.verified?.prizePool ?? '0' };
+  }
+
   private async notifyProofQueue(tournamentId: string): Promise<void> {
     const redis = this.redisService.getClient();
     await redis.publish('proof-queue', JSON.stringify({ tournamentId }));

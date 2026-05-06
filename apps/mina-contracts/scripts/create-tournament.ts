@@ -5,29 +5,40 @@
  * and creates the next available tournament.
  *
  * Usage:
+ *   pnpm --filter mina-contracts run create-tournament -- --config tournament-config.json
  *   pnpm --filter mina-contracts run create-tournament -- --title "Spring Cup" --image-url /tournaments/custom.png
  *
  * Required CLI flags (after `--` when using pnpm):
- *   --title, -t       — Display title (backend + UI)
- *   --image-url, -i   — Image URL (absolute or site-relative)
+ *   --title, -t              — Display title (backend + UI)
+ *   --image-url, -i          — Image URL (absolute or site-relative)
  *
- * Optional CLI flags:
- *   --description, -d — Tournament description text
- *   --sponsors, -s    — JSON array of sponsor objects: '[{"name":"Foo","url":"https://foo.com"}]'
- *   --config, -c      — Path to a JSON config file with any of the above fields
+ * Optional CLI flags (override config file and env vars):
+ *   --description, -d        — Tournament description text
+ *   --sponsors, -s           — JSON array of sponsor objects: '[{"name":"Foo","url":"https://foo.com"}]'
+ *   --config, -c             — Path to a JSON config file with any of the below fields
+ *   --ticket-price           — Ticket price in nanoMINA (e.g. 1000000000 = 1 MINA)
+ *   --fee-percent            — Fee in basis points (e.g. 500 = 5 %)
+ *   --claim-window           — Slots after battleEndSlot for winners to claim
+ *   --battle-start-delay     — Slots from now until battle opens
+ *   --battle-slots           — Number of slots the join / battle window stays open
+ *   --prize-percents         — JSON number array, 10 entries summing to 10 000
+ *                              e.g. '[2500,1500,1000,1000,1000,700,700,700,500,400]'
  *
- * Environment variables:
- *   MINA_NETWORK_URL - Mina GraphQL endpoint (default: devnet)
- *   MINA_ARCHIVE_URL - Mina Archive GraphQL endpoint
- *   DEPLOYER_PRIVATE_KEY - Private key for admin account
+ * Config file fields (--config path/to/config.json):
+ *   title, imageUrl, description, sponsors,
+ *   ticketPrice, feePercent, claimWindow, battleStartDelay, battleSlots, prizePercents
+ *
+ * Environment variables (lowest priority, overridden by config file and CLI flags):
+ *   MINA_NETWORK_URL           - Mina GraphQL endpoint (default: devnet)
+ *   MINA_ARCHIVE_URL           - Mina Archive GraphQL endpoint
+ *   DEPLOYER_PRIVATE_KEY       - Private key for admin account
  *   TOURNAMENT_CONTRACT_ADDRESS - Deployed contract address
- *   TICKET_PRICE - Tournament ticket price in nanoMINA (default: 1000000000 = 1 MINA)
- *   FEE_PERCENT - Per-tournament fee in basis points (default: 500 = 5%)
- *   CLAIM_WINDOW - Slots after battleEndSlot during which winners may claim
- *                  (default: 20000)
- *   BATTLE_START_DELAY - Slots until battle opens for joining (default: 10 = ~30 min)
- *   BATTLE_SLOTS - Number of slots for battle phase / join window (default: 400 = ~20 hours)
- *   BACKEND_URL - Backend API base URL (default: http://localhost:3001)
+ *   TICKET_PRICE               - Ticket price in nanoMINA (default: 1000000000 = 1 MINA)
+ *   FEE_PERCENT                - Fee in basis points (default: 500 = 5 %)
+ *   CLAIM_WINDOW               - Slots for claim window (default: 20000)
+ *   BATTLE_START_DELAY         - Slots until battle opens (default: 10 = ~30 min)
+ *   BATTLE_SLOTS               - Slots for battle phase (default: 400 = ~20 hours)
+ *   BACKEND_URL                - Backend API base URL (default: http://localhost:3001)
  *
  * If `createResult.wait()` throws or backend registration fails after the tx is sent, the
  * POST body is written under keys/tournament/pending-backend/ (wait failures set
@@ -112,11 +123,16 @@ async function fetchCurrentSlot(): Promise<number> {
   return Number(slot);
 }
 
-// Tournament timing configuration (~3 minutes per slot on typical networks)
-const BATTLE_START_DELAY = Number(process.env.BATTLE_START_DELAY || '10');
-const BATTLE_SLOTS = Number(process.env.BATTLE_SLOTS || '400');
-const FEE_PERCENT = Number(process.env.FEE_PERCENT || '500');
-const CLAIM_WINDOW = Number(process.env.CLAIM_WINDOW || '20000');
+// Default tournament timing / economic configuration (~3 minutes per slot on typical networks).
+// These are overridden by config file values, which are in turn overridden by CLI flags.
+const DEFAULT_BATTLE_START_DELAY = Number(process.env.BATTLE_START_DELAY || '10');
+const DEFAULT_BATTLE_SLOTS = Number(process.env.BATTLE_SLOTS || '400');
+const DEFAULT_FEE_PERCENT = Number(process.env.FEE_PERCENT || '500');
+const DEFAULT_CLAIM_WINDOW = Number(process.env.CLAIM_WINDOW || '20000');
+const DEFAULT_TICKET_PRICE = process.env.TICKET_PRICE || '1000000000'; // 1 MINA
+const DEFAULT_PRIZE_PERCENTS = [
+  2500, 1500, 1000, 1000, 1000, 700, 700, 700, 500, 400,
+];
 
 interface TournamentState {
   leaf: TournamentLeaf;
@@ -419,7 +435,27 @@ async function main() {
     imageUrl: tournamentImageUrl,
     description: tournamentDescription,
     sponsors: tournamentSponsors,
+    ticketPrice: configTicketPrice,
+    feePercent: configFeePercent,
+    claimWindow: configClaimWindow,
+    battleStartDelay: configBattleStartDelay,
+    battleSlots: configBattleSlots,
+    prizePercents: configPrizePercents,
   } = parseRequiredTournamentDisplayArgs(process.argv);
+
+  if (configBattleStartDelay === undefined) throw new Error('battleStartDelay is required');
+  if (configBattleSlots === undefined) throw new Error('battleSlots is required');
+  if (configFeePercent === undefined) throw new Error('feePercent is required');
+  if (configClaimWindow === undefined) throw new Error('claimWindow is required');
+  if (configTicketPrice === undefined) throw new Error('ticketPrice is required');
+  if (configPrizePercents === undefined) throw new Error('prizePercents is required');
+
+  const BATTLE_START_DELAY = configBattleStartDelay;
+  const BATTLE_SLOTS = configBattleSlots;
+  const FEE_PERCENT = configFeePercent;
+  const CLAIM_WINDOW = configClaimWindow;
+  const ticketPrice = BigInt(configTicketPrice);
+  const prizePercents = configPrizePercents;
 
   // Check required environment variables
   const deployerKeyBase58 = process.env.DEPLOYER_PRIVATE_KEY;
@@ -507,9 +543,6 @@ async function main() {
   const nextTournamentId = Field(maxTournamentId + 1);
   console.log(`\nNext tournament ID: ${nextTournamentId.toString()}`);
 
-  // Get tournament configuration from env
-  const ticketPrice = BigInt(process.env.TICKET_PRICE || '1000000000'); // 1 MINA default
-
   // Calculate slot timings
   console.log('\nFetching current slot from GraphQL...');
   const currentSlot = await fetchCurrentSlot();
@@ -536,12 +569,7 @@ async function main() {
     ticketPrice: UInt64.from(ticketPrice),
     feePercent: UInt32.from(FEE_PERCENT),
     claimWindow: UInt32.from(CLAIM_WINDOW),
-    prizePercents: [
-      UInt32.from(2500), UInt32.from(1500), UInt32.from(1000),
-      UInt32.from(1000), UInt32.from(1000), UInt32.from(700),
-      UInt32.from(700),  UInt32.from(700),  UInt32.from(500),
-      UInt32.from(400),
-    ],
+    prizePercents: prizePercents.map((p) => UInt32.from(p)),
   });
 
   // Get witness for new tournament (should be empty slot)
@@ -592,7 +620,7 @@ async function main() {
     ticketPrice: ticketPrice.toString(),
     feePercent: FEE_PERCENT,
     claimWindow: CLAIM_WINDOW,
-    prizePercents: [2500, 1500, 1000, 1000, 1000, 700, 700, 700, 500, 400],
+    prizePercents,
     battleStartSlot,
     battleEndSlot,
     claimDeadlineSlot,
