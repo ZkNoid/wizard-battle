@@ -229,6 +229,8 @@ jobs:
             --build-arg TOURNAMENT_CONTRACT_ADDRESS=${{ secrets.TOURNAMENT_CONTRACT_ADDRESS }} \
             --build-arg TOURNAMENT_REDIS_URL=${{ secrets.TOURNAMENT_REDIS_URL }} \
             --build-arg TOURNAMENT_ADMIN_PRIVATE_KEY=${{ secrets.TOURNAMENT_ADMIN_PRIVATE_KEY }} \
+            --build-arg MINA_GRAPHQL_URL=${{ secrets.MINA_GRAPHQL_URL }} \
+            --build-arg MINA_ARCHIVE_URL=${{ secrets.MINA_ARCHIVE_URL }} \
             -t ${{ steps.calc-container.outputs.container_name }} .
 
       - name: Save Docker image to tar
