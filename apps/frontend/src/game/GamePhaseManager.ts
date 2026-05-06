@@ -692,22 +692,21 @@ export class GamePhaseManager {
             return;
           }
 
-          let coordinates: { x: number | bigint; y: number | bigint } | undefined;
+          let coordX = 0;
+          let coordY = 0;
           try {
-            coordinates = spell.modifierData.fromJSON(
+            const pos = spell.modifierData.fromJSON(
               JSON.parse(action.spellCastInfo)
             ).position;
+            coordX = Number(pos.x.toBigInt());
+            coordY = Number(pos.y.toBigInt());
           } catch {
             // Spell struct has no position field (e.g. ShadowVeil)
           }
 
-          if (!coordinates) {
-            coordinates = { x: 0, y: 0 };
-          }
-
           const sceneeffectNewTurnFunction = spell.sceneEffect?.(
-            +coordinates.x,
-            +coordinates.y,
+            coordX,
+            coordY,
             gameEventEmitter,
             type
           );
