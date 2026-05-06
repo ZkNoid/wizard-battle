@@ -230,7 +230,7 @@ export class MinaClientService implements OnModuleInit {
 
   async getTransactionStatus(
     txHash: string,
-    blockLength: number = 20
+    blockLength: number = 40
   ): Promise<'pending' | 'included' | 'failed' | 'unknown'> {
     const graphqlUrl =
       process.env.MINA_GRAPHQL_URL ||
