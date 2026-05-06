@@ -698,8 +698,8 @@ export class GamePhaseManager {
             const pos = spell.modifierData.fromJSON(
               JSON.parse(action.spellCastInfo)
             ).position;
-            coordX = Number(pos.x.toBigInt());
-            coordY = Number(pos.y.toBigInt());
+            coordX = Number(pos.x.toBigint());
+            coordY = Number(pos.y.toBigint());
           } catch {
             // Spell struct has no position field (e.g. ShadowVeil)
           }
