@@ -1,0 +1,16 @@
+{
+  "title": "Test tournament(devnet)",
+  "imageUrl": "/tournaments/spring-cup.png",
+  "description": "A great tournament for all wizards.",
+  "sponsors": [
+    { "name": "ZkNoid", "url": "https://zknoid.io" },
+    { "name": "Mina Protocol", "url": "https://minaprotocol.com" }
+  ],
+
+  "ticketPrice": "0",
+  "feePercent": 0,
+  "claimWindow": 20000,
+  "battleStartDelay": 0,
+  "battleSlots": 7,
+  "prizePercents": [2500, 1500, 1000, 1000, 1000, 700, 700, 700, 500, 400]
+}
