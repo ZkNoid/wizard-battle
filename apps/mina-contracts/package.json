@@ -24,7 +24,8 @@
     "deploy-tournament:testnet": "tsc && node --experimental-vm-modules build/scripts/deploy-tournament.js",
     "create-tournament": "tsc && node --experimental-vm-modules build/scripts/create-tournament.js",
     "retry-pending-backend-tournaments": "tsc && node --experimental-vm-modules build/scripts/retry-pending-backend-tournaments.js",
-    "sync-tournaments": "tsc && node --experimental-vm-modules build/scripts/sync-tournaments.js"
+    "sync-tournaments": "tsc && node --experimental-vm-modules build/scripts/sync-tournaments.js",
+    "sponsor-tournament": "tsc && node --experimental-vm-modules build/scripts/sponsor-tournament.js"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.16.4",

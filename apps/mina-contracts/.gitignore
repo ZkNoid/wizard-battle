@@ -3,6 +3,9 @@ build
 node_modules
 coverage
 
+# o1js compiled circuit cache (regenerated on first test run)
+cache
+
 # Editor
 .vscode
 

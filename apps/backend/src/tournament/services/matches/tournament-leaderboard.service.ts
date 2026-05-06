@@ -8,6 +8,12 @@ import {
 import { TournamentStateService } from '../state/tournament-state.service.js';
 import { ITournamentLeaderboardEntry } from '../../../../../common/types/tournament-matchmaking.types.js';
 
+/**
+ * Mirror of TournamentManager.PERCENT_BASE — kept in sync with the contract.
+ * `verified.prizePercents` are stored as basis points so that `sum === PERCENT_BASE`.
+ */
+const PERCENT_BASE = 10_000;
+
 /** Ranking score: baseline 100 plus net wins, floored at 0. */
 export function tournamentLeaderboardScore(
   wins: number,
@@ -97,20 +103,28 @@ export class TournamentLeaderboardService {
     });
     const prizePool = tournament
       ? BigInt(tournament.verified.prizePool)
-      : BigInt(0);
+      : 0n;
     const percents = tournament?.verified.prizePercents ?? [];
 
     return entries.map((entry, idx) => {
       const place = idx + 1;
       const prizePercent = percents[idx] ?? 0;
-      const prizeAmount =
+      // prizePercents are basis points (PERCENT_BASE = 10_000 in TournamentManager).
+      const prizeAmountBn =
         prizePool > 0n && prizePercent > 0
-          ? Number((prizePool * BigInt(prizePercent)) / 100n)
-          : 0;
+          ? (prizePool * BigInt(prizePercent)) / BigInt(PERCENT_BASE)
+          : 0n;
 
       const prize: ITournamentLeaderboardEntry['prize'] =
-        prizeAmount > 0
-          ? [{ type: 'currency', currency: 'MINA', amount: prizeAmount }]
+        prizeAmountBn > 0n
+          ? [
+              {
+                type: 'currency',
+                currency: 'MINA',
+                // Frontend type is `number`; cast safely from BigInt.
+                amount: Number(prizeAmountBn),
+              },
+            ]
           : [];
 
       return {
@@ -123,7 +137,11 @@ export class TournamentLeaderboardService {
 
   /**
    * Returns the top N winners for finalization.
-   * Reuses getLeaderboard() which already computes prizes.
+   *
+   * IMPORTANT: pass NUM_WINNERS (10) — anything smaller leaves prize-pool
+   * money trapped in the contract because the contract enforces only
+   * `totalPrizes <= prizePool`, never the inverse. The leaf percentages are
+   * authored to sum to PERCENT_BASE (10_000 bp) across all 10 places.
    */
   async getTopWinners(
     tournamentId: string,
@@ -135,10 +153,14 @@ export class TournamentLeaderboardService {
       .slice(0, topN)
       .filter((e) => e.totalGames > 0)
       .map((entry) => {
-        const totalPrize = entry.prize.reduce((sum, p) => sum + p.amount, 0);
+        // Sum prize entries as BigInt to avoid float drift on large pools.
+        const totalPrize = entry.prize.reduce(
+          (sum, p) => sum + BigInt(p.amount),
+          0n
+        );
         return {
           publicKey: entry.walletAddress,
-          prizeAmount: String(totalPrize),
+          prizeAmount: totalPrize.toString(),
           place: entry.place,
         };
       });

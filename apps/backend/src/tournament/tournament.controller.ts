@@ -30,6 +30,10 @@ import {
   ClaimPrizeResponseDto,
   CreateTournamentDto,
   CreateTournamentResponseDto,
+  SponsorFundDto,
+  SponsorFundResponseDto,
+  SponsorFundNotifyDto,
+  SponsorFundNotifyResponseDto,
   TournamentResponseDto,
   ParticipantsResponseDto,
   PendingOperationResponseDto,
@@ -79,6 +83,8 @@ export class TournamentController {
         dto.tournamentId,
         {
           ticketPrice: dto.ticketPrice,
+          feePercent: dto.feePercent,
+          claimWindow: dto.claimWindow,
           prizePercents: dto.prizePercents,
           battleStartSlot: dto.battleStartSlot,
           battleEndSlot: dto.battleEndSlot,
@@ -290,6 +296,147 @@ export class TournamentController {
         }
       }
     );
+  }
+
+  @Post(':id/sponsor-fund')
+  async sponsorFund(
+    @Param('id') tournamentId: string,
+    @Body() dto: SponsorFundDto
+  ): Promise<SponsorFundResponseDto> {
+    this.logger.log(
+      `Sponsor fund request for tournament ${tournamentId} from ${dto.sponsorPubKey} amount=${dto.amount}`
+    );
+
+    const tournament =
+      await this.tournamentStateService.getVerifiedState(tournamentId);
+    if (!tournament) {
+      throw new HttpException(
+        `Tournament ${tournamentId} not found`,
+        HttpStatus.NOT_FOUND
+      );
+    }
+    if (tournament.verified.status !== 'Battle') {
+      throw new HttpException(
+        `Tournament ${tournamentId} only accepts sponsor funds while in Battle phase`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const currentSlot = await this.minaClientService.getCurrentSlot();
+    if (currentSlot >= tournament.verified.battleEndSlot) {
+      throw new HttpException(
+        `Tournament ${tournamentId} battle window has closed; sponsor funding no longer accepted`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    let amountBn: bigint;
+    try {
+      amountBn = BigInt(dto.amount);
+    } catch {
+      throw new HttpException(
+        'amount must be a numeric string',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+    if (amountBn <= 0n) {
+      throw new HttpException(
+        'amount must be greater than zero',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    try {
+      const pendingOp =
+        await this.tournamentStateService.addPendingOperation({
+          tournamentId,
+          type: OperationType.SponsorFund,
+          playerPubKey: dto.sponsorPubKey,
+          sponsorAmount: amountBn.toString(),
+        });
+
+      return {
+        operationId: pendingOp._id.toString(),
+        status: pendingOp.status,
+        message: `SponsorFund queued for processing`,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      this.logger.error(
+        `Failed to queue SponsorFund for ${dto.sponsorPubKey}`,
+        error
+      );
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Failed to queue operation',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  /**
+   * Notify the backend of a `sponsorFund` tx that was submitted directly
+   * on-chain by an external script (e.g. the admin sponsor-tournament script)
+   * rather than through the proof-generator queue. Applies the amount to the
+   * tournament's verified state so the backend's off-chain leaf stays in sync.
+   *
+   * POST /tournament/:id/sponsor-fund/notify
+   * Body: { sponsorPubKey, amount (nanoMINA string), txHash }
+   */
+  @Post(':id/sponsor-fund/notify')
+  async notifySponsorFund(
+    @Param('id') tournamentId: string,
+    @Body() dto: SponsorFundNotifyDto
+  ): Promise<SponsorFundNotifyResponseDto> {
+    this.logger.log(
+      `External sponsorFund notify for tournament ${tournamentId}: ` +
+        `sponsor=${dto.sponsorPubKey} amount=${dto.amount} txHash=${dto.txHash}`
+    );
+
+    const tournament =
+      await this.tournamentStateService.getVerifiedState(tournamentId);
+    if (!tournament) {
+      throw new HttpException(
+        `Tournament ${tournamentId} not found`,
+        HttpStatus.NOT_FOUND
+      );
+    }
+
+    let amountBn: bigint;
+    try {
+      amountBn = BigInt(dto.amount);
+    } catch {
+      throw new HttpException('amount must be a numeric string', HttpStatus.BAD_REQUEST);
+    }
+    if (amountBn <= 0n) {
+      throw new HttpException('amount must be greater than zero', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      const { newPrizePool } =
+        await this.tournamentStateService.applySponsorFundExternal(
+          tournamentId,
+          dto.amount
+        );
+      this.logger.log(
+        `Applied external sponsorFund of ${dto.amount} to tournament ${tournamentId}, ` +
+          `new prize pool: ${newPrizePool} (txHash=${dto.txHash})`
+      );
+      return {
+        message: `SponsorFund applied to tournament ${tournamentId}`,
+        tournamentId,
+        newPrizePool,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      this.logger.error(
+        `Failed to apply external sponsorFund to tournament ${tournamentId}`,
+        error
+      );
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Failed to apply sponsor fund',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   @Post(':id/claim-prize')
@@ -561,7 +708,7 @@ export class TournamentController {
       }
       if (result.reason === 'wrong_type') {
         throw new HttpException(
-          'Only buyTicket or claimPrize operations can be abandoned',
+          'Only buyTicket, claimPrize, or sponsorFund operations can be abandoned',
           HttpStatus.BAD_REQUEST
         );
       }

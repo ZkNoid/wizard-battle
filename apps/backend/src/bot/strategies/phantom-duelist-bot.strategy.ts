@@ -3,14 +3,18 @@ import { IUserAction } from '../../../../common/types/gameplay.types';
 import { Wizard, allWizards, WizardId } from '../../../../common/wizards';
 import { BaseBotStrategy } from './base-bot.strategy';
 
-const LOW_HP_THRESHOLD = 60;
+/** Absolute HP threshold below which the phantom prioritises a defensive ally spell. */
+const PHANTOM_LOW_HP = 60;
+/** Phantom is melee → close to 0 distance. */
+const PHANTOM_IDEAL_DISTANCE = 0;
 
 /**
  * @title Phantom Duelist Bot Strategy
- * @notice Bot strategy for the Phantom Duelist wizard.
- * @dev Action pattern: use a defensive ally spell (ShadowVeil etc.) when HP is
- *      low, otherwise attack. Uses generic ally/enemy split — no hardcoded IDs.
- *      Phantom Duelist has no Heal; its ally spells are utility/stealth buffs.
+ * @notice Two actions per turn: positioning + spell.
+ * @dev Closes distance to the opponent every turn (melee). Uses a defensive
+ *      ally spell (ShadowVeil / SpectralProjection) when HP is low; otherwise
+ *      casts the highest-scoring enemy spell evaluated against the projected
+ *      post-move position (DusksEmbrace / SpectralArrow / PhantomEcho).
  */
 export class PhantomDuelistBotStrategy extends BaseBotStrategy {
   protected getWizard(): Wizard {
@@ -29,29 +33,69 @@ export class PhantomDuelistBotStrategy extends BaseBotStrategy {
     const available = this.getAvailableSpells(currentState);
     if (available.length === 0) return [];
 
+    const p = this.perceive(currentState, opponentState);
     const { allySpells, enemySpells } = this.splitSpells(available);
     const actions: IUserAction[] = [];
 
-    // Read current HP to decide whether to use a defensive ally spell
-    let currentHP = 100;
-    try {
-      const parsed = JSON.parse(currentState.fields);
-      currentHP = parseInt(parsed?.playerStats?.hp?.magnitude ?? '100');
-    } catch { /* use default */ }
+    // ── Move: close the gap ─────────────────────────────────────────────────
+    let projectedPos = p.selfPos;
+    if (p.selfPos && p.selfSpeed > 0) {
+      const dest = p.oppPos
+        ? this.pickMoveTowards(
+            p.selfPos,
+            p.oppPos,
+            p.selfSpeed,
+            PHANTOM_IDEAL_DISTANCE
+          )
+        : this.randomWalk(p.selfPos, p.selfSpeed);
 
-    if (currentHP <= LOW_HP_THRESHOLD && allySpells.length > 0) {
-      // Prioritise a defensive/utility ally spell (ShadowVeil, SpectralProjection…)
-      const pick = allySpells[Math.floor(Math.random() * allySpells.length)]!;
-      actions.push(
-        this.buildSpellAction(botId, pick.spellId.toString(), opponentState, undefined, currentState)
-      );
+      if (dest.x !== p.selfPos.x || dest.y !== p.selfPos.y) {
+        const moveAction = this.buildMoveAction(botId, dest);
+        if (moveAction) {
+          actions.push(moveAction);
+          projectedPos = dest;
+        }
+      }
     }
 
-    // Fill remaining slot with a random enemy attack spell
-    if (actions.length < 2 && enemySpells.length > 0) {
-      const pick = enemySpells[Math.floor(Math.random() * enemySpells.length)]!;
+    // ── Defensive: low HP → ally spell (ShadowVeil etc.) ────────────────────
+    const lowHp = p.selfHp <= PHANTOM_LOW_HP;
+    if (lowHp && allySpells.length > 0) {
+      const pick = allySpells[Math.floor(Math.random() * allySpells.length)]!;
       actions.push(
-        this.buildSpellAction(botId, pick.spellId.toString(), opponentState, undefined, currentState)
+        this.buildSpellAction(
+          botId,
+          pick.spellId.toString(),
+          opponentState,
+          undefined,
+          currentState
+        )
+      );
+      return actions;
+    }
+
+    // ── Offensive: best attack vs projected position ────────────────────────
+    const attack = this.pickBestAttack(enemySpells, projectedPos, p.oppPos);
+    if (attack) {
+      actions.push(
+        this.buildSpellAction(
+          botId,
+          attack.spell.spellId.toString(),
+          opponentState,
+          attack.targetPos,
+          currentState
+        )
+      );
+    } else if (allySpells.length > 0) {
+      const pick = allySpells[Math.floor(Math.random() * allySpells.length)]!;
+      actions.push(
+        this.buildSpellAction(
+          botId,
+          pick.spellId.toString(),
+          opponentState,
+          undefined,
+          currentState
+        )
       );
     }
 

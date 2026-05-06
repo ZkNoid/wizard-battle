@@ -21,6 +21,7 @@ import {
 import { RedisService } from '../../../redis/redis.service.js';
 import { OperationEventsService } from '../events/operation-events.service.js';
 import { MerkleService } from '../merkle/merkle.service.js';
+import { TournamentOptimisticOverlayService } from './tournament-optimistic-overlay.service.js';
 import { TournamentVerifiedMutationsService } from './tournament-verified-mutations.service.js';
 import { validateCreateTournamentConfig } from './tournament-config.validator.js';
 import { optionalTournamentDisplayFields } from './tournament-display.util.js';
@@ -100,7 +101,8 @@ export class TournamentStateService {
     private readonly merkleService: MerkleService,
     private readonly redisService: RedisService,
     private readonly operationEventsService: OperationEventsService,
-    private readonly verifiedMutations: TournamentVerifiedMutationsService
+    private readonly verifiedMutations: TournamentVerifiedMutationsService,
+    private readonly overlayService: TournamentOptimisticOverlayService
   ) {}
 
   async getVerifiedState(
@@ -148,8 +150,10 @@ export class TournamentStateService {
     const pendingPlayers = pendingBuyTickets.map((op) => op.playerPubKey);
 
     const ticketPrice = BigInt(tournament.verified.ticketPrice);
-    const prizeContributionPerTicket =
-      calculatePrizeContribution(ticketPrice);
+    const prizeContributionPerTicket = calculatePrizeContribution(
+      ticketPrice,
+      BigInt(tournament.verified.feePercent ?? 0)
+    );
 
     const optimisticPrizePool =
       BigInt(tournament.verified.prizePool) +
@@ -160,9 +164,12 @@ export class TournamentStateService {
       status: tournament.verified.status,
       battleStartSlot: tournament.verified.battleStartSlot,
       battleEndSlot: tournament.verified.battleEndSlot,
+      claimDeadlineSlot: tournament.verified.claimDeadlineSlot,
       ticketPrice: tournament.verified.ticketPrice,
+      feePercent: tournament.verified.feePercent,
       prizePercents: tournament.verified.prizePercents,
       prizePool: optimisticPrizePool.toString(),
+      sponsorContribution: tournament.verified.sponsorContribution ?? '0',
       participantCount:
         tournament.verified.participantCount + pendingBuyTickets.length,
       registeredPlayers,
@@ -239,9 +246,35 @@ export class TournamentStateService {
           `Tournament ${dto.tournamentId} must be in Battle phase to finalize (status: ${tournament.verified.status})`
         );
       }
-      if (!dto.finalizeWinners?.length) {
+      // finalizeWinners may legitimately be empty when there were no
+      // matches; in that case the contract refunds the entire pool to admin.
+    }
+
+    if (dto.type === OperationType.SponsorFund) {
+      if (tournament.verified.status !== TournamentStatus.Battle) {
         throw new BadRequestException(
-          'finalizeWinners is required for FinalizeTournament operations'
+          `Tournament ${dto.tournamentId} must be in Battle phase to accept sponsor funds (status: ${tournament.verified.status})`
+        );
+      }
+      if (!dto.sponsorAmount) {
+        throw new BadRequestException(
+          'sponsorAmount is required for SponsorFund operations'
+        );
+      }
+      try {
+        if (BigInt(dto.sponsorAmount) <= 0n) {
+          throw new BadRequestException('sponsorAmount must be > 0');
+        }
+      } catch (e) {
+        if (e instanceof BadRequestException) throw e;
+        throw new BadRequestException('sponsorAmount must be a numeric string');
+      }
+    }
+
+    if (dto.type === OperationType.RecoverUnclaimed) {
+      if (tournament.verified.status !== TournamentStatus.Claiming) {
+        throw new BadRequestException(
+          `Tournament ${dto.tournamentId} must be in Claiming phase to recover unclaimed funds (status: ${tournament.verified.status})`
         );
       }
     }
@@ -256,6 +289,9 @@ export class TournamentStateService {
         retryCount: 0,
         ...(dto.type === OperationType.FinalizeTournament && dto.finalizeWinners
           ? { finalizeWinners: dto.finalizeWinners }
+          : {}),
+        ...(dto.type === OperationType.SponsorFund && dto.sponsorAmount
+          ? { sponsorAmount: dto.sponsorAmount }
           : {}),
       });
     } catch (err) {
@@ -348,6 +384,12 @@ export class TournamentStateService {
       updatedAt: updated.updatedAt ?? new Date(),
     });
 
+    await this.cascadeFailDependents(
+      updated.tournamentId,
+      updated._id,
+      `parent_op_${updated._id} expired awaiting signature`
+    );
+
     return true;
   }
 
@@ -373,9 +415,12 @@ export class TournamentStateService {
     if (op.playerPubKey !== playerPubKey) {
       return { ok: false, reason: 'wrong_player' };
     }
+    // Only player-driven, wallet-signed operations are abandonable; admin
+    // ops (FinalizeTournament, RecoverUnclaimed) are not user-cancellable.
     if (
       op.type !== OperationType.BuyTicket &&
-      op.type !== OperationType.ClaimPrize
+      op.type !== OperationType.ClaimPrize &&
+      op.type !== OperationType.SponsorFund
     ) {
       return { ok: false, reason: 'wrong_type' };
     }
@@ -440,6 +485,12 @@ export class TournamentStateService {
       error: updated.error,
       updatedAt: updated.updatedAt ?? new Date(),
     });
+
+    await this.cascadeFailDependents(
+      updated.tournamentId,
+      updated._id,
+      `parent_op_${updated._id} abandoned by client`
+    );
 
     return { ok: true };
   }
@@ -517,6 +568,35 @@ export class TournamentStateService {
       );
     }
 
+    if (op.type === OperationType.SponsorFund) {
+      // Without this, the off-chain leaf hash drifts the moment a sponsor
+      // tx confirms — every subsequent op on the tournament fails the
+      // witness-root check and the tournament becomes un-finalizable.
+      if (!op.sponsorAmount) {
+        throw new BadRequestException(
+          `Operation ${op._id} is missing sponsorAmount snapshot`
+        );
+      }
+      await retry(
+        () =>
+          this.verifiedMutations.applySponsorFundToVerified(
+            op.tournamentId,
+            op.sponsorAmount as string
+          ),
+        `applySponsorFund(${op.tournamentId}, ${op.playerPubKey})`
+      );
+    }
+
+    if (op.type === OperationType.RecoverUnclaimed) {
+      await retry(
+        () =>
+          this.verifiedMutations.applyRecoverUnclaimedToVerified(
+            op.tournamentId
+          ),
+        `applyRecoverUnclaimed(${op.tournamentId})`
+      );
+    }
+
     await this.updateOperationStatus(opId, OperationStatus.Confirmed, {
       txHash,
     });
@@ -546,6 +626,39 @@ export class TournamentStateService {
       this.logger.error(
         `Operation ${opId} permanently failed after ${maxRetries} retries: ${error}`
       );
+      await this.cascadeFailDependents(
+        op.tournamentId,
+        op._id,
+        `parent_op_${op._id} failed: ${error}`
+      );
+    }
+  }
+
+  /**
+   * After a parent op terminally fails (chain rejection, retry exhaustion,
+   * abandon, expired-awaiting-signature) every later in-flight op for the
+   * same tournament has a proof committed to the parent's pending mutation
+   * and is now witness-stale. Mark them failed so a clean retry can happen
+   * once the queue settles, instead of broadcasting txs we know will be
+   * rejected on-chain.
+   */
+  private async cascadeFailDependents(
+    tournamentId: string,
+    failedOpId: string | Types.ObjectId,
+    reason: string
+  ): Promise<void> {
+    try {
+      await this.overlayService.invalidateDependents(
+        tournamentId,
+        failedOpId,
+        reason
+      );
+    } catch (err) {
+      this.logger.error(
+        `Failed to cascade dependent invalidation for tournament ${tournamentId} after ${failedOpId.toString()}: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
     }
   }
 
@@ -574,9 +687,13 @@ export class TournamentStateService {
         status: TournamentStatus.Battle,
         battleStartSlot: config.battleStartSlot,
         battleEndSlot: config.battleEndSlot,
+        // Mirror the on-chain `claimDeadlineSlot = battleEndSlot + claimWindow`.
+        claimDeadlineSlot: config.battleEndSlot + config.claimWindow,
         ticketPrice: config.ticketPrice,
+        feePercent: config.feePercent,
         prizePercents: config.prizePercents,
         prizePool: '0',
+        sponsorContribution: '0',
         participantCount: 0,
         participantsRoot: emptyRoot,
         winnersRoot: emptyRoot,
@@ -615,6 +732,24 @@ export class TournamentStateService {
       { tournamentId },
       { tournamentsRoot: newRoot }
     );
+  }
+
+  /**
+   * Apply a sponsorFund that was submitted directly on-chain (e.g. via the
+   * admin sponsor-tournament script) rather than through the proof-generator
+   * queue. Mirrors `confirmOperation` for SponsorFund but skips pending-op
+   * bookkeeping since there is no op document for the external tx.
+   */
+  async applySponsorFundExternal(
+    tournamentId: string,
+    amount: string
+  ): Promise<{ newPrizePool: string }> {
+    await this.verifiedMutations.applySponsorFundToVerified(tournamentId, amount);
+    const tournament = await this.tournamentModel
+      .findOne({ tournamentId })
+      .lean()
+      .exec();
+    return { newPrizePool: tournament?.verified?.prizePool ?? '0' };
   }
 
   private async notifyProofQueue(tournamentId: string): Promise<void> {
