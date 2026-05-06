@@ -28,6 +28,8 @@ ARG TOURNAMENT_APP_PORT
 ARG TOURNAMENT_CONTRACT_ADDRESS
 ARG TOURNAMENT_REDIS_URL
 ARG TOURNAMENT_ADMIN_PRIVATE_KEY
+ARG MINA_GRAPHQL_URL
+ARG MINA_ARCHIVE_URL
 
 WORKDIR /usr/share/nestjs/main
 COPY . .
@@ -94,6 +96,8 @@ echo "TOURNAMENT_APP_PORT=${TOURNAMENT_APP_PORT:-3032}" >> /usr/share/nestjs/mai
 echo "TOURNAMENT_CONTRACT_ADDRESS=${TOURNAMENT_CONTRACT_ADDRESS}" >> /usr/share/nestjs/main/.env
 echo "TOURNAMENT_REDIS_URL=${TOURNAMENT_REDIS_URL:-redis://redis-tournament:6379}" >> /usr/share/nestjs/main/.env
 echo "TOURNAMENT_ADMIN_PRIVATE_KEY=${TOURNAMENT_ADMIN_PRIVATE_KEY}" >> /usr/share/nestjs/main/.env
+echo "MINA_GRAPHQL_URL=${MINA_GRAPHQL_URL}" >> /usr/share/nestjs/main/.env
+echo "MINA_ARCHIVE_URL=${MINA_ARCHIVE_URL}" >> /usr/share/nestjs/main/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/backend/.env
 cp /usr/share/nestjs/main/.env /usr/share/nestjs/main/apps/frontend/.env
 #. .env
