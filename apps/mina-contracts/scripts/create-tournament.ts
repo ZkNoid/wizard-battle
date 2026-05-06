@@ -474,9 +474,12 @@ async function main() {
 
   // Connect to network
   console.log(`\nConnecting to: ${MINA_NETWORK_URL}`);
+  const networkId = MINA_NETWORK_URL.includes('mainnet') ? 'mainnet' : 'devnet';
+  console.log(`Network ID: ${networkId}`);
   const network = Mina.Network({
     mina: MINA_NETWORK_URL,
     archive: MINA_ARCHIVE_URL,
+    networkId: networkId as 'mainnet' | 'devnet',
   });
   Mina.setActiveInstance(network);
 
