@@ -50,9 +50,12 @@ async function main() {
 
   // Connect to network
   console.log(`\nConnecting to: ${MINA_NETWORK_URL}`);
+  const networkId = MINA_NETWORK_URL.includes('mainnet') ? 'mainnet' : 'devnet';
+  console.log(`Network ID: ${networkId}`);
   const network = Mina.Network({
     mina: MINA_NETWORK_URL,
     archive: MINA_ARCHIVE_URL,
+    networkId: networkId as 'mainnet' | 'devnet',
   });
   Mina.setActiveInstance(network);
 
@@ -180,12 +183,14 @@ function saveKeys(keyData: KeyData, isInitialSave = false): void {
 
 main().catch((err) => {
   console.error('Deployment failed:', err);
-  
+
   // Try to update key file with failure status if it exists
   try {
     const currentPath = path.join(KEYS_DIR, 'current.json');
     if (fs.existsSync(currentPath)) {
-      const existingData = JSON.parse(fs.readFileSync(currentPath, 'utf-8')) as KeyData;
+      const existingData = JSON.parse(
+        fs.readFileSync(currentPath, 'utf-8')
+      ) as KeyData;
       if (existingData.status === 'pending') {
         existingData.status = 'failed';
         existingData.error = err instanceof Error ? err.message : String(err);
@@ -197,6 +202,6 @@ main().catch((err) => {
   } catch (updateErr) {
     console.error('Could not update key file with failure status:', updateErr);
   }
-  
+
   process.exit(1);
 });
