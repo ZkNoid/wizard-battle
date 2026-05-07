@@ -74,12 +74,15 @@ COPY apps/mina-contracts/package.json ./apps/mina-contracts/package.json
 COPY packages/dev-auth/package.json ./packages/dev-auth/package.json
 COPY packages/typescript-config/package.json ./packages/typescript-config/package.json
 
-# Install only what backend (+ workspace deps) needs.
-# Skipping the frontend dependency tree (Next.js, Phaser, wagmi, viem, ...)
-# saves a large amount of install time since the frontend ships from Vercel.
+# Install everything except the frontend tree.
+# The backend imports source files from `apps/mina-contracts` via relative
+# paths, so `apps/mina-contracts/node_modules` (especially o1js) must exist
+# for TypeScript to resolve the o1js types referenced inside those files.
+# The frontend ships from Vercel, so its heavy dependency tree
+# (Next.js, Phaser, wagmi, viem, ...) is the only thing we skip here.
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm config set store-dir /pnpm/store \
-    && pnpm install --filter=backend... --frozen-lockfile
+    && pnpm install --filter='!frontend' --frozen-lockfile
 
 # Now bring in the rest of the source. This layer only invalidates when source
 # files change, not when dependency manifests change.
