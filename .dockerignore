@@ -1,0 +1,63 @@
+# Version control
+.git
+.gitignore
+.gitmodules
+.github
+
+# Editor / IDE
+.vscode
+.cursor
+.cursorignore
+
+# Node / pnpm
+node_modules
+**/node_modules
+.pnpm-store
+**/.pnpm-store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs & caches (built fresh inside the image)
+dist
+**/dist
+build
+**/build
+.next
+**/.next
+.turbo
+**/.turbo
+**/.cache
+**/tsconfig.tsbuildinfo
+coverage
+**/coverage
+out
+
+# Local env files (env values are injected via build args inside Dockerfile)
+.env
+**/.env
+.env.local
+**/.env.local
+.env.development.local
+**/.env.development.local
+.env.production.local
+**/.env.production.local
+
+# Logs / OS junk
+*.log
+.DS_Store
+*.pem
+
+# Solidity / Foundry assets — not needed by the Node backend image
+packages/evm-contracts
+lib
+
+# Mina contract local artifacts (compiled/cached zk material)
+apps/mina-contracts/cache
+apps/mina-contracts/build
+apps/mina-contracts/keys
+
+# Documentation
+docs
+*.md
+!README.md

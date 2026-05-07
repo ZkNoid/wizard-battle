@@ -97,7 +97,8 @@ async function main() {
   // Compile contract
   console.log('Compiling TournamentManager...');
   const startCompile = Date.now();
-  await TournamentManager.compile();
+  const result = await TournamentManager.compile();
+  console.log('Verification key hash:', result.verificationKey.hash.toString());
   console.log(`Compilation completed in ${Date.now() - startCompile}ms`);
 
   // Create contract instance
