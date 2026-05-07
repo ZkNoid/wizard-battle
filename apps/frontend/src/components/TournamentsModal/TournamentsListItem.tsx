@@ -36,11 +36,10 @@ export function TournamentsListItem({
           <TournamentListItemImageBg className="absolute inset-0 h-full w-full" />
           <Image
             src={tournament.imageURL}
-            width={96}
-            height={96}
+            fill
             alt={tournament.title}
             unoptimized
-            className="relative z-10 h-24 w-24 object-contain object-center"
+            className="z-10 object-cover object-center"
           />
         </div>
       </div>
