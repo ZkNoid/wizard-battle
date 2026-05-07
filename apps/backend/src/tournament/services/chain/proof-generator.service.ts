@@ -113,16 +113,23 @@ export class ProofGeneratorService implements OnModuleInit {
     }
 
     this.isCompiling = true;
+
+    // Ensure the correct Mina network instance (with the right networkId) is
+    // active before compilation. The verification key hash is derived from
+    // domain-separated hashes that include the networkId, so compiling against
+    // a 'devnet' instance produces a different VK than 'mainnet' and vice-versa.
+    Mina.setActiveInstance(this.minaClientService.getNetwork());
+
     this.logger.log('Starting TournamentManager compilation...');
 
     try {
       const startTime = Date.now();
-      await TournamentManager.compile();
+      const { verificationKey } = await TournamentManager.compile();
       const elapsed = Date.now() - startTime;
 
       this.isCompiled = true;
       this.logger.log(
-        `TournamentManager compiled successfully in ${elapsed}ms`
+        `TournamentManager compiled successfully in ${elapsed}ms — VK hash: ${verificationKey.hash.toString()}`
       );
     } catch (error) {
       this.logger.error('Failed to compile TournamentManager', error);

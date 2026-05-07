@@ -27,12 +27,23 @@ export class MinaClientService implements OnModuleInit {
     await this.connect();
   }
 
+  getNetwork(): ReturnType<typeof Mina.Network> {
+    if (!this.network) {
+      throw new Error('Mina network not initialised — call connect() first');
+    }
+    return this.network;
+  }
+
   async connect(): Promise<void> {
     const networkUrl =
       process.env.MINA_GRAPHQL_URL ||
       'https://api.minascan.io/node/devnet/v1/graphql';
 
-    this.logger.log(`Connecting to Mina network: ${networkUrl}`);
+    const networkId = networkUrl.includes('mainnet') ? 'mainnet' : 'devnet';
+
+    this.logger.log(
+      `Connecting to Mina network: ${networkUrl} (networkId=${networkId})`
+    );
 
     try {
       this.network = Mina.Network({
@@ -40,6 +51,7 @@ export class MinaClientService implements OnModuleInit {
         archive:
           process.env.MINA_ARCHIVE_URL ||
           'https://api.minascan.io/archive/devnet/v1/graphql',
+        networkId: networkId as 'mainnet' | 'devnet',
       });
       Mina.setActiveInstance(this.network);
 
