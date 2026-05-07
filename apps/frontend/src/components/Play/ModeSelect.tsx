@@ -37,9 +37,7 @@ export function ModeSelect({
     if (isTournamentLoading) return;
     setIsTournamentLoading(true);
     try {
-      await useTournamentStore
-        .getState()
-        .loadTournaments(address ?? undefined);
+      await useTournamentStore.getState().loadTournaments(address ?? undefined);
       const joined = findUserActiveTournament(
         useTournamentStore.getState().tournaments
       );
@@ -119,7 +117,7 @@ export function ModeSelect({
       {/* Tournament */}
       <div className="px-15 py-13.5 w-143 h-143 relative flex flex-col items-center">
         <Image
-          src="/tournaments/medal.png"
+          src="/tournaments/TournamentChoice.png"
           alt="tournament"
           width={216}
           height={216}
