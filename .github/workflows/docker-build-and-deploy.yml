@@ -12,17 +12,29 @@ jobs:
       name: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '23'
+        uses: actions/checkout@v4
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.13.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23'
+          cache: 'pnpm'
+
+      - name: Cache Turborepo build outputs
+        uses: actions/cache@v4
+        with:
+          path: |
+            .turbo
+            **/.turbo
+            **/node_modules/.cache/turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -94,7 +106,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install ssh client
         run: sudo apt-get update && sudo apt-get install -y openssh-client
@@ -115,7 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install ssh client
         run: sudo apt-get update && sudo apt-get install -y openssh-client
@@ -136,7 +148,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install ssh client
         run: sudo apt-get update && sudo apt-get install -y openssh-client
@@ -157,7 +169,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install ssh client
         run: sudo apt-get update && sudo apt-get install -y openssh-client
@@ -183,13 +195,10 @@ jobs:
       APP_PORT: '{"main": "3030", "dev": "3031"}'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Docker
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker (opt
-        run: echo "Skipping Docker Hub login if not pushing to registry."
 
       - name: Calculate deploy container name
         id: calc-container
@@ -201,41 +210,47 @@ jobs:
           echo "app_port=$APP_PORT" >> $GITHUB_OUTPUT
 
       - name: Build Docker image
-        run: |
-          docker build \
-            --build-arg MONGODB_URI=${{ secrets.MONGODB_URI }} \
-            --build-arg MONGODB_DB=${{ secrets.MONGODB_DB }} \
-            --build-arg APP_PORT=${{ steps.calc-container.outputs.app_port }} \
-            --build-arg REDIS_URL=${{ secrets.REDIS_URL }} \
-            --build-arg WEBSOCKET_URL=${{ secrets.WEBSOCKET_URL }} \
-            --build-arg SPELL_CAST_TIMEOUT=${{ secrets.SPELL_CAST_TIMEOUT }} \
-            --build-arg MINA_NETWORK_URL=${{ secrets.MINA_NETWORK_URL }} \
-            --build-arg MINA_ADMIN_PRIVATE_KEY=${{ secrets.MINA_ADMIN_PRIVATE_KEY }} \
-            --build-arg MINA_CONTRACT_ADDRESS=${{ secrets.MINA_CONTRACT_ADDRESS }} \
-            --build-arg BULLMQ_REDIS_HOST=${{ secrets.BULLMQ_REDIS_HOST }} \
-            --build-arg BULLMQ_REDIS_PORT=${{ secrets.BULLMQ_REDIS_PORT }} \
-            --build-arg EVM_RPC_URL=${{ secrets.EVM_RPC_URL }} \
-            --build-arg GAME_SIGNER_PUBLIC_KEY=${{ secrets.GAME_SIGNER_PUBLIC_KEY }} \
-            --build-arg GAME_SIGNER_PRIVATE_KEY=${{ secrets.GAME_SIGNER_PRIVATE_KEY }} \
-            --build-arg GAME_REGISTRY_ADDRESS=${{ secrets.GAME_REGISTRY_ADDRESS }} \
-            --build-arg WB_RESOURCES_ADDRESS=${{ secrets.WB_RESOURCES_ADDRESS }} \
-            --build-arg WB_CHARACTER_ADDRESS=${{ secrets.WB_CHARACTER_ADDRESS }} \
-            --build-arg WB_COINS_ADDRESS=${{ secrets.WB_COINS_ADDRESS }} \
-            --build-arg WB_ITEMS_ADDRESS=${{ secrets.WB_ITEMS_ADDRESS }} \
-            --build-arg GAME_MARKET_ADDRESS=${{ secrets.GAME_MARKET_ADDRESS }} \
-            --build-arg RPC_WS_URL=${{ secrets.RPC_WS_URL }} \
-            --build-arg GAME_MARKET_DEPLOYMENT_BLOCK=${{ secrets.GAME_MARKET_DEPLOYMENT_BLOCK }} \
-            --build-arg TOURNAMENT_APP_PORT=${{ secrets.TOURNAMENT_APP_PORT }} \
-            --build-arg TOURNAMENT_CONTRACT_ADDRESS=${{ secrets.TOURNAMENT_CONTRACT_ADDRESS }} \
-            --build-arg TOURNAMENT_REDIS_URL=${{ secrets.TOURNAMENT_REDIS_URL }} \
-            --build-arg TOURNAMENT_ADMIN_PRIVATE_KEY=${{ secrets.TOURNAMENT_ADMIN_PRIVATE_KEY }} \
-            --build-arg MINA_GRAPHQL_URL=${{ secrets.MINA_GRAPHQL_URL }} \
-            --build-arg MINA_ARCHIVE_URL=${{ secrets.MINA_ARCHIVE_URL }} \
-            -t ${{ steps.calc-container.outputs.container_name }} .
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          tags: ${{ steps.calc-container.outputs.container_name }}:latest
+          cache-from: type=gha,scope=${{ github.ref_name }}
+          cache-to: type=gha,mode=max,scope=${{ github.ref_name }}
+          build-args: |
+            MONGODB_URI=${{ secrets.MONGODB_URI }}
+            MONGODB_DB=${{ secrets.MONGODB_DB }}
+            APP_PORT=${{ steps.calc-container.outputs.app_port }}
+            REDIS_URL=${{ secrets.REDIS_URL }}
+            WEBSOCKET_URL=${{ secrets.WEBSOCKET_URL }}
+            SPELL_CAST_TIMEOUT=${{ secrets.SPELL_CAST_TIMEOUT }}
+            MINA_NETWORK_URL=${{ secrets.MINA_NETWORK_URL }}
+            MINA_ADMIN_PRIVATE_KEY=${{ secrets.MINA_ADMIN_PRIVATE_KEY }}
+            MINA_CONTRACT_ADDRESS=${{ secrets.MINA_CONTRACT_ADDRESS }}
+            BULLMQ_REDIS_HOST=${{ secrets.BULLMQ_REDIS_HOST }}
+            BULLMQ_REDIS_PORT=${{ secrets.BULLMQ_REDIS_PORT }}
+            EVM_RPC_URL=${{ secrets.EVM_RPC_URL }}
+            GAME_SIGNER_PUBLIC_KEY=${{ secrets.GAME_SIGNER_PUBLIC_KEY }}
+            GAME_SIGNER_PRIVATE_KEY=${{ secrets.GAME_SIGNER_PRIVATE_KEY }}
+            GAME_REGISTRY_ADDRESS=${{ secrets.GAME_REGISTRY_ADDRESS }}
+            WB_RESOURCES_ADDRESS=${{ secrets.WB_RESOURCES_ADDRESS }}
+            WB_CHARACTER_ADDRESS=${{ secrets.WB_CHARACTER_ADDRESS }}
+            WB_COINS_ADDRESS=${{ secrets.WB_COINS_ADDRESS }}
+            WB_ITEMS_ADDRESS=${{ secrets.WB_ITEMS_ADDRESS }}
+            GAME_MARKET_ADDRESS=${{ secrets.GAME_MARKET_ADDRESS }}
+            RPC_WS_URL=${{ secrets.RPC_WS_URL }}
+            GAME_MARKET_DEPLOYMENT_BLOCK=${{ secrets.GAME_MARKET_DEPLOYMENT_BLOCK }}
+            TOURNAMENT_APP_PORT=${{ secrets.TOURNAMENT_APP_PORT }}
+            TOURNAMENT_CONTRACT_ADDRESS=${{ secrets.TOURNAMENT_CONTRACT_ADDRESS }}
+            TOURNAMENT_REDIS_URL=${{ secrets.TOURNAMENT_REDIS_URL }}
+            TOURNAMENT_ADMIN_PRIVATE_KEY=${{ secrets.TOURNAMENT_ADMIN_PRIVATE_KEY }}
+            MINA_GRAPHQL_URL=${{ secrets.MINA_GRAPHQL_URL }}
+            MINA_ARCHIVE_URL=${{ secrets.MINA_ARCHIVE_URL }}
 
       - name: Save Docker image to tar
         run: |
-          docker save ${{ steps.calc-container.outputs.container_name }} -o ${{ steps.calc-container.outputs.container_name }}.tar
+          docker save ${{ steps.calc-container.outputs.container_name }}:latest -o ${{ steps.calc-container.outputs.container_name }}.tar
           chmod 644 ${{ steps.calc-container.outputs.container_name }}.tar
 
       - name: Install ssh client
