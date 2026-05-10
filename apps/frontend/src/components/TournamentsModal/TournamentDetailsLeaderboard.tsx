@@ -190,7 +190,7 @@ export function TournamentDetailsLeaderboard({
         </div>
 
         {/* Rows */}
-        <div className="flex flex-1 flex-col gap-2 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
           {loading ? (
             <div className="font-pixel text-main-gray/40 flex h-full items-center justify-center text-sm">
               Loading…
@@ -221,7 +221,7 @@ export function TournamentDetailsLeaderboard({
                 );
               })()}
 
-              <div className="flex-1 overflow-hidden">
+              <div className="min-h-0 flex-1 overflow-hidden">
                 <Scroll height="100%" alwaysShowScrollbar>
                   <div className="flex flex-col gap-2 pr-2">
                     {entries.map((item) => {
