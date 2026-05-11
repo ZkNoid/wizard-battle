@@ -7,7 +7,6 @@ import { PveIcon } from './assets/pve-icon';
 import { PvpIcon } from './assets/pvp-icon';
 import { PlaySteps } from '@/lib/enums/PlaySteps';
 import { PlayMode } from '@/lib/enums/PlayMode';
-import { TOURNAMENT_MATCHMAKING_STORAGE_KEY } from '@/lib/constants/tournament-matchmaking';
 import { useTournamentStore } from '@/lib/store/tournamentStore';
 import { useMiscellaneousSessionStore } from '@/lib/store/miscellaneousSessionStore';
 import type { ITournament } from '@/lib/types/ITournament';
@@ -42,9 +41,7 @@ export function ModeSelect({
         useTournamentStore.getState().tournaments
       );
       if (joined) {
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem(TOURNAMENT_MATCHMAKING_STORAGE_KEY, joined.id);
-        }
+        useTournamentStore.getState().setActiveMatchmakingTournament(joined.id);
         setPlayMode(PlayMode.PVP);
         setPlayStep(PlaySteps.SELECT_CHARACTER);
       } else {
@@ -71,9 +68,7 @@ export function ModeSelect({
             variant="gray"
             className="w-106 h-15"
             onClick={() => {
-              if (typeof window !== 'undefined') {
-                sessionStorage.removeItem(TOURNAMENT_MATCHMAKING_STORAGE_KEY);
-              }
+              useTournamentStore.getState().clearActiveMatchmakingTournament();
               setPlayStep(PlaySteps.SELECT_CHARACTER);
               setPlayMode(PlayMode.PVP);
             }}
@@ -99,9 +94,7 @@ export function ModeSelect({
             variant="gray"
             className="w-106 h-15"
             onClick={() => {
-              if (typeof window !== 'undefined') {
-                sessionStorage.removeItem(TOURNAMENT_MATCHMAKING_STORAGE_KEY);
-              }
+              useTournamentStore.getState().clearActiveMatchmakingTournament();
               setPlayStep(PlaySteps.SELECT_CHARACTER);
               setPlayMode(PlayMode.PVE);
             }}
