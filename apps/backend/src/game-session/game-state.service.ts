@@ -805,10 +805,32 @@ export class GameStateService {
    * - Increments turn counter when cycling back to SPELL_CASTING
    * - Persists changes to Redis for multi-instance consistency
    */
-  async advanceGamePhase(roomId: string): Promise<GamePhase | null> {
+  /**
+   * Advance the room's phase to the next phase in the cycle.
+   *
+   * @param roomId The room to advance.
+   * @param expected If provided, the call is a no-op when the room is not
+   *   currently in `expected`. Acts as a Compare-And-Swap guard so that two
+   *   independent callers (gateway happy-path + scheduler stuck-recovery,
+   *   or any future race) cannot both successfully advance the phase. The
+   *   second caller observes a mismatch and bails out instead of double
+   *   advancing — which previously caused duplicated `applySpellEffects`
+   *   broadcasts and Stater.reduceSpellCooldowns() running twice per turn.
+   */
+  async advanceGamePhase(
+    roomId: string,
+    expected?: GamePhase
+  ): Promise<GamePhase | null> {
     return this.withRoomLock(roomId, async () => {
       const gameState = await this.getGameState(roomId);
       if (!gameState) return null;
+
+      if (expected && gameState.currentPhase !== expected) {
+        console.log(
+          `⏭️ advanceGamePhase no-op for ${roomId}: expected ${expected}, found ${gameState.currentPhase}`
+        );
+        return gameState.currentPhase;
+      }
 
       const phases = Object.values(GamePhase);
       const currentPhaseIndex = phases.indexOf(gameState.currentPhase);

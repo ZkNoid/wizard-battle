@@ -1,8 +1,9 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, Optional } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { GameStateService } from './game-state.service';
 import { GameSessionGateway } from './game-session.gateway';
 import { RewardService } from '../reward/reward.service';
+import { TournamentResultRecorderService } from '../tournament/services/index.js';
 import {
   GamePhase,
   IUserActions,
@@ -11,6 +12,15 @@ import {
   IGameEnd,
   IReward,
 } from '../../../common/types/gameplay.types';
+
+interface SchedulerWinnerData {
+  wUserId: string | undefined;
+  wPlayerId: string;
+  lUserId: string | undefined;
+  lPlayerId: string;
+  wCharacter: string;
+  lCharacter: string;
+}
 
 /**
  * @title Game Phase Scheduler - Cron-Based Phase Management
@@ -27,8 +37,60 @@ export class GamePhaseSchedulerService {
     private readonly gameStateService: GameStateService,
     @Inject(forwardRef(() => GameSessionGateway))
     private readonly gameSessionGateway: GameSessionGateway,
-    private readonly rewardService: RewardService
+    private readonly rewardService: RewardService,
+    @Optional()
+    private readonly tournamentResultRecorder?: TournamentResultRecorderService
   ) {}
+
+  /**
+   * Persist a tournament match result if the room is a tournament room and a
+   * winner is known. This is the scheduler's counterpart to the recording
+   * performed by GameSessionGateway.handleReportDead — without it, matches
+   * ended via cron timeouts (e.g., a player times out during SPELL_CASTING
+   * because their proof generation overshot the deadline) never reach Mongo
+   * and silently disappear from the tournament leaderboard.
+   *
+   * Draws are intentionally NOT recorded — the leaderboard schema does not
+   * carry a winner-less row, matching the gateway behavior.
+   */
+  private async recordTournamentResultIfWinner(
+    roomId: string,
+    winnerData: SchedulerWinnerData | null,
+    surrendered: boolean
+  ): Promise<void> {
+    if (!this.tournamentResultRecorder) return;
+    if (!winnerData) return;
+    if (!this.tournamentResultRecorder.isTournamentRoom(roomId)) return;
+
+    try {
+      const gameState = await this.gameStateService.getGameState(roomId);
+      await this.tournamentResultRecorder.recordResult({
+        roomId,
+        winnerId: winnerData.wUserId ?? winnerData.wPlayerId,
+        loserId: winnerData.lUserId ?? winnerData.lPlayerId,
+        winnerPlayerId: winnerData.wPlayerId,
+        loserPlayerId: winnerData.lPlayerId,
+        rounds: gameState?.turn ?? 1,
+        surrendered,
+      });
+    } catch (err) {
+      console.error(
+        `Failed to record tournament match result from scheduler for room ${roomId}:`,
+        err
+      );
+    }
+  }
+
+  /**
+   * Tournament rooms live in `tournament_matches_active`, regular rooms in
+   * `matches`. Without choosing the right hash key, scheduler cleanup leaks
+   * tournament match entries forever.
+   */
+  private matchesHashKey(roomId: string): string {
+    return this.tournamentResultRecorder?.isTournamentRoom(roomId)
+      ? 'tournament_matches_active'
+      : 'matches';
+  }
 
   /**
    * Retry wrapper with circuit breaker
@@ -275,7 +337,10 @@ export class GamePhaseSchedulerService {
               this.gameStateService.removeGameState(roomId)
             );
             await this.withRetry(() =>
-              this.gameStateService.redisClient.hDel('matches', roomId)
+              this.gameStateService.redisClient.hDel(
+                this.matchesHashKey(roomId),
+                roomId
+              )
             );
             console.log(
               `🗑️ Cleared match and state for timed-out room ${roomId}`
@@ -354,6 +419,15 @@ export class GamePhaseSchedulerService {
             await this.withRetry(() =>
               this.gameStateService.publishToRoom(roomId, 'gameEnd', gameEnd)
             );
+            // Persist tournament leaderboard entry. The losing player here is
+            // a non-submitter (proof gen / network / tab freeze), treated as
+            // a forfeit — record with surrendered=true so post-hoc analytics
+            // can distinguish forfeits from in-combat losses.
+            await this.recordTournamentResultIfWinner(
+              roomId,
+              winnerData,
+              true
+            );
             await this.withRetry(() =>
               this.gameStateService.markRoomForCleanup(
                 roomId,
@@ -366,7 +440,10 @@ export class GamePhaseSchedulerService {
                 this.gameStateService.removeGameState(roomId)
               );
               await this.withRetry(() =>
-                this.gameStateService.redisClient.hDel('matches', roomId)
+                this.gameStateService.redisClient.hDel(
+                  this.matchesHashKey(roomId),
+                  roomId
+                )
               );
               console.log(
                 `🗑️ Cleared match and state for finished room ${roomId}`
@@ -401,9 +478,13 @@ export class GamePhaseSchedulerService {
               );
 
               let gameEnd: IGameEnd;
+              let resolvedWinner:
+                | SchedulerWinnerData
+                | null = null;
               if (result === 'draw') {
                 gameEnd = { winnerId: 'draw' };
               } else {
+                resolvedWinner = result;
                 gameEnd = await this.distributeRewards(result, winnerId);
               }
 
@@ -412,6 +493,11 @@ export class GamePhaseSchedulerService {
                 .emit('gameEnd', gameEnd);
               await this.withRetry(() =>
                 this.gameStateService.publishToRoom(roomId, 'gameEnd', gameEnd)
+              );
+              await this.recordTournamentResultIfWinner(
+                roomId,
+                resolvedWinner,
+                true
               );
             } else {
               // Multiple players still alive - it's a draw
@@ -443,7 +529,10 @@ export class GamePhaseSchedulerService {
                 this.gameStateService.removeGameState(roomId)
               );
               await this.withRetry(() =>
-                this.gameStateService.redisClient.hDel('matches', roomId)
+                this.gameStateService.redisClient.hDel(
+                  this.matchesHashKey(roomId),
+                  roomId
+                )
               );
               console.log(
                 `🗑️ Cleared match and state for completed game in room ${roomId}`
@@ -561,48 +650,55 @@ export class GamePhaseSchedulerService {
 
   /**
    * @notice Purge stale matches every minute
-   * @dev Ensures Redis 'matches' entries are removed when rooms are finished or missing
+   * @dev Ensures Redis match entries are removed when rooms are finished or
+   * missing. Iterates BOTH the regular `matches` hash and the
+   * `tournament_matches_active` hash so tournament rooms don't accumulate.
    */
   @Cron('0 * * * * *')
   async purgeStaleMatches() {
     if (!(await this.withRetry(() => this.isLeader()))) return;
-    try {
-      const matches = await this.withRetry(() =>
-        this.getAllHashEntriesWithScan('matches')
-      );
-      if (!matches || Object.keys(matches).length === 0) return;
+    const timeoutMs = Number(process.env.SPELL_CAST_TIMEOUT || 120000);
 
-      for (const [roomId] of Object.entries(matches)) {
-        const state = await this.withRetry(() =>
-          this.gameStateService.getGameState(roomId)
+    for (const hashKey of ['matches', 'tournament_matches_active']) {
+      try {
+        const matches = await this.withRetry(() =>
+          this.getAllHashEntriesWithScan(hashKey)
         );
-        const timeoutMs = Number(process.env.SPELL_CAST_TIMEOUT || 120000);
+        if (!matches || Object.keys(matches).length === 0) continue;
 
-        if (!state) {
-          // Only remove stale match entry; do not touch game state here
-          await this.withRetry(() =>
-            this.gameStateService.redisClient.hDel('matches', roomId)
+        for (const [roomId] of Object.entries(matches)) {
+          const state = await this.withRetry(() =>
+            this.gameStateService.getGameState(roomId)
           );
-          console.log(`🧽 Purged stale match with no state: ${roomId}`);
-          continue;
-        }
 
-        const isInactive = state.status !== 'active';
-        const isOld =
-          Date.now() - (state.updatedAt || state.createdAt || 0) > timeoutMs;
-        if (isInactive && isOld) {
-          // Only purge stale match entry; avoid deleting game state here to prevent mid-game loss.
-          // Room state cleanup should be handled by explicit cleanup flows (e.g., cleanupRoom, markRoomForCleanup, end-of-game paths).
-          await this.withRetry(() =>
-            this.gameStateService.redisClient.hDel('matches', roomId)
-          );
-          console.log(
-            `🧽 Purged stale match entry (state retained) for room: ${roomId}`
-          );
+          if (!state) {
+            // Only remove stale match entry; do not touch game state here
+            await this.withRetry(() =>
+              this.gameStateService.redisClient.hDel(hashKey, roomId)
+            );
+            console.log(
+              `🧽 Purged stale match with no state from ${hashKey}: ${roomId}`
+            );
+            continue;
+          }
+
+          const isInactive = state.status !== 'active';
+          const isOld =
+            Date.now() - (state.updatedAt || state.createdAt || 0) > timeoutMs;
+          if (isInactive && isOld) {
+            // Only purge stale match entry; avoid deleting game state here to prevent mid-game loss.
+            // Room state cleanup should be handled by explicit cleanup flows (e.g., cleanupRoom, markRoomForCleanup, end-of-game paths).
+            await this.withRetry(() =>
+              this.gameStateService.redisClient.hDel(hashKey, roomId)
+            );
+            console.log(
+              `🧽 Purged stale match entry (state retained) from ${hashKey} for room: ${roomId}`
+            );
+          }
         }
+      } catch (error) {
+        console.error(`Error purging stale matches (${hashKey}):`, error);
       }
-    } catch (error) {
-      console.error('Error purging stale matches:', error);
     }
   }
 
@@ -680,10 +776,28 @@ export class GamePhaseSchedulerService {
       const timeSincePhaseStart = now - gameState.phaseStartTime;
 
       // Check for specific phase transition conditions
+      //
+      // NOTE: Happy-path transitions (SPELL_PROPAGATION→SPELL_EFFECTS,
+      // SPELL_EFFECTS→END_OF_ROUND, STATE_UPDATE→SPELL_CASTING) are driven
+      // exclusively by GameSessionGateway (event-driven, inline). The cron
+      // is STUCK-RECOVERY ONLY — thresholds below are far above any normal
+      // gateway transit time so the cron does not race the happy path.
+      // The CAS guard in GameStateService.advanceGamePhase additionally
+      // ensures any concurrent attempt is a no-op when the phase already
+      // advanced.
+      //
+      // Without these recovery branches, a process restart between the
+      // gateway's `emit applySpellEffects` and its `setTimeout(2000)` (or
+      // mid-fire-and-forget on SPELL_PROPAGATION/STATE_UPDATE) leaves the
+      // room wedged until the 30-min `cleanupInactiveRooms` sweeper kills
+      // it. With recovery, the cron rescues the room within ~25s.
+      const STUCK_RECOVERY_MS = 20_000;
       switch (gameState.currentPhase) {
         case GamePhase.SPELL_PROPAGATION:
-          // Auto-advance to SPELL_EFFECTS after 1 second
-          if (timeSincePhaseStart >= 1000) {
+          if (timeSincePhaseStart >= STUCK_RECOVERY_MS) {
+            console.log(
+              `🚨 SPELL_PROPAGATION stuck for ${timeSincePhaseStart}ms in room ${roomId} — forcing recovery`
+            );
             transitions.push({
               roomId,
               currentPhase: GamePhase.SPELL_PROPAGATION,
@@ -694,8 +808,10 @@ export class GamePhaseSchedulerService {
           break;
 
         case GamePhase.SPELL_EFFECTS:
-          // Auto-advance to END_OF_ROUND after 2 seconds
-          if (timeSincePhaseStart >= 2000) {
+          if (timeSincePhaseStart >= STUCK_RECOVERY_MS) {
+            console.log(
+              `🚨 SPELL_EFFECTS stuck for ${timeSincePhaseStart}ms in room ${roomId} — forcing recovery`
+            );
             transitions.push({
               roomId,
               currentPhase: GamePhase.SPELL_EFFECTS,
@@ -705,11 +821,28 @@ export class GamePhaseSchedulerService {
           }
           break;
 
+        case GamePhase.STATE_UPDATE:
+          if (timeSincePhaseStart >= STUCK_RECOVERY_MS) {
+            console.log(
+              `🚨 STATE_UPDATE stuck for ${timeSincePhaseStart}ms in room ${roomId} — forcing recovery`
+            );
+            transitions.push({
+              roomId,
+              currentPhase: GamePhase.STATE_UPDATE,
+              nextPhase: GamePhase.SPELL_CASTING,
+              delayMs: 0,
+            });
+          }
+          break;
+
         case GamePhase.END_OF_ROUND:
-          // END_OF_ROUND - issue fix
-          // Auto-advance to STATE_UPDATE if stuck for more than 10 seconds
-          // This prevents games from getting stuck when players fail to submit trusted states
-          if (timeSincePhaseStart >= 10000) {
+          // Auto-advance to STATE_UPDATE if stuck for more than 15 seconds.
+          // Threshold is intentionally larger than any reasonable client
+          // proof-generation + submission time so that the gateway's
+          // event-driven path (storeTrustedStateAndMarkReady →
+          // advanceToStateUpdate) wins under normal conditions and this
+          // only fires when one or more clients failed to submit.
+          if (timeSincePhaseStart >= 15000) {
             const alivePlayers = gameState.players.filter((p) => p.isAlive);
             const playersWithTrustedState = gameState.players.filter(
               (p) => p.isAlive && p.trustedState
@@ -764,18 +897,6 @@ export class GamePhaseSchedulerService {
             }
           }
           break;
-
-        case GamePhase.STATE_UPDATE:
-          // Auto-advance to next turn after 2 seconds
-          if (timeSincePhaseStart >= 2000) {
-            transitions.push({
-              roomId,
-              currentPhase: GamePhase.STATE_UPDATE,
-              nextPhase: GamePhase.SPELL_CASTING,
-              delayMs: 0,
-            });
-          }
-          break;
       }
     }
 
@@ -817,33 +938,66 @@ export class GamePhaseSchedulerService {
         `🔄 Phase transition: ${roomId} ${currentPhase} → ${nextPhase}`
       );
 
-      // GameSessionGateway is now properly injected
-
-      switch (nextPhase) {
-        case GamePhase.SPELL_EFFECTS:
-          await this.gameSessionGateway.advanceToSpellEffects(roomId);
-          break;
-        case GamePhase.END_OF_ROUND:
-          // Advance phase directly since we don't have a specific method
-          await this.gameStateService.advanceGamePhase(roomId);
-          break;
-        case GamePhase.STATE_UPDATE:
-          // END_OF_ROUND - issue fix
-          // Handle timeout from END_OF_ROUND - force advance to state update
-          if (currentPhase === GamePhase.END_OF_ROUND) {
-            console.log(
-              `🚨 Force advancing ${roomId} from END_OF_ROUND timeout to STATE_UPDATE`
-            );
-            await this.gameSessionGateway.advanceToStateUpdate(roomId);
-          } else {
-            await this.gameStateService.advanceGamePhase(roomId);
-          }
-          break;
-        case GamePhase.SPELL_CASTING:
-          await this.gameSessionGateway.startNextTurn(roomId);
-          break;
-        default:
-          await this.gameStateService.advanceGamePhase(roomId);
+      // Stuck-recovery dispatch. Each branch delegates to the same gateway
+      // method that drives the happy path; the CAS guard in
+      // GameStateService.advanceGamePhase makes the call a no-op if the
+      // gateway already advanced the phase between our `getGameState` read
+      // and now. Recovery thresholds (see getPendingPhaseTransitions) are
+      // wide enough that this code only runs on real wedges (process
+      // restart mid-setTimeout, redis hiccup, unhandled rejection).
+      if (
+        currentPhase === GamePhase.SPELL_PROPAGATION &&
+        nextPhase === GamePhase.SPELL_EFFECTS
+      ) {
+        console.log(
+          `🚨 Force advancing ${roomId} from SPELL_PROPAGATION wedge to SPELL_EFFECTS`
+        );
+        await this.gameSessionGateway.advanceToSpellEffects(roomId);
+      } else if (
+        currentPhase === GamePhase.SPELL_EFFECTS &&
+        nextPhase === GamePhase.END_OF_ROUND
+      ) {
+        // No dedicated gateway method — emit endOfRound directly so
+        // clients submit their trusted state, then the END_OF_ROUND
+        // recovery branch (15s) handles the rest if they don't.
+        console.log(
+          `🚨 Force advancing ${roomId} from SPELL_EFFECTS wedge to END_OF_ROUND`
+        );
+        const advanced = await this.gameStateService.advanceGamePhase(
+          roomId,
+          GamePhase.SPELL_EFFECTS
+        );
+        if (advanced === GamePhase.END_OF_ROUND) {
+          const payload = { phase: GamePhase.END_OF_ROUND };
+          this.gameSessionGateway.server
+            .to(roomId)
+            .emit('endOfRound', payload);
+          await this.gameStateService.publishToRoom(
+            roomId,
+            'endOfRound',
+            payload
+          );
+        }
+      } else if (
+        currentPhase === GamePhase.END_OF_ROUND &&
+        nextPhase === GamePhase.STATE_UPDATE
+      ) {
+        console.log(
+          `🚨 Force advancing ${roomId} from END_OF_ROUND timeout to STATE_UPDATE`
+        );
+        await this.gameSessionGateway.advanceToStateUpdate(roomId);
+      } else if (
+        currentPhase === GamePhase.STATE_UPDATE &&
+        nextPhase === GamePhase.SPELL_CASTING
+      ) {
+        console.log(
+          `🚨 Force advancing ${roomId} from STATE_UPDATE wedge to SPELL_CASTING`
+        );
+        await this.gameSessionGateway.startNextTurn(roomId);
+      } else {
+        console.warn(
+          `⚠️ Ignoring unexpected scheduler transition ${currentPhase}→${nextPhase} for ${roomId}`
+        );
       }
       // Best-effort lock release
       await this.gameStateService.releaseRoomLock(lockKey, owner);

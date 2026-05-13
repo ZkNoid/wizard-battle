@@ -60,17 +60,23 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
   });
 
   describe('Phase Transition Logic', () => {
-    it('should identify SPELL_PROPAGATION rooms ready for SPELL_EFFECTS transition', async () => {
+    // The scheduler is STUCK-RECOVERY ONLY for the happy-path phases.
+    // Gateway drives SPELL_PROPAGATION→SPELL_EFFECTS, SPELL_EFFECTS→
+    // END_OF_ROUND, and STATE_UPDATE→SPELL_CASTING inline. The cron uses
+    // a 20s threshold per phase so it cannot realistically race the
+    // gateway's happy path (which transitions in <2s). The CAS guard in
+    // GameStateService.advanceGamePhase additionally makes any concurrent
+    // attempt a no-op when the gateway already advanced the phase.
+    it('should NOT transition SPELL_PROPAGATION rooms below 20s recovery threshold', async () => {
       const roomId = 'test-room';
       const gameState = {
         roomId,
         status: 'active',
         currentPhase: GamePhase.SPELL_PROPAGATION,
-        phaseStartTime: Date.now() - 1500, // 1.5 seconds ago (>1 second threshold)
+        phaseStartTime: Date.now() - 5000, // 5s — well below 20s recovery threshold
         players: [{ id: 'player1', isAlive: true }],
       };
 
-      // Mock Redis hash keys (list of roomIds) and game state
       mockGameStateService.redisClient = createRedisClientMock({
         scan: jest
           .fn()
@@ -78,9 +84,32 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
       });
       mockGameStateService.getGameState.mockResolvedValue(gameState);
       mockGameStateService.isLeader.mockResolvedValue(true);
-      mockGameSessionGateway.advanceToSpellEffects.mockResolvedValue(undefined);
 
-      // Call the private method via reflection for testing
+      const pendingTransitions = await (
+        scheduler as any
+      ).getPendingPhaseTransitions();
+
+      expect(pendingTransitions).toHaveLength(0);
+    });
+
+    it('should recover SPELL_PROPAGATION rooms stuck >20s', async () => {
+      const roomId = 'test-room';
+      const gameState = {
+        roomId,
+        status: 'active',
+        currentPhase: GamePhase.SPELL_PROPAGATION,
+        phaseStartTime: Date.now() - 21000, // 21s — past 20s recovery threshold
+        players: [{ id: 'player1', isAlive: true }],
+      };
+
+      mockGameStateService.redisClient = createRedisClientMock({
+        scan: jest
+          .fn()
+          .mockResolvedValue({ cursor: '0', keys: [`game_states:${roomId}`] }),
+      });
+      mockGameStateService.getGameState.mockResolvedValue(gameState);
+      mockGameStateService.isLeader.mockResolvedValue(true);
+
       const pendingTransitions = await (
         scheduler as any
       ).getPendingPhaseTransitions();
@@ -94,13 +123,38 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
       });
     });
 
-    it('should identify SPELL_EFFECTS rooms ready for END_OF_ROUND transition', async () => {
+    it('should NOT transition SPELL_EFFECTS rooms below 20s recovery threshold', async () => {
       const roomId = 'test-room';
       const gameState = {
         roomId,
         status: 'active',
         currentPhase: GamePhase.SPELL_EFFECTS,
-        phaseStartTime: Date.now() - 2500, // 2.5 seconds ago (>2 second threshold)
+        phaseStartTime: Date.now() - 5000,
+        players: [{ id: 'player1', isAlive: true }],
+      };
+
+      mockGameStateService.redisClient = createRedisClientMock({
+        scan: jest
+          .fn()
+          .mockResolvedValue({ cursor: '0', keys: [`game_states:${roomId}`] }),
+      });
+      mockGameStateService.getGameState.mockResolvedValue(gameState);
+      mockGameStateService.isLeader.mockResolvedValue(true);
+
+      const pendingTransitions = await (
+        scheduler as any
+      ).getPendingPhaseTransitions();
+
+      expect(pendingTransitions).toHaveLength(0);
+    });
+
+    it('should recover SPELL_EFFECTS rooms stuck >20s', async () => {
+      const roomId = 'test-room';
+      const gameState = {
+        roomId,
+        status: 'active',
+        currentPhase: GamePhase.SPELL_EFFECTS,
+        phaseStartTime: Date.now() - 21000,
         players: [{ id: 'player1', isAlive: true }],
       };
 
@@ -125,13 +179,38 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
       });
     });
 
-    it('should identify STATE_UPDATE rooms ready for new turn', async () => {
+    it('should NOT transition STATE_UPDATE rooms below 20s recovery threshold', async () => {
       const roomId = 'test-room';
       const gameState = {
         roomId,
         status: 'active',
         currentPhase: GamePhase.STATE_UPDATE,
-        phaseStartTime: Date.now() - 2500, // 2.5 seconds ago (>2 second threshold)
+        phaseStartTime: Date.now() - 5000,
+        players: [{ id: 'player1', isAlive: true }],
+      };
+
+      mockGameStateService.redisClient = createRedisClientMock({
+        scan: jest
+          .fn()
+          .mockResolvedValue({ cursor: '0', keys: [`game_states:${roomId}`] }),
+      });
+      mockGameStateService.getGameState.mockResolvedValue(gameState);
+      mockGameStateService.isLeader.mockResolvedValue(true);
+
+      const pendingTransitions = await (
+        scheduler as any
+      ).getPendingPhaseTransitions();
+
+      expect(pendingTransitions).toHaveLength(0);
+    });
+
+    it('should recover STATE_UPDATE rooms stuck >20s', async () => {
+      const roomId = 'test-room';
+      const gameState = {
+        roomId,
+        status: 'active',
+        currentPhase: GamePhase.STATE_UPDATE,
+        phaseStartTime: Date.now() - 21000,
         players: [{ id: 'player1', isAlive: true }],
       };
 
@@ -156,14 +235,47 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
       });
     });
 
-    it('should not transition rooms that are not ready', async () => {
+    it('should identify END_OF_ROUND rooms stuck >15s for STATE_UPDATE recovery', async () => {
       const roomId = 'test-room';
       const gameState = {
         roomId,
         status: 'active',
-        currentPhase: GamePhase.SPELL_PROPAGATION,
-        phaseStartTime: Date.now() - 500, // 0.5 seconds ago (<1 second threshold)
+        currentPhase: GamePhase.END_OF_ROUND,
+        phaseStartTime: Date.now() - 16000, // 16s — past 15s recovery threshold
         players: [{ id: 'player1', isAlive: true }],
+        playersReady: [],
+      };
+
+      mockGameStateService.redisClient = createRedisClientMock({
+        scan: jest
+          .fn()
+          .mockResolvedValue({ cursor: '0', keys: [`game_states:${roomId}`] }),
+      });
+      mockGameStateService.getGameState.mockResolvedValue(gameState);
+      mockGameStateService.isLeader.mockResolvedValue(true);
+
+      const pendingTransitions = await (
+        scheduler as any
+      ).getPendingPhaseTransitions();
+
+      expect(pendingTransitions).toHaveLength(1);
+      expect(pendingTransitions[0]).toEqual({
+        roomId,
+        currentPhase: GamePhase.END_OF_ROUND,
+        nextPhase: GamePhase.STATE_UPDATE,
+        delayMs: 0,
+      });
+    });
+
+    it('should not transition END_OF_ROUND rooms below 15s threshold', async () => {
+      const roomId = 'test-room';
+      const gameState = {
+        roomId,
+        status: 'active',
+        currentPhase: GamePhase.END_OF_ROUND,
+        phaseStartTime: Date.now() - 1000, // 1s — well below recovery threshold
+        players: [{ id: 'player1', isAlive: true }],
+        playersReady: [],
       };
 
       mockGameStateService.redisClient = createRedisClientMock({
@@ -208,7 +320,30 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
   });
 
   describe('Phase Transition Execution', () => {
-    it('should execute SPELL_EFFECTS transition correctly', async () => {
+    it('should execute END_OF_ROUND→STATE_UPDATE recovery via gateway', async () => {
+      const transition = {
+        roomId: 'test-room',
+        currentPhase: GamePhase.END_OF_ROUND,
+        nextPhase: GamePhase.STATE_UPDATE,
+        delayMs: 0,
+      };
+
+      mockGameStateService.acquireRoomLock.mockResolvedValue({
+        ok: true,
+        lockKey: 'lock-key',
+        owner: 'test-owner',
+      });
+      mockGameStateService.releaseRoomLock.mockResolvedValue(true);
+      mockGameSessionGateway.advanceToStateUpdate.mockResolvedValue(undefined);
+
+      await (scheduler as any).executePhaseTransition(transition);
+
+      expect(mockGameSessionGateway.advanceToStateUpdate).toHaveBeenCalledWith(
+        'test-room'
+      );
+    });
+
+    it('should execute SPELL_PROPAGATION→SPELL_EFFECTS recovery via gateway', async () => {
       const transition = {
         roomId: 'test-room',
         currentPhase: GamePhase.SPELL_PROPAGATION,
@@ -222,18 +357,16 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
         owner: 'test-owner',
       });
       mockGameStateService.releaseRoomLock.mockResolvedValue(true);
-      mockGameStateService.cleanupRoom.mockResolvedValue(undefined);
       mockGameSessionGateway.advanceToSpellEffects.mockResolvedValue(undefined);
 
       await (scheduler as any).executePhaseTransition(transition);
 
-      // Should cleanup room on error (no gateway available means error path)
-      expect(mockGameStateService.cleanupRoom).toHaveBeenCalledWith(
+      expect(mockGameSessionGateway.advanceToSpellEffects).toHaveBeenCalledWith(
         'test-room'
       );
     });
 
-    it('should execute new turn transition correctly', async () => {
+    it('should execute STATE_UPDATE→SPELL_CASTING recovery via gateway', async () => {
       const transition = {
         roomId: 'test-room',
         currentPhase: GamePhase.STATE_UPDATE,
@@ -247,26 +380,99 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
         owner: 'test-owner',
       });
       mockGameStateService.releaseRoomLock.mockResolvedValue(true);
-      mockGameStateService.cleanupRoom.mockResolvedValue(undefined);
       mockGameSessionGateway.startNextTurn.mockResolvedValue(undefined);
 
       await (scheduler as any).executePhaseTransition(transition);
 
-      // Should cleanup room on error (no gateway available means error path)
-      expect(mockGameStateService.cleanupRoom).toHaveBeenCalledWith(
+      expect(mockGameSessionGateway.startNextTurn).toHaveBeenCalledWith(
         'test-room'
       );
+    });
+
+    it('should execute SPELL_EFFECTS→END_OF_ROUND recovery via direct emit', async () => {
+      const transition = {
+        roomId: 'test-room',
+        currentPhase: GamePhase.SPELL_EFFECTS,
+        nextPhase: GamePhase.END_OF_ROUND,
+        delayMs: 0,
+      };
+
+      const emitMock = jest.fn();
+      mockGameSessionGateway.server = {
+        to: jest.fn().mockReturnValue({ emit: emitMock }),
+      };
+      mockGameStateService.acquireRoomLock.mockResolvedValue({
+        ok: true,
+        lockKey: 'lock-key',
+        owner: 'test-owner',
+      });
+      mockGameStateService.releaseRoomLock.mockResolvedValue(true);
+      mockGameStateService.advanceGamePhase.mockResolvedValue(
+        GamePhase.END_OF_ROUND
+      );
+      mockGameStateService.publishToRoom.mockResolvedValue(undefined);
+
+      await (scheduler as any).executePhaseTransition(transition);
+
+      expect(mockGameStateService.advanceGamePhase).toHaveBeenCalledWith(
+        'test-room',
+        GamePhase.SPELL_EFFECTS
+      );
+      expect(emitMock).toHaveBeenCalledWith('endOfRound', {
+        phase: GamePhase.END_OF_ROUND,
+      });
+      expect(mockGameStateService.publishToRoom).toHaveBeenCalledWith(
+        'test-room',
+        'endOfRound',
+        { phase: GamePhase.END_OF_ROUND }
+      );
+    });
+
+    it('should NOT emit endOfRound if CAS guard rejects SPELL_EFFECTS recovery', async () => {
+      const transition = {
+        roomId: 'test-room',
+        currentPhase: GamePhase.SPELL_EFFECTS,
+        nextPhase: GamePhase.END_OF_ROUND,
+        delayMs: 0,
+      };
+
+      const emitMock = jest.fn();
+      mockGameSessionGateway.server = {
+        to: jest.fn().mockReturnValue({ emit: emitMock }),
+      };
+      mockGameStateService.acquireRoomLock.mockResolvedValue({
+        ok: true,
+        lockKey: 'lock-key',
+        owner: 'test-owner',
+      });
+      mockGameStateService.releaseRoomLock.mockResolvedValue(true);
+      // Gateway already advanced past SPELL_EFFECTS — CAS returns the
+      // current actual phase which is NOT END_OF_ROUND in this case.
+      mockGameStateService.advanceGamePhase.mockResolvedValue(
+        GamePhase.STATE_UPDATE
+      );
+
+      await (scheduler as any).executePhaseTransition(transition);
+
+      expect(emitMock).not.toHaveBeenCalled();
+      expect(mockGameStateService.publishToRoom).not.toHaveBeenCalled();
     });
 
     it('should handle transition errors by cleaning up room', async () => {
       const transition = {
         roomId: 'test-room',
-        currentPhase: GamePhase.SPELL_PROPAGATION,
-        nextPhase: GamePhase.SPELL_EFFECTS,
+        currentPhase: GamePhase.END_OF_ROUND,
+        nextPhase: GamePhase.STATE_UPDATE,
         delayMs: 0,
       };
 
-      mockGameSessionGateway.advanceToSpellEffects.mockRejectedValue(
+      mockGameStateService.acquireRoomLock.mockResolvedValue({
+        ok: true,
+        lockKey: 'lock-key',
+        owner: 'test-owner',
+      });
+      mockGameStateService.releaseRoomLock.mockResolvedValue(true);
+      mockGameSessionGateway.advanceToStateUpdate.mockRejectedValue(
         new Error('Transition failed')
       );
       mockGameStateService.cleanupRoom.mockResolvedValue(undefined);

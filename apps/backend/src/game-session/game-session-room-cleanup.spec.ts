@@ -88,6 +88,25 @@ describe('GameSessionGateway - Room Cleanup Tests', () => {
 
     gateway = module.get<GameSessionGateway>(GameSessionGateway);
     gateway.server = mockServer;
+
+    // Default advanceGamePhase mock honors the new CAS guard: returns the
+    // next phase in the cycle, matching the production state machine.
+    // Without this, every gateway advance method would observe undefined !==
+    // expected and bail out as a no-op.
+    const phaseOrder: GamePhase[] = [
+      GamePhase.SPELL_CASTING,
+      GamePhase.SPELL_PROPAGATION,
+      GamePhase.SPELL_EFFECTS,
+      GamePhase.END_OF_ROUND,
+      GamePhase.STATE_UPDATE,
+    ];
+    mockGameStateService.advanceGamePhase.mockImplementation(
+      async (_roomId: string, expected?: GamePhase) => {
+        if (!expected) return GamePhase.SPELL_CASTING;
+        const idx = phaseOrder.indexOf(expected);
+        return phaseOrder[(idx + 1) % phaseOrder.length];
+      }
+    );
   });
 
   afterEach(async () => {
@@ -114,8 +133,7 @@ describe('GameSessionGateway - Room Cleanup Tests', () => {
       activeRooms.add(roomId);
       roomPlayers.set(roomId, ['player1', 'player2']);
 
-      // Start game with active resources
-      mockGameStateService.advanceGamePhase.mockResolvedValue(undefined);
+      // Start game with active resources (advanceGamePhase mock set in beforeEach)
       mockGameStateService.getAllPlayerActions.mockResolvedValue({
         player1: { actions: [] },
         player2: { actions: [] },
@@ -187,8 +205,7 @@ describe('GameSessionGateway - Room Cleanup Tests', () => {
         roomPlayers.set(roomId, [`player${cycle}a`, `player${cycle}b`]);
         activeRooms.add(roomId);
 
-        // Start some game activity
-        mockGameStateService.advanceGamePhase.mockResolvedValue(undefined);
+        // Start some game activity (advanceGamePhase mock set in beforeEach)
         mockGameStateService.getAllPlayerActions.mockResolvedValue({});
 
         // Players disconnect immediately
@@ -212,8 +229,7 @@ describe('GameSessionGateway - Room Cleanup Tests', () => {
       activeRooms.add(roomId);
       roomPlayers.set(roomId, ['player1', 'player2']);
 
-      // Setup active game
-      mockGameStateService.advanceGamePhase.mockResolvedValue(undefined);
+      // Setup active game (advanceGamePhase mock set in beforeEach)
       mockGameStateService.getAllPlayerActions.mockResolvedValue({});
 
       // Start game phases that create resources
@@ -241,8 +257,7 @@ describe('GameSessionGateway - Room Cleanup Tests', () => {
       const roomId = 'abrupt-end-room';
       activeRooms.add(roomId);
 
-      // Setup game with active resources
-      mockGameStateService.advanceGamePhase.mockResolvedValue(undefined);
+      // Setup game with active resources (advanceGamePhase mock set in beforeEach)
       mockGameStateService.getAllPlayerActions.mockResolvedValue({});
 
       await gateway.advanceToSpellPropagation(roomId);

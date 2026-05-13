@@ -32,7 +32,25 @@ describe('END_OF_ROUND Stuck Issue Fix', () => {
     storeTrustedStateAndMarkReady: jest.fn(),
     markPlayerReady: jest.fn(),
     clearTurnData: jest.fn(),
-    advanceGamePhase: jest.fn(),
+    // Honor CAS guard: return the next phase in the cycle so gateway
+    // methods proceed past their advance check.
+    advanceGamePhase: jest.fn(
+      async (
+        _roomId: string,
+        expected?: GamePhase
+      ): Promise<GamePhase | null> => {
+        const order: GamePhase[] = [
+          GamePhase.SPELL_CASTING,
+          GamePhase.SPELL_PROPAGATION,
+          GamePhase.SPELL_EFFECTS,
+          GamePhase.END_OF_ROUND,
+          GamePhase.STATE_UPDATE,
+        ];
+        if (!expected) return GamePhase.SPELL_CASTING;
+        const idx = order.indexOf(expected);
+        return order[(idx + 1) % order.length] ?? null;
+      }
+    ),
     updateGameState: jest.fn(),
     publishToRoom: jest.fn(),
     subscribeToRoomEvents: jest.fn(),

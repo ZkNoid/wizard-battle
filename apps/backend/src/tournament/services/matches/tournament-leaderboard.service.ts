@@ -35,8 +35,12 @@ export class TournamentLeaderboardService {
   /**
    * Aggregates match results for a tournament into a ranked leaderboard.
    * Includes registered participants who have no recorded matches (0/0).
-   * Ranking by {@link tournamentLeaderboardScore} (desc), then wins, fewer
-   * losses, wallet — so an idle registrant (100) can rank above a losing record.
+   *
+   * Ranking rules (in order):
+   *   1. Players who have played ≥1 game always rank above those who have not.
+   *   2. Within each group: score desc → wins desc → losses asc → wallet asc.
+   *
+   * Example: 95 pts / 5 losses ranks above 100 pts / 0 games.
    */
   async getLeaderboard(
     tournamentId: string
@@ -96,6 +100,10 @@ export class TournamentLeaderboardService {
     }
 
     entries.sort((a, b) => {
+      // Players who have played at least once always outrank idle registrants.
+      const aPlayed = a.totalGames > 0 ? 1 : 0;
+      const bPlayed = b.totalGames > 0 ? 1 : 0;
+      if (bPlayed !== aPlayed) return bPlayed - aPlayed;
       if (b.score !== a.score) return b.score - a.score;
       if (b.wins !== a.wins) return b.wins - a.wins;
       if (a.losses !== b.losses) return a.losses - b.losses;
