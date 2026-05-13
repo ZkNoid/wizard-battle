@@ -58,6 +58,12 @@ export class GamePhaseManager {
     null;
   private phaseTimerDeadlineMs: number | null = null;
   private cachedTrustedStateForTurn?: ITrustedState; // Cached once per round
+  // Per-turn dedupe flags. Defense in depth against duplicated server
+  // broadcasts (e.g. happy-path / scheduler race, redis pubsub fan-in).
+  // Without these, applySpellEffects firing twice would call
+  // Stater.applyActions twice and cooldowns would drop -2 instead of -1.
+  private hasAppliedPropagationThisTurn = false;
+  private hasAppliedEffectsThisTurn = false;
   private stageProcessMutex: Mutex;
 
   constructor(
@@ -262,6 +268,8 @@ export class GamePhaseManager {
           // Reset per-turn tracking to avoid stale state after rejoin
           this.hasSubmittedActions = false;
           this.hasSubmittedTrustedState = false;
+          this.hasAppliedPropagationThisTurn = false;
+          this.hasAppliedEffectsThisTurn = false;
           this.lastActions = undefined;
         } finally {
           release();
@@ -434,6 +442,14 @@ export class GamePhaseManager {
    * - Awaits server signal to begin applying effects
    */
   private handleSpellPropagation(allActions: Record<string, IUserActions>) {
+    if (this.hasAppliedPropagationThisTurn) {
+      console.log(
+        '⏭️ Skipping duplicate allPlayerActions for this turn'
+      );
+      return;
+    }
+    this.hasAppliedPropagationThisTurn = true;
+
     console.log('Received all player actions:', allActions);
 
     // Ensure we submitted actions before processing propagation
@@ -491,13 +507,19 @@ export class GamePhaseManager {
    * - Prevents cheating through cryptographic verification
    */
   private handleSpellEffects() {
+    if (this.hasAppliedEffectsThisTurn) {
+      console.log(
+        '⏭️ Skipping duplicate applySpellEffects for this turn (cooldowns already advanced)'
+      );
+      return;
+    }
+    this.hasAppliedEffectsThisTurn = true;
+
     this.updateCurrentPhase(GamePhase.SPELL_EFFECTS);
 
-    // Apply effects using your Stater
-    // This would typically involve calling stater.applyActions()
-    // and generating the trusted state
-
-    // Generate and cache trusted state for this round, but do not submit yet
+    // Apply effects using Stater. This calls reduceSpellCooldowns() exactly
+    // once per turn — the dedupe flag above guarantees idempotency even if
+    // the server emits applySpellEffects more than once.
     this.cachedTrustedStateForTurn = this.generateTrustedState();
 
     // Trigger UI update after spell effects have been applied
@@ -651,6 +673,8 @@ export class GamePhaseManager {
     // Reset for new turn
     this.hasSubmittedActions = false;
     this.hasSubmittedTrustedState = false;
+    this.hasAppliedPropagationThisTurn = false;
+    this.hasAppliedEffectsThisTurn = false;
     this.lastActions = undefined;
     this.cachedTrustedStateForTurn = undefined;
 

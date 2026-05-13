@@ -18,7 +18,7 @@ import type {
   IUpdateQueue,
 } from '../../../../common/types/matchmaking.types';
 import type { ITournamentAddToQueue } from '../../../../common/types/tournament-matchmaking.types';
-import { TOURNAMENT_MATCHMAKING_STORAGE_KEY } from '@/lib/constants/tournament-matchmaking';
+import { useTournamentStore } from '@/lib/store/tournamentStore';
 import type { IReward } from '../../../../common/types/gameplay.types';
 import { State } from '../../../../common/stater/state';
 import { GamePhaseManager } from '@/game/GamePhaseManager';
@@ -101,9 +101,9 @@ export default function Matchmaking({
     if (!socket || !stater) return;
 
     const handleMatchFound = (response: IFoundMatch) => {
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem(TOURNAMENT_MATCHMAKING_STORAGE_KEY);
-      }
+      // Tournament matchmaking context intentionally preserved across matches.
+      // Cleared only when the user explicitly leaves tournament mode (ModeSelect PvP/PvE),
+      // ensuring "Play more?" → next match still routes to tournament queue.
       console.log(
         '🎮 Match found! Creating GamePhaseManager and confirming joined...'
       );
@@ -196,9 +196,7 @@ export default function Matchmaking({
       console.log(data);
 
       const tournamentId =
-        typeof window !== 'undefined'
-          ? sessionStorage.getItem(TOURNAMENT_MATCHMAKING_STORAGE_KEY)
-          : null;
+        useTournamentStore.getState().activeMatchmakingTournamentId;
 
       if (playMode === PlayMode.PVE) {
         socket.emit('joinBotMatchmaking', {
@@ -272,10 +270,17 @@ export default function Matchmaking({
           variant="gray"
           className="w-106 h-15"
           onClick={() => {
-            if (typeof window !== 'undefined') {
-              sessionStorage.removeItem(TOURNAMENT_MATCHMAKING_STORAGE_KEY);
-            }
-            setPlayStep(PlaySteps.SELECT_MAP);
+            // Tell the backend to drop us from whichever queue we joined
+            // (casual or tournament). Without this, the previous tournament
+            // entry can persist server-side and the next matchmaking attempt
+            // can be silently mis-routed.
+            socket?.emit('leaveMatchmaking');
+            // Bounce the player back to mode selection so the next
+            // matchmaking attempt always reflects an explicit choice:
+            // tournament context survives in the store (it's only cleared
+            // by PvP/PvE buttons), so re-clicking Tournament resumes the
+            // tournament queue, while PvP/PvE move to the casual queue.
+            setPlayStep(PlaySteps.SELECT_MODE);
           }}
         >
           Cancel

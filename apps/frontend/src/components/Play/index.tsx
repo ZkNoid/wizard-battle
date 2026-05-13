@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PlaySteps } from '@/lib/enums/PlaySteps';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ModeSelect } from './ModeSelect';
@@ -15,13 +15,12 @@ import Matchmaking from './Matchmaking';
 import GameResult from '../GameResult';
 import { allWizards } from '../../../../common/wizards';
 import { useUserInformationStore } from '@/lib/store/userInformationStore';
+import { useTournamentStore } from '@/lib/store/tournamentStore';
 import Header from '../Header';
 import Modals from '../Header/Modals';
-import { TOURNAMENT_MATCHMAKING_STORAGE_KEY } from '@/lib/constants/tournament-matchmaking';
 
 export default function Play() {
   const router = useRouter();
-  const tournamentBootstrapRef = useRef(false);
   const [playStep, setPlayStep] = useState<PlaySteps>(PlaySteps.SELECT_MODE);
   const [playMode, setPlayMode] = useState<PlayMode | undefined>(undefined);
   const [botType, setBotType] = useState<BotType>(BotType.MAGE);
@@ -42,13 +41,15 @@ export default function Play() {
   const { stater, setSelectedSkills, setCurrentWizard } =
     useUserInformationStore();
 
+  // Re-runs whenever the URL gains `?tournamentId=`. We then strip the param
+  // via router.replace so the next invocation returns early — this avoids a
+  // ref-based one-shot guard that would silently drop tournament intent if the
+  // user opens TournamentsModal from inside /play and clicks "Find Match"
+  // while already mid-flow (the previous bug).
   useEffect(() => {
     const tid = searchParams.get('tournamentId');
-    if (!tid || tournamentBootstrapRef.current) return;
-    tournamentBootstrapRef.current = true;
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem(TOURNAMENT_MATCHMAKING_STORAGE_KEY, tid);
-    }
+    if (!tid) return;
+    useTournamentStore.getState().setActiveMatchmakingTournament(tid);
     setPlayMode(PlayMode.PVP);
     setPlayStep(PlaySteps.SELECT_CHARACTER);
     router.replace('/play');

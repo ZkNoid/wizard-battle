@@ -129,6 +129,16 @@ interface TournamentStore {
   isLoading: boolean;
   error: string | null;
 
+  /**
+   * Tournament id the user is currently matchmaking for.
+   * Set when user enters /play with tournament intent.
+   * Cleared only on explicit non-tournament mode selection or explicit exit.
+   * Survives match end → game results → /play navigation in the same SPA session.
+   */
+  activeMatchmakingTournamentId: string | null;
+  setActiveMatchmakingTournament: (id: string | null) => void;
+  clearActiveMatchmakingTournament: () => void;
+
   loadTournaments: (playerPubKey?: string) => Promise<void>;
   clear: () => void;
 }
@@ -138,6 +148,12 @@ export const useTournamentStore = create<TournamentStore>()((set) => ({
   raw: [],
   isLoading: false,
   error: null,
+  activeMatchmakingTournamentId: null,
+
+  setActiveMatchmakingTournament: (id: string | null) =>
+    set({ activeMatchmakingTournamentId: id }),
+  clearActiveMatchmakingTournament: () =>
+    set({ activeMatchmakingTournamentId: null }),
 
   loadTournaments: async (playerPubKey?: string) => {
     set({ isLoading: true, error: null });
@@ -169,5 +185,11 @@ export const useTournamentStore = create<TournamentStore>()((set) => ({
     }
   },
 
-  clear: () => set({ tournaments: [], raw: [], error: null }),
+  clear: () =>
+    set({
+      tournaments: [],
+      raw: [],
+      error: null,
+      activeMatchmakingTournamentId: null,
+    }),
 }));

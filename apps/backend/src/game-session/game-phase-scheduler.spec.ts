@@ -85,15 +85,20 @@ describe('GamePhaseSchedulerService', () => {
   });
 
   describe('Cron-Based Phase Transitions', () => {
-    it('should process phase transitions without creating timers', async () => {
-      // Mock active room needing phase transition
+    it('should process END_OF_ROUND stuck-recovery transitions without timers', async () => {
+      // Scheduler is stuck-recovery only — only END_OF_ROUND past 15s gets
+      // forwarded to the gateway. Happy-path phases are gateway-driven.
       const mockGameState = {
         roomId: 'test-room',
         status: 'active',
-        currentPhase: GamePhase.SPELL_PROPAGATION,
-        phaseStartTime: Date.now() - 2000, // 2 seconds ago
-        phaseTimeout: 1000, // 1 second timeout
-        players: [{ id: 'player1' }, { id: 'player2' }],
+        currentPhase: GamePhase.END_OF_ROUND,
+        phaseStartTime: Date.now() - 16000, // 16s — past 15s recovery threshold
+        phaseTimeout: 1000,
+        players: [
+          { id: 'player1', isAlive: true },
+          { id: 'player2', isAlive: true },
+        ],
+        playersReady: [],
         createdAt: Date.now() - 10000,
         updatedAt: Date.now() - 1000,
       };
@@ -104,18 +109,15 @@ describe('GamePhaseSchedulerService', () => {
       });
       mockGameStateService.getGameState.mockResolvedValue(mockGameState);
 
-      // Call the cron method directly
       await service.processPhaseTransitions();
 
-      // Verify phase transition was triggered
-      expect(mockGameSessionGateway.advanceToSpellEffects).toHaveBeenCalledWith(
+      expect(mockGameSessionGateway.advanceToStateUpdate).toHaveBeenCalledWith(
         'test-room'
       );
 
       console.log(
-        '✅ CRON-BASED SOLUTION: Phase transition processed without setTimeout'
+        '✅ STUCK-RECOVERY ONLY: Cron only forces END_OF_ROUND→STATE_UPDATE'
       );
-      console.log('✅ NO MEMORY LEAKS: No timer objects created or tracked');
     });
 
     it('should clean up inactive rooms via cron', async () => {
@@ -272,10 +274,11 @@ CRON-BASED APPROACH:
       const mockGameState = {
         roomId: 'error-room',
         status: 'active',
-        currentPhase: GamePhase.SPELL_PROPAGATION,
-        phaseStartTime: Date.now() - 2000,
+        currentPhase: GamePhase.END_OF_ROUND,
+        phaseStartTime: Date.now() - 16000, // past 15s recovery threshold
         phaseTimeout: 1000,
-        players: [],
+        players: [{ id: 'p1', isAlive: true }],
+        playersReady: [],
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -285,7 +288,7 @@ CRON-BASED APPROACH:
         keys: ['game_states:error-room'],
       });
       mockGameStateService.getGameState.mockResolvedValue(mockGameState);
-      mockGameSessionGateway.advanceToSpellEffects.mockRejectedValue(
+      mockGameSessionGateway.advanceToStateUpdate.mockRejectedValue(
         new Error('Room processing failed')
       );
 

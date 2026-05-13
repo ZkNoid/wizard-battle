@@ -507,6 +507,10 @@ export class MatchmakingService {
         break;
       }
     }
+
+    // Whether or not we paired anyone this cycle, push a fresh count to the
+    // tournament queue room so the UI counter stays accurate.
+    await this.updateTournamentQueueStatus(tournamentId);
   }
 
   /**
@@ -1110,6 +1114,35 @@ export class MatchmakingService {
   }
 
   /**
+   * Broadcast queue size for a specific tournament queue room.
+   * Mirrors `updateQueueStatus` but scoped to the per-tournament Socket.IO
+   * room `queue:tournament:<id>`. Without this the tournament Matchmaking UI
+   * never receives `updateQueue` events and the player counter sticks on "...".
+   */
+  private async updateTournamentQueueStatus(
+    tournamentId: string
+  ): Promise<void> {
+    try {
+      const queueKey = this.queueKeyFor(tournamentId);
+      const waitingCount = await this.redisClient.lLen(queueKey);
+      const estimatedTimeSec = Math.max(0, waitingCount - 1) * 30;
+      const updateQueue: IUpdateQueue = new TransformedUpdateQueue(
+        waitingCount,
+        estimatedTimeSec
+      );
+
+      this.server
+        ?.to(`queue:tournament:${tournamentId}`)
+        .emit('updateQueue', updateQueue);
+    } catch (err) {
+      console.error(
+        `Failed to emit tournament updateQueue for ${tournamentId}:`,
+        err
+      );
+    }
+  }
+
+  /**
    * Set the server
    * @param server - The Socket.IO Server instance for local socket operations
    *
@@ -1501,6 +1534,16 @@ export class MatchmakingService {
       )
     );
 
+    // Direct emit to joining socket guarantees the counter updates before any
+    // race with `socket.join` propagation; broadcast covers everyone else
+    // already in the room.
+    const estimatedTimeSec = Math.max(0, queueLength - 1) * 30;
+    socket.emit(
+      'updateQueue',
+      new TransformedUpdateQueue(queueLength, estimatedTimeSec)
+    );
+    await this.updateTournamentQueueStatus(tournamentId);
+
     console.log(
       `Player ${player.playerId} (wallet: ${userId}) joined tournament ${tournamentId} queue`
     );
@@ -1808,21 +1851,34 @@ export class MatchmakingService {
     }
 
     // Also remove from any tournament queues
+    const touchedTournaments = new Set<string>();
     try {
       const tournamentKeys = await this.getTournamentQueueKeys();
       for (const tKey of tournamentKeys) {
         const tEntries = await this.redisClient.lRange(tKey, 0, -1);
+        let removedHere = false;
         for (const raw of tEntries) {
           try {
             const parsed = JSON.parse(raw);
             if (parsed.player.socketId === socket.id) {
               await this.redisClient.lRem(tKey, 1, raw);
+              removedHere = true;
             }
           } catch {}
+        }
+        if (removedHere) {
+          const tournamentId = tKey.replace('waiting:tournament:', '');
+          touchedTournaments.add(tournamentId);
+          // Drop the room subscription so future tournament emits don't
+          // reach a socket that has explicitly left this queue.
+          socket.leave(`queue:tournament:${tournamentId}`);
         }
       }
     } catch (err) {
       console.error('Error cleaning tournament queues on leave:', err);
+    }
+    for (const tournamentId of touchedTournaments) {
+      await this.updateTournamentQueueStatus(tournamentId);
     }
 
     const removeFromQueue: IRemoveFromQueue = new TransformedRemoveFromQueue(

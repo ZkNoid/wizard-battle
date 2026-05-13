@@ -41,3 +41,5 @@ yarn-error.log*
 *.pem
 
 packages/evm-contracts/lib/
+
+.serena
