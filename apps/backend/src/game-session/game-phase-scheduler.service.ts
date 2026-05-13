@@ -776,10 +776,28 @@ export class GamePhaseSchedulerService {
       const timeSincePhaseStart = now - gameState.phaseStartTime;
 
       // Check for specific phase transition conditions
+      //
+      // NOTE: Happy-path transitions (SPELL_PROPAGATION→SPELL_EFFECTS,
+      // SPELL_EFFECTS→END_OF_ROUND, STATE_UPDATE→SPELL_CASTING) are driven
+      // exclusively by GameSessionGateway (event-driven, inline). The cron
+      // is STUCK-RECOVERY ONLY — thresholds below are far above any normal
+      // gateway transit time so the cron does not race the happy path.
+      // The CAS guard in GameStateService.advanceGamePhase additionally
+      // ensures any concurrent attempt is a no-op when the phase already
+      // advanced.
+      //
+      // Without these recovery branches, a process restart between the
+      // gateway's `emit applySpellEffects` and its `setTimeout(2000)` (or
+      // mid-fire-and-forget on SPELL_PROPAGATION/STATE_UPDATE) leaves the
+      // room wedged until the 30-min `cleanupInactiveRooms` sweeper kills
+      // it. With recovery, the cron rescues the room within ~25s.
+      const STUCK_RECOVERY_MS = 20_000;
       switch (gameState.currentPhase) {
         case GamePhase.SPELL_PROPAGATION:
-          // Auto-advance to SPELL_EFFECTS after 1 second
-          if (timeSincePhaseStart >= 1000) {
+          if (timeSincePhaseStart >= STUCK_RECOVERY_MS) {
+            console.log(
+              `🚨 SPELL_PROPAGATION stuck for ${timeSincePhaseStart}ms in room ${roomId} — forcing recovery`
+            );
             transitions.push({
               roomId,
               currentPhase: GamePhase.SPELL_PROPAGATION,
@@ -790,8 +808,10 @@ export class GamePhaseSchedulerService {
           break;
 
         case GamePhase.SPELL_EFFECTS:
-          // Auto-advance to END_OF_ROUND after 2 seconds
-          if (timeSincePhaseStart >= 2000) {
+          if (timeSincePhaseStart >= STUCK_RECOVERY_MS) {
+            console.log(
+              `🚨 SPELL_EFFECTS stuck for ${timeSincePhaseStart}ms in room ${roomId} — forcing recovery`
+            );
             transitions.push({
               roomId,
               currentPhase: GamePhase.SPELL_EFFECTS,
@@ -801,11 +821,28 @@ export class GamePhaseSchedulerService {
           }
           break;
 
+        case GamePhase.STATE_UPDATE:
+          if (timeSincePhaseStart >= STUCK_RECOVERY_MS) {
+            console.log(
+              `🚨 STATE_UPDATE stuck for ${timeSincePhaseStart}ms in room ${roomId} — forcing recovery`
+            );
+            transitions.push({
+              roomId,
+              currentPhase: GamePhase.STATE_UPDATE,
+              nextPhase: GamePhase.SPELL_CASTING,
+              delayMs: 0,
+            });
+          }
+          break;
+
         case GamePhase.END_OF_ROUND:
-          // END_OF_ROUND - issue fix
-          // Auto-advance to STATE_UPDATE if stuck for more than 10 seconds
-          // This prevents games from getting stuck when players fail to submit trusted states
-          if (timeSincePhaseStart >= 10000) {
+          // Auto-advance to STATE_UPDATE if stuck for more than 15 seconds.
+          // Threshold is intentionally larger than any reasonable client
+          // proof-generation + submission time so that the gateway's
+          // event-driven path (storeTrustedStateAndMarkReady →
+          // advanceToStateUpdate) wins under normal conditions and this
+          // only fires when one or more clients failed to submit.
+          if (timeSincePhaseStart >= 15000) {
             const alivePlayers = gameState.players.filter((p) => p.isAlive);
             const playersWithTrustedState = gameState.players.filter(
               (p) => p.isAlive && p.trustedState
@@ -860,18 +897,6 @@ export class GamePhaseSchedulerService {
             }
           }
           break;
-
-        case GamePhase.STATE_UPDATE:
-          // Auto-advance to next turn after 2 seconds
-          if (timeSincePhaseStart >= 2000) {
-            transitions.push({
-              roomId,
-              currentPhase: GamePhase.STATE_UPDATE,
-              nextPhase: GamePhase.SPELL_CASTING,
-              delayMs: 0,
-            });
-          }
-          break;
       }
     }
 
@@ -913,33 +938,66 @@ export class GamePhaseSchedulerService {
         `🔄 Phase transition: ${roomId} ${currentPhase} → ${nextPhase}`
       );
 
-      // GameSessionGateway is now properly injected
-
-      switch (nextPhase) {
-        case GamePhase.SPELL_EFFECTS:
-          await this.gameSessionGateway.advanceToSpellEffects(roomId);
-          break;
-        case GamePhase.END_OF_ROUND:
-          // Advance phase directly since we don't have a specific method
-          await this.gameStateService.advanceGamePhase(roomId);
-          break;
-        case GamePhase.STATE_UPDATE:
-          // END_OF_ROUND - issue fix
-          // Handle timeout from END_OF_ROUND - force advance to state update
-          if (currentPhase === GamePhase.END_OF_ROUND) {
-            console.log(
-              `🚨 Force advancing ${roomId} from END_OF_ROUND timeout to STATE_UPDATE`
-            );
-            await this.gameSessionGateway.advanceToStateUpdate(roomId);
-          } else {
-            await this.gameStateService.advanceGamePhase(roomId);
-          }
-          break;
-        case GamePhase.SPELL_CASTING:
-          await this.gameSessionGateway.startNextTurn(roomId);
-          break;
-        default:
-          await this.gameStateService.advanceGamePhase(roomId);
+      // Stuck-recovery dispatch. Each branch delegates to the same gateway
+      // method that drives the happy path; the CAS guard in
+      // GameStateService.advanceGamePhase makes the call a no-op if the
+      // gateway already advanced the phase between our `getGameState` read
+      // and now. Recovery thresholds (see getPendingPhaseTransitions) are
+      // wide enough that this code only runs on real wedges (process
+      // restart mid-setTimeout, redis hiccup, unhandled rejection).
+      if (
+        currentPhase === GamePhase.SPELL_PROPAGATION &&
+        nextPhase === GamePhase.SPELL_EFFECTS
+      ) {
+        console.log(
+          `🚨 Force advancing ${roomId} from SPELL_PROPAGATION wedge to SPELL_EFFECTS`
+        );
+        await this.gameSessionGateway.advanceToSpellEffects(roomId);
+      } else if (
+        currentPhase === GamePhase.SPELL_EFFECTS &&
+        nextPhase === GamePhase.END_OF_ROUND
+      ) {
+        // No dedicated gateway method — emit endOfRound directly so
+        // clients submit their trusted state, then the END_OF_ROUND
+        // recovery branch (15s) handles the rest if they don't.
+        console.log(
+          `🚨 Force advancing ${roomId} from SPELL_EFFECTS wedge to END_OF_ROUND`
+        );
+        const advanced = await this.gameStateService.advanceGamePhase(
+          roomId,
+          GamePhase.SPELL_EFFECTS
+        );
+        if (advanced === GamePhase.END_OF_ROUND) {
+          const payload = { phase: GamePhase.END_OF_ROUND };
+          this.gameSessionGateway.server
+            .to(roomId)
+            .emit('endOfRound', payload);
+          await this.gameStateService.publishToRoom(
+            roomId,
+            'endOfRound',
+            payload
+          );
+        }
+      } else if (
+        currentPhase === GamePhase.END_OF_ROUND &&
+        nextPhase === GamePhase.STATE_UPDATE
+      ) {
+        console.log(
+          `🚨 Force advancing ${roomId} from END_OF_ROUND timeout to STATE_UPDATE`
+        );
+        await this.gameSessionGateway.advanceToStateUpdate(roomId);
+      } else if (
+        currentPhase === GamePhase.STATE_UPDATE &&
+        nextPhase === GamePhase.SPELL_CASTING
+      ) {
+        console.log(
+          `🚨 Force advancing ${roomId} from STATE_UPDATE wedge to SPELL_CASTING`
+        );
+        await this.gameSessionGateway.startNextTurn(roomId);
+      } else {
+        console.warn(
+          `⚠️ Ignoring unexpected scheduler transition ${currentPhase}→${nextPhase} for ${roomId}`
+        );
       }
       // Best-effort lock release
       await this.gameStateService.releaseRoomLock(lockKey, owner);

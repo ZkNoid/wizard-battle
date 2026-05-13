@@ -270,9 +270,17 @@ export default function Matchmaking({
           variant="gray"
           className="w-106 h-15"
           onClick={() => {
-            // Cancelling the search keeps the user inside their tournament context.
-            // To exit tournament queue they pick PvP/PvE explicitly in ModeSelect.
-            setPlayStep(PlaySteps.SELECT_MAP);
+            // Tell the backend to drop us from whichever queue we joined
+            // (casual or tournament). Without this, the previous tournament
+            // entry can persist server-side and the next matchmaking attempt
+            // can be silently mis-routed.
+            socket?.emit('leaveMatchmaking');
+            // Bounce the player back to mode selection so the next
+            // matchmaking attempt always reflects an explicit choice:
+            // tournament context survives in the store (it's only cleared
+            // by PvP/PvE buttons), so re-clicking Tournament resumes the
+            // tournament queue, while PvP/PvE move to the casual queue.
+            setPlayStep(PlaySteps.SELECT_MODE);
           }}
         >
           Cancel

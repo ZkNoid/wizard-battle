@@ -264,6 +264,24 @@ export class GameSessionGateway {
     );
   }
 
+  /**
+   * Explicit cancel from the Matchmaking screen. Without this the player
+   * stays in the Redis queue (casual or tournament) until socket disconnect,
+   * so a fresh `joinMatchmaking` after cancel races against a stale entry
+   * (which can re-route them into the wrong mode after dedupe). We reuse
+   * `leaveMatchmaking`; it removes the player from every queue, leaves the
+   * queue Socket.IO rooms, and broadcasts updated counts.
+   */
+  @SubscribeMessage('leaveMatchmaking')
+  async handleLeaveMatchmaking(socket: Socket) {
+    if (!this.gameStateService.isRedisReady()) {
+      console.warn('leaveMatchmaking rejected: Redis not ready');
+      return null;
+    }
+    await this.matchmakingService.leaveMatchmaking(socket);
+    return null;
+  }
+
   @SubscribeMessage('gameMessage')
   /**
    * @param socket - The socket instance
@@ -1382,8 +1400,19 @@ export class GameSessionGateway {
     // Get all actions and broadcast them
     const allActions = await this.gameStateService.getAllPlayerActions(roomId);
 
-    // Advance phase
-    await this.gameStateService.advanceGamePhase(roomId);
+    // CAS-guarded advance: only broadcast if WE actually moved the phase
+    // from SPELL_CASTING → SPELL_PROPAGATION. If a concurrent caller already
+    // advanced, bail out so we don't double-emit.
+    const advanced = await this.gameStateService.advanceGamePhase(
+      roomId,
+      GamePhase.SPELL_CASTING
+    );
+    if (advanced !== GamePhase.SPELL_PROPAGATION) {
+      console.log(
+        `⏭️ advanceToSpellPropagation skip for ${roomId}: phase=${advanced}`
+      );
+      return;
+    }
 
     // Broadcast all actions to all players
     this.server.to(roomId).emit('allPlayerActions', allActions);
@@ -1393,10 +1422,8 @@ export class GameSessionGateway {
       allActions
     );
 
-    // Auto-advance to spell effects phase after a short delay
-    // setTimeout(() => {
+    // Auto-advance to spell effects phase
     this.advanceToSpellEffects(roomId);
-    // }, 1000);
   }
 
   /**
@@ -1418,7 +1445,17 @@ export class GameSessionGateway {
    * Note: This phase has no server-side waiting - clients self-manage timing
    */
   async advanceToSpellEffects(roomId: string) {
-    await this.gameStateService.advanceGamePhase(roomId);
+    // CAS guard: only emit applySpellEffects if WE advanced the phase.
+    const advanced = await this.gameStateService.advanceGamePhase(
+      roomId,
+      GamePhase.SPELL_PROPAGATION
+    );
+    if (advanced !== GamePhase.SPELL_EFFECTS) {
+      console.log(
+        `⏭️ advanceToSpellEffects skip for ${roomId}: phase=${advanced}`
+      );
+      return;
+    }
 
     // Notify players to apply effects
     this.server.to(roomId).emit('applySpellEffects');
@@ -1426,7 +1463,16 @@ export class GameSessionGateway {
 
     // Auto-advance to END_OF_ROUND phase after players have time to process effects
     setTimeout(async () => {
-      await this.gameStateService.advanceGamePhase(roomId);
+      const advancedToEor = await this.gameStateService.advanceGamePhase(
+        roomId,
+        GamePhase.SPELL_EFFECTS
+      );
+      if (advancedToEor !== GamePhase.END_OF_ROUND) {
+        console.log(
+          `⏭️ advance to END_OF_ROUND skip for ${roomId}: phase=${advancedToEor}`
+        );
+        return;
+      }
       console.log(`🔄 Advanced room ${roomId} to END_OF_ROUND phase`);
 
       // Emit explicit endOfRound to signal clients to submit trusted state exactly once (no polling)
@@ -1479,8 +1525,20 @@ export class GameSessionGateway {
       `📊 Collected ${trustedStates.length} trusted states from alive players`
     );
 
-    // Advance phase
-    await this.gameStateService.advanceGamePhase(roomId);
+    // CAS guard: only emit updateUserStates if WE moved END_OF_ROUND →
+    // STATE_UPDATE. Prevents duplicate broadcast when both
+    // storeTrustedStateAndMarkReady allReady fast-path and the scheduler
+    // stuck-recovery path race for the same transition.
+    const advanced = await this.gameStateService.advanceGamePhase(
+      roomId,
+      GamePhase.END_OF_ROUND
+    );
+    if (advanced !== GamePhase.STATE_UPDATE) {
+      console.log(
+        `⏭️ advanceToStateUpdate skip for ${roomId}: phase=${advanced}`
+      );
+      return;
+    }
 
     // Broadcast state updates
     const updateUserStates = { states: trustedStates };
@@ -1493,10 +1551,8 @@ export class GameSessionGateway {
 
     console.log(`📡 Broadcasted state updates to room ${roomId}`);
 
-    // Start next turn after a delay
-    // setTimeout(() => {
+    // Start next turn
     this.startNextTurn(roomId);
-    // }, 2000);
   }
 
   /**
@@ -1525,8 +1581,15 @@ export class GameSessionGateway {
     // Clear turn-specific data before advancing to new turn
     await this.gameStateService.clearTurnData(roomId);
 
-    // Advance to new turn (increments turn counter and sets phase to SPELL_CASTING)
-    await this.gameStateService.advanceGamePhase(roomId);
+    // CAS guard: only emit newTurn if WE advanced STATE_UPDATE → SPELL_CASTING.
+    const advanced = await this.gameStateService.advanceGamePhase(
+      roomId,
+      GamePhase.STATE_UPDATE
+    );
+    if (advanced !== GamePhase.SPELL_CASTING) {
+      console.log(`⏭️ startNextTurn skip for ${roomId}: phase=${advanced}`);
+      return;
+    }
 
     // Notify players of new turn and include phaseTimeout from state/env
     const state = await this.gameStateService.getGameState(roomId);
