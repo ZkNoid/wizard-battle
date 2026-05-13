@@ -121,7 +121,7 @@ export class Stater extends Struct({
     this.state.pushEffect(
       new Effect({
         effectId: EffectsId.Revealed!,
-        duration: Field(2),
+        duration: Field(1),
         param: Field(0),
       }),
       'public',
