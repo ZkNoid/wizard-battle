@@ -9,6 +9,13 @@ export interface TournamentSponsor {
   url?: string;
 }
 
+export interface TournamentWinnerView {
+  walletAddress: string;
+  /** Prize amount in nanoMINA (string for BigInt safety). */
+  prizeAmount: string;
+  claimed: boolean;
+}
+
 export interface OptimisticView {
   tournamentId: string;
   status: TournamentStatus;
@@ -23,6 +30,12 @@ export interface OptimisticView {
   participantCount: number;
   registeredPlayers: string[];
   pendingPlayers: string[];
+  /**
+   * Winners map flattened to an array. Empty array when the tournament has
+   * not yet been finalized. Each entry exposes the player's wallet, the
+   * prize amount (nanoMINA) and whether the on-chain claim was applied.
+   */
+  winners: TournamentWinnerView[];
   title?: string;
   imageUrl?: string;
   description?: string;

@@ -149,6 +149,14 @@ export class TournamentStateService {
 
     const pendingPlayers = pendingBuyTickets.map((op) => op.playerPubKey);
 
+    const winners = Array.from(tournament.winners?.entries() ?? []).map(
+      ([walletAddress, info]) => ({
+        walletAddress,
+        prizeAmount: info.prizeAmount,
+        claimed: info.claimed,
+      })
+    );
+
     const ticketPrice = BigInt(tournament.verified.ticketPrice);
     const prizeContributionPerTicket = calculatePrizeContribution(
       ticketPrice,
@@ -174,6 +182,7 @@ export class TournamentStateService {
         tournament.verified.participantCount + pendingBuyTickets.length,
       registeredPlayers,
       pendingPlayers,
+      winners,
       ...optionalTournamentDisplayFields(
         tournament.title,
         tournament.imageUrl,
