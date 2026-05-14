@@ -25,13 +25,23 @@ export interface ITournament {
   startDate: string;
 
   status: 'upcoming' | 'active' | 'ended';
+  /**
+   * - `not-joined`   — wallet absent or not registered
+   * - `pending`      — buy-ticket op queued/proving/submitted, not yet on-chain
+   * - `got-ticket`   — registered on-chain, no result yet
+   * - `joined`       — reserved (in-flight matchmaking placeholder)
+   * - `lost`         — registered, tournament ended, not in winners list
+   * - `won`          — in winners list, prize not yet claimed
+   * - `claimed`      — in winners list, claim already applied on-chain
+   */
   userStatus:
     | 'not-joined'
     | 'got-ticket'
     | 'joined'
     | 'won'
     | 'lost'
-    | 'pending';
+    | 'pending'
+    | 'claimed';
 }
 
 export type ITournamentAsset =

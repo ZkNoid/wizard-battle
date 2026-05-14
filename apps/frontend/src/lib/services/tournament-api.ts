@@ -17,6 +17,13 @@ export interface TournamentResponseSponsor {
   url?: string;
 }
 
+export interface TournamentResponseWinner {
+  walletAddress: string;
+  /** Prize amount in nanoMINA (string for BigInt safety). */
+  prizeAmount: string;
+  claimed: boolean;
+}
+
 export interface TournamentResponse {
   tournamentId: string;
   status: string;
@@ -28,6 +35,12 @@ export interface TournamentResponse {
   participantCount: number;
   registeredPlayers: string[];
   pendingPlayers: string[];
+  /**
+   * Winners snapshot, present once the tournament has been finalized. Empty
+   * array (or undefined for backward compatibility with older backends) when
+   * no winners have been recorded yet.
+   */
+  winners?: TournamentResponseWinner[];
   /** Backend display title; UI falls back to a generated label when omitted. */
   title?: string;
   /** Backend image URL; UI falls back to a default asset when omitted. */
@@ -138,6 +151,32 @@ export async function buyTicket(
   }
 
   return res.json() as Promise<BuyTicketResponse>;
+}
+
+export interface ClaimPrizeResponse {
+  operationId: string;
+  status: string;
+  message: string;
+}
+
+export async function claimPrize(
+  tournamentId: string,
+  playerPubKey: string
+): Promise<ClaimPrizeResponse> {
+  const res = await fetch(`${TOURNAMENT_BASE}/${tournamentId}/claim-prize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ playerPubKey }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(
+      (body as { message?: string } | null)?.message ?? `HTTP ${res.status}`
+    );
+  }
+
+  return res.json() as Promise<ClaimPrizeResponse>;
 }
 
 const SSE_MAX_RETRIES = 3;

@@ -37,7 +37,12 @@
     "start:instances": "./start-instances-only.sh",
     "import:inventory-xlsx": "npx ts-node --transpile-only -r dotenv/config scripts/import-inventory-items-from-xlsx.ts",
     "seed:location-db": "npx ts-node --transpile-only -r dotenv/config scripts/recent/seed-location-db.ts",
-    "seed:user-inventory-catalog": "npx ts-node --transpile-only -r dotenv/config scripts/recent/seed-user-inventory-from-catalog.ts"
+    "seed:user-inventory-catalog": "npx ts-node --transpile-only -r dotenv/config scripts/recent/seed-user-inventory-from-catalog.ts",
+    "rewards:distribute-armor": "npx ts-node --transpile-only -r dotenv/config scripts/recent/distribute-reward-armor-from-csv.ts",
+    "tournament:export-match-audit": "npx ts-node --transpile-only -r dotenv/config scripts/recent/export-tournament-match-audit.ts",
+    "tournament:export-match-audit-v2": "npx ts-node --transpile-only -r dotenv/config scripts/recent/export-tournament-match-audit-v2.ts",
+    "tournament:delete-abuse-matches": "npx ts-node --transpile-only -r dotenv/config scripts/recent/delete-tournament-matches-from-abuse-csv.ts",
+    "tournament:delete-matches-from-xlsx": "npx ts-node --transpile-only -r dotenv/config scripts/recent/delete-tournament-matches-from-accounts-xlsx.ts"
   },
   "dependencies": {
     "@golevelup/ts-jest": "^0.7.0",

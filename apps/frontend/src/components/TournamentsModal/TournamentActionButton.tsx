@@ -32,18 +32,22 @@ function isTournamentParticipant(userStatus: ITournament['userStatus']) {
 function getActionConfig(tournament: ITournament): ActionConfig {
   const { status, userStatus } = tournament;
 
-  if (status === 'ended') {
-    if (userStatus === 'won') {
-      return {
-        label: 'Claim rewards',
-        labelColor: 'text-main-gray',
-        variant: 'green',
-        disabled: false,
-        action: 'claim',
-      };
-    }
+  // Winner-state buttons — these take priority over the tournament status
+  // because winners stay claimable through the entire claim window even
+  // after the battle has ended.
+  if (userStatus === 'won') {
     return {
-      label: 'Event ended',
+      label: 'Claim rewards',
+      labelColor: status === 'ended' ? 'text-main-gray' : undefined,
+      variant: 'green',
+      disabled: false,
+      action: 'claim',
+    };
+  }
+
+  if (userStatus === 'claimed') {
+    return {
+      label: 'Claimed',
       labelColor: 'text-main-gray',
       variant: 'gray',
       disabled: true,
@@ -51,12 +55,13 @@ function getActionConfig(tournament: ITournament): ActionConfig {
     };
   }
 
-  if (status === 'active' && userStatus === 'won') {
+  if (status === 'ended') {
     return {
-      label: 'Claim rewards',
-      variant: 'green',
-      disabled: false,
-      action: 'claim',
+      label: 'Event ended',
+      labelColor: 'text-main-gray',
+      variant: 'gray',
+      disabled: true,
+      action: 'none',
     };
   }
 
@@ -94,32 +99,13 @@ function getActionConfig(tournament: ITournament): ActionConfig {
     };
   }
 
-  switch (userStatus) {
-    case 'not-joined':
-      return {
-        label: 'Join tournament',
-        labelColor: 'text-white',
-        variant: 'blue',
-        disabled: false,
-        action: 'join',
-      };
-    case 'won':
-      return {
-        label: 'Claim rewards',
-        labelColor: 'text-main-gray',
-        variant: 'green',
-        disabled: false,
-        action: 'claim',
-      };
-    default:
-      return {
-        label: 'Join tournament',
-        labelColor: 'text-white',
-        variant: 'blue',
-        disabled: false,
-        action: 'join',
-      };
-  }
+  return {
+    label: 'Join tournament',
+    labelColor: 'text-white',
+    variant: 'blue',
+    disabled: false,
+    action: 'join',
+  };
 }
 
 export function TournamentActionButton({
