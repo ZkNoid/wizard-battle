@@ -18,6 +18,10 @@ import {
   useBuyTicket,
   BUY_TICKET_STATUS_LABEL,
 } from '@/lib/hooks/useBuyTicket';
+import {
+  useClaimPrize,
+  CLAIM_PRIZE_STATUS_LABEL,
+} from '@/lib/hooks/useClaimPrize';
 
 interface TournamentsFormProps {
   onClose?: () => void;
@@ -136,6 +140,14 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
   );
 
   const { status, txHash, error, isLoading, buyTicket, reset } = useBuyTicket();
+  const {
+    status: claimStatus,
+    txHash: claimTxHash,
+    error: claimError,
+    isLoading: isClaimLoading,
+    claimPrize,
+    reset: resetClaim,
+  } = useClaimPrize();
 
   const {
     tournaments: allTournaments,
@@ -156,6 +168,10 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
     if (status === 'confirmed') refreshTournaments();
   }, [status, refreshTournaments]);
 
+  useEffect(() => {
+    if (claimStatus === 'confirmed') refreshTournaments();
+  }, [claimStatus, refreshTournaments]);
+
   const tournaments = applyTournamentListView(allTournaments, filters.view);
 
   const handleJoinRequest = useCallback(
@@ -175,16 +191,21 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
     await buyTicket(tournament);
   };
 
-  const handleConfirmClaim = () => {
-    // TODO: trigger claim rewards transaction
+  const handleConfirmClaim = (tournament: ITournament) => {
     setClaimTournament(null);
+    void claimPrize(tournament);
   };
 
   const handleDismissTxStatus = () => {
     reset();
   };
 
+  const handleDismissClaimStatus = () => {
+    resetClaim();
+  };
+
   const showTxStatus = status !== 'idle';
+  const showClaimStatus = claimStatus !== 'idle';
 
   return (
     <div className="flex h-full w-full flex-col gap-4">
@@ -238,6 +259,7 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
       {showTxStatus && (
         <TxStatusBar
           status={status}
+          label={BUY_TICKET_STATUS_LABEL[status]}
           txHash={txHash}
           error={error}
           isLoading={isLoading}
@@ -256,8 +278,19 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
       {claimTournament && (
         <CongratulationsModal
           rewards={claimTournament.prizePool}
-          onClaim={handleConfirmClaim}
+          onClaim={() => handleConfirmClaim(claimTournament)}
           onClose={() => setClaimTournament(null)}
+        />
+      )}
+
+      {showClaimStatus && (
+        <TxStatusBar
+          status={claimStatus}
+          label={CLAIM_PRIZE_STATUS_LABEL[claimStatus]}
+          txHash={claimTxHash}
+          error={claimError}
+          isLoading={isClaimLoading}
+          onDismiss={handleDismissClaimStatus}
         />
       )}
     </div>
@@ -266,8 +299,19 @@ export function TournamentsForm({ onClose }: TournamentsFormProps) {
 
 // ─── Inline transaction status bar ──────────────────────────────────────────
 
+/**
+ * Status union shared by both useBuyTicket and useClaimPrize. Both hooks
+ * advance through the same lifecycle (idle → submitting → … → confirmed |
+ * failed), so the bar is parameterised by the resolved label rather than
+ * the source enum.
+ */
+type TxLifecycleStatus =
+  | ReturnType<typeof useBuyTicket>['status']
+  | ReturnType<typeof useClaimPrize>['status'];
+
 interface TxStatusBarProps {
-  status: ReturnType<typeof useBuyTicket>['status'];
+  status: TxLifecycleStatus;
+  label: string;
   txHash: string | null;
   error: string | null;
   isLoading: boolean;
@@ -276,6 +320,7 @@ interface TxStatusBarProps {
 
 function TxStatusBar({
   status,
+  label,
   txHash,
   error,
   isLoading,
@@ -303,7 +348,7 @@ function TxStatusBar({
       )}
 
       <span>
-        {BUY_TICKET_STATUS_LABEL[status]}
+        {label}
         {isFailed && error ? `: ${error}` : ''}
         {isConfirmed && txHash ? ` · tx ${txHash.slice(0, 8)}…` : ''}
       </span>

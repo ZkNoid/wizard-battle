@@ -26,12 +26,16 @@ describe('TournamentController', () => {
     status: TournamentStatus.Battle,
     battleStartSlot: 500,
     battleEndSlot: 1000,
+    claimDeadlineSlot: 2000,
     ticketPrice: '1000000000',
+    feePercent: 0,
     prizePercents: [2500, 1500, 1000, 1000, 1000, 700, 700, 700, 500, 400],
     prizePool: '5000000000',
+    sponsorContribution: '0',
     participantCount: 5,
     registeredPlayers: ['B62qPlayer1', 'B62qPlayer2'],
     pendingPlayers: ['B62qPending1'],
+    winners: [],
   };
 
   const mockVerifiedState = {

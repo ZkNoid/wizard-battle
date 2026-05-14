@@ -45,15 +45,28 @@ function mapStatus(
 }
 
 function mapUserStatus(
-  _response: TournamentResponse,
-  _playerPubKey?: string
+  response: TournamentResponse,
+  status: ITournament['status'],
+  playerPubKey?: string
 ): ITournament['userStatus'] {
-  if (!_playerPubKey) return 'not-joined';
+  if (!playerPubKey) return 'not-joined';
 
-  const isRegistered = _response.registeredPlayers.includes(_playerPubKey);
-  const isPending = _response.pendingPlayers.includes(_playerPubKey);
+  const winnerEntry = response.winners?.find(
+    (w) => w.walletAddress === playerPubKey
+  );
+  if (winnerEntry) {
+    return winnerEntry.claimed ? 'claimed' : 'won';
+  }
+
+  const isRegistered = response.registeredPlayers.includes(playerPubKey);
+  const isPending = response.pendingPlayers.includes(playerPubKey);
 
   if (isPending) return 'pending';
+
+  // Tournament ended and the player participated but is not in the
+  // winners snapshot → they are out of the prize pool.
+  if (status === 'ended' && isRegistered) return 'lost';
+
   if (isRegistered) return 'got-ticket';
   return 'not-joined';
 }
@@ -99,6 +112,8 @@ export function mapTournamentResponse(
   const displayTitle = response.title?.trim();
   const displayImageUrl = response.imageUrl?.trim();
 
+  const status = mapStatus(response, anchor);
+
   return {
     id: response.tournamentId,
     title:
@@ -109,8 +124,8 @@ export function mapTournamentResponse(
     dateTo,
     scheduleTimes,
     startDate: String(response.battleStartSlot),
-    status: mapStatus(response, anchor),
-    userStatus: mapUserStatus(response, playerPubKey),
+    status,
+    userStatus: mapUserStatus(response, status, playerPubKey),
     participantCount: response.participantCount,
     imageURL:
       displayImageUrl && displayImageUrl.length > 0
