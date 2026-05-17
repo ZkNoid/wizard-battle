@@ -113,15 +113,26 @@ export class TournamentLeaderboardService {
       ? BigInt(tournament.verified.prizePool)
       : 0n;
     const percents = tournament?.verified.prizePercents ?? [];
+    // Winners map contains exact on-chain prize amounts set at finalization.
+    // These are authoritative and immune to prizePool shrinkage from claims.
+    const winnersMap = tournament?.winners ?? new Map();
 
     return entries.map((entry, idx) => {
       const place = idx + 1;
-      const prizePercent = percents[idx] ?? 0;
-      // prizePercents are basis points (PERCENT_BASE = 10_000 in TournamentManager).
-      const prizeAmountBn =
-        prizePool > 0n && prizePercent > 0
-          ? (prizePool * BigInt(prizePercent)) / BigInt(PERCENT_BASE)
-          : 0n;
+
+      let prizeAmountBn: bigint;
+      const winnerInfo = winnersMap.get(entry.walletAddress);
+      if (winnerInfo?.prizeAmount) {
+        // Exact amount locked in at finalization — always correct regardless of claims.
+        prizeAmountBn = BigInt(winnerInfo.prizeAmount);
+      } else {
+        // Pre-finalization estimate: derive from current prizePool and basis-point percents.
+        const prizePercent = percents[idx] ?? 0;
+        prizeAmountBn =
+          prizePool > 0n && prizePercent > 0
+            ? (prizePool * BigInt(prizePercent)) / BigInt(PERCENT_BASE)
+            : 0n;
+      }
 
       const prize: ITournamentLeaderboardEntry['prize'] =
         prizeAmountBn > 0n
