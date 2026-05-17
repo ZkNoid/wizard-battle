@@ -236,7 +236,8 @@ export class GamePhaseSchedulerService {
    */
   @Cron('*/5 * * * * *')
   async processPhaseTransitions() {
-    if (!(await this.withRetry(() => this.isLeader()))) return;
+    const { ok, lockKey, owner } = await this.acquireLeadership();
+    if (!ok) return;
     try {
       const pendingTransitions = await this.withRetry(() =>
         this.getPendingPhaseTransitions()
@@ -247,6 +248,8 @@ export class GamePhaseSchedulerService {
       }
     } catch (error) {
       console.error('Error processing phase transitions:', error);
+    } finally {
+      await this.gameStateService.releaseRoomLock(lockKey, owner);
     }
   }
 
@@ -257,13 +260,8 @@ export class GamePhaseSchedulerService {
    * */
   @Cron('*/2 * * * * *')
   async enforceSpellCastingTimeouts() {
-    // console.log('⏱️ [enforceSpellCastingTimeouts] Cron triggered');
-    const isLeader = await this.withRetry(() => this.isLeader());
-    // console.log(`⏱️ [enforceSpellCastingTimeouts] Is leader: ${isLeader}`);
-    if (!isLeader) {
-      // console.log('⏱️ [enforceSpellCastingTimeouts] Not a leader, skipping');
-      return;
-    }
+    const { ok, lockKey, owner } = await this.acquireLeadership();
+    if (!ok) return;
     try {
       const roomIds = await this.withRetry(() => this.getAllRoomIdsWithScan());
       // console.log(`⏱️ [enforceSpellCastingTimeouts] Found ${roomIds.length} rooms`);
@@ -558,6 +556,18 @@ export class GamePhaseSchedulerService {
               3600
             )
           ); // 1 hour
+        } else {
+          // Case C: every alive player has submitted actions but the gateway
+          // failed to advance SPELL_CASTING → SPELL_PROPAGATION (Redis hiccup,
+          // unhandled exception, or process restart mid-call). Both actions are
+          // already stored, so we just force the transition — the game resumes
+          // as if the gateway had done it normally.
+          console.log(
+            `🚨 Room ${roomId}: all ${submitters.length} players submitted but SPELL_CASTING stuck after ${timeSincePhaseStart}ms — forcing SPELL_PROPAGATION`
+          );
+          await this.withRetry(() =>
+            this.gameSessionGateway.advanceToSpellPropagation(roomId)
+          );
         }
       }
     } catch (error) {
@@ -566,6 +576,8 @@ export class GamePhaseSchedulerService {
         'Stack trace:',
         error instanceof Error ? error.stack : 'Unknown'
       );
+    } finally {
+      await this.gameStateService.releaseRoomLock(lockKey, owner);
     }
   }
 
@@ -575,7 +587,8 @@ export class GamePhaseSchedulerService {
    */
   @Cron('0 */5 * * * *')
   async cleanupInactiveRooms() {
-    if (!(await this.withRetry(() => this.isLeader()))) return;
+    const { ok, lockKey, owner } = await this.acquireLeadership();
+    if (!ok) return;
     try {
       console.log('🧹 Running inactive room cleanup...');
       const inactiveRooms = await this.withRetry(() =>
@@ -595,6 +608,8 @@ export class GamePhaseSchedulerService {
       }
     } catch (error) {
       console.error('Error cleaning up inactive rooms:', error);
+    } finally {
+      await this.gameStateService.releaseRoomLock(lockKey, owner);
     }
   }
 
@@ -604,11 +619,14 @@ export class GamePhaseSchedulerService {
    */
   @Cron('0 * * * * *')
   async cleanupDeadInstances() {
-    if (!(await this.withRetry(() => this.isLeader()))) return;
+    const { ok, lockKey, owner } = await this.acquireLeadership();
+    if (!ok) return;
     try {
       await this.withRetry(() => this.gameStateService.cleanupDeadInstances());
     } catch (error) {
       console.error('Error cleaning up dead instances:', error);
+    } finally {
+      await this.gameStateService.releaseRoomLock(lockKey, owner);
     }
   }
 
@@ -656,64 +674,75 @@ export class GamePhaseSchedulerService {
    */
   @Cron('0 * * * * *')
   async purgeStaleMatches() {
-    if (!(await this.withRetry(() => this.isLeader()))) return;
+    const { ok, lockKey, owner } = await this.acquireLeadership();
+    if (!ok) return;
     const timeoutMs = Number(process.env.SPELL_CAST_TIMEOUT || 120000);
 
-    for (const hashKey of ['matches', 'tournament_matches_active']) {
-      try {
-        const matches = await this.withRetry(() =>
-          this.getAllHashEntriesWithScan(hashKey)
-        );
-        if (!matches || Object.keys(matches).length === 0) continue;
-
-        for (const [roomId] of Object.entries(matches)) {
-          const state = await this.withRetry(() =>
-            this.gameStateService.getGameState(roomId)
+    try {
+      for (const hashKey of ['matches', 'tournament_matches_active']) {
+        try {
+          const matches = await this.withRetry(() =>
+            this.getAllHashEntriesWithScan(hashKey)
           );
+          if (!matches || Object.keys(matches).length === 0) continue;
 
-          if (!state) {
-            // Only remove stale match entry; do not touch game state here
-            await this.withRetry(() =>
-              this.gameStateService.redisClient.hDel(hashKey, roomId)
+          for (const [roomId] of Object.entries(matches)) {
+            const state = await this.withRetry(() =>
+              this.gameStateService.getGameState(roomId)
             );
-            console.log(
-              `🧽 Purged stale match with no state from ${hashKey}: ${roomId}`
-            );
-            continue;
-          }
 
-          const isInactive = state.status !== 'active';
-          const isOld =
-            Date.now() - (state.updatedAt || state.createdAt || 0) > timeoutMs;
-          if (isInactive && isOld) {
-            // Only purge stale match entry; avoid deleting game state here to prevent mid-game loss.
-            // Room state cleanup should be handled by explicit cleanup flows (e.g., cleanupRoom, markRoomForCleanup, end-of-game paths).
-            await this.withRetry(() =>
-              this.gameStateService.redisClient.hDel(hashKey, roomId)
-            );
-            console.log(
-              `🧽 Purged stale match entry (state retained) from ${hashKey} for room: ${roomId}`
-            );
+            if (!state) {
+              // Only remove stale match entry; do not touch game state here
+              await this.withRetry(() =>
+                this.gameStateService.redisClient.hDel(hashKey, roomId)
+              );
+              console.log(
+                `🧽 Purged stale match with no state from ${hashKey}: ${roomId}`
+              );
+              continue;
+            }
+
+            const isInactive = state.status !== 'active';
+            const isOld =
+              Date.now() - (state.updatedAt || state.createdAt || 0) > timeoutMs;
+            if (isInactive && isOld) {
+              // Only purge stale match entry; avoid deleting game state here to prevent mid-game loss.
+              // Room state cleanup should be handled by explicit cleanup flows (e.g., cleanupRoom, markRoomForCleanup, end-of-game paths).
+              await this.withRetry(() =>
+                this.gameStateService.redisClient.hDel(hashKey, roomId)
+              );
+              console.log(
+                `🧽 Purged stale match entry (state retained) from ${hashKey} for room: ${roomId}`
+              );
+            }
           }
+        } catch (error) {
+          console.error(`Error purging stale matches (${hashKey}):`, error);
         }
-      } catch (error) {
-        console.error(`Error purging stale matches (${hashKey}):`, error);
       }
+    } finally {
+      await this.gameStateService.releaseRoomLock(lockKey, owner);
     }
   }
 
   /**
-   * Check if this instance is the leader
+   * Try to become the scheduler leader for this cron invocation.
+   * Returns the lock handle so the caller can release it when done,
+   * allowing the next cron tick to run at its configured interval
+   * instead of waiting the full TTL.
    */
-  private async isLeader(): Promise<boolean> {
+  private async acquireLeadership(): Promise<{
+    ok: boolean;
+    lockKey: string;
+    owner: string;
+  }> {
     const owner = this.gameStateService.getInstanceId();
-    const { ok } = await this.gameStateService.acquireRoomLock(
+    return this.gameStateService.acquireRoomLock(
       'global',
-      10000, // 10s TTL
+      10000,
       owner,
       'lock:scheduler'
     );
-    return ok;
   }
 
   /**

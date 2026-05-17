@@ -8,6 +8,10 @@ import {
   TournamentMatch,
   TournamentMatchSchema,
 } from './schemas/tournament-match.schema.js';
+import {
+  PendingOperation,
+  PendingOperationSchema,
+} from './schemas/pending-operation.schema.js';
 import { TournamentResultRecorderService } from './services/index.js';
 
 /**
@@ -20,6 +24,7 @@ import { TournamentResultRecorderService } from './services/index.js';
     MongooseModule.forFeature([
       { name: Tournament.name, schema: TournamentSchema },
       { name: TournamentMatch.name, schema: TournamentMatchSchema },
+      { name: PendingOperation.name, schema: PendingOperationSchema },
     ]),
   ],
   providers: [TournamentResultRecorderService],
