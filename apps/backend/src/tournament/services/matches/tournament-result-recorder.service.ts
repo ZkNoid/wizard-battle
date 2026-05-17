@@ -10,6 +10,12 @@ import {
   TournamentDocument,
   TournamentStatus,
 } from '../../schemas/tournament.schema.js';
+import {
+  OperationStatus,
+  OperationType,
+  PendingOperation,
+  PendingOperationDocument,
+} from '../../schemas/pending-operation.schema.js';
 
 /**
  * Lightweight service for tournament match result persistence and validation.
@@ -25,7 +31,9 @@ export class TournamentResultRecorderService {
     @InjectModel(TournamentMatch.name)
     private readonly tournamentMatchModel: Model<TournamentMatchDocument>,
     @InjectModel(Tournament.name)
-    private readonly tournamentModel: Model<TournamentDocument>
+    private readonly tournamentModel: Model<TournamentDocument>,
+    @InjectModel(PendingOperation.name)
+    private readonly pendingOperationModel: Model<PendingOperationDocument>
   ) {}
 
   async validateParticipant(
@@ -71,6 +79,43 @@ export class TournamentResultRecorderService {
   }): Promise<void> {
     const tournamentId = this.extractTournamentId(params.roomId);
     if (!tournamentId) return;
+
+    const tournament = await this.tournamentModel
+      .findOne({ tournamentId })
+      .exec();
+
+    if (!tournament) {
+      this.logger.warn(
+        `recordResult: tournament ${tournamentId} not found, skipping`
+      );
+      return;
+    }
+
+    if (tournament.verified.status !== TournamentStatus.Battle) {
+      throw new Error(
+        `Tournament ${tournamentId} is in ${tournament.verified.status} phase — result recording rejected`
+      );
+    }
+
+    const pendingFinalization = await this.pendingOperationModel
+      .findOne({
+        tournamentId,
+        type: OperationType.FinalizeTournament,
+        status: {
+          $in: [
+            OperationStatus.Queued,
+            OperationStatus.Proving,
+            OperationStatus.Submitted,
+          ],
+        },
+      })
+      .exec();
+
+    if (pendingFinalization) {
+      throw new Error(
+        `Tournament ${tournamentId} has a pending finalization (op ${pendingFinalization._id}, status: ${pendingFinalization.status}) — result recording rejected`
+      );
+    }
 
     try {
       await this.tournamentMatchModel.create({
