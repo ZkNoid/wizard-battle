@@ -8,6 +8,7 @@ import {
   PrivateKey,
   AccountUpdate,
   fetchAccount,
+  addCachedAccount,
 } from 'o1js';
 import {
   TournamentManager,
@@ -331,6 +332,16 @@ export class ProofGeneratorService implements OnModuleInit {
     // against stale/empty state, producing transactions the network rejects.
     await this.fetchProofAccounts(contractAddress, playerPubKey);
 
+    // The on-chain `tournamentsRoot` lags behind pending (Submitted) ops that
+    // have not been confirmed yet. The witnesses and leaf we pass into every
+    // contract method are computed against the optimistic root, so we must
+    // also make o1js see that same root when it calls
+    // `this.tournamentsRoot.getAndRequireEquals()` during proof generation.
+    // We do this by patching the o1js account-state cache entry for the
+    // contract: everything except appState[0] (tournamentsRoot) stays as
+    // fetched from the chain (balance, nonce, admin, fee, etc.).
+    this.injectOptimisticContractState(contractAddress, overlay.tournamentsRoot);
+
     if (overlay.foldedOps.length > 0) {
       this.logger.log(
         `Op ${op._id} (${op.type}) proving against overlay with ${overlay.foldedOps.length} ` +
@@ -346,6 +357,63 @@ export class ProofGeneratorService implements OnModuleInit {
       contract,
       playerPubKey,
     };
+  }
+
+  /**
+   * After `fetchProofAccounts` populates the o1js cache with the confirmed
+   * on-chain state, overwrite only `appState[0]` (tournamentsRoot) with the
+   * optimistic root so that every subsequent `getAndRequireEquals()` call
+   * inside the SmartContract methods sees the root that our witnesses were
+   * computed against, not the (older) proved root.
+   *
+   * State layout for TournamentManager (8 slots total):
+   *   [0] tournamentsRoot   Field
+   *   [1] admin.x           Field  \
+   *   [2] admin.y           Field  /  PublicKey
+   *   [3] platformFeePercent UInt32
+   *   [4] gameManagerAddress.x Field \
+   *   [5] gameManagerAddress.y Field /  PublicKey
+   *   [6] (unused)
+   *   [7] (unused)
+   *
+   * All other slots are left unchanged — balance, nonce, and every other
+   * contract state field come from the chain and must not be spoofed.
+   */
+  private injectOptimisticContractState(
+    contractAddress: PublicKey,
+    tournamentsRoot: Field
+  ): void {
+    let cached: ReturnType<typeof Mina.getAccount>;
+    try {
+      cached = Mina.getAccount(contractAddress);
+    } catch {
+      this.logger.warn(
+        'No cached contract account found after fetchAccount — ' +
+          'optimistic tournamentsRoot injection skipped; proof may fail'
+      );
+      return;
+    }
+
+    if (!cached.zkapp?.appState) {
+      this.logger.warn(
+        'Cached contract account has no zkapp appState — ' +
+          'optimistic tournamentsRoot injection skipped; proof may fail'
+      );
+      return;
+    }
+
+    const patchedAppState = [...cached.zkapp.appState];
+    patchedAppState[0] = tournamentsRoot;
+
+    addCachedAccount({
+      ...cached,
+      zkapp: { ...cached.zkapp, appState: patchedAppState },
+    });
+
+    this.logger.debug(
+      `Injected optimistic tournamentsRoot=${tournamentsRoot.toString()} ` +
+        `into o1js cache for ${contractAddress.toBase58()}`
+    );
   }
 
   private async fetchProofAccounts(
