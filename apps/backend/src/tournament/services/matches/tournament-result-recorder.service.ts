@@ -76,6 +76,8 @@ export class TournamentResultRecorderService {
     loserPlayerId: string;
     rounds: number;
     surrendered: boolean;
+    winnerIp?: string;
+    loserIp?: string;
   }): Promise<void> {
     const tournamentId = this.extractTournamentId(params.roomId);
     if (!tournamentId) return;
@@ -143,6 +145,20 @@ export class TournamentResultRecorderService {
       $or: [
         { winnerId: walletA, loserId: walletB },
         { winnerId: walletB, loserId: walletA },
+      ],
+    });
+  }
+
+  async getIpPairGameCount(
+    tournamentId: string,
+    ipA: string,
+    ipB: string
+  ): Promise<number> {
+    return this.tournamentMatchModel.countDocuments({
+      tournamentId,
+      $or: [
+        { winnerIp: ipA, loserIp: ipB },
+        { winnerIp: ipB, loserIp: ipA },
       ],
     });
   }

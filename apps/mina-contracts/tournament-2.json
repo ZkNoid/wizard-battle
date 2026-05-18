@@ -1,0 +1,11 @@
+{
+  "title": "Mainnet Event 2: Ascension",
+  "imageUrl": "/tournaments/Second.png",
+  "description": "The battle continues. Only the strongest will rise further through the ranks. Face skilled opponents, climb the leaderboard, and compete for rewards in the second sponsored Wizard Battle mainnet event.",
+  "ticketPrice": "0",
+  "feePercent": 0,
+  "claimWindow": 14400,
+  "battleStartDelay": 0,
+  "battleSlots": 3360,
+  "prizePercents": [3000, 2500, 1500, 1000, 500, 300, 300, 300, 300, 300]
+}
