@@ -10,6 +10,10 @@ export function EffectIcon({
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
 
+  if (effectName === 'Decoy') {
+    return null;
+  }
+
   const getEffectStyle = (name: string) => {
     // Map effect names to icons, colors and descriptions
     const effectStyles: Record<
@@ -625,28 +629,6 @@ export function EffectIcon({
         color: '#94A3B8',
         bgColor: '#334155',
         description: 'Cannot move. Speed reduced to 0.',
-      },
-      Decoy: {
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
-            <circle
-              cx="12"
-              cy="8"
-              r="4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M4 20c0-4 4-6 8-6s8 2 8 6"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeDasharray="3 2"
-            />
-          </svg>
-        ),
-        color: '#A78BFA',
-        bgColor: '#4C1D95',
-        description: 'A phantom decoy shows a fake position to the enemy.',
       },
       Cloud: {
         icon: (

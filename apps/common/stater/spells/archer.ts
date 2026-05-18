@@ -228,6 +228,8 @@ export const HailOfArrowsCast = (
   });
 };
 
+const HAIL_OF_ARROWS_RANGE = 3;
+
 export const HailOfArrowsModifier = (
   stater: Stater,
   spellCast: SpellCast<HailOfArrowsData>,
@@ -236,7 +238,7 @@ export const HailOfArrowsModifier = (
   const selfPosition = stater.state.playerStats.position.value;
   const targetPosition = spellCast.additionalData.position;
   const distance = selfPosition.manhattanDistance(targetPosition);
-  const hasDamage = distance.lessThanOrEqual(UInt64.from(3));
+  const hasDamage = distance.lessThanOrEqual(UInt64.from(HAIL_OF_ARROWS_RANGE));
   const damageToApply = Provable.if(hasDamage, UInt64.from(50), UInt64.from(0));
 
   stater.applyDamage(damageToApply, opponentState);
@@ -265,13 +267,15 @@ export const HailOfArrowsModifier = (
 };
 
 const HailOfArrowsAffectedArea = (x: number, y: number) => {
-  return [
-    { x: x, y: y },
-    { x: x + 1, y: y },
-    { x: x - 1, y: y },
-    { x: x, y: y + 1 },
-    { x: x, y: y - 1 },
-  ];
+  const positions: { x: number; y: number }[] = [];
+  for (let dx = -HAIL_OF_ARROWS_RANGE; dx <= HAIL_OF_ARROWS_RANGE; dx++) {
+    for (let dy = -HAIL_OF_ARROWS_RANGE; dy <= HAIL_OF_ARROWS_RANGE; dy++) {
+      if (Math.abs(dx) + Math.abs(dy) <= HAIL_OF_ARROWS_RANGE) {
+        positions.push({ x: x + dx, y: y + dy });
+      }
+    }
+  }
+  return positions;
 };
 
 const HailOfArrowsSceneEffect = (
@@ -344,7 +348,10 @@ export const DecoyModifier = (
     new Effect({
       effectId: CircuitString.fromString('Decoy').hash(),
       duration: Field.from(2),
-      param: Field(spellCast.additionalData.x.toBigInt() + spellCast.additionalData.y.toBigInt() * 8n),
+      param: Field(
+        spellCast.additionalData.x.toBigInt() +
+          spellCast.additionalData.y.toBigInt() * 8n
+      ),
     }),
     'public',
     Bool(true)

@@ -53,6 +53,7 @@ interface QueuedPlayer {
   timestamp: number;
   level: number;
   tournamentId?: string;
+  ip?: string;
 }
 
 /**
@@ -66,7 +67,7 @@ interface Match {
   tournamentId?: string;
 }
 
-const MAX_TOURNAMENT_GAMES_PER_PAIR = 2;
+const MAX_TOURNAMENT_GAMES_PER_PAIR = 4;
 
 /**
  * MatchmakingService
@@ -163,6 +164,30 @@ export class MatchmakingService {
       tournamentId,
       walletA,
       walletB
+    );
+  }
+
+  /** Store the resolved IP for a player in Redis (2-hour TTL). */
+  async storePlayerIp(playerId: string, ip: string): Promise<void> {
+    await this.redisClient.set(`player_ip:${playerId}`, ip, { EX: 7200 });
+  }
+
+  /** Retrieve the stored IP for a player, or null if not found. */
+  async getPlayerIp(playerId: string): Promise<string | null> {
+    return this.redisClient.get(`player_ip:${playerId}`);
+  }
+
+  /** Count games played between two IPs in a tournament. */
+  private async getTournamentIpPairGameCount(
+    tournamentId: string,
+    ipA: string,
+    ipB: string
+  ): Promise<number> {
+    if (!this.tournamentResultRecorder) return 0;
+    return this.tournamentResultRecorder.getIpPairGameCount(
+      tournamentId,
+      ipA,
+      ipB
     );
   }
 
@@ -496,6 +521,18 @@ export class MatchmakingService {
           p2Wallet
         );
         if (pairCount >= MAX_TOURNAMENT_GAMES_PER_PAIR) continue;
+
+        // IP-pair check: block if either IP is unknown, or the pair already
+        // reached the per-IP limit (catches multi-account abuse from same IP).
+        const p1Ip = available[i]!.ip;
+        const p2Ip = available[j]!.ip;
+        if (!p1Ip || !p2Ip) continue;
+        const ipPairCount = await this.getTournamentIpPairGameCount(
+          tournamentId,
+          p1Ip,
+          p2Ip
+        );
+        if (ipPairCount >= MAX_TOURNAMENT_GAMES_PER_PAIR) continue;
 
         matched.add(i);
         matched.add(j);
@@ -1515,11 +1552,13 @@ export class MatchmakingService {
       } catch {}
     }
 
+    const playerIp = await this.getPlayerIp(player.playerId);
     const queuedPlayer: QueuedPlayer = {
       player,
       timestamp: Date.now(),
       level: 0,
       tournamentId,
+      ip: playerIp ?? undefined,
     };
     await this.redisClient.lPush(queueKey, JSON.stringify(queuedPlayer));
 
@@ -1632,7 +1671,9 @@ export class MatchmakingService {
           strategy = new MageBotStrategy();
           break;
       }
-      console.log(`🤖 Using strategy for botType="${botType}": ${strategy.constructor.name}`);
+      console.log(
+        `🤖 Using strategy for botType="${botType}": ${strategy.constructor.name}`
+      );
 
       // Create and connect bot client
       const botClient = await this.botClientService.createBotClient(
