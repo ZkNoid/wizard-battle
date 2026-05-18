@@ -31,6 +31,12 @@ export class TournamentMatch {
 
   @Prop({ required: true, default: false })
   surrendered!: boolean;
+
+  @Prop({ default: '' })
+  winnerIp!: string;
+
+  @Prop({ default: '' })
+  loserIp!: string;
 }
 
 export const TournamentMatchSchema =
@@ -45,4 +51,8 @@ TournamentMatchSchema.index(
 TournamentMatchSchema.index(
   { tournamentId: 1, winnerPlayerId: 1, loserPlayerId: 1 },
   { name: 'pair_lookup_by_player' }
+);
+TournamentMatchSchema.index(
+  { tournamentId: 1, winnerIp: 1, loserIp: 1 },
+  { name: 'ip_pair_lookup' }
 );

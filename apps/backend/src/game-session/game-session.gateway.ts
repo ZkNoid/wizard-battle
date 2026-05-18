@@ -130,8 +130,19 @@ export class GameSessionGateway {
       .registerSocket(socket, playerId)
       .catch((err) => console.error('Failed to register socket mapping:', err));
 
-    // Attempt rejoin if playerId is provided
+    // Store resolved client IP in Redis so matchmaking can enforce the IP-pair limit.
+    // Trust x-real-ip (set by nginx from $remote_addr) over the client-controlled
+    // x-forwarded-for header. Fall back to the raw transport address.
     if (playerId) {
+      const ip =
+        (socket.handshake.headers['x-real-ip'] as string | undefined) ||
+        socket.handshake.address;
+      if (ip) {
+        this.matchmakingService
+          .storePlayerIp(playerId, ip)
+          .catch((err) => console.error('Failed to store player IP:', err));
+      }
+
       this.matchmakingService
         .rejoinIfInMatch(socket, playerId)
         .catch((err) => console.error('rejoinIfInMatch failed:', err));
@@ -1030,6 +1041,10 @@ export class GameSessionGateway {
             const gameState = await this.gameStateService.getGameState(
               data.roomId
             );
+            const [winnerIp, loserIp] = await Promise.all([
+              this.matchmakingService.getPlayerIp(winnerData.wPlayerId),
+              this.matchmakingService.getPlayerIp(winnerData.lPlayerId),
+            ]);
             await this.tournamentResultRecorder.recordResult({
               roomId: data.roomId,
               winnerId: winnerData.wUserId ?? winnerData.wPlayerId,
@@ -1038,6 +1053,8 @@ export class GameSessionGateway {
               loserPlayerId: winnerData.lPlayerId,
               rounds: gameState?.turn ?? 1,
               surrendered: data.dead.surrendered ?? false,
+              winnerIp: winnerIp ?? '',
+              loserIp: loserIp ?? '',
             });
           } catch (tournamentErr) {
             console.error(
