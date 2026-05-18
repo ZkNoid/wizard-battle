@@ -66,7 +66,7 @@ interface Match {
   tournamentId?: string;
 }
 
-const MAX_TOURNAMENT_GAMES_PER_PAIR = 2;
+const MAX_TOURNAMENT_GAMES_PER_PAIR = 4;
 
 /**
  * MatchmakingService
@@ -1632,7 +1632,9 @@ export class MatchmakingService {
           strategy = new MageBotStrategy();
           break;
       }
-      console.log(`🤖 Using strategy for botType="${botType}": ${strategy.constructor.name}`);
+      console.log(
+        `🤖 Using strategy for botType="${botType}": ${strategy.constructor.name}`
+      );
 
       // Create and connect bot client
       const botClient = await this.botClientService.createBotClient(
