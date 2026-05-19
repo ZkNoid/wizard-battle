@@ -155,7 +155,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
     const xpInCurrentLevel = xp - xpAtCurrentLevel;
     const xpNeededForNextLevel = xpAtNextLevel - xpAtCurrentLevel;
     if (xpNeededForNextLevel <= 0) return 100;
-    return Math.min(100, Math.max(0, (xpInCurrentLevel / xpNeededForNextLevel) * 100));
+    return Math.min(
+      100,
+      Math.max(0, (xpInCurrentLevel / xpNeededForNextLevel) * 100)
+    );
   };
 
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
@@ -163,18 +166,16 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
   const handleDrop = async (slotId: InventoryItemWearableArmorSlot) => {
     if (!draggedItem || !address) return;
 
-    if (draggedItem.item.type !== 'armor') {
-      setDraggedItem(null);
-      return;
-    }
-
     const wearableItem = draggedItem.item as IInventoryArmorItem;
     if (wearableItem.wearableSlot !== slotId) {
       setDraggedItem(null);
       return;
     }
 
-    if (wearableItem.wearRequirements && wearableItem.wearRequirements.length > 0) {
+    if (
+      wearableItem.wearRequirements &&
+      wearableItem.wearRequirements.length > 0
+    ) {
       const currentClassName = getWizardClassName(currentWizard);
       const currentLevel = levelFromXp(xp);
 
@@ -370,7 +371,10 @@ export default function InventoryModal({ onClose }: { onClose: () => void }) {
               </div>
 
               <div className="relative size-[95%]">
-                <AnimatedHero wizardId={currentWizardId} className="size-full" />
+                <AnimatedHero
+                  wizardId={currentWizardId}
+                  className="size-full"
+                />
                 {/* Level bar */}
                 <div className="w-38 -z-1 absolute -top-5 left-1/2 h-6 -translate-x-1/2 overflow-hidden">
                   <LvlBg className="-z-1 absolute inset-0 size-full" />
