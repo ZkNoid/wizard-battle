@@ -13,9 +13,8 @@ import { defaultHeroStats } from '@/lib/constants/stat';
 import type { PublicClient } from 'viem';
 import { env } from '@/env';
 
-const WB_RESOURCES_ADDRESS = (
-  env.NEXT_PUBLIC_RESOURCES_CONTRACT_ADDRESS ?? ''
-) as `0x${string}`;
+const WB_RESOURCES_ADDRESS = (env.NEXT_PUBLIC_RESOURCES_CONTRACT_ADDRESS ??
+  '') as `0x${string}`;
 
 const BALANCE_OF_BATCH_ABI = [
   {
@@ -83,16 +82,14 @@ const calculateStats = (
   const stats: IHeroStats = getWizardDefaultStats(wizardId);
 
   Object.values(equippedSlots).forEach((userItem) => {
-    if (userItem && userItem.item.type === 'armor') {
-      const armorItem = userItem.item as IInventoryArmorItem;
-      if (armorItem.buff) {
-        Object.entries(armorItem.buff).forEach(([buffKey, buffValue]) => {
-          const statKey = buffToStatKeyMap[buffKey];
-          if (statKey && statKey in stats && buffValue) {
-            stats[statKey] += Number(buffValue);
-          }
-        });
-      }
+    if (userItem && 'buff' in userItem.item) {
+      const buff = userItem.item.buff;
+      Object.entries(buff).forEach(([buffKey, buffValue]) => {
+        const statKey = buffToStatKeyMap[buffKey];
+        if (statKey && statKey in stats && buffValue) {
+          stats[statKey] += Number(buffValue);
+        }
+      });
     }
   });
 
@@ -121,7 +118,10 @@ interface InventoryStore {
   // Actions - address comes from useMinaAppkit hook in components
   loadUserInventory: (address: string) => Promise<void>;
   loadCurrencies: (address: string) => Promise<void>;
-  loadOnchainBalances: (evmAddress: string, publicClient: PublicClient) => Promise<void>;
+  loadOnchainBalances: (
+    evmAddress: string,
+    publicClient: PublicClient
+  ) => Promise<void>;
   getEquippedItems: (wizardId: string) => EquippedSlots;
   getStats: (wizardId: string) => IHeroStats;
   equipItem: (
@@ -153,9 +153,14 @@ export const useInventoryStore = create<InventoryStore>()(
       statsByWizard: {},
       iteminventory: [],
 
-      loadOnchainBalances: async (evmAddress: string, publicClient: PublicClient) => {
+      loadOnchainBalances: async (
+        evmAddress: string,
+        publicClient: PublicClient
+      ) => {
         if (!WB_RESOURCES_ADDRESS) {
-          console.warn('loadOnchainBalances: NEXT_PUBLIC_RESOURCES_CONTRACT_ADDRESS is not set');
+          console.warn(
+            'loadOnchainBalances: NEXT_PUBLIC_RESOURCES_CONTRACT_ADDRESS is not set'
+          );
           return;
         }
 
@@ -169,12 +174,12 @@ export const useInventoryStore = create<InventoryStore>()(
           const accounts = allItems.map(() => evmAddress as `0x${string}`);
           const ids = allItems.map((i) => BigInt(i.tokenId));
 
-          const balances = await publicClient.readContract({
+          const balances = (await publicClient.readContract({
             address: WB_RESOURCES_ADDRESS,
             abi: BALANCE_OF_BATCH_ABI,
             functionName: 'balanceOfBatch',
             args: [accounts, ids],
-          }) as bigint[];
+          })) as bigint[];
 
           // Build a map: itemId -> balance
           const balanceByItemId = new Map<string, bigint>();
