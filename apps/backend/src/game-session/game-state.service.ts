@@ -1291,7 +1291,12 @@ export class GameStateService {
           let wCharacter = 'mage'; // default
           let lCharacter = 'mage'; // default
           try {
-            const matchData = await this.redisClient.hGet('matches', roomId);
+            const matchData =
+              (await this.redisClient.hGet('matches', roomId)) ??
+              (await this.redisClient.hGet(
+                'tournament_matches_active',
+                roomId
+              ));
             if (matchData) {
               const match = JSON.parse(matchData);
 
