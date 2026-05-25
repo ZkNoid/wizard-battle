@@ -246,7 +246,7 @@ export const useInventoryStore = create<InventoryStore>()(
               }
 
               // Get the slot from the item
-              if (userItem.item.type === 'armor') {
+              if (userItem.item && 'wearableSlot' in userItem.item) {
                 const armorItem = userItem.item as IInventoryArmorItem;
                 equippedByWizard[wizardId][armorItem.wearableSlot] = userItem;
               }
