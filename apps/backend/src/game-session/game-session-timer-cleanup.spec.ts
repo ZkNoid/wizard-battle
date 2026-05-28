@@ -39,11 +39,13 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
   let scheduler: GamePhaseSchedulerService;
   let mockGameStateService: any;
   let mockGameSessionGateway: any;
+  let mockMatchmakingService: any;
 
   beforeEach(async () => {
     // Mock services
     mockGameStateService = createMock<GameStateService>();
     mockGameSessionGateway = createMock<GameSessionGateway>();
+    mockMatchmakingService = createMock<MatchmakingService>();
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [ScheduleModule.forRoot()],
@@ -51,6 +53,7 @@ describe('GamePhaseSchedulerService - Cron-Based Phase Management', () => {
         GamePhaseSchedulerService,
         { provide: GameStateService, useValue: mockGameStateService },
         { provide: GameSessionGateway, useValue: mockGameSessionGateway },
+        { provide: MatchmakingService, useValue: mockMatchmakingService },
       ],
     }).compile();
 

@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { GameStateService } from './game-state.service';
 import { GameSessionGateway } from './game-session.gateway';
 import { RewardService } from '../reward/reward.service';
+import { MatchmakingService } from '../matchmaking/matchmaking.service';
 import { TournamentResultRecorderService } from '../tournament/services/index.js';
 import {
   GamePhase,
@@ -38,6 +39,7 @@ export class GamePhaseSchedulerService {
     @Inject(forwardRef(() => GameSessionGateway))
     private readonly gameSessionGateway: GameSessionGateway,
     private readonly rewardService: RewardService,
+    private readonly matchmakingService: MatchmakingService,
     @Optional()
     private readonly tournamentResultRecorder?: TournamentResultRecorderService
   ) {}
@@ -64,6 +66,11 @@ export class GamePhaseSchedulerService {
 
     try {
       const gameState = await this.gameStateService.getGameState(roomId);
+      const [winnerIp, loserIp] = await Promise.all([
+        this.matchmakingService.getPlayerIp(winnerData.wPlayerId),
+        this.matchmakingService.getPlayerIp(winnerData.lPlayerId),
+      ]);
+
       await this.tournamentResultRecorder.recordResult({
         roomId,
         winnerId: winnerData.wUserId ?? winnerData.wPlayerId,
@@ -72,6 +79,8 @@ export class GamePhaseSchedulerService {
         loserPlayerId: winnerData.lPlayerId,
         rounds: gameState?.turn ?? 1,
         surrendered,
+        winnerIp: winnerIp ?? '',
+        loserIp: loserIp ?? '',
       });
     } catch (err) {
       console.error(
