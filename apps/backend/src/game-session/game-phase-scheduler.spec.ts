@@ -3,6 +3,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { GamePhaseSchedulerService } from './game-phase-scheduler.service';
 import { GameStateService } from './game-state.service';
 import { GameSessionGateway } from './game-session.gateway';
+import { MatchmakingService } from '../matchmaking/matchmaking.service';
 import { GamePhase } from '../../../common/types/gameplay.types';
 import { createMock } from '@golevelup/ts-jest';
 
@@ -15,10 +16,12 @@ describe('GamePhaseSchedulerService', () => {
   let service: GamePhaseSchedulerService;
   let mockGameStateService: any;
   let mockGameSessionGateway: any;
+  let mockMatchmakingService: any;
 
   beforeEach(async () => {
     mockGameStateService = createMock<GameStateService>();
     mockGameSessionGateway = createMock<GameSessionGateway>();
+    mockMatchmakingService = createMock<MatchmakingService>();
 
     // Mock Redis client
     const multiMock = {
@@ -78,6 +81,7 @@ describe('GamePhaseSchedulerService', () => {
         GamePhaseSchedulerService,
         { provide: GameStateService, useValue: mockGameStateService },
         { provide: GameSessionGateway, useValue: mockGameSessionGateway },
+        { provide: MatchmakingService, useValue: mockMatchmakingService },
       ],
     }).compile();
 
