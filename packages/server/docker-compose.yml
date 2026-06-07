@@ -140,6 +140,8 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
+    extra_hosts:
+      - "host-gateway:host-gateway"
     networks:
       - bridge
 
